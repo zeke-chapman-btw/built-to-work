@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "apps.core.apps.CoreConfig",
     "apps.accounts.apps.AccountsConfig",
+    'apps.participants.apps.ParticipantsConfig',
 ]
 
 MIDDLEWARE = [
@@ -90,3 +91,8 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+AUTHENTICATION_BACKENDS = [
+    "apps.participants.auth.ParticipantAuthenticationBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
