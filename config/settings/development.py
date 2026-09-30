@@ -29,3 +29,11 @@ CSRF_TRUSTED_ORIGINS = [
     for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin.strip()
 ]
+
+CSRF_TRUSTED_ORIGINS.append("https://symmetrical-funicular-qvpxx6rx5j7wc96wv-8000.app.github.dev")
+
+CSRF_TRUSTED_ORIGINS.append("https://localhost:8000")
+
+# GitHub Codespaces preview hosts are variable per Codespace and port.
+ALLOWED_HOSTS += [".app.github.dev"]
+CSRF_TRUSTED_ORIGINS += ["https://*.app.github.dev"]

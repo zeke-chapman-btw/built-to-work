@@ -151,7 +151,7 @@ def password_reset_confirm(request, token):
 def staff_requests(request):
     if not request.user.is_staff: raise Http404
     items = ParticipantAccountRequest.objects.filter(status=ParticipantAccountRequest.Status.PENDING_REVIEW).order_by("created_at")
-    return render(request, "participants/staff_requests.html", {"requests": items})
+    return render(request, "internal/staff_requests.html", {"requests": items})
 
 @login_required(login_url="admin:login")
 @transaction.atomic
@@ -171,4 +171,4 @@ def staff_resolve_request(request, request_id):
             audit(request.user, "participant_account_request_resolved", obj, new_data={"participant_id": str(participant.pk), "status": obj.status})
             return redirect("participants:staff-requests")
     else: form = StaffRequestResolutionForm(initial={"participant": obj.matched_participant_id})
-    return render(request, "participants/form.html", {"title": f"Resolve request for {obj.login_email}", "form": form, "request_obj": obj})
+    return render(request, "internal/staff_request_resolve.html", {"title": f"Resolve request for {obj.login_email}", "form": form, "request_obj": obj})
