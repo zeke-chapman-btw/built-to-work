@@ -1,0 +1,14 @@
+{% extends "internal/base.html" %}{% load tz %}
+{% block title %}Events | Built to Work{% endblock %}
+{% block content %}
+<style>
+.events-page{max-width:1180px;margin:auto}.events-head{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1.5rem}.events-head h1{margin:0}.events-table{width:100%;border-collapse:collapse}.events-table th,.events-table td{padding:.9rem;text-align:left;border-bottom:1px solid #e5e7eb}.events-table th{font-size:.78rem;text-transform:uppercase;color:#6b7280}.events-table a{color:#a51e2c;font-weight:600}.event-pill{display:inline-block;padding:.25rem .6rem;border-radius:1rem;background:#f3f4f6;font-size:.78rem}
+@media(max-width:720px){.events-head{align-items:flex-start;flex-direction:column}.events-table th:nth-child(3),.events-table td:nth-child(3){display:none}.events-table th,.events-table td{padding:.65rem .35rem;font-size:.9rem}}
+</style>
+<section class="events-page">
+  <header class="events-head"><div><h1>Events</h1><p>Manage event schedules, registrations, and check-in.</p></div><a class="button button-primary" href="{% url 'events:event_create' %}">Create event</a></header>
+  {% if events %}<div class="card" style="overflow-x:auto"><table class="events-table"><thead><tr><th>Event</th><th>Date and time</th><th>Location</th><th>Status</th><th>Registered</th><th>Checked in</th></tr></thead><tbody>
+  {% for event in events %}<tr><td><a href="{% url 'events:event_detail' event.id %}">{{ event.name }}</a><br><small>{{ event.code|default:"" }}</small></td><td>{% timezone event.timezone_name %}{{ event.local_start_at|date:"M j, Y g:i A" }}{% endtimezone %}</td><td>{{ event.location_name|default:"—" }}</td><td><span class="event-pill">{{ event.get_status_display }}</span></td><td>{{ event.registration_count|default:0 }}</td><td>{{ event.attendance_count|default:0 }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<div class="card"><h2>No events yet</h2><p>Create an event to start registering participants and managing check-in.</p><a class="button button-primary" href="{% url 'events:event_create' %}">Create event</a></div>{% endif %}
+</section>
+{% endblock %}

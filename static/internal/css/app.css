@@ -3,3 +3,48 @@
 .brand-logo{display:block;width:148px;height:30px;max-width:100%;flex:0 0 148px;object-fit:cover;object-position:center}
 
 .topbar>div{margin-left:auto}
+
+/* Shared actions used by internal event workflows. */
+.button,
+a.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #d6d8dc;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: #25282d;
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.25;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:hover,
+a.button:hover {
+  background: #f5f6f7;
+}
+
+.button-primary,
+a.button-primary {
+  border-color: #bd2633;
+  background: #bd2633;
+  color: #fff;
+}
+
+.button-primary:hover,
+a.button-primary:hover {
+  border-color: #9f1e29;
+  background: #9f1e29;
+  color: #fff;
+}
+
+.button:focus-visible,
+a.button:focus-visible {
+  outline: 3px solid #8db7e8;
+  outline-offset: 2px;
+}

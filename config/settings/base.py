@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     "apps.core.apps.CoreConfig",
     "apps.accounts.apps.AccountsConfig",
     'apps.participants.apps.ParticipantsConfig',
+    'apps.events.apps.EventsConfig',
 ]
 
 MIDDLEWARE = [

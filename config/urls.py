@@ -6,6 +6,7 @@ urlpatterns = [
     path("internal/", include("apps.internal_ui.urls")),
     path("admin/", admin.site.urls),
     path("participants/", include("apps.participants.urls")),
+    path("events/", include("apps.events.urls")),
     path("", home, name="home"),
     path("health/", health, name="health"),
 ]
