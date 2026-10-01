@@ -33,6 +33,7 @@ class Event(models.Model):
     postal_code = models.CharField(max_length=24, blank=True)
     country = models.CharField(max_length=100, blank=True)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.DRAFT)
+    allow_station_auto_check_in = models.BooleanField(default=False)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="created_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

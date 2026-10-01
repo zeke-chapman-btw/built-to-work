@@ -1,0 +1,6 @@
+{% extends "internal/base.html" %}
+{% block title %}{{ page_title }} | Built to Work{% endblock %}
+{% block content %}
+<section class="station-page"><p><a href="{% if station %}{% url 'stations:detail' station.id %}{% else %}{% url 'stations:list' %}{% endif %}">← Back</a></p><div class="card"><form method="post" class="station-form">{% csrf_token %}{{ form.as_p }}<div class="form-actions"><button class="button button-primary" type="submit">Save station</button><a class="button" href="{% if station %}{% url 'stations:detail' station.id %}{% else %}{% url 'stations:list' %}{% endif %}">Cancel</a></div></form></div></section>
+<style>.station-page{max-width:800px;margin:auto}.station-form{display:grid;gap:.7rem}.station-form input,.station-form select,.station-form textarea{width:100%;max-width:100%;padding:.65rem;border:1px solid #ccd1d8;border-radius:.45rem}.form-actions{display:flex;gap:.6rem;flex-wrap:wrap}</style>
+{% endblock %}

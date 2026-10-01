@@ -8,6 +8,7 @@ urlpatterns = [
     path("ticket/<uuid:token>/", views.ticket_present, name="ticket_present"),
     path("", views.event_list, name="event_list"),
     path("create/", views.event_create, name="event_create"),
+    path("<uuid:event_id>/stations/", views.event_station_assign, name="station_assign"),
     path("<uuid:event_id>/", views.event_detail, name="event_detail"),
     path("<uuid:event_id>/edit/", views.event_edit, name="event_edit"),
     path("<uuid:event_id>/registrations/<uuid:registration_id>/", views.registration_detail, name="registration_detail"),

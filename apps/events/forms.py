@@ -16,7 +16,7 @@ class EventForm(forms.ModelForm):
         fields = (
             "name", "code", "description", "start_at", "end_at", "timezone_name",
             "location_name", "address_line_1", "address_line_2", "city", "state",
-            "postal_code", "country", "status",
+            "postal_code", "country", "status", "allow_station_auto_check_in",
         )
         widgets = {
             "start_at": forms.DateTimeInput(attrs={"type": "datetime-local"}, format=DATETIME_FORMAT),

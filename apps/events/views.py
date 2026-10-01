@@ -15,6 +15,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.participants.models import Participant
+from apps.stations.forms import StationForEventForm
+from apps.stations.services import assign_station
 from .forms import EventForm, RegistrationForm, ReissueTicketForm, VoidRegistrationForm
 from .models import Attendance, Event, EventRegistration, QrTicket
 from .services import audit_action, check_in_registration, register_participant, resolve_ticket, reissue_ticket, void_registration
@@ -132,7 +134,7 @@ def event_detail(request, event_id):
     with timezone.override(ZoneInfo(event.timezone_name)):
         return render(request, "events/event_detail.html", {
             "page_title": "Events",
-            "event": event, "registrations": registrations,
+            "event": event, "registrations": registrations, "station_form": StationForEventForm(), "station_assignments": event.station_assignments.select_related("station"), "experience_sessions": event.experience_sessions.select_related("participant").prefetch_related("activities"),
             "registration_count": EventRegistration.objects.filter(event=event, status=EventRegistration.Status.ACTIVE).count(),
             "attendance_count": Attendance.objects.filter(event=event, is_void=False).count(),
             "registration_form": form, "scan_form_token": scan_form_token, "scan_resolution": resolution,
@@ -215,3 +217,29 @@ def ticket_present(request, token):
             "ticket_qr_data": _ticket_qr_data(request, ticket),
             "already_checked_in": resolution.status == "already_checked_in",
         })
+
+
+@staff_required
+def event_station_assign(request, event_id):
+    from apps.stations.models import EventStation
+    from apps.stations.services import assign_station
+
+    event = get_object_or_404(Event, pk=event_id)
+    if request.method != "POST":
+        return HttpResponse(status=405)
+    form = StationForEventForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, "Choose a valid active station and assignment settings.")
+        return redirect("events:event_detail", event_id=event.pk)
+    assignment, created = assign_station(event=event, station=form.cleaned_data["station"], actor=request.user)
+    old_data = {"enabled": assignment.enabled, "display_order": assignment.display_order}
+    assignment.enabled = form.cleaned_data["enabled"]
+    assignment.display_order = form.cleaned_data["display_order"]
+    if not assignment.enabled:
+        assignment.is_active_context = False
+    assignment.save()
+    if not created:
+        from apps.events.services import audit_action
+        audit_action(actor=request.user, action="station.event_assignment.updated", instance=assignment, old_data=old_data, new_data={"enabled": assignment.enabled, "display_order": assignment.display_order})
+    messages.success(request, "Station assigned to event." if created else "Station assignment updated.")
+    return redirect("events:event_detail", event_id=event.pk)
