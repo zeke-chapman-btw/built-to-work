@@ -138,6 +138,11 @@ class StationExperienceTests(TestCase):
         self.assertEqual(activity.skip_reason, "Station unavailable")
         self.assertTrue(AuditLog.objects.filter(action="experience.activity.skipped", reason="Station unavailable").exists())
 
+        from apps.stations.services import _prior_steps_complete
+
+        self.assertIsNone(_prior_steps_complete(session, ExperienceActivity.Activity.DUCK))
+        self.assertEqual(_prior_steps_complete(session, ExperienceActivity.Activity.SIMULATOR), ExperienceActivity.Activity.DUCK)
+
     def test_test_and_demo_sessions_are_not_linked_to_people(self):
         test_session = start_test_session(event=self.event, mode=ExperienceSession.Mode.STAFF_TEST, actor=self.staff)
         demo_session = start_test_session(event=self.event, mode=ExperienceSession.Mode.DEMO, actor=self.staff)
@@ -145,6 +150,47 @@ class StationExperienceTests(TestCase):
         self.assertIsNone(test_session.participant_id)
         self.assertIsNone(demo_session.registration_id)
         self.assertEqual(ExperienceSession.objects.filter(mode=ExperienceSession.Mode.OFFICIAL).count(), 0)
+
+
+    def test_kiosk_http_requires_staff_check_in_without_creating_experience(self):
+        registration = self.registration()
+        ticket = registration.tickets.get(is_current=True)
+        self.event.allow_station_auto_check_in = False
+        self.event.save(update_fields=("allow_station_auto_check_in",))
+        activate_event_context(assignment=self.kiosk_assignment, actor=self.staff)
+        response = self.client.post(
+            reverse("stations:kiosk", kwargs={"station_code": self.kiosk.code}),
+            {"token": ticket.token},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Please ask a Built to Work team member for help before continuing.")
+        self.assertNotContains(response, "staff_check_in_required")
+        self.assertNotContains(response, ticket.token)
+        for internal_value in ("staff_check_in_required", "Staff_Check_In_Required", "Traceback", "ValidationError", "IntegrityError"):
+            self.assertNotContains(response, internal_value)
+        self.assertEqual(Attendance.objects.filter(registration=registration).count(), 0)
+        self.assertEqual(
+            ExperienceSession.objects.filter(registration=registration).count(), 0
+        )
+
+
+    def test_kiosk_http_requires_staff_check_in_without_creating_experience(self):
+        registration = self.registration()
+        ticket = registration.tickets.get(is_current=True)
+        self.event.allow_station_auto_check_in = False
+        self.event.save(update_fields=("allow_station_auto_check_in",))
+        activate_event_context(assignment=self.kiosk_assignment, actor=self.staff)
+        response = self.client.post(
+            reverse("stations:kiosk", kwargs={"station_code": self.kiosk.code}),
+            {"token": ticket.token},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Please ask a Built to Work team member for help before continuing.")
+        self.assertNotContains(response, "staff_check_in_required")
+        self.assertEqual(Attendance.objects.filter(registration=registration).count(), 0)
+        self.assertEqual(
+            ExperienceSession.objects.filter(registration=registration).count(), 0
+        )
 
 
 class StationAccessTests(TestCase):

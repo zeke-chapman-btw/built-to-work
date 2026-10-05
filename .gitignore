@@ -7,3 +7,5 @@ __pycache__/
 .coverage
 htmlcov/
 staticfiles/
+# Development question uploads are runtime media; canonical review images live in static/kiosk/images/test-mode/.
+/assessment_questions/

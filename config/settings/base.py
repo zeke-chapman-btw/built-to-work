@@ -12,6 +12,7 @@ ALLOWED_HOSTS = [
 
 INSTALLED_APPS = [
     "apps.stations.apps.StationsConfig",
+    "apps.assessments.apps.AssessmentsConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

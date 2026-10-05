@@ -1,0 +1,1 @@
+{% extends "internal/base.html" %}{% block title %}Assessment category{% endblock %}{% block content %}<main class="page"><h1>Assessment category</h1><form method="post" class="card">{% csrf_token %}{{ form.as_p }}<button class="button button-primary">Save</button></form></main>{% endblock %}

@@ -1,13 +1,15 @@
+import os
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from apps.events.models import Event
 from apps.events.views import staff_required
+from .kiosk_review import TEST_EVENT_CODE
 from .forms import EventStationForm, ExperienceModeForm, SkipActivityForm, StationForEventForm, StationForm
 from .models import EventStation, ExperienceActivity, ExperienceSession, Station
 from .services import (
@@ -113,6 +115,140 @@ def _operator_context(assignment, *, result=None, scan_form=None, mode_form=None
         "skip_forms": skip_forms or {}, "result_status": safe_status,
         "required_activity": result.get("required_activity") if result else None,
     }
+
+
+def participant_kiosk_signup(request, station_code):
+    """Show the intake QR when a signup destination is configured."""
+    import base64
+    import os
+    from io import BytesIO
+
+    station = Station.objects.get(code=station_code)
+    signup_qr_data = ""
+    signup_url = os.environ.get("PARTICIPANT_SIGNUP_URL", "").strip()
+    if signup_url:
+        import qrcode
+
+        qr = qrcode.make(signup_url)
+        image_buffer = BytesIO()
+        qr.save(image_buffer, format="PNG")
+        encoded = base64.b64encode(image_buffer.getvalue()).decode("ascii")
+        signup_qr_data = f"data:image/png;base64,{encoded}"
+    return render(request, "stations/kiosk_signup.html", {
+        "station": station,
+        "signup_qr_data": signup_qr_data,
+    })
+
+
+def participant_kiosk(request, station_code):
+    # Anonymous participant-facing kiosk; staff tools live at the service URL.
+    assignment = EventStation.objects.select_related("event", "station").filter(
+        station__code=station_code,
+        station__station_type=Station.Type.KIOSK,
+        station__is_active=True,
+        enabled=True,
+        is_active_context=True,
+    ).first()
+    request.session.pop("participant_kiosk_session", None)
+    request.session.pop("test_kiosk_session", None)
+    friendly_error = None
+    ticket_error_code = None
+    first_name = ""
+    already_complete = False
+    if assignment is None:
+        friendly_error = "This kiosk is not ready yet. Please ask a Built to Work staff member for help."
+    elif request.method == "POST":
+        token = request.POST.get("token", "").strip()
+        status, session = "not_found", None
+        if token:
+            result = process_station_scan(station_code=station_code, token=token, actor=None)
+            status = result.get("status")
+            session = result.get("session")
+        if status == "activity_in_progress" and session is not None:
+            request.session["participant_kiosk_session"] = str(session.pk)
+            return redirect(
+                "assessments:station_start",
+                station_code=station_code,
+                session_id=session.pk,
+            )
+        elif status in {"session_complete", "activity_complete", "already_complete", "completed"}:
+            ticket_error_code = "already_complete"
+            already_complete = True
+            friendly_error = "You've already completed this assessment. Please ask a staff member if you need help."
+        else:
+            ticket_error_code = status
+            friendly_error = {
+                "wrong_event": "Please ask a Built to Work team member for help.",
+                "expired": "Please try scanning your Built to Work QR ticket again.",
+                "revoked": "Please try scanning your Built to Work QR ticket again.",
+                "registration_inactive": "Please try scanning your Built to Work QR ticket again.",
+                "prior_activity_required": "Please ask a Built to Work team member for help.",
+                "check_in_unavailable": "Please ask a Built to Work team member for help.",
+                "not_found": "Please try scanning your Built to Work QR ticket again.",
+                "station_unconfigured": "This kiosk is not ready yet. Please ask a Built to Work team member for help.",
+            }.get(status, "Please ask a Built to Work team member for help before continuing.")
+    return render(request, "stations/kiosk_home.html", {
+        "station_code": station_code,
+        "signup_url": os.environ.get("PARTICIPANT_SIGNUP_URL", "").strip(),
+        "friendly_error": friendly_error,
+        "ticket_error_code": ticket_error_code,
+        "first_name": first_name,
+        "already_complete": already_complete,
+        "setup_error": assignment is None,
+        "event_name": assignment.event.name if assignment else None,
+    })
+
+
+
+def _test_event_assignment(station):
+    return EventStation.objects.select_related("event").filter(station=station, enabled=True, event__code=TEST_EVENT_CODE).first()
+
+def _test_assessment_ready(assignment):
+    from apps.assessments.services import eligible_event_categories
+    return assignment is not None and len(eligible_event_categories(assignment.event)) >= 2
+
+
+def service_menu(request, station_code):
+    station = get_object_or_404(Station, code=station_code, station_type=Station.Type.KIOSK, is_active=True)
+    assignment = _test_event_assignment(station)
+    if request.method == "POST" and request.POST.get("action") == "return":
+        return redirect("stations:kiosk", station_code=station.code)
+    return render(request, "stations/service_menu.html", {"station": station, "test_ready": _test_assessment_ready(assignment)})
+
+def service_start_test(request, station_code):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    station = get_object_or_404(Station, code=station_code, station_type=Station.Type.KIOSK, is_active=True)
+    assignment = _test_event_assignment(station)
+    if not _test_assessment_ready(assignment):
+        return render(request, "stations/service_menu.html", {"station": station, "test_ready": False, "service_error": "Test Mode needs two ready categories with published question sets. Please ask a team member to configure the development review event."}, status=503)
+    session = start_test_session(event=assignment.event, mode=ExperienceSession.Mode.STAFF_TEST, actor=None)
+    request.session.pop("participant_kiosk_session", None)
+    request.session["test_kiosk_session"] = str(session.pk)
+    return redirect("assessments:station_start", station_code=station.code, session_id=session.pk)
+
+def service_start_new_test(request, station_code, session_id):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    if request.session.get("test_kiosk_session") != str(session_id):
+        raise Http404
+    old_session = get_object_or_404(ExperienceSession, pk=session_id, mode=ExperienceSession.Mode.STAFF_TEST, participant__isnull=True, registration__isnull=True)
+    station = get_object_or_404(Station, code=station_code, station_type=Station.Type.KIOSK, is_active=True)
+    assignment = _test_event_assignment(station)
+    if assignment is None or assignment.event_id != old_session.event_id:
+        raise Http404
+    session = start_test_session(event=old_session.event, mode=ExperienceSession.Mode.STAFF_TEST, actor=None)
+    request.session["test_kiosk_session"] = str(session.pk)
+    return redirect("assessments:station_start", station_code=station_code, session_id=session.pk)
+
+def service_exit_test(request, station_code, session_id):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    if request.session.get("test_kiosk_session") != str(session_id):
+        raise Http404
+    get_object_or_404(ExperienceSession, pk=session_id, mode=ExperienceSession.Mode.STAFF_TEST, participant__isnull=True, registration__isnull=True)
+    request.session.pop("test_kiosk_session", None)
+    return redirect("stations:kiosk", station_code=station_code)
 
 
 @staff_required

@@ -1,0 +1,50 @@
+{% extends "assessments/kiosk_base.html" %}
+{% block title %}Choose Your Skills{% endblock %}
+{% block content %}
+<section class="screen category-page" data-idle-screen data-ignore-scans="true" aria-labelledby="category-title">
+  <h1 id="category-title" class="category-question">Which 2 skills are you most interested in?</h1>
+  <form method="post" id="category-form" class="category-form">
+    {% csrf_token %}
+    <div class="category-grid" role="group" aria-label="Choose exactly two skill categories">
+      {% for config in configs %}
+      <button class="category-choice" type="button" data-category-id="{{ config.id }}" aria-pressed="false">
+        <span class="category-choice-order" aria-hidden="true"></span>
+        <span>{{ config.display_name|default:config.category.name }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    <div id="category-values"></div>
+    <p id="category-status" class="category-status" aria-live="polite">Choose 2 skills to continue.</p>
+    <div class="category-actions"><button id="category-continue" class="kiosk-button" type="submit" disabled>I'M READY</button></div>
+  </form>
+</section>
+<script>
+(()=>{
+  const cards=[...document.querySelectorAll('.category-choice')];
+  const values=document.getElementById('category-values');
+  const status=document.getElementById('category-status');
+  const submit=document.getElementById('category-continue');
+  const selected=[];
+  function render(){
+    values.replaceChildren();
+    cards.forEach(card=>{
+      const index=selected.indexOf(card.dataset.categoryId);
+      const chosen=index!==-1;
+      card.classList.toggle('is-selected',chosen);
+      card.setAttribute('aria-pressed',String(chosen));
+      card.querySelector('.category-choice-order').textContent=chosen?'#'+(index+1):'';
+
+    });
+    selected.forEach(id=>{const input=document.createElement('input');input.type='hidden';input.name='categories';input.value=id;values.append(input);});
+    submit.disabled=selected.length!==2;
+    status.textContent=selected.length===2?'Your skills are ready in the order shown.':'Choose '+(2-selected.length)+' more skill'+(2-selected.length===1?'':'s')+'.';
+  }
+  cards.forEach(card=>card.addEventListener('click',()=>{
+    const id=card.dataset.categoryId, index=selected.indexOf(id);
+    if(index!==-1)selected.splice(index,1);else if(selected.length<2)selected.push(id);
+    render();
+  }));
+  render();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "assessments/kiosk_base.html" %}{% load static %}{% block title %}Kiosk Home | Built to Work{% endblock %}{% block content %}
+<section class="home-screen" aria-labelledby="home-title">
+{% if already_complete %}<p class="kiosk-feedback kiosk-error" role="alert">You've already completed this assessment.</p>{% endif %}
+{% if friendly_error %}<p class="kiosk-feedback kiosk-error" role="alert">{{ friendly_error }}</p>{% endif %}
+<div class="home-primary"><p class="home-eyebrow">Welcome</p><h1 id="home-title">TEST YOUR SKILLS</h1><p class="home-instruction">SCAN YOUR QR TICKET</p><p class="home-support">Hold your QR ticket a few inches in front of the scanner.</p>
+<div class="scan-target" aria-hidden="true"><span class="scan-corner scan-corner-tl"></span><span class="scan-corner scan-corner-tr"></span><span class="scan-corner scan-corner-bl"></span><span class="scan-corner scan-corner-br"></span></div>
+<form class="scanner-capture" method="post" action="" data-scanner-capture autocomplete="off">{% csrf_token %}<label class="visually-hidden" for="ticket-code">Scan your QR ticket</label><input id="ticket-code" name="token" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1"><button class="visually-hidden" type="submit" tabindex="-1">Continue</button></form>
+<p class="scan-feedback" data-scan-feedback role="status" aria-live="polite"></p></div>
+<div class="home-secondary"><div><h2>Don't have a ticket?</h2><p>Complete our intake form to get started.</p></div><div><a class="kiosk-button home-signup-button" href="{% url 'stations:kiosk_signup' station_code=station_code %}">SIGN UP HERE</a></div></div>
+</section>
+{% endblock %}{% block scripts %}<script>
+document.addEventListener('DOMContentLoaded',()=>{const form=document.querySelector('[data-scanner-capture]');if(!form)return;const input=form.querySelector('input[name="token"]');const feedback=document.querySelector('[data-scan-feedback]');let submitting=false;const focusScanner=()=>{if(!submitting)input.focus({preventScroll:true})};window.setTimeout(focusScanner,150);document.addEventListener('pointerdown',e=>{if(!e.target.closest('a,button'))window.setTimeout(focusScanner,0)});input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const token=input.value.trim();if(!token||submitting)return;submitting=true;form.requestSubmit()}});form.addEventListener('submit',()=>{submitting=true;if(feedback)feedback.textContent='Checking your ticket…'});window.addEventListener('pageshow',()=>{submitting=false;input.value='';focusScanner()});});
+</script>{% endblock %}

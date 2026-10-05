@@ -1,0 +1,1 @@
+{% extends "internal/base.html" %}{% block title %}Question set{% endblock %}{% block content %}<main class="page"><h1>New question set — {{ category.name }}</h1><form method="post" class="card">{% csrf_token %}{{ form.as_p }}<button class="button button-primary">Create draft</button></form></main>{% endblock %}
