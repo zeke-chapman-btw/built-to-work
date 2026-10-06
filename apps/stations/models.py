@@ -10,7 +10,8 @@ from django.utils import timezone
 class Station(models.Model):
     class Type(models.TextChoices):
         KIOSK = "kiosk", "Kiosk"
-        DUCK = "duck", "Duck experience"
+        DUCK = "duck", "Legacy Duck experience"
+        GAME = "game", "Game"
         SIMULATOR = "simulator", "Simulator"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -93,7 +94,8 @@ class ExperienceSession(models.Model):
 class ExperienceActivity(models.Model):
     class Activity(models.TextChoices):
         KIOSK = "kiosk", "Kiosk"
-        DUCK = "duck", "Duck experience"
+        DUCK = "duck", "Legacy Duck experience"
+        GAME = "game", "Game"
         SIMULATOR = "simulator", "Simulator"
 
     class Status(models.TextChoices):

@@ -1,0 +1,2 @@
+{% extends 'assessments/kiosk_base.html' %}
+{% block content %}<main class='kiosk-screen game-placeholder'><p class='test-mode-indicator'>TEST MODE</p><p class='eyebrow'>FRAMEWORK CHECK</p><h1>GAME COMPLETE</h1><h2>NEXT: SIMULATOR</h2><p>This nonofficial test did not change participant or Event results.</p><a class='kiosk-button' href='{% url 'stations:test_mode_reset' %}'>Start New Test / Reset Test</a><a class='kiosk-button secondary' href='{% url 'stations:test_mode_exit' %}'>Exit Test Mode / Return to Kiosk</a></main>{% endblock %}

@@ -1,3 +1,4 @@
+from apps.games.services import configured_game
 from django.urls import reverse
 from apps.stations.services import complete_activity
 from functools import wraps
@@ -198,7 +199,7 @@ def station_start(request, station_code, session_id):
     if request.method == "POST":
                 return redirect("assessments:category_selection", station_code=station.code, session_id=session.id)
     categories = eligible_event_categories(session.event)
-    return render(request, "assessments/instructions.html", {"station": station, "session": session, "category_count": len(categories), "first_name": _participant_first_name(session)})
+    return render(request, "assessments/instructions.html", {"station": station, "session": session, "category_count": len(categories), "first_name": _participant_first_name(session), "game_configuration": configured_game(session.event)})
 
 
 def category_selection(request, station_code, session_id):
@@ -331,17 +332,14 @@ def results(request, station_code, session_id):
     return render(request, "assessments/results.html", {"station": station, "attempt": attempt, "sections": sections, "session": session, "first_name": _participant_first_name(session)})
 
 
-def duck_handoff(request, station_code, session_id):
+def game_handoff(request, station_code, session_id):
     station, session = _kiosk_session(request, station_code, session_id)
     attempt = _current_attempt(session)
     if not attempt or attempt.status != QuizAttempt.Status.COMPLETE:
         return redirect("assessments:station_start", station_code=station.code, session_id=session.pk)
-    return render(
-        request,
-        "assessments/duck_handoff.html",
-        {"station": station, "session": session, "first_name": _participant_first_name(session)},
-    )
-
+    if configured_game(session.event):
+        return redirect("games:launch", station_code=station.code, session_id=session.pk)
+    return redirect("games:simulator_next", station_code=station.code, session_id=session.pk)
 
 def finish(request, station_code, session_id):
     station, session = _kiosk_session(request, station_code, session_id)
@@ -375,3 +373,7 @@ def question_set_new(request, category_id):
         item.save()
         return redirect('assessments:question_set_detail', set_id=item.pk)
     return _authoring(request, 'question_set_form.html', {'form': form, 'category': category})
+
+
+# Compatibility for callers that used the earlier Duck-specific route name.
+duck_handoff = game_handoff

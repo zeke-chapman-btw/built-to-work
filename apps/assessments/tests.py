@@ -738,11 +738,7 @@ class AssessmentEventConfigurationTests(TestCase):
             self.assertNotContains(results_response, sentinel)
         kiosk_activity.refresh_from_db()
         self.assertEqual(kiosk_activity.status, ExperienceActivity.Status.COMPLETED)
-        self.assertIsNone(_prior_steps_complete(session, ExperienceActivity.Activity.DUCK))
-        self.assertEqual(
-            _prior_steps_complete(session, ExperienceActivity.Activity.SIMULATOR),
-            ExperienceActivity.Activity.DUCK,
-        )
+        self.assertIsNone(_prior_steps_complete(session, ExperienceActivity.Activity.SIMULATOR))
         results_response = client.get(results_url)
         self.assertEqual(results_response.status_code, 200)
         for sentinel in ("A_SENTINEL_EMAIL@example.invalid", "A_SENTINEL_PHONE_5550100", "A_SENTINEL_AUDIT", ticket.token):

@@ -100,7 +100,7 @@ class StationExperienceTests(TestCase):
         self.assertEqual(Attendance.objects.count(), 1)
         self.assertEqual(Attendance.objects.get().source, Attendance.Source.STATION)
         self.assertEqual(ExperienceSession.objects.filter(registration=registration).count(), 1)
-        self.assertEqual(ExperienceActivity.objects.filter(session__registration=registration).count(), 3)
+        self.assertEqual(ExperienceActivity.objects.filter(session__registration=registration).count(), 2)
         self.assertEqual(ExperienceActivity.objects.get(session__registration=registration, activity=ExperienceActivity.Activity.KIOSK).status, ExperienceActivity.Status.IN_PROGRESS)
 
     def test_experience_progression_and_completion_are_ordered_and_idempotent(self):
@@ -111,21 +111,19 @@ class StationExperienceTests(TestCase):
         for assignment in (self.kiosk_assignment, self.duck_assignment, self.simulator_assignment):
             activate_event_context(assignment=assignment, actor=self.staff)
         blocked = self.scan(self.duck, ticket.token)
-        self.assertEqual(blocked["status"], "prior_activity_required")
-        self.assertEqual(blocked["required_activity"], ExperienceActivity.Activity.KIOSK)
+        self.assertEqual(blocked["status"], "game_not_configured")
         self.scan(self.kiosk, ticket.token)
         session = ExperienceSession.objects.get(registration=registration)
         first, changed = complete_activity(session=session, activity_name=ExperienceActivity.Activity.KIOSK, actor=self.staff)
         self.assertTrue(changed)
         _, changed_again = complete_activity(session=session, activity_name=ExperienceActivity.Activity.KIOSK, actor=self.staff)
         self.assertFalse(changed_again)
-        self.scan(self.duck, ticket.token)
-        complete_activity(session=session, activity_name=ExperienceActivity.Activity.DUCK, actor=self.staff)
+        self.assertEqual(self.scan(self.duck, ticket.token)["status"], "game_not_configured")
         self.scan(self.simulator, ticket.token)
         complete_activity(session=session, activity_name=ExperienceActivity.Activity.SIMULATOR, actor=self.staff)
         session.refresh_from_db()
         self.assertIsNotNone(session.completed_at)
-        self.assertEqual(session.activities.filter(status=ExperienceActivity.Status.COMPLETED).count(), 3)
+        self.assertEqual(session.activities.filter(status=ExperienceActivity.Status.COMPLETED).count(), 2)
 
     def test_skip_requires_reason_and_records_staff_audit(self):
         session = start_test_session(event=self.event, mode=ExperienceSession.Mode.DEMO, actor=self.staff)
@@ -140,8 +138,7 @@ class StationExperienceTests(TestCase):
 
         from apps.stations.services import _prior_steps_complete
 
-        self.assertIsNone(_prior_steps_complete(session, ExperienceActivity.Activity.DUCK))
-        self.assertEqual(_prior_steps_complete(session, ExperienceActivity.Activity.SIMULATOR), ExperienceActivity.Activity.DUCK)
+        self.assertIsNone(_prior_steps_complete(session, ExperienceActivity.Activity.SIMULATOR))
 
     def test_test_and_demo_sessions_are_not_linked_to_people(self):
         test_session = start_test_session(event=self.event, mode=ExperienceSession.Mode.STAFF_TEST, actor=self.staff)

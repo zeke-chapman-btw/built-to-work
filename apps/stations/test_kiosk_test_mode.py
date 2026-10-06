@@ -252,7 +252,7 @@ class KioskTestModeTests(TestCase):
         response = self.client.get(results_url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "TEST MODE")
-        self.assertContains(response, "Duck Game")
+        self.assertContains(response, "Simulator")
         self.assertEqual(Participant.objects.count(), before["participants"])
         self.assertEqual(EventRegistration.objects.count(), before["registrations"])
         self.assertEqual(Attendance.objects.count(), before["attendance"])

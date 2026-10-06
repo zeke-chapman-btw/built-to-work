@@ -4,12 +4,24 @@ from django.utils import timezone
 
 from apps.events.models import Attendance, Event, EventRegistration
 from apps.events.services import audit_action, check_in_registration, resolve_ticket
+from apps.games.services import configured_game
 from .models import EventStation, ExperienceActivity, ExperienceSession, Station
 
-ACTIVITY_ORDER = (ExperienceActivity.Activity.KIOSK, ExperienceActivity.Activity.DUCK, ExperienceActivity.Activity.SIMULATOR)
+LEGACY_ACTIVITY_ORDER = (ExperienceActivity.Activity.KIOSK, ExperienceActivity.Activity.DUCK, ExperienceActivity.Activity.SIMULATOR)
+ACTIVITY_ORDER = LEGACY_ACTIVITY_ORDER  # Backward-compatible export for existing callers
+
+def activity_order_for_session(session):
+    has_game_activity = session.activities.filter(activity=ExperienceActivity.Activity.GAME).exists()
+    has_legacy_duck_activity = session.activities.filter(activity=ExperienceActivity.Activity.DUCK).exists()
+    if has_legacy_duck_activity and not has_game_activity:
+        return LEGACY_ACTIVITY_ORDER
+    if configured_game(session.event) or has_game_activity:
+        return (ExperienceActivity.Activity.KIOSK, ExperienceActivity.Activity.GAME, ExperienceActivity.Activity.SIMULATOR)
+    return (ExperienceActivity.Activity.KIOSK, ExperienceActivity.Activity.SIMULATOR)
 STATION_ACTIVITY = {
     Station.Type.KIOSK: ExperienceActivity.Activity.KIOSK,
     Station.Type.DUCK: ExperienceActivity.Activity.DUCK,
+    Station.Type.GAME: ExperienceActivity.Activity.GAME,
     Station.Type.SIMULATOR: ExperienceActivity.Activity.SIMULATOR,
 }
 
@@ -37,7 +49,7 @@ def activate_event_context(*, assignment, actor):
 
 
 def _ensure_activity_rows(session):
-    for activity in ACTIVITY_ORDER:
+    for activity in activity_order_for_session(session):
         ExperienceActivity.objects.get_or_create(session=session, activity=activity)
 
 
@@ -52,7 +64,7 @@ def start_test_session(*, event, mode, actor):
 
 def _finish_if_complete(session, actor):
     rows = {row.activity: row for row in session.activities.all()}
-    if all(rows.get(key) and rows[key].status in (ExperienceActivity.Status.COMPLETED, ExperienceActivity.Status.SKIPPED) for key in ACTIVITY_ORDER):
+    if all(rows.get(key) and rows[key].status in (ExperienceActivity.Status.COMPLETED, ExperienceActivity.Status.SKIPPED) for key in activity_order_for_session(session)):
         if session.completed_at is None:
             session.completed_at = timezone.now()
             session.save(update_fields=("completed_at",))
@@ -62,9 +74,10 @@ def _finish_if_complete(session, actor):
 
 
 def _prior_steps_complete(session, activity):
-    index = ACTIVITY_ORDER.index(activity)
+    order = activity_order_for_session(session)
+    index = order.index(activity)
     rows = {row.activity: row for row in session.activities.all()}
-    for required in ACTIVITY_ORDER[:index]:
+    for required in order[:index]:
         row = rows.get(required)
         if not row or row.status not in (ExperienceActivity.Status.COMPLETED, ExperienceActivity.Status.SKIPPED):
             return required
@@ -109,7 +122,12 @@ def process_station_scan(*, station_code, token, actor):
             if session.event_id != event.pk or session.participant_id != registration.participant_id:
                 return {"status": "wrong_event", "assignment": assignment}
             _ensure_activity_rows(session)
-            activity_name = STATION_ACTIVITY[assignment.station.station_type]
+            station_type = assignment.station.station_type
+            activity_name = STATION_ACTIVITY[station_type]
+            if station_type == Station.Type.GAME and configured_game(event) is None:
+                return {"status": "game_not_configured", "assignment": assignment, "session": session}
+            if station_type == Station.Type.DUCK and not session.activities.filter(activity=ExperienceActivity.Activity.DUCK).exists():
+                return {"status": "game_not_configured", "assignment": assignment, "session": session}
             activity = ExperienceActivity.objects.select_for_update().get(session=session, activity=activity_name)
             blocked = _prior_steps_complete(session, activity_name)
             if blocked:
@@ -128,7 +146,7 @@ def process_station_scan(*, station_code, token, actor):
 
 
 def complete_activity(*, session, activity_name, actor):
-    if activity_name not in ACTIVITY_ORDER:
+    if activity_name not in activity_order_for_session(session):
         raise ValidationError("Unknown experience activity.")
     with transaction.atomic():
         session = ExperienceSession.objects.select_for_update().get(pk=session.pk)
@@ -149,7 +167,7 @@ def skip_activity(*, session, activity_name, actor, reason):
     reason = (reason or "").strip()
     if not reason:
         raise ValidationError("A reason is required to skip an activity.")
-    if activity_name not in ACTIVITY_ORDER:
+    if activity_name not in activity_order_for_session(session):
         raise ValidationError("Unknown experience activity.")
     with transaction.atomic():
         session = ExperienceSession.objects.select_for_update().get(pk=session.pk)
