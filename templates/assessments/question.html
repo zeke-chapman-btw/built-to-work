@@ -1,1 +1,30 @@
-{% extends "assessments/kiosk_base.html" %}{% block title %}Skills Assessment{% endblock %}{% block content %}<section class="screen" data-ignore-scans="true">{% if countdown_active %}<div class="assessment-countdown" role="dialog" aria-modal="true" aria-live="assertive"><div class="assessment-countdown-card"><p class="screen-eyebrow">{% if section.position == 1 %}GET READY{% else %}NEXT UP{% endif %}</p><p class="screen-subtitle">{{ section.category_name_snapshot }}</p><div class="assessment-countdown-number" id="assessment-countdown-number">3</div><form method="post" id="assessment-countdown-form" action="{{ countdown_start_url }}">{% csrf_token %}<input type="hidden" name="section_id" value="{{ section.pk }}"></form></div></div><script>(()=>{const count=document.getElementById("assessment-countdown-number"),form=document.getElementById("assessment-countdown-form");let value=3;const timer=setInterval(()=>{value-=1;if(value>0){count.textContent=value;return;}clearInterval(timer);count.textContent="GO";setTimeout(()=>form.submit(),650);},1000);})();</script>{% endif %}<header class="question-topbar"><div class="question-category">{{ section.category_name_snapshot }}</div><div class="question-progress">Question {{ question.position }} of {{ total }}</div><div class="question-timer" id="timer" data-seconds="{{ remaining_seconds }}" {% if countdown_active %}data-started="false"{% endif %} aria-live="off">{{ remaining_seconds }}</div></header><div class="question-stage {% if not question.image_url %}no-image{% endif %}"><div class="question-prompt"><p class="screen-eyebrow">Category {{ section.position }} of 2</p><h1 class="question-text">{{ question.text }}</h1>{% if question.image_url %}<img class="question-image" src="{{ question.image_url }}" alt="" loading="eager">{% endif %}</div><form method="post" id="answer-form" class="answers-grid">{% csrf_token %}<input type="hidden" name="action" value="answer"><input type="hidden" name="question_position" value="{{ question.position }}">{% for choice in choices %}<button class="answer-button" type="submit" name="choice_key" value="{{ choice.key }}" {% if countdown_active %}disabled{% endif %}>{{ choice.text }}</button>{% endfor %}</form></div></section>{% endblock %}
+{% extends "assessments/kiosk_base.html" %}{% load static %}{% block content %}<section class="screen question-screen" data-ignore-scans><header class="question-topbar"><div class="question-category">{{ section.title }}</div><div class="question-progress">Question {{ question.position }} of {{ question.total }}</div><div class="question-timer{% if countdown_active %} is-urgent{% endif %}" id="timer" data-seconds="{{ remaining_seconds }}" {% if countdown_active %}data-started="false"{% endif %} aria-live="off">{{ remaining_seconds }}</div></header><div class="question-stage {% if question.image_url %}has-image{% else %}no-image{% endif %}"><div class="question-prompt"><p class="screen-eyebrow">Category {{ section.position }} of 2</p><h1 class="question-text">{{ question.text }}</h1></div>{% if question.image_url %}<div class="question-image-panel"><img class="question-image" src="{% if 'kiosk-test-engine.svg' in question.image_url %}{% static 'kiosk/images/test-mode/kiosk-test-engine.svg' %}{% elif 'kiosk-test-site.svg' in question.image_url %}{% static 'kiosk/images/test-mode/kiosk-test-site.svg' %}{% else %}{{ question.image_url }}{% endif %}" alt="" loading="eager"></div>{% endif %}{% if countdown_active %}
+<div class="quiz-countdown-overlay" role="status" aria-live="assertive" aria-atomic="true">
+  <div class="quiz-countdown-content">
+    <p>GET READY</p>
+    <strong id="quiz-countdown-value">3</strong>
+  </div>
+</div>
+<form id="section-countdown-start" method="post" action="{{ countdown_start_url }}" hidden>
+  {% csrf_token %}
+  <input type="hidden" name="section_id" value="{{ section.pk }}">
+</form>
+<script>
+(() => {
+  const startForm = document.getElementById("section-countdown-start");
+  const countdownValue = document.getElementById("quiz-countdown-value");
+  let value = 3;
+  const timer = window.setInterval(() => {
+    value -= 1;
+    if (value > 0) {
+      countdownValue.textContent = String(value);
+      return;
+    }
+    window.clearInterval(timer);
+    countdownValue.textContent = "GO!";
+    window.setTimeout(() => startForm.submit(), 500);
+  }, 1000);
+})();
+</script>
+{% endif %}
+<form method="post" id="answer-form" class="answers-grid">{% csrf_token %}<input type="hidden" name="action" value="answer"><input type="hidden" name="question_position" value="{{ question.position }}">{% for choice in choices %}<button class="answer-button" type="submit" name="choice_key" value="{{ choice.key }}" {% if countdown_active %}disabled{% endif %}>{{ choice.text }}</button>{% endfor %}</form></div></section>{% endblock %}}

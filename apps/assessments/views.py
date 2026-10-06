@@ -329,7 +329,7 @@ def results(request, station_code, session_id):
     sections = list(attempt.sections.order_by("position"))
     if session.mode == ExperienceSession.Mode.OFFICIAL:
         complete_activity(session=session, activity_name=ExperienceActivity.Activity.KIOSK, actor=None)
-    return render(request, "assessments/results.html", {"station": station, "attempt": attempt, "sections": sections, "session": session, "first_name": _participant_first_name(session)})
+    return render(request, "assessments/results.html", {"station": station, "attempt": attempt, "sections": sections, "session": session, "first_name": _participant_first_name(session), "game_configuration": configured_game(session.event)})
 
 
 def game_handoff(request, station_code, session_id):

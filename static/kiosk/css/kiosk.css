@@ -177,3 +177,113 @@ h1,h2,.screen-title,.screen-subtitle,.screen-eyebrow,.home-primary h1,.home-inst
     gap: clamp(1rem, 2vh, 1.75rem);
   }
 }
+
+/* Build 5B participant assessment results */
+.quiz-results{box-sizing:border-box;width:100%;min-height:calc(100vh - 5rem);padding:clamp(1.5rem,3vh,3rem) clamp(1.5rem,4vw,4rem);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(.55rem,1.2vh,1.1rem);overflow:hidden;text-align:center;color:#fff;background:radial-gradient(ellipse at 50% 0%,#333 0%,#171717 56%,#101010 100%)}
+.quiz-results-mode{margin:0;padding:.28em .8em;border-radius:999px;background:var(--btw-yellow,#e6a800);color:#151515;font-family:Roboto,Arial,sans-serif;font-size:clamp(.8rem,1.1vw,1.2rem);font-weight:700;letter-spacing:.12em}
+.quiz-results-eyebrow,.quiz-results-next-label{margin:0;color:#f5f5f5;font-size:clamp(.9rem,1.2vw,1.35rem);font-weight:700;letter-spacing:.16em}
+.quiz-results-title{margin:0;color:#fff;font-size:clamp(2.6rem,5vw,5.7rem);line-height:.95}
+.quiz-results-scores{width:min(100%,70rem);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(.8rem,2vw,1.8rem)}
+.quiz-results-score{padding:clamp(.8rem,1.5vh,1.35rem) clamp(1rem,2vw,2rem);border:1px solid rgba(255,255,255,.22);border-top:4px solid #d21f32;border-radius:.8rem;background:rgba(255,255,255,.06)}
+.quiz-results-score h2{margin:0 0 .25em;color:#fff;font-size:clamp(1.25rem,2vw,2.1rem)}
+.quiz-results-score p{margin:0;color:#fff;font-size:clamp(1.15rem,1.8vw,1.8rem)}
+.quiz-results-score strong{font-size:1.35em}
+.quiz-results-total{margin:0;color:#fff;font-size:clamp(1.5rem,2.8vw,3rem);font-weight:700}
+.quiz-results-total span{font-size:.55em;letter-spacing:.16em;color:#ddd}
+.quiz-results-next{display:flex;flex-direction:column;align-items:center;gap:.35rem;margin-top:.35rem}
+.quiz-results-next h2{margin:0;color:#fff;font-size:clamp(2rem,3.5vw,4rem);line-height:1}
+.quiz-results-guidance{margin:.1rem 0;color:#eee;font-size:clamp(1rem,1.4vw,1.4rem)}
+.quiz-results-primary{min-width:min(28rem,80vw);margin-top:.25rem}
+.quiz-results-test-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:.7rem;margin-top:.2rem}
+.quiz-results-secondary{font-size:clamp(.8rem,1vw,1rem);padding:.65em 1.1em}
+@media(max-width:700px){.quiz-results{min-height:calc(100vh - 4rem);gap:.65rem;padding:1.2rem}.quiz-results-scores{gap:.55rem}.quiz-results-score{padding:.8rem .6rem}.quiz-results-test-actions{flex-direction:column}.quiz-results-primary{min-width:min(23rem,88vw)}}
+
+
+/* Image-bearing assessment questions use a dedicated landscape composition. */
+@media (min-width: 901px) {
+  .question-stage.has-image {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: stretch;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .question-stage.has-image .question-prompt {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+  }
+
+  .question-stage.has-image .question-image-panel {
+    grid-column: 1;
+    grid-row: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .question-stage.has-image .question-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  .question-stage.has-image .answers-grid {
+    grid-column: 2;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .question-stage.has-image .answer-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    text-align: center;
+  }
+}
+
+
+.quiz-countdown-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 88%);
+  color: #fff;
+  text-align: center;
+}
+
+.quiz-countdown-content p {
+  margin: 0 0 1rem;
+  font-size: clamp(1.5rem, 4vw, 3rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+#quiz-countdown-value {
+  display: block;
+  color: var(--btw-yellow, #f0b323);
+  font-size: clamp(7rem, 20vw, 16rem);
+  font-weight: 800;
+  line-height: 0.95;
+}

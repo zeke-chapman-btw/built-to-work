@@ -714,7 +714,7 @@ class AssessmentEventConfigurationTests(TestCase):
         if sections[1].started_at is None:
             transition = client.get(attempt_url)
             self.assertEqual(transition.status_code, 200)
-            self.assertContains(transition, "NEXT UP")
+            self.assertContains(transition, sections[1].questions_snapshot[0]["text"])
             self.assertIsNone(sections[1].started_at)
             start_url = reverse("assessments:attempt_start", kwargs={"station_code": station.code, "session_id": session.pk})
             self.assertEqual(client.post(start_url, {"section_id": str(sections[1].pk)}).status_code, 302)

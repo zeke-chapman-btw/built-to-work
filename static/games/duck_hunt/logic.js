@@ -1,0 +1,6 @@
+(function(root){'use strict';
+function position(t,ms,r){const p=(ms-t.start)/t.flight;let x=-.09+1.18*p;if(t.direction<0)x=1-x;return {x:x*r.width,y:(t.y0+(t.y1-t.y0)*p+.018*Math.sin(p*Math.PI*2+t.wave))*r.height};}
+function pick(targets,ms,x,y,hit,r){return [...targets].sort((a,b)=>b.size-a.size||b.id-a.id).find(t=>{if(hit.has(t.id)||ms<t.start||ms>=t.end)return false;const p=position(t,ms,r);return ((x-p.x)/(t.size*.53))**2+((y-p.y)/(t.size*.32))**2<=1;})||null;}
+class Round{constructor(snapshot){this.rules=snapshot.rules;this.targets=snapshot.targets;this.hit=new Set();this.shots=[];this.score=0;this.kills=0;this.lastShot=-Infinity;}trigger(ms,x,y){if(![ms,x,y].every(Number.isFinite)||ms<0||ms>=this.rules.duration_ms||ms<this.lastShot||x<0||y<0||x>this.rules.width||y>this.rules.height)return null;this.lastShot=ms;const shot={t:Math.min(this.rules.duration_ms-.001,Math.round(ms*1000)/1000),x:Math.round(x*1000)/1000,y:Math.round(y*1000)/1000};this.shots.push(shot);const target=pick(this.targets,shot.t,shot.x,shot.y,this.hit,this.rules);if(target){this.hit.add(target.id);this.score+=target.points;this.kills++;}return target;}}
+const api={position,pick,Round};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.DuckLogic=api;
+})(typeof window==='undefined'?globalThis:window);
