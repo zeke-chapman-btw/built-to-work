@@ -1,9 +1,10 @@
 {% load static %}<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block title %}Built to Work{% endblock %}</title><link rel="stylesheet" href="{% static 'kiosk/css/kiosk.css' %}?v=build4-kiosk-visual-polish-6"></head>
-<body data-home-url="{% if station %}{% url 'stations:kiosk' station_code=station.code %}{% else %}{% url 'stations:kiosk' station_code=station_code %}{% endif %}" class="kiosk-shell kiosk-body{% if request.session.test_kiosk_session %} is-test-mode{% endif %}">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block title %}Built to Work{% endblock %}</title><link rel="stylesheet" href="{% static 'kiosk/css/kiosk.css' %}?v=build4-kiosk-visual-polish-6">
+<link rel="stylesheet" href="{% static 'kiosk/css/kiosk-measured.css' %}?v=kiosk-measured-1920-5"></head>
+<body data-home-url="{% if station %}{% url 'stations:kiosk' station_code=station.code %}{% else %}{% url 'stations:kiosk' station_code=station_code %}{% endif %}" class="kiosk-body{% if request.resolver_match.url_name == 'service_menu' %} service-context{% else %} participant-context{% endif %}{% if request.session.test_kiosk_session %} is-test-mode{% endif %}"><div class="kiosk-viewport"><div class="kiosk-screen kiosk-shell">
 {% if request.session.test_kiosk_session %}<div class="test-mode-ribbon" role="status">TEST MODE</div>{% endif %}
 <header class="kiosk-header"><img class="kiosk-logo" src="{% static 'kiosk/images/built-to-work-linear.svg' %}" alt="Built to Work" {% if request.resolver_match.url_name == 'kiosk' %}data-service-url="{% url 'stations:service_menu' station_code=station_code %}"{% endif %}></header>
-<main class="kiosk-main">{% block content %}{% endblock %}</main>
+<main class="kiosk-main">{% block content %}{% endblock %}</main></div></div>
 {% if request.resolver_match.url_name != 'kiosk' and request.resolver_match.url_name != 'service_menu' %}<div class="idle-overlay" id="idle-warning" aria-hidden="true" hidden><section class="idle-dialog" id="idle-dialog" role="alertdialog" aria-modal="true" aria-labelledby="idle-title"><p class="screen-eyebrow">Built to Work</p><h2 id="idle-title">Still there?</h2><p>Returning to the home screen in <span id="idle-count">5</span> seconds.</p><button class="kiosk-button" id="idle-keep-going" type="button">Keep Going</button></section></div>{% endif %}
 <script src="{% static 'kiosk/js/kiosk.js' %}?v=build4-kiosk-fonts-2" defer></script>
 <script>

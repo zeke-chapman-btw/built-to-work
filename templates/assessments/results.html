@@ -4,22 +4,23 @@
 <section class="screen quiz-results" data-ignore-scans>
   {% if request.session.test_kiosk_session %}<p class="quiz-results-mode">TEST MODE</p>{% endif %}
   <p class="screen-eyebrow quiz-results-eyebrow">ASSESSMENT COMPLETE</p>
-  <h1 class="quiz-results-title">GREAT WORK</h1>
+  <h1 class="quiz-results-title">TEST COMPLETE</h1>
+  <p class="screen-subtitle">Here are your results.</p>
   <div class="quiz-results-scores" aria-label="Category results">
     {% for section in attempt.sections.all %}
       <article class="quiz-results-score"><h2>{{ section.category_name_snapshot }}</h2><p><strong>{{ section.correct_count }} correct</strong></p></article>
     {% endfor %}
   </div>
   <p class="quiz-results-total"><span>TOTAL: {{ attempt.total_correct }} CORRECT</span></p>
-  <div class="quiz-results-next">
-    <p class="quiz-results-next-label">NEXT UP</p>
-    <h2>{% if game_configuration %}{{ game_configuration.game.display_name }}{% else %}SIMULATOR{% endif %}</h2>
+  <div class="quiz-results-next {% if game_configuration %}has-game{% else %}no-game{% endif %}">
+    <p class="quiz-results-next-label">NEXT UP:</p>
+    {% if not game_configuration %}<h2>SIMULATOR</h2>{% endif %}
     {% if game_configuration %}
       {% if request.session.test_kiosk_session %}
         <p class="quiz-results-guidance">Test assessment complete. No official participant data was changed.</p>
-        <a class="kiosk-button quiz-results-primary" href="{% url 'games:launch' station_code=station.code session_id=session.id %}">START TEST GAME</a>
+        <a class="kiosk-button quiz-results-primary" href="{% url 'games:launch' station_code=station.code session_id=session.id %}">{{ game_configuration.game.display_name }}</a>
       {% else %}
-        <a class="kiosk-button quiz-results-primary" href="{% url 'assessments:duck_handoff' station_code=station.code session_id=session.id %}">START {{ game_configuration.game.display_name }}</a>
+        <a class="kiosk-button quiz-results-primary" href="{% url 'assessments:duck_handoff' station_code=station.code session_id=session.id %}">{{ game_configuration.game.display_name }}</a>
       {% endif %}
     {% else %}
       <p class="quiz-results-guidance">Please head to the Simulator station to continue.</p>

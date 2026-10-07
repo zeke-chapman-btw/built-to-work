@@ -15,10 +15,10 @@ from .services import complete_game_session, configured_game
 
 IMPLEMENTATION_VERSION = "1"
 RULES = {
-    "version": "duck-hunt-v1", "duration_ms": 45000, "countdown_ms": 3600,
+    "version": "duck-hunt-v2", "duration_ms": 45000, "countdown_ms": 3600,
     "feedback_ms": 700, "width": 1920, "height": 1080,
     "sizes": {"near": 160, "mid": 126, "far": 98},
-    "flight_ms": {"slow": 7000, "medium": 5700, "fast": 4500},
+    "flight_ms": {"slow": 5833, "medium": 4750, "fast": 3750},
     "scores": {"near": {"slow": 10, "medium": 15, "fast": 20},
                "mid": {"slow": 20, "medium": 25, "fast": 30},
                "far": {"slow": 30, "medium": 35, "fast": 40}},
