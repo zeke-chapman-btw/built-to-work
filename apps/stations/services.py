@@ -187,3 +187,29 @@ def skip_activity(*, session, activity_name, actor, reason):
         audit_action(actor=actor, action="experience.activity.skipped", instance=activity, new_data={"activity": activity_name, "session_id": str(session.pk)}, reason=reason)
         _finish_if_complete(session, actor)
         return activity, True
+
+
+def complete_simulator_from_capture(*, session):
+    """Finish the existing official Simulator activity from a trusted capture."""
+    if session.mode != ExperienceSession.Mode.OFFICIAL:
+        raise ValidationError("Only official experiences accept simulator results.")
+    with transaction.atomic():
+        session = ExperienceSession.objects.select_for_update().get(pk=session.pk)
+        if session.completed_at is not None:
+            raise ValidationError("This experience is already complete.")
+        if _prior_steps_complete(session, ExperienceActivity.Activity.SIMULATOR):
+            raise ValidationError("Earlier experience activities are incomplete.")
+        activity = ExperienceActivity.objects.select_for_update().get(
+            session=session, activity=ExperienceActivity.Activity.SIMULATOR
+        )
+        if activity.status not in (ExperienceActivity.Status.PENDING, ExperienceActivity.Status.IN_PROGRESS):
+            raise ValidationError("Simulator activity cannot accept another result.")
+        if activity.status == ExperienceActivity.Status.PENDING:
+            activity.status = ExperienceActivity.Status.IN_PROGRESS
+            activity.started_at = timezone.now()
+            activity.save(update_fields=("status", "started_at"))
+            audit_action(
+                actor=None, action="experience.activity.started", instance=activity,
+                source="simulator_capture", new_data={"activity": "simulator", "session_id": str(session.pk)},
+            )
+        return complete_activity(session=session, activity_name=ExperienceActivity.Activity.SIMULATOR, actor=None)

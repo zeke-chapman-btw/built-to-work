@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'apps.participants.apps.ParticipantsConfig',
     'apps.events.apps.EventsConfig',
     "apps.games.apps.GamesConfig",
+    "apps.simulators.apps.SimulatorsConfig",
 ]
 
 MIDDLEWARE = [
@@ -101,3 +102,7 @@ AUTHENTICATION_BACKENDS = [
     "apps.participants.auth.ParticipantAuthenticationBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
+
+# The local capture API is disabled until a private LAN helper token is configured.
+SIMULATOR_INGESTION_TOKEN = os.environ.get("SIMULATOR_INGESTION_TOKEN", "")
+SIMULATOR_TEST_IDENTIFIER = os.environ.get("SIMULATOR_TEST_IDENTIFIER", "0000000000")
