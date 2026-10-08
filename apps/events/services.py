@@ -32,6 +32,8 @@ def register_participant(*, event, participant, actor, source=EventRegistration.
         raise ValidationError("This event is not accepting registrations.")
     if getattr(participant, "archived_at", None):
         raise ValidationError("An archived participant cannot be registered.")
+    if participant.kind != "person":
+        raise ValidationError("The BTW test identity cannot receive an official Event registration.")
     existing = EventRegistration.objects.filter(event=event, participant=participant, status=EventRegistration.Status.ACTIVE).first()
     if existing:
         return existing, False
@@ -56,6 +58,8 @@ def issue_ticket(*, registration, actor=None):
     """Idempotently return the registration's current ticket, issuing it once if absent."""
     with transaction.atomic():
         registration = EventRegistration.objects.select_for_update().select_related("event").get(pk=registration.pk)
+        if registration.participant.kind != "person":
+            raise ValidationError("The BTW test identity cannot receive an official ticket.")
         current = QrTicket.objects.filter(registration=registration, is_current=True).first()
         if current:
             return current
@@ -101,6 +105,8 @@ def resolve_ticket(token, *, expected_event=None):
     if ticket is None:
         return TicketResolution("not_found")
     registration = ticket.registration
+    if registration.participant.kind != "person":
+        return TicketResolution("registration_inactive", ticket)
     if not ticket.is_current or ticket.revoked_at is not None:
         return TicketResolution("revoked", ticket)
     if registration.status != EventRegistration.Status.ACTIVE:
@@ -119,6 +125,8 @@ def check_in_registration(*, registration, actor=None, source=Attendance.Source.
     """Create at most one active attendance row; repeated requests return the original."""
     with transaction.atomic():
         registration = EventRegistration.objects.select_for_update().select_related("event", "participant").get(pk=registration.pk)
+        if registration.participant.kind != "person":
+            raise ValidationError("The BTW test identity cannot be checked in officially.")
         event = registration.event
         if registration.status != EventRegistration.Status.ACTIVE:
             raise ValidationError("This registration is no longer active.")

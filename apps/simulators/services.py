@@ -116,7 +116,37 @@ def _ingest_atomic(*, submission_id, event_id, station_code, profile_id, profile
             capture.status = SimulatorCapture.Status.TEST
             capture.mode = SimulatorCapture.Mode.STAFF_TEST
             capture.review_reason = "invalid_score" if parsed_score is None else ""
-            capture.save(update_fields=("status", "mode", "review_reason"))
+            # An active permanent test run may receive this nonofficial capture.
+            # No registration, official result, or official progression is touched.
+            from apps.participants.models import TestParticipantRun
+            from apps.stations.models import ExperienceActivity
+            from apps.stations.services import activity_order_for_session, complete_activity
+            run = TestParticipantRun.objects.select_for_update().select_related(
+                "participant", "experience_session"
+            ).filter(event=configuration.event, reset_at__isnull=True).first()
+            update_fields = ["status", "mode", "review_reason"]
+            if run is not None:
+                session = run.experience_session
+                if session.mode == "staff_test" and not session.registration_id and not session.participant_id:
+                    capture.participant = run.participant
+                    capture.experience_session = session
+                    update_fields += ["participant", "experience_session"]
+            capture.save(update_fields=update_fields)
+            if run is not None and capture.experience_session_id and parsed_score is not None:
+                session = run.experience_session
+                order = activity_order_for_session(session)
+                prior = order[:order.index(ExperienceActivity.Activity.SIMULATOR)]
+                rows = {row.activity: row for row in session.activities.select_for_update()}
+                ready = all(rows[key].status in (ExperienceActivity.Status.COMPLETED,
+                    ExperienceActivity.Status.SKIPPED) for key in prior)
+                simulator = rows.get(ExperienceActivity.Activity.SIMULATOR)
+                if ready and simulator and simulator.status in (ExperienceActivity.Status.PENDING,
+                    ExperienceActivity.Status.IN_PROGRESS) and session.completed_at is None:
+                    if simulator.status == ExperienceActivity.Status.PENDING:
+                        simulator.status = ExperienceActivity.Status.IN_PROGRESS
+                        simulator.started_at = timezone.now()
+                        simulator.save(update_fields=("status", "started_at"))
+                    complete_activity(session=session, activity_name=ExperienceActivity.Activity.SIMULATOR, actor=None)
             _audit_capture(capture, "simulator.capture.test")
             return capture, False
 
@@ -135,7 +165,7 @@ def _ingest_atomic(*, submission_id, event_id, station_code, profile_id, profile
         else:
             candidates = list(EventRegistration.objects.select_related("participant").filter(
                 event=event, status=EventRegistration.Status.ACTIVE,
-                participant__contact_phone=normalized, participant__archived_at__isnull=True,
+                participant__contact_phone=normalized, participant__archived_at__isnull=True, participant__kind="person",
             )[:2])
             if len(candidates) == 0:
                 reason = "unmatched_identifier"

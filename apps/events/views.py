@@ -15,6 +15,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.participants.models import Participant
+from apps.participants.identity import find_or_create_participant
 from apps.stations.forms import StationForEventForm
 from apps.stations.services import assign_station
 from .forms import EventForm, RegistrationForm, ReissueTicketForm, VoidRegistrationForm
@@ -90,18 +91,14 @@ def event_detail(request, event_id):
         data = form.cleaned_data
         participant = data["participant"]
         if participant is None:
-            email, phone = data.get("contact_email"), data.get("contact_phone")
-            candidates = {}
-            if email:
-                candidates.update({p.pk: p for p in Participant.objects.filter(archived_at__isnull=True, contact_email__iexact=email)})
-            if phone:
-                candidates.update({p.pk: p for p in Participant.objects.filter(archived_at__isnull=True, contact_phone=phone)})
-            if len(candidates) > 1:
+            resolution = find_or_create_participant(
+                first_name=data["first_name"], last_name=data["last_name"],
+                email=data.get("contact_email"), phone=data.get("contact_phone"),
+            )
+            if resolution.status == "ambiguous":
                 form.add_error(None, "Those contact details match different participants. Select the correct participant before registering.")
-            elif candidates:
-                participant = next(iter(candidates.values()))
             else:
-                participant = Participant.objects.create(first_name=data["first_name"].strip(), last_name=data["last_name"].strip(), contact_email=email or "", contact_phone=phone or "")
+                participant = resolution.participant
         if participant is not None:
             try:
                 registration, created = register_participant(event=event, participant=participant, actor=request.user, source=data["source"])

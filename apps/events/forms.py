@@ -79,7 +79,7 @@ class RegistrationForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["participant"].queryset = Participant.objects.filter(archived_at__isnull=True).order_by("last_name", "first_name")
+        self.fields["participant"].queryset = Participant.objects.filter(archived_at__isnull=True, kind=Participant.Kind.PERSON).order_by("last_name", "first_name")
         self.fields["participant"].label_from_instance = lambda person: f"{person.last_name}, {person.first_name} — {person.contact_email or person.contact_phone or 'no contact'}"
 
     def clean(self):

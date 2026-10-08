@@ -65,6 +65,10 @@ def _start_section(section, now):
 @transaction.atomic
 def create_attempt(session, selected_config_ids, *, is_official=True, actor=None, replacement_for=None, start_first_section=True):
     session = type(session).objects.select_for_update().select_related("registration__event", "registration__participant").get(pk=session.pk)
+    if is_official and session.mode != "official":
+        raise ValidationError("A nonofficial experience cannot create an official assessment.")
+    if is_official and session.participant.kind != "person":
+        raise ValidationError("A system test identity cannot create an official assessment.")
     selected_ids = [str(value) for value in selected_config_ids]
     if len(selected_ids) != 2 or selected_ids[0] == selected_ids[1]:
         raise ValidationError("Choose exactly two different assessment categories.")

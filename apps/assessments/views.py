@@ -167,6 +167,9 @@ def _kiosk_session(request, station_code, session_id):
     if is_test_mode:
         if session.mode != ExperienceSession.Mode.STAFF_TEST or session.registration_id or session.participant_id:
             raise Http404
+        from apps.participants.models import TestParticipantRun
+        if TestParticipantRun.objects.filter(experience_session=session, reset_at__isnull=False).exists():
+            raise Http404
     elif session.mode != ExperienceSession.Mode.OFFICIAL or session.registration_id is None:
         raise Http404
     if not EventStation.objects.filter(event=session.event, station=station, enabled=True).exists():

@@ -165,7 +165,10 @@ def participant_kiosk(request, station_code):
             status = result.get("status")
             session = result.get("session")
         if status == "activity_in_progress" and session is not None:
-            request.session["participant_kiosk_session"] = str(session.pk)
+            if session.mode == ExperienceSession.Mode.STAFF_TEST:
+                request.session["test_kiosk_session"] = str(session.pk)
+            else:
+                request.session["participant_kiosk_session"] = str(session.pk)
             return redirect(
                 "assessments:station_start",
                 station_code=station_code,
@@ -237,7 +240,15 @@ def service_start_new_test(request, station_code, session_id):
     assignment = _test_event_assignment(station)
     if assignment is None or assignment.event_id != old_session.event_id:
         raise Http404
-    session = start_test_session(event=old_session.event, mode=ExperienceSession.Mode.STAFF_TEST, actor=None)
+    from apps.participants.models import TestParticipantRun
+    from apps.participants.system_test import reset_test_participant_run
+    linked_run = TestParticipantRun.objects.filter(experience_session=old_session).first()
+    if linked_run is not None:
+        if linked_run.reset_at is not None:
+            raise Http404
+        session = reset_test_participant_run(run=linked_run, reason="Test Mode started a new run").experience_session
+    else:
+        session = start_test_session(event=old_session.event, mode=ExperienceSession.Mode.STAFF_TEST, actor=None)
     request.session["test_kiosk_session"] = str(session.pk)
     return redirect("assessments:station_start", station_code=station_code, session_id=session.pk)
 

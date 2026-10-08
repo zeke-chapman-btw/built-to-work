@@ -95,6 +95,22 @@ def process_station_scan(*, station_code, token, actor):
     if event.status != Event.Status.UPCOMING or now < event.start_at or now > event.end_at:
         return {"status": "event_not_open", "assignment": assignment}
 
+    # The reusable BTW test QR is not an Event ticket and never checks in.
+    from apps.participants.system_test import resolve_test_qr, start_or_resume_test_run
+    test_person = resolve_test_qr(token)
+    if test_person is not None:
+        if assignment.station.station_type != Station.Type.KIOSK:
+            return {"status": "wrong_station", "assignment": assignment}
+        run = start_or_resume_test_run(participant=test_person, event=event, actor=actor)
+        session = run.experience_session
+        activity = session.activities.get(activity=ExperienceActivity.Activity.KIOSK)
+        if activity.status == ExperienceActivity.Status.PENDING:
+            activity.status = ExperienceActivity.Status.IN_PROGRESS
+            activity.started_at = now
+            activity.save(update_fields=("status", "started_at"))
+        return {"status": "activity_in_progress", "assignment": assignment, "session": session,
+                "activity": activity, "test_identity": True}
+
     resolution = resolve_ticket(token, expected_event=event)
     if resolution.status == "valid":
         if not event.allow_station_auto_check_in:

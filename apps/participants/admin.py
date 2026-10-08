@@ -3,9 +3,10 @@ from .models import Participant, ParticipantAccount, ParticipantAccountRequest, 
 
 @admin.register(Participant)
 class ParticipantAdmin(admin.ModelAdmin):
-    list_display = ("last_name", "first_name", "contact_email", "contact_phone", "created_at")
-    search_fields = ("first_name", "last_name", "contact_email", "contact_phone")
-    readonly_fields = ("id", "created_at", "updated_at", "archived_at")
+    list_display = ("last_name", "first_name", "kind", "contact_email", "contact_phone", "created_at")
+    list_filter = ("kind",)
+    search_fields = ("first_name", "last_name", "contact_email", "contact_phone", "identity_uuid")
+    readonly_fields = ("id", "identity_uuid", "test_qr_token", "created_at", "updated_at", "archived_at")
 
 @admin.register(ParticipantAccount)
 class ParticipantAccountAdmin(admin.ModelAdmin):

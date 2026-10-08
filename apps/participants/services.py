@@ -16,14 +16,9 @@ def audit(actor, action, instance, old_data=None, new_data=None, reason=""):
     return record_audit(actor=actor, action=action, instance=instance, source="participant_portal", old_data=old_data, new_data=new_data, reason=reason)
 
 def find_participant_matches(email="", phone=""):
-    email, phone = normalize_email(email), normalize_phone(phone)
-    qs = Participant.objects.all()
-    if hasattr(Participant, "archived_at"): qs = qs.filter(archived_at__isnull=True)
-    from django.db.models import Q
-    query = Q()
-    if email: query |= Q(contact_email__iexact=email)
-    if phone: query |= Q(contact_phone=phone)
-    return qs.filter(query).distinct() if query else qs.none()
+    from .identity import participant_candidates
+    return participant_candidates(email=email, phone=phone)
+
 
 def send_signed_link(subject, email, path, token, request=None):
     reverse_path = reverse(path, kwargs={'token': token})
@@ -47,6 +42,8 @@ def begin_account_request(request_obj, request=None):
 @transaction.atomic
 def create_pending_account(participant, email, verified_at, actor=None, request=None):
     email = normalize_email(email)
+    if participant.kind != Participant.Kind.PERSON:
+        raise ValueError("System test identities cannot have participant accounts.")
     if ParticipantAccount.objects.filter(status=ParticipantAccount.Status.ACTIVE, login_email__iexact=email).exists():
         raise ValueError("An active participant account already uses that email.")
     if ParticipantAccount.objects.filter(participant=participant).exists():
