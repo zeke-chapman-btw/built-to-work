@@ -1,0 +1,3 @@
+{% extends "participants/registration_base.html" %}
+{% block title %}Registration complete{% endblock %}
+{% block content %}<main class="reg-main"><p class="eyebrow">THANK YOU</p><h1 class="hero">You're registered</h1><div class="card"><p>Your information has been saved. A BTW team member can help with next steps.</p>{% if event %}<p class="muted">Event: <strong>{{ event.name }}</strong></p>{% endif %}{% if legal_pending %}<p class="muted">Your registration is saved. The current consent document still needs administrator approval.</p>{% endif %}<a class="button" href="{% url 'participants:registration-start' %}">DONE</a></div></main>{% endblock %}

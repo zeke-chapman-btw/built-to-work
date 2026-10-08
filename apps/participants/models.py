@@ -23,6 +23,11 @@ class Participant(TimestampedModel, ArchivableModel):
     city = models.CharField(max_length=100, blank=True)
     state = models.CharField(max_length=100, blank=True)
     postal_code = models.CharField(max_length=24, blank=True)
+    address_line_1 = models.CharField(max_length=200, blank=True)
+    address_line_2 = models.CharField(max_length=200, blank=True)
+    date_of_birth = models.DateField(null=True, blank=True)
+    life_stage = models.CharField(max_length=64, blank=True)
+    age_classification = models.CharField(max_length=16, blank=True)
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=("kind",), condition=Q(kind="system_test"), name="participants_one_system_test_identity")]
@@ -119,3 +124,84 @@ class ParticipantEmailChange(TimestampedModel):
     def save(self, *args, **kwargs):
         self.new_email = normalize_email(self.new_email)
         super().save(*args, **kwargs)
+
+
+class RegistrationForm(TimestampedModel):
+    slug = models.SlugField(unique=True, default="standard")
+    name = models.CharField(max_length=160, default="BTW Standard Intake")
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    def __str__(self): return self.name
+
+class RegistrationFormVersion(TimestampedModel):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        PUBLISHED = "published", "Published"
+        RETIRED = "retired", "Retired"
+    form = models.ForeignKey(RegistrationForm, on_delete=models.PROTECT, related_name="versions")
+    version = models.PositiveIntegerField()
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.DRAFT)
+    snapshot = models.JSONField(default=dict)
+    published_at = models.DateTimeField(null=True, blank=True)
+    effective_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="registration_form_versions")
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("form", "version"), name="registration_form_version_unique")]
+        ordering = ("-version",)
+
+class RegistrationQuestion(TimestampedModel):
+    class FieldType(models.TextChoices):
+        SHORT_TEXT = "short_text", "Short text"
+        LONG_TEXT = "long_text", "Long text"
+        YES_NO = "yes_no", "Yes / No"
+        SINGLE = "single_choice", "Single choice"
+        MULTIPLE = "multiple_choice", "Multiple choice"
+        DROPDOWN = "dropdown", "Dropdown"
+        DATE = "date", "Date"
+        NUMBER = "number", "Number"
+    form = models.ForeignKey(RegistrationForm, on_delete=models.PROTECT, related_name="questions")
+    canonical_key = models.SlugField(max_length=100)
+    label = models.CharField(max_length=240)
+    help_text = models.TextField(blank=True)
+    field_type = models.CharField(max_length=24, choices=FieldType.choices, default=FieldType.SHORT_TEXT)
+    options = models.JSONField(default=list, blank=True)
+    visibility_rule = models.JSONField(default=dict, blank=True)
+    is_required = models.BooleanField(default=False)
+    is_protected = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    position = models.PositiveIntegerField(default=0)
+    class Meta:
+        ordering = ("position", "id")
+        constraints = [models.UniqueConstraint(fields=("form", "canonical_key"), name="registration_question_key_unique")]
+
+class RegistrationSubmission(TimestampedModel):
+    class Status(models.TextChoices):
+        STARTED = "started", "Started"
+        SUBMITTED = "submitted", "Submitted"
+        INELIGIBLE = "ineligible", "Ineligible"
+    form_version = models.ForeignKey(RegistrationFormVersion, on_delete=models.PROTECT, related_name="submissions")
+    participant = models.ForeignKey(Participant, null=True, blank=True, on_delete=models.PROTECT, related_name="registration_submissions")
+    event = models.ForeignKey("events.Event", null=True, blank=True, on_delete=models.PROTECT, related_name="registration_submissions")
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.STARTED)
+    answers = models.JSONField(default=dict)
+    answer_snapshot = models.JSONField(default=dict)
+    age_classification = models.CharField(max_length=16, blank=True)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    source = models.CharField(max_length=32, default="public")
+
+class ConsentDocumentVersion(TimestampedModel):
+    key = models.SlugField(max_length=80)
+    version = models.CharField(max_length=40)
+    title = models.CharField(max_length=200)
+    body = models.TextField()
+    is_approved = models.BooleanField(default=False)
+    effective_at = models.DateTimeField(null=True, blank=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("key", "version"), name="consent_document_version_unique")]
+
+class ConsentAcceptance(TimestampedModel):
+    participant = models.ForeignKey(Participant, on_delete=models.PROTECT, related_name="consent_acceptances")
+    submission = models.ForeignKey(RegistrationSubmission, on_delete=models.PROTECT, related_name="consent_acceptances")
+    document = models.ForeignKey(ConsentDocumentVersion, on_delete=models.PROTECT, related_name="acceptances")
+    accepted_at = models.DateTimeField(auto_now_add=True)
+    metadata = models.JSONField(default=dict, blank=True)
