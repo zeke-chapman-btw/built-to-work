@@ -1,0 +1,27 @@
+.content-admin { max-width: 1180px; margin: 0 auto; display: grid; gap: 20px; }
+.content-admin .panel { background: #fff; color: #171717; border: 1px solid #ddd; border-radius: 14px; padding: 22px; box-shadow: 0 2px 10px #0000000a; }
+.content-admin .panel h2 { margin: 0 0 12px; font-size: 1.4rem; }
+.content-admin .panel p { line-height: 1.5; }
+.content-admin .split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.content-admin .actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-top: 16px; }
+.content-admin .button { display: inline-block; border: 0; border-radius: 8px; padding: 10px 16px; background: #d61f2c; color: #fff; font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
+.content-admin .button.secondary { background: #262626; }
+.content-admin .button.muted { background: #606060; }
+.content-admin .button:disabled { opacity: .5; cursor: not-allowed; }
+.content-admin .field { margin: 12px 0; }
+.content-admin .field label { display: block; font-weight: 700; margin-bottom: 5px; }
+.content-admin input:not([type=checkbox]):not([type=radio]), .content-admin select, .content-admin textarea { box-sizing: border-box; max-width: 100%; width: 100%; padding: 10px 12px; border: 1px solid #aaa; border-radius: 7px; background: #fff; color: #171717; font: inherit; }
+.content-admin input[type=checkbox] { width: auto; }
+.content-admin .hint, .content-admin small { color: #555; }
+.content-admin .errorlist, .content-admin .error { color: #a40f1a; font-weight: 700; }
+.content-admin .status { display: inline-block; padding: 5px 9px; border-radius: 999px; background: #eee; font-weight: 700; font-size: .85rem; }
+.content-admin .status.ready { background: #d8f0db; color: #154d1d; }
+.content-admin .status.attention { background: #ffe6be; color: #774500; }
+.content-admin .warning { padding: 14px; border-left: 5px solid #d61f2c; background: #fff1ef; }
+.content-admin table { border-collapse: collapse; width: 100%; }
+.content-admin th, .content-admin td { border-bottom: 1px solid #ddd; text-align: left; padding: 10px 8px; vertical-align: top; }
+.content-admin th { font-size: .9rem; }
+.content-admin .qr-card { max-width: 330px; width: 100%; }
+.content-admin .qr-card img { display: block; width: 100%; aspect-ratio: 1; }
+@media (max-width: 760px) { .content-admin .split { grid-template-columns: 1fr; } .content-admin .panel { padding: 16px; } .content-admin table { display: block; overflow-x: auto; } }
+@media print { .sidebar, .topbar, .content-admin .actions, .content-admin form { display: none !important; } .content-admin .qr-card { width: 330px; } }

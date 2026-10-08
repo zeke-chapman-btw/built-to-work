@@ -1,0 +1,31 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<div class="content-admin">
+  <section class="panel"><h2>Permanent BTW Test Participant</h2>
+    <p>Use this identity to check the trailer experience. Test runs and simulator captures remain nonofficial and do not count toward attendance, candidates, reports, or leaderboards.</p>
+    {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+    {% if not person %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="provision"><button class="button" type="submit">Provision Test Participant</button></form>{% endif %}
+  </section>
+  {% if person %}<div class="split">
+    <section class="panel"><h2>Reusable Test QR</h2><div class="qr-card"><img src="{{ qr_data }}" alt="Permanent BTW Test Participant QR"></div>
+      <p>Scan this at a kiosk assigned to the active test Event. Keep the card with BTW staff. The QR contains an opaque token, not personal details.</p>
+      <div class="actions"><button class="button secondary" type="button" onclick="window.print()">Print or save QR</button></div>
+      <p class="hint">Simulator test identifier: <strong>{{ simulator_identifier }}</strong>. QR rotation is a separate Admin-only action reserved for a later build.</p>
+    </section>
+    <section class="panel"><h2>Start or resume a test run</h2>
+      {% if events %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="start">
+        <div class="field"><label for="test-event">Active Event</label><select id="test-event" name="event_id" required>{% for event in events %}<option value="{{ event.pk }}">{{ event.name }}</option>{% endfor %}</select></div>
+        <button class="button" type="submit">Start or resume</button></form>
+      {% else %}<p class="warning">No current Event is available. Configure a test Event and kiosk first.</p>{% endif %}
+      <p class="hint">The same QR may be scanned again. A completed run starts a fresh nonofficial run; an in-progress run resumes.</p>
+    </section>
+  </div>
+  <section class="panel"><h2>Recent test history</h2>
+    <table><thead><tr><th>Event</th><th>Started</th><th>State</th><th>Action</th></tr></thead><tbody>
+      {% for run in recent %}<tr><td>{{ run.event.name }}</td><td>{{ run.started_at }}</td><td>{% if run.reset_at %}Reset{% elif run.experience_session.completed_at %}Completed{% else %}In progress{% endif %}</td><td>
+      {% if not run.reset_at %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="reset"><input type="hidden" name="run_id" value="{{ run.pk }}"><label for="reason-{{ run.pk }}">Reset reason</label><input id="reason-{{ run.pk }}" name="reason" required maxlength="240" placeholder="Equipment test, repeat assessment..."><button class="button muted" type="submit">Reset test run</button></form>{% endif %}
+      </td></tr>{% empty %}<tr><td colspan="4">No test runs yet.</td></tr>{% endfor %}
+    </tbody></table>
+  </section>{% endif %}
+</div>
+{% endblock %}

@@ -1,7 +1,8 @@
 from django.urls import path
-from . import views
+from . import views, testing_views
 app_name = "participants"
 urlpatterns = [
+    path("staff/testing/", testing_views.test_participant_admin, name="testing"),
     path("request-account/", views.account_request, name="account-request"),
     path("verify/<str:token>/", views.verify_request, name="verify-request"),
     path("set-password/<str:token>/", views.set_password, name="set-password"),

@@ -44,6 +44,7 @@ class QuestionSet(models.Model):
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.DRAFT)
     created_at = models.DateTimeField(auto_now_add=True)
     published_at = models.DateTimeField(null=True, blank=True)
+    effective_at = models.DateTimeField(null=True, blank=True)
     retired_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -54,32 +55,51 @@ class QuestionSet(models.Model):
         return f"{self.category.name} — {self.name} v{self.version}"
 
     def difficulty_counts(self):
-        return {difficulty: self.items.filter(is_active=True, question__is_active=True, question__difficulty=difficulty).count()
-                for difficulty, _ in Question.Difficulty.choices}
+        counts = {difficulty: 0 for difficulty, _ in Question.Difficulty.choices}
+        items = self.items.filter(is_active=True, question__is_active=True).select_related("question").prefetch_related("question__choices")
+        for item in items:
+            question = item.question
+            choices = list(question.choices.all())
+            if question.category_id == self.category_id and len(choices) == 4 and sum(choice.is_correct for choice in choices) == 1:
+                counts[question.difficulty] += 1
+        return counts
 
     def readiness(self):
         counts = self.difficulty_counts()
         missing = {key: max(0, 5 - value) for key, value in counts.items()}
-        return {"ready": self.status == self.Status.PUBLISHED and not any(missing.values()),
-                "counts": counts, "missing": missing}
+        return {"ready": self.status == self.Status.PUBLISHED and sum(counts.values()) >= 15,
+                "counts": counts, "missing": missing, "total": sum(counts.values())}
 
-    def publish(self):
-        report = self.readiness()
-        if any(count < 5 for count in report["counts"].values()):
-            raise ValidationError("A question set needs at least 5 active questions at each difficulty before it can be published.")
+    def is_effective(self, at=None):
+        at = at or timezone.now()
+        return self.status == self.Status.PUBLISHED and (self.effective_at is None or self.effective_at <= at)
+
+    @property
+    def is_scheduled(self):
+        return self.status == self.Status.PUBLISHED and self.effective_at is not None and self.effective_at > timezone.now()
+
+    def publish(self, *, effective_at=None):
         if self.status != self.Status.DRAFT:
             raise ValidationError("Only a Draft question set can be published.")
+        if self.readiness()["total"] < 15:
+            raise ValidationError("A question set needs at least 15 valid active questions before publication.")
+        now = timezone.now()
+        if effective_at is not None and timezone.is_naive(effective_at):
+            raise ValidationError("Publication time must include a timezone.")
         self.status = self.Status.PUBLISHED
-        self.published_at = timezone.now()
-        self.save(update_fields=("status", "published_at"))
+        self.published_at = now
+        self.effective_at = effective_at or now
+        self.save(update_fields=("status", "published_at", "effective_at"))
 
     def retire(self):
         if self.status != self.Status.PUBLISHED:
             raise ValidationError("Only a Published question set can be retired.")
+        now = timezone.now()
+        if self.event_configurations.filter(event__status="upcoming", event__start_at__lte=now, event__end_at__gte=now).exists():
+            raise ValidationError("This set is assigned to a current Event. Retire it after the Event ends.")
         self.status = self.Status.RETIRED
-        self.retired_at = timezone.now()
+        self.retired_at = now
         self.save(update_fields=("status", "retired_at"))
-
 
 class Question(models.Model):
     class Difficulty(models.TextChoices):
@@ -144,10 +164,16 @@ class QuestionSetItem(models.Model):
 
 
 class EventAssessmentCategory(models.Model):
+    class PoolMode(models.TextChoices):
+        DEFAULT = "default", "Default category pool"
+        CURATED = "curated", "Event-specific curated pool"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     event = models.ForeignKey("events.Event", on_delete=models.CASCADE, related_name="assessment_categories")
     category = models.ForeignKey(AssessmentCategory, on_delete=models.PROTECT, related_name="event_configurations")
     question_set = models.ForeignKey(QuestionSet, on_delete=models.PROTECT, related_name="event_configurations")
+    pool_mode = models.CharField(max_length=12, choices=PoolMode.choices, default=PoolMode.DEFAULT)
+    curated_questions = models.ManyToManyField(Question, blank=True, related_name="curated_event_configurations")
     enabled = models.BooleanField(default=True)
     display_order = models.PositiveSmallIntegerField(default=0)
     display_name = models.CharField(max_length=120, blank=True)
@@ -164,8 +190,10 @@ class EventAssessmentCategory(models.Model):
             if self.question_set.status != QuestionSet.Status.PUBLISHED:
                 raise ValidationError({"question_set": "Only Published question sets may be assigned to an Event."})
             report = self.question_set.readiness()
-            if not all(report["counts"].get(level, 0) >= 5 for level in ("easy", "medium", "hard")):
-                raise ValidationError({"question_set": "This question set is not ready: it needs at least 5 active questions at each difficulty."})
+            if report["total"] < 15:
+                raise ValidationError({"question_set": "This question set needs at least 15 valid active questions."})
+            if self.event_id and self.question_set.effective_at and self.question_set.effective_at > max(self.event.start_at, timezone.now()):
+                raise ValidationError({"question_set": "This version becomes effective after the Event starts."})
 
     @property
     def participant_name(self):

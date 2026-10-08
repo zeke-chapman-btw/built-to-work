@@ -1,4 +1,5 @@
 from django import forms
+from django.utils import timezone
 from django.core.exceptions import ValidationError
 from .models import AssessmentCategory, EventAssessmentCategory, Question, QuestionSet
 
@@ -54,6 +55,35 @@ class QuestionForm(forms.ModelForm):
                 self.add_error(field, "Enter text for all four answers.")
         return cleaned
 
+    def clean_image(self):
+        image = self.cleaned_data.get("image")
+        if not image or image is False or not hasattr(image, "size"):
+            return image
+        if image.size > 5 * 1024 * 1024:
+            raise forms.ValidationError("Use an image smaller than 5 MB.")
+        # Validate a real image header without introducing a runtime font/image dependency.
+        # Serving is still restricted to these three browser-safe formats.
+        try:
+            header = image.read(64)
+            image.seek(-12, 2)
+            trailer = image.read(12)
+            image.seek(0)
+        except (OSError, ValueError):
+            raise forms.ValidationError("Upload a valid PNG, JPEG, or WebP image.")
+        png = (header.startswith(bytes.fromhex("89504e470d0a1a0a"))
+               and header[8:16] == bytes.fromhex("0000000d49484452")
+               and int.from_bytes(header[16:20], "big") > 0
+               and int.from_bytes(header[20:24], "big") > 0
+               and trailer == bytes.fromhex("0000000049454e44ae426082"))
+        jpeg = (header.startswith(bytes.fromhex("ffd8ff")) and trailer.endswith(bytes.fromhex("ffd9"))
+                and image.size >= 100)
+        webp = (header.startswith(b"RIFF") and header[8:12] == b"WEBP"
+                and header[12:16] in (b"VP8 ", b"VP8L", b"VP8X")
+                and int.from_bytes(header[4:8], "little") + 8 == image.size)
+        if not (png or jpeg or webp):
+            raise forms.ValidationError("Upload a valid PNG, JPEG, or WebP image.")
+        return image
+
     def save(self, commit=True):
         question = super().save(commit=False)
         if self.category:
@@ -69,19 +99,49 @@ class QuestionForm(forms.ModelForm):
         return question
 
 
+class PublishQuestionSetForm(forms.Form):
+    effective_at = forms.DateTimeField(required=False,
+        widget=forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
+        input_formats=("%Y-%m-%dT%H:%M",))
+
+
 class EventCategoryForm(forms.ModelForm):
     class Meta:
         model = EventAssessmentCategory
-        fields = ("category", "question_set", "enabled", "display_order", "display_name", "description")
+        fields = ("category", "pool_mode", "question_set", "curated_questions", "enabled", "display_order", "display_name", "description")
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, event=None, **kwargs):
+        self.event = event
         super().__init__(*args, **kwargs)
         self.fields["category"].queryset = AssessmentCategory.objects.filter(is_active=True)
+        self.fields["question_set"].required = False
         self.fields["question_set"].queryset = QuestionSet.objects.filter(status=QuestionSet.Status.PUBLISHED).select_related("category")
+        self.fields["curated_questions"].required = False
+        self.fields["curated_questions"].queryset = Question.objects.filter(is_active=True).order_by("difficulty", "created_at")
+        self.fields["curated_questions"].help_text = "Optional: select at least 15 questions from the chosen set, or leave blank to use its full pool."
 
     def clean(self):
         data = super().clean()
-        category, qset = data.get("category"), data.get("question_set")
-        if category and qset and category.pk != qset.category_id:
-            self.add_error("question_set", "Choose a Published question set for the selected category.")
+        category = data.get("category")
+        mode = data.get("pool_mode")
+        qset = data.get("question_set")
+        selected = data.get("curated_questions")
+        if category and mode == EventAssessmentCategory.PoolMode.DEFAULT:
+            from .services import latest_effective_set
+            qset = latest_effective_set(category, max(self.event.start_at, timezone.now()) if self.event else None)
+            if qset is None:
+                self.add_error("category", "No Published question set is effective by this Event's start.")
+            else:
+                data["question_set"] = qset
+                data["curated_questions"] = Question.objects.none()
+        elif mode == EventAssessmentCategory.PoolMode.CURATED:
+            if not qset:
+                self.add_error("question_set", "Choose a Published question set for the curated pool.")
+            elif category and category.pk != qset.category_id:
+                self.add_error("question_set", "Choose a set for the selected category.")
+            if selected and selected.exists():
+                if selected.count() < 15:
+                    self.add_error("curated_questions", "Select at least 15 questions, or leave this blank for the full set.")
+                elif qset and selected.exclude(set_memberships__question_set=qset, set_memberships__is_active=True).exists():
+                    self.add_error("curated_questions", "Every curated question must belong to the selected set.")
         return data

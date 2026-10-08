@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.utils import timezone
 from apps.core.models import AuditLog
 from apps.stations.models import ExperienceActivity
@@ -15,31 +16,77 @@ BLUEPRINT = ((Question.Difficulty.EASY, 5), (Question.Difficulty.MEDIUM, 5), (Qu
 SECTION_SECONDS = 45
 
 
+def latest_effective_set(category, at=None):
+    """Choose a published version once when an Event configuration is saved."""
+    at = at or timezone.now()
+    return (QuestionSet.objects.filter(category=category, status=QuestionSet.Status.PUBLISHED)
+            .filter(Q(effective_at__lte=at) | Q(effective_at__isnull=True))
+            .order_by("-version").first())
+
+
+def _candidate_questions(config):
+    items = config.question_set.items.filter(
+        is_active=True, question__is_active=True,
+        question__category=config.category,
+    ).select_related("question").prefetch_related("question__choices")
+    if config.pool_mode == EventAssessmentCategory.PoolMode.CURATED:
+        curated_ids = list(config.curated_questions.values_list("pk", flat=True))
+        if curated_ids:
+            items = items.filter(question_id__in=curated_ids)
+    questions = []
+    for item in items:
+        choices = list(item.question.choices.all())
+        if len(choices) == 4 and sum(choice.is_correct for choice in choices) == 1:
+            questions.append(item.question)
+    return questions
+
+
+def configuration_readiness(config):
+    questions = _candidate_questions(config)
+    counts = {difficulty: sum(question.difficulty == difficulty for question in questions)
+              for difficulty, _ in Question.Difficulty.choices}
+    return {"ready": len(questions) >= 15, "total": len(questions), "counts": counts,
+            "missing": {key: max(0, 5 - value) for key, value in counts.items()}}
+
+
 def eligible_event_categories(event):
     result = []
-    configs = EventAssessmentCategory.objects.filter(event=event, enabled=True, category__is_active=True,
-        question_set__status=QuestionSet.Status.PUBLISHED).select_related("category", "question_set").order_by("display_order", "category__name")
+    configs = EventAssessmentCategory.objects.filter(
+        event=event, enabled=True, category__is_active=True,
+        question_set__status=QuestionSet.Status.PUBLISHED,
+    ).select_related("category", "question_set").order_by("display_order", "category__name")
     for config in configs:
-        counts = config.question_set.difficulty_counts()
-        if all(counts.get(level, 0) >= count for level, count in BLUEPRINT):
+        if config.question_set.is_effective() and configuration_readiness(config)["ready"]:
             result.append(config)
     return result
 
 
-def _snapshot_questions(question_set):
+def _snapshot_questions(config):
+    """Keep difficulty bands in order; randomize only within each eligible band."""
+    by_level = {difficulty: [] for difficulty, _ in Question.Difficulty.choices}
+    for question in _candidate_questions(config):
+        by_level[question.difficulty].append(question)
+    if sum(map(len, by_level.values())) < 15:
+        raise ValidationError("This assessment category is not ready. Please ask staff for help.")
+    counts = {difficulty: min(required, len(by_level[difficulty])) for difficulty, required in BLUEPRINT}
+    remaining = 15 - sum(counts.values())
+    while remaining:
+        allocated = False
+        for difficulty, _ in BLUEPRINT:
+            if counts[difficulty] < len(by_level[difficulty]):
+                counts[difficulty] += 1
+                remaining -= 1
+                allocated = True
+                if not remaining:
+                    break
+        if not allocated:
+            raise ValidationError("This assessment category does not have 15 eligible questions.")
     selected = []
-    for difficulty, required in BLUEPRINT:
-        eligible = list(question_set.items.filter(is_active=True, question__is_active=True,
-            question__difficulty=difficulty, question__category=question_set.category).select_related("question").prefetch_related("question__choices"))
-        eligible = [item.question for item in eligible if item.question.choices.count() == 4 and item.question.choices.filter(is_correct=True).count() == 1]
-        if len(eligible) < required:
-            raise ValidationError("This assessment category is not ready. Please ask staff for help.")
-        selected.extend(random.sample(eligible, required))
-    random.shuffle(selected)
+    for difficulty, _ in BLUEPRINT:
+        selected.extend(random.sample(by_level[difficulty], counts[difficulty]))
     snapshot = []
     for position, question in enumerate(selected, start=1):
-        choices = list(question.choices.all())
-        random.shuffle(choices)
+        choices = list(question.choices.all())  # Authored display order is never shuffled.
         try:
             image_url = question.image.url if question.image else ""
         except ValueError:
@@ -47,12 +94,14 @@ def _snapshot_questions(question_set):
         snapshot.append({
             "position": position,
             "source_question_id": str(question.pk),
+            "question_set_version": config.question_set.version,
             "text": question.text,
             "image_url": image_url,
             "difficulty": question.difficulty,
             "choices": [{"key": str(choice.pk), "text": choice.text, "correct": choice.is_correct} for choice in choices],
         })
     return snapshot
+
 
 def _start_section(section, now):
     section.status = AssessmentSection.Status.ACTIVE
@@ -87,7 +136,7 @@ def create_attempt(session, selected_config_ids, *, is_official=True, actor=None
         section = AssessmentSection.objects.create(attempt=attempt, category=config.category,
             question_set=config.question_set, position=position,
             category_name_snapshot=config.participant_name,
-            questions_snapshot=_snapshot_questions(config.question_set), duration_seconds=SECTION_SECONDS)
+            questions_snapshot=_snapshot_questions(config), duration_seconds=SECTION_SECONDS)
         if position == 1 and start_first_section:
             _start_section(section, now)
     if is_official:
