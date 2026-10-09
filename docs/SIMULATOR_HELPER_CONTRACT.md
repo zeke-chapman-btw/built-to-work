@@ -35,3 +35,7 @@ Only accepted official captures with status matched or resolved, is_official=tru
 ## Operational boundaries
 
 Set SIMULATOR_INGESTION_TOKEN and, if needed, SIMULATOR_TEST_IDENTIFIER in environment configuration. Keep the token out of source control and logs. Restrict the endpoint to the intended trailer network and protect the transport before field deployment. The future helper should log only non-sensitive state transitions and delivery IDs. Secure staff review UI, Windows service installation, OCR implementation, camera/image capture, and cloud synchronization are outside Build 6A.
+
+## Build 6B local XML monitor boundary
+
+The Windows Simulator Results monitor is documented in [SIMULATOR_WINDOWS_HELPER.md](SIMULATOR_WINDOWS_HELPER.md). It collects and archives SimU XML locally; this Build 6B branch does not connect that local index to this ingestion API. The official SimU scoring formula and server synchronization remain pending. The earlier server-side calibration import command and its test were not available in this Codespace and are not part of this commit; recover or verify them separately.

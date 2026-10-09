@@ -9,3 +9,15 @@ htmlcov/
 staticfiles/
 # Development question uploads are runtime media; canonical review images live in static/kiosk/images/test-mode/.
 /assessment_questions/
+
+# Local simulator monitor configuration, evidence, and transfer package
+/build-6b-transfer.zip
+/simulator_helper/config.diagnostic.json
+/simulator_helper/config.json
+/simulator_helper/profile.json
+/simulator_helper/state.json
+/simulator_helper/diagnostic_history.json
+/simulator_helper/ui_preferences.json
+/simulator_helper/monitor.log*
+/simulator_helper/*.sqlite3*
+/simulator_helper/simulator_xml_archive/

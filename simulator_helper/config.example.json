@@ -1,0 +1,16 @@
+{
+  "server_url": "http://TRAILER_SERVER:8000",
+  "event_id": "REPLACE_WITH_EVENT_UUID",
+  "station_code": "SIM-01",
+  "profile_path": "profile.json",
+  "state_path": "state.json",
+  "poll_interval": 0.75,
+  "stable_reads": 3,
+  "min_confidence": 70,
+  "session_timeout_seconds": 300,
+  "tesseract_cmd": "",
+  "xml_source_directory": "C:\\Users\\YOUR_USERNAME\\Documents\\My Games\\SimUCampusData\\ExperienceMode",
+  "xml_archive_directory": "C:\\Users\\YOUR_USERNAME\\Documents\\BTW\\simulator_xml_archive",
+  "xml_database_path": "C:\\Users\\YOUR_USERNAME\\Documents\\BTW\\simulator_xml_archive\\results.sqlite3",
+  "xml_poll_interval": 1.0
+}
