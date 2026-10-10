@@ -402,3 +402,25 @@ class BackupRecord(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     error = models.TextField(blank=True)
+
+
+class CentralSyncReceipt(models.Model):
+    """Durable central acknowledgement for an offline sync envelope."""
+    class Status(models.TextChoices):
+        ACCEPTED = "accepted", "Accepted"
+        REVIEW = "review", "Needs review"
+
+    operation_key = models.CharField(max_length=200, unique=True)
+    trailer_identity = models.CharField(max_length=120)
+    event_id = models.UUIDField()
+    preparation_id = models.UUIDField(null=True, blank=True)
+    participant_identity = models.UUIDField(null=True, blank=True)
+    ticket_number = models.CharField(max_length=10, blank=True)
+    payload = models.JSONField(default=dict)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.ACCEPTED)
+    received_at = models.DateTimeField(auto_now_add=True)
+    acknowledged_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.TextField(blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=("trailer_identity", "event_id"), name="sync_receipt_scope_idx")]

@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import offline_views
+from . import sync_views
 app_name = "events"
 urlpatterns = [
  path("offline/", offline_views.offline_preparations, name="offline-preparations"),
@@ -27,4 +28,8 @@ urlpatterns = [
  path("<uuid:event_id>/registrations/<uuid:registration_id>/check-in/", views.registration_check_in, name="registration_check_in"),
  path("<uuid:event_id>/registrations/<uuid:registration_id>/reissue/", views.registration_reissue, name="registration_reissue"),
  path("<uuid:event_id>/registrations/<uuid:registration_id>/void/", views.registration_void, name="registration_void"),
+]
+urlpatterns += [
+    path("sync/ingest/", sync_views.sync_ingest, name="sync-ingest"),
+    path("sync/status/", sync_views.sync_status, name="sync-status"),
 ]
