@@ -84,3 +84,66 @@ def mark_sync_failed(item, error, retry_seconds=60):
 
 def destination_hash(value):
     return hashlib.sha256(value.strip().lower().encode()).hexdigest()
+
+
+def create_offline_registration(*, preparation, actor, data):
+    """Create a durable local registration and queue it for later sync."""
+    from datetime import timedelta
+    from django.utils import timezone
+    from apps.participants.models import (
+        Participant, ConsentAcceptance, ConsentDocumentVersion, RegistrationSubmission,
+        RegistrationFormVersion,
+    )
+    from .models import EventRegistration, QrTicket, OfflineRegistrationEnvelope
+    from .services import register_participant
+    if preparation.status != "active":
+        raise ValidationError("This trailer event is not active.")
+    document = preparation.consent_document
+    if not document or not document.is_approved:
+        raise ValidationError("An approved consent document is required.")
+    form_version = RegistrationFormVersion.objects.filter(status=RegistrationFormVersion.Status.PUBLISHED).order_by("-version").first()
+    if not form_version:
+        raise ValidationError("No published registration form is available.")
+    answers = data.get("answers") or {}
+    from .models import EventRegistrationQuestion
+    questions = EventRegistrationQuestion.objects.filter(event=preparation.event, is_active=True).order_by("position", "created_at")
+    for question in questions:
+        value = answers.get(question.key, "")
+        if question.is_required and (value is None or (isinstance(value, str) and not value.strip())):
+            raise ValidationError(f"{question.label} is required.")
+        if value not in (None, "") and question.field_type in {"single_choice", "yes_no"}:
+            allowed = {str(option.get("value", option.get("label", ""))) if isinstance(option, dict) else str(option) for option in question.options}
+            if question.field_type == "yes_no":
+                allowed = {"yes", "no"}
+            if str(value) not in allowed:
+                raise ValidationError(f"Choose a valid answer for {question.label}.")
+    first_name = str(data.get("first_name", "")).strip()
+    last_name = str(data.get("last_name", "")).strip()
+    if not first_name or not last_name:
+        raise ValidationError("First and last name are required.")
+    email = str(data.get("contact_email", data.get("email", ""))).strip()
+    phone = str(data.get("contact_phone", data.get("phone", ""))).strip()
+    with transaction.atomic():
+        participant = Participant.objects.create(first_name=first_name, last_name=last_name, contact_email=email, contact_phone=phone)
+        submission = RegistrationSubmission.objects.create(
+            form_version=form_version, participant=participant, event=preparation.event,
+            status=RegistrationSubmission.Status.SUBMITTED, answers=dict(data),
+            answer_snapshot=form_version.snapshot, source="offline", submitted_at=timezone.now(),
+        )
+        ConsentAcceptance.objects.create(participant=participant, submission=submission, document=document, metadata={"source": "offline", "trailer": preparation.trailer.identity})
+        group = None
+        group_id = data.get("group")
+        if group_id:
+            group = preparation.event.groups.filter(pk=group_id, is_active=True).first()
+        registration, created = register_participant(event=preparation.event, participant=participant, actor=actor, source=EventRegistration.Source.STAFF, group=group, custom_answers=dict(data))
+        if not created:
+            raise ValidationError("This participant is already registered.")
+        number = reserve_ticket_number(preparation)
+        ticket = QrTicket.objects.create(registration=registration, ticket_number=number, expires_at=timezone.now() + timedelta(days=30), issued_by=actor)
+        envelope = OfflineRegistrationEnvelope.objects.create(
+            preparation=preparation, participant_identity=participant.identity_uuid, registration_id=registration.id,
+            ticket_number=number, consent_document_version=document.version, consent_hash=document.content_hash,
+            group_name=group.name if group else "", custom_answers=dict(data), payload={"event_id": str(preparation.event_id), "ticket_number": number},
+        )
+        queue_sync(preparation=preparation, operation_key=f"registration:{envelope.id}", operation_type="registration.created", payload=envelope.payload)
+        return participant, registration, ticket, envelope

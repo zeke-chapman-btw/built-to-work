@@ -1,0 +1,1 @@
+<!doctype html><html><body><h1>Offline registration</h1><p>{{ preparation.event.name }} — {{ preparation.trailer.display_name }}</p><form method="post">{% csrf_token %}{{ form.non_field_errors }}{% for field in form %}<p>{{ field.errors }}{{ field.label_tag }} {{ field }}</p>{% endfor %}<button type="submit">Register and issue ticket</button></form></body></html>

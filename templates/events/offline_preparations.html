@@ -1,0 +1,1 @@
+<!doctype html><html><body><h1>Offline registration</h1><p>Select a prepared trailer event.</p><ul>{% for p in preparations %}<li><a href="{% url 'events:offline-preparation-detail' p.id %}">{{ p.event.name }} — {{ p.trailer.display_name }} ({{ p.status }})</a></li>{% empty %}<li>No prepared events.</li>{% endfor %}</ul></body></html>
