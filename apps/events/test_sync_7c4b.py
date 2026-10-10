@@ -6,6 +6,7 @@ from .sync import record_sync_failure
 from .sync_views import sync_ingest
 
 
+@override_settings(DEBUG=True, BTW_SYNC_API_TOKEN="secret")
 class SyncIngestTests(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
@@ -23,10 +24,10 @@ class SyncIngestTests(TestCase):
         self.assertEqual(response.status_code, 400)
 
     @override_settings(BTW_SYNC_API_TOKEN="")
-    def test_unconfigured_endpoint_fails_closed(self):
+    def test_missing_trailer_credentials_are_rejected(self):
         request = self.factory.post("/events/sync/ingest/", data=json.dumps({}), content_type="application/json")
         response = sync_ingest(request)
-        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.status_code, 401)
 
     def test_retry_backoff_is_bounded(self):
         item = Mock(attempts=12)
@@ -40,7 +41,7 @@ class SyncIngestTests(TestCase):
 
     @override_settings(BTW_SYNC_API_TOKEN="secret")
     def test_duplicate_operation_is_acknowledged_without_reimport(self):
-        existing = SimpleNamespace(status="accepted")
+        existing = SimpleNamespace(status="accepted", trailer_identity="TRAILER-1", event_id="00000000-0000-0000-0000-000000000001")
         receipt_manager = Mock()
         receipt_manager.select_for_update.return_value.filter.return_value.first.return_value = existing
         trailer_manager = Mock()
@@ -53,3 +54,16 @@ class SyncIngestTests(TestCase):
             response = sync_ingest(request)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(json.loads(response.content)["duplicate"])
+
+    def test_trailer_credentials_are_hashed_and_rotatable(self):
+        from django.contrib.auth.hashers import check_password
+        from apps.events.sync import authenticate_trailer, provision_trailer_credential, revoke_trailer_credential
+        trailer = SimpleNamespace(identity="TRAILER-1", is_active=True, credential_hash="", credential_revoked_at=None, credential_rotated_at=None)
+        trailer.save = Mock()
+        first = provision_trailer_credential(trailer)
+        self.assertTrue(check_password(first, trailer.credential_hash))
+        second = provision_trailer_credential(trailer)
+        self.assertNotEqual(first, second)
+        self.assertTrue(check_password(second, trailer.credential_hash))
+        revoke_trailer_credential(trailer)
+        self.assertIsNotNone(trailer.credential_revoked_at)

@@ -9,6 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from .models import CentralSyncReceipt, Event, OfflineEventPreparation, SyncOutboxItem, TrailerInstance
+from .sync import authenticate_trailer, import_registration_if_safe
 from .views import staff_required
 
 
@@ -18,16 +19,18 @@ def _token(request):
 
 
 def _configured_token():
+    # Shared bearer tokens are only a development bootstrap path.
+    if not settings.DEBUG:
+        return ""
     return getattr(settings, "BTW_SYNC_API_TOKEN", "") or os.environ.get("BTW_SYNC_API_TOKEN", "")
-
-
 @require_POST
 @csrf_exempt
 def sync_ingest(request):
     configured = _configured_token()
-    if not configured:
-        return JsonResponse({"detail": "Synchronization is not configured"}, status=503)
-    if _token(request) != configured:
+    token = _token(request)
+    if not token:
+        return JsonResponse({"detail": "Synchronization is not configured"}, status=401)
+    if configured and not token:
         return JsonResponse({"detail": "Invalid synchronization credentials"}, status=401)
     try:
         body = json.loads(request.body or "{}")
@@ -39,7 +42,9 @@ def sync_ingest(request):
         return JsonResponse({"detail": "Invalid synchronization envelope"}, status=400)
     if len(operation_key) > 200 or not trailer_identity or not isinstance(payload, dict):
         return JsonResponse({"detail": "Invalid synchronization envelope"}, status=400)
-    trailer = TrailerInstance.objects.filter(identity=trailer_identity, is_active=True).first()
+    trailer = TrailerInstance.objects.filter(identity=trailer_identity, is_active=True, credential_revoked_at__isnull=True).first()
+    if not trailer or (token != configured and authenticate_trailer(trailer_identity, token) is None):
+        return JsonResponse({"detail": "Invalid synchronization credentials"}, status=401)
     event = Event.objects.filter(pk=event_id).first()
     if not trailer or not event:
         return JsonResponse({"detail": "Unknown trailer or event"}, status=403)
@@ -60,22 +65,28 @@ def sync_ingest(request):
     with transaction.atomic():
         existing = CentralSyncReceipt.objects.select_for_update().filter(operation_key=operation_key).first()
         if existing:
+            if existing.trailer_identity != trailer_identity or str(existing.event_id) != str(event_id):
+                return JsonResponse({"detail": "operation key belongs to another trailer or event"}, status=409)
             return JsonResponse({"status": existing.status, "operation_key": operation_key, "duplicate": True}, status=200)
         status = CentralSyncReceipt.Status.ACCEPTED
         last_error = ""
-        if participant_identity:
-            from apps.participants.models import Participant
-            matches = Participant.objects.filter(identity_uuid=participant_identity, archived_at__isnull=True)
-            if not matches.exists():
-                status = CentralSyncReceipt.Status.REVIEW
-                last_error = "Participant identity requires central reconciliation"
+        from apps.participants.models import Participant
+        participant = Participant.objects.filter(
+            identity_uuid=participant_identity, archived_at__isnull=True
+        ).first() if participant_identity else None
+        _, import_error = import_registration_if_safe(
+            event=event, payload=payload, participant=participant, preparation=preparation
+        )
+        if import_error:
+            status = CentralSyncReceipt.Status.REVIEW
+            last_error = import_error
         receipt = CentralSyncReceipt.objects.create(
             operation_key=operation_key, trailer_identity=trailer_identity, event_id=event_id,
             preparation_id=preparation.id if preparation else None, participant_identity=participant_identity,
             ticket_number=str(payload.get("ticket_number", ""))[:10], payload=body, status=status,
             acknowledged_at=None if status == CentralSyncReceipt.Status.REVIEW else __import__("django.utils.timezone", fromlist=["now"]).now(), last_error=last_error,
         )
-    return JsonResponse({"status": receipt.status, "operation_key": operation_key, "duplicate": False}, status=202 if status == CentralSyncReceipt.Status.REVIEW else 200)
+    return JsonResponse({"status": receipt.status, "operation_key": operation_key, "duplicate": False, "detail": receipt.last_error}, status=202 if status == CentralSyncReceipt.Status.REVIEW else 200)
 
 
 @staff_required

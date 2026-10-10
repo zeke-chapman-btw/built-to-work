@@ -106,7 +106,7 @@ def create_offline_registration(*, preparation, actor, data):
         raise ValidationError("No published registration form is available.")
     answers = data.get("answers") or {}
     from .models import EventRegistrationQuestion
-    questions = EventRegistrationQuestion.objects.filter(event=preparation.event, is_active=True).order_by("position", "created_at")
+    questions = EventRegistrationQuestion.objects.filter(event=preparation.event, is_active=True).order_by("position", "pk")
     for question in questions:
         value = answers.get(question.key, "")
         if question.is_required and (value is None or (isinstance(value, str) and not value.strip())):
@@ -139,11 +139,73 @@ def create_offline_registration(*, preparation, actor, data):
         if not created:
             raise ValidationError("This participant is already registered.")
         number = reserve_ticket_number(preparation)
-        ticket = QrTicket.objects.create(registration=registration, ticket_number=number, expires_at=timezone.now() + timedelta(days=30), issued_by=actor)
+        ticket = QrTicket.objects.get(registration=registration, is_current=True)
+        ticket.ticket_number = number
+        ticket.expires_at = timezone.now() + timedelta(days=30)
+        ticket.issued_by = actor
+        ticket.save(update_fields=["ticket_number", "expires_at", "issued_by"])
+        acceptance = ConsentAcceptance.objects.get(participant=participant, submission=submission, document=document)
+        payload = {
+            "event_id": str(preparation.event_id),
+            "preparation_id": str(preparation.pk), "participant_identity": str(participant.identity_uuid),
+            "participant": {
+                "id": str(participant.pk), "identity_uuid": str(participant.identity_uuid),
+                "kind": participant.kind, "first_name": participant.first_name,
+                "last_name": participant.last_name, "preferred_name": participant.preferred_name,
+                "contact_email": participant.contact_email, "contact_phone": participant.contact_phone,
+                "created_at": participant.created_at.isoformat(),
+            },
+            "registration": {
+                "id": str(registration.pk), "registered_at": registration.registered_at.isoformat(),
+                "group_id": str(group.pk) if group else "", "group_name": group.name if group else "",
+                "custom_answers": registration.custom_answers,
+            },
+            "ticket": {
+                "id": str(ticket.pk), "token": str(ticket.token), "ticket_number": ticket.ticket_number,
+                "issued_at": ticket.issued_at.isoformat(), "expires_at": ticket.expires_at.isoformat(),
+            },
+            "ticket_number": number,
+            "submission": {
+                "id": str(submission.pk), "form_version_id": str(form_version.pk),
+                "form_version": form_version.version, "answers": submission.answers,
+                "answer_snapshot": submission.answer_snapshot,
+                "submitted_at": submission.submitted_at.isoformat(),
+                "age_classification": submission.age_classification,
+            },
+            "consent": {
+                "acceptance_id": str(acceptance.pk), "document_id": str(document.pk),
+                "document_key": document.key, "document_version": document.version,
+                "content_hash": document.content_hash, "accepted_at": acceptance.accepted_at.isoformat(),
+                "metadata": acceptance.metadata,
+            },
+        }
+        payload.update({
+            "participant_identity": str(participant.identity_uuid),
+            "participant": {
+                "identity_uuid": str(participant.identity_uuid),
+                "first_name": participant.first_name, "last_name": participant.last_name,
+                "preferred_name": participant.preferred_name,
+                "contact_email": participant.contact_email, "contact_phone": participant.contact_phone,
+                "city": participant.city, "state": participant.state, "postal_code": participant.postal_code,
+            },
+            "registration_id": str(registration.pk),
+            "registered_at": registration.registered_at.isoformat(),
+            "group_id": str(registration.group_id) if registration.group_id else None,
+            "group_name": group.name if group else "",
+            "custom_answers": registration.custom_answers or {},
+            "ticket_number": number,
+            "ticket": {
+                "ticket_id": str(ticket.pk), "token": str(ticket.token),
+                "ticket_number": number, "is_current": ticket.is_current,
+                "issued_at": ticket.issued_at.isoformat(), "expires_at": ticket.expires_at.isoformat(),
+                "revoked_at": ticket.revoked_at.isoformat() if ticket.revoked_at else None,
+                "reissue_reason": ticket.reissue_reason,
+            },
+        })
         envelope = OfflineRegistrationEnvelope.objects.create(
             preparation=preparation, participant_identity=participant.identity_uuid, registration_id=registration.id,
             ticket_number=number, consent_document_version=document.version, consent_hash=document.content_hash,
-            group_name=group.name if group else "", custom_answers=dict(data), payload={"event_id": str(preparation.event_id), "ticket_number": number},
+            group_name=group.name if group else "", custom_answers=dict(data), payload=payload,
         )
         queue_sync(preparation=preparation, operation_key=f"registration:{envelope.id}", operation_type="registration.created", payload=envelope.payload)
         return participant, registration, ticket, envelope

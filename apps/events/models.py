@@ -256,6 +256,9 @@ class TrailerInstance(models.Model):
     identity = models.CharField(max_length=120, unique=True)
     display_name = models.CharField(max_length=160)
     is_active = models.BooleanField(default=True)
+    credential_hash = models.CharField(max_length=256, blank=True)
+    credential_revoked_at = models.DateTimeField(null=True, blank=True)
+    credential_rotated_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
