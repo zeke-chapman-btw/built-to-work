@@ -86,6 +86,38 @@ class SimulatorCaptureTests(TestCase):
         self.assertEqual(Attendance.objects.count(), 0)
         self.assertEqual(QrTicket.objects.count(), 0)
 
+    def test_current_event_ticket_number_matches_simulator_capture(self):
+        QrTicket.objects.create(
+            registration=self.registration,
+            ticket_number="1234567890",
+            expires_at=timezone.now() + timedelta(hours=1),
+        )
+        capture, replay = self.ingest(raw_identifier="1234567890")
+        self.assertFalse(replay)
+        self.assertEqual(capture.status, SimulatorCapture.Status.MATCHED)
+        self.assertEqual(capture.registration, self.registration)
+        self.assertEqual(self.simulator_activity().status, ExperienceActivity.Status.COMPLETED)
+
+    def test_other_event_ticket_does_not_fall_back_to_phone_match(self):
+        now = timezone.now()
+        other_event = Event.objects.create(
+            name="Other event", status=Event.Status.UPCOMING,
+            start_at=now - timedelta(hours=1), end_at=now + timedelta(hours=1),
+        )
+        other_registration = EventRegistration.objects.create(
+            event=other_event, participant=self.participant,
+        )
+        QrTicket.objects.create(
+            registration=other_registration,
+            ticket_number="4785551234",
+            expires_at=now + timedelta(hours=1),
+        )
+        capture, replay = self.ingest(raw_identifier="4785551234")
+        self.assertFalse(replay)
+        self.assertEqual(capture.status, SimulatorCapture.Status.NEEDS_REVIEW)
+        self.assertIsNone(capture.registration_id)
+        self.assertNotEqual(self.simulator_activity().status, ExperienceActivity.Status.COMPLETED)
+
     def test_configured_game_must_be_complete_before_simulator(self):
         game, _ = GameDefinition.objects.get_or_create(key="duck_hunt", defaults={"display_name": "Duck Hunt", "implementation_key": "duck_hunt"})
         EventGameConfiguration.objects.create(event=self.event, game=game)

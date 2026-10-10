@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.db.models.functions import Lower
 from apps.core.models import ArchivableModel, TimestampedModel
 from .normalization import normalize_email, normalize_phone
+from .consent_storage import PrivateConsentStorage
 
 class Participant(TimestampedModel, ArchivableModel):
     class Kind(models.TextChoices):
@@ -188,14 +189,21 @@ class RegistrationSubmission(TimestampedModel):
     age_classification = models.CharField(max_length=16, blank=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
     source = models.CharField(max_length=32, default="public")
+    idempotency_key = models.CharField(max_length=64, unique=True, null=True, blank=True)
 
 class ConsentDocumentVersion(TimestampedModel):
     key = models.SlugField(max_length=80)
     version = models.CharField(max_length=40)
     title = models.CharField(max_length=200)
     body = models.TextField()
+    original_pdf = models.FileField(upload_to="consent_documents/", storage=PrivateConsentStorage(), blank=True, null=True)
+    content_hash = models.CharField(max_length=64, blank=True)
     is_approved = models.BooleanField(default=False)
     effective_at = models.DateTimeField(null=True, blank=True)
+    text_verified_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="verified_consent_documents")
+    text_verified_at = models.DateTimeField(null=True, blank=True)
+    published_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="published_consent_documents")
+    published_at = models.DateTimeField(null=True, blank=True)
     class Meta:
         constraints = [models.UniqueConstraint(fields=("key", "version"), name="consent_document_version_unique")]
 

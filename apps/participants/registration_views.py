@@ -1,11 +1,14 @@
 import json
+import uuid
 from datetime import date
 from django.core.exceptions import PermissionDenied
-from django.db import transaction
+from django.db import IntegrityError, transaction
+from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.text import slugify
 from apps.core.audit import record_audit
+from apps.events.services import register_participant
 from .forms import RegistrationQuestionForm, SnapshotRegistrationForm, LIFE_STAGE_CHOICES
 from .models import (Participant, ParticipantCareerProfile, RegistrationForm, RegistrationFormVersion, RegistrationQuestion, RegistrationSubmission, ConsentDocumentVersion, ConsentAcceptance)
 
@@ -64,7 +67,27 @@ def registration_start(request, event_id=None):
         return redirect("participants:registration-form" + (("?event=" + str(event.pk)) if event else ""))
     return render(request, "participants/registration_start.html", {"event": event})
 
+def _registration_complete(request, submission):
+    from apps.events.models import QrTicket
+    participant = submission.participant
+    event = submission.event
+    ticket = None
+    if event:
+        ticket = QrTicket.objects.filter(registration__event=event, registration__participant=participant, is_current=True).first()
+    return render(request, "participants/registration_complete.html", {
+        "participant": participant, "submission": submission, "ticket": ticket,
+        "event": event, "legal_pending": False,
+    })
+
+
 def registration_form(request):
+    # The rendered form carries a request key; resubmitting that form is idempotent.
+    # Legacy/API POSTs without a key remain independent submissions.
+    submitted_key = request.POST.get("registration_request_key", "") if request.method == "POST" else ""
+    try:
+        request_key = uuid.UUID(submitted_key).hex if submitted_key else uuid.uuid4().hex
+    except ValueError:
+        return HttpResponseBadRequest("Invalid registration request key.")
     form_model = standard_form()
     version = published_version(form_model)
     event_id = request.GET.get("event") or request.POST.get("event")
@@ -72,23 +95,64 @@ def registration_form(request):
     if event_id:
         from apps.events.models import Event
         event = get_object_or_404(Event, pk=event_id)
+    if request.method == "POST":
+        prior = RegistrationSubmission.objects.select_related("participant", "event").filter(idempotency_key=request_key).first()
+        if prior:
+            if prior.event_id != (event.pk if event else None):
+                return render(request, "participants/registration_unavailable.html", {
+                    "event": event, "reason": "This form was already submitted for another event. Start a new registration."
+                }, status=409)
+            return _registration_complete(request, prior)
     approved = ConsentDocumentVersion.objects.filter(key="btw-intake", is_approved=True).order_by("-effective_at", "-version").first()
     if not version or not approved:
-        return render(request, "participants/registration_unavailable.html", {"event": event, "reason": "Registration is temporarily unavailable while BTW updates its approved consent information."}, status=503)
+        return render(request, "participants/registration_unavailable.html", {
+            "event": event, "reason": "Registration is temporarily unavailable while BTW updates its approved consent information."
+        }, status=503)
     questions = version.snapshot.get("questions", [])
     form = SnapshotRegistrationForm(request.POST or None, questions=questions, consent_document=approved)
     if request.method == "POST" and form.is_valid():
         data = form.cleaned_data
         age = age_for(data["date_of_birth"])
         classification = "minor" if age < 18 else "adult"
-        with transaction.atomic():
-            participant = Participant.objects.create(first_name=data.get("first_name", ""), last_name=data.get("last_name", ""), preferred_name=data.get("preferred_name", ""), contact_email=data.get("contact_email", ""), contact_phone=data.get("contact_phone", ""), city=data.get("city", ""), state=data.get("state", ""), postal_code=data.get("postal_code", ""), date_of_birth=data["date_of_birth"], life_stage=data.get("life_stage", ""), age_classification=classification)
-            ParticipantCareerProfile.objects.update_or_create(participant=participant, defaults={"employment_status": data.get("employment_status", ""), "career_interests": data.get("career_interests", ""), "willing_to_travel": data.get("willing_to_travel") == "yes", "education_training": data.get("education_training", ""), "skills_interests": data.get("certifications", "")})
-            answers = {k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in data.items() if k != "consent" and v not in (None, "", [])}
-            submission = RegistrationSubmission.objects.create(form_version=version, participant=participant, event=event, status=RegistrationSubmission.Status.SUBMITTED, answers=answers, answer_snapshot={"questions": questions, "answers": answers}, age_classification=classification, submitted_at=timezone.now())
-            ConsentAcceptance.objects.create(participant=participant, submission=submission, document=approved)
-        return render(request, "participants/registration_complete.html", {"participant": participant, "submission": submission, "legal_pending": False})
-    return render(request, "participants/registration_form.html", {"form": form, "event": event, "version": version, "consent_document": approved, "progress": 50})
+        try:
+            with transaction.atomic():
+                participant = Participant.objects.create(
+                    first_name=data.get("first_name", ""), last_name=data.get("last_name", ""),
+                    preferred_name=data.get("preferred_name", ""), contact_email=data.get("contact_email", ""),
+                    contact_phone=data.get("contact_phone", ""), city=data.get("city", ""),
+                    state=data.get("state", ""), postal_code=data.get("postal_code", ""),
+                    date_of_birth=data["date_of_birth"], life_stage=data.get("life_stage", ""),
+                    age_classification=classification,
+                )
+                ParticipantCareerProfile.objects.update_or_create(participant=participant, defaults={
+                    "employment_status": data.get("employment_status", ""),
+                    "career_interests": data.get("career_interests", ""),
+                    "willing_to_travel": data.get("willing_to_travel") == "yes",
+                    "education_training": data.get("education_training", ""),
+                    "skills_interests": data.get("certifications", ""),
+                })
+                answers = {k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in data.items() if k != "consent" and v not in (None, "", [])}
+                submission = RegistrationSubmission.objects.create(
+                    form_version=version, participant=participant, event=event,
+                    status=RegistrationSubmission.Status.SUBMITTED, answers=answers,
+                    answer_snapshot={"questions": questions, "answers": answers},
+                    age_classification=classification, submitted_at=timezone.now(),
+                    idempotency_key=request_key,
+                )
+                ConsentAcceptance.objects.create(participant=participant, submission=submission, document=approved,
+                    metadata={"document_version": approved.version, "pdf_sha256": approved.content_hash})
+                if event:
+                    register_participant(event=event, participant=participant, actor=None, source="public")
+        except IntegrityError:
+            prior = RegistrationSubmission.objects.filter(idempotency_key=request_key).first()
+            if prior is None:
+                raise
+            return _registration_complete(request, prior)
+        return _registration_complete(request, submission)
+    return render(request, "participants/registration_form.html", {
+        "form": form, "event": event, "version": version,
+        "consent_document": approved, "progress": 50, "registration_request_key": request_key,
+    })
 
 def _admin_only(request):
     if not request.user.is_authenticated:

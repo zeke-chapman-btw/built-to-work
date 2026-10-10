@@ -1,11 +1,12 @@
 from django.urls import path
-
 from . import views
-
 app_name = "events"
-
 urlpatterns = [
     path("ticket/<uuid:token>/", views.ticket_present, name="ticket_present"),
+    path("ticket/<uuid:token>/image/", views.ticket_image, name="ticket_image"),
+    path("ticket-number/<str:ticket_number>/", views.ticket_lookup, name="ticket_lookup"),
+    path("tickets/recovery/", views.ticket_recovery, name="ticket_recovery"),
+    path("tickets/<uuid:ticket_id>/reprint/", views.ticket_reprint, name="ticket_reprint"),
     path("", views.event_list, name="event_list"),
     path("create/", views.event_create, name="event_create"),
     path("<uuid:event_id>/stations/", views.event_station_assign, name="station_assign"),

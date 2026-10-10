@@ -1,6 +1,6 @@
 {% extends "internal/base.html" %}{% load tz %}
 {% block title %}Events | Built to Work{% endblock %}
-{% block content %}
+{% block content %}<p><a href="{% url 'events:ticket_recovery' %}">Staff ticket recovery</a></p>
 <style>
 .events-page{max-width:1180px;margin:auto}.events-head{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1.5rem}.events-head h1{margin:0}.events-table{width:100%;border-collapse:collapse}.events-table th,.events-table td{padding:.9rem;text-align:left;border-bottom:1px solid #e5e7eb}.events-table th{font-size:.78rem;text-transform:uppercase;color:#6b7280}.events-table a{color:#a51e2c;font-weight:600}.event-pill{display:inline-block;padding:.25rem .6rem;border-radius:1rem;background:#f3f4f6;font-size:.78rem}
 @media(max-width:720px){.events-head{align-items:flex-start;flex-direction:column}.events-table th:nth-child(3),.events-table td:nth-child(3){display:none}.events-table th,.events-table td{padding:.65rem .35rem;font-size:.9rem}}

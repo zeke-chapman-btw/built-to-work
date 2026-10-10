@@ -1,11 +1,16 @@
 from datetime import date, timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
+from apps.events.models import Event, EventRegistration, QrTicket
 
 from apps.participants.forms import RegistrationIntakeForm
 from apps.participants.models import (
+    ConsentAcceptance,
     ConsentDocumentVersion,
     Participant,
     RegistrationFormVersion,
@@ -92,6 +97,40 @@ class RegistrationIntakeTests(TestCase):
         self.client.post(reverse("participants:registration-form"), self.valid_data())
         self.client.post(reverse("participants:registration-form"), self.valid_data(contact_phone="555-0102", contact_email="other@example.com"))
         self.assertEqual(Participant.objects.count(), 2)
+
+    def test_repeated_event_form_submission_reuses_all_records(self):
+        now = timezone.now()
+        event = Event.objects.create(name="Retry Event", status=Event.Status.UPCOMING,
+                                     start_at=now + timedelta(hours=1), end_at=now + timedelta(hours=4))
+        url = reverse("participants:registration-form")
+        response = self.client.get(url, {"event": str(event.pk)})
+        self.assertEqual(response.status_code, 200)
+        key = response.context["registration_request_key"]
+        payload = self.valid_data(event=str(event.pk), registration_request_key=key)
+        self.assertEqual(self.client.post(url, payload).status_code, 200)
+        self.assertEqual(self.client.post(url, payload).status_code, 200)
+        self.assertEqual(Participant.objects.count(), 1)
+        self.assertEqual(RegistrationSubmission.objects.count(), 1)
+        self.assertEqual(ConsentAcceptance.objects.count(), 1)
+        self.assertEqual(EventRegistration.objects.count(), 1)
+        self.assertEqual(QrTicket.objects.count(), 1)
+
+    def test_ticket_issuance_failure_rolls_back_registration_and_consent(self):
+        now = timezone.now()
+        event = Event.objects.create(name="Allocation Failure Event", status=Event.Status.UPCOMING,
+                                     start_at=now + timedelta(hours=1), end_at=now + timedelta(hours=4))
+        url = reverse("participants:registration-form")
+        key = self.client.get(url, {"event": str(event.pk)}).context["registration_request_key"]
+        payload = self.valid_data(event=str(event.pk), registration_request_key=key)
+        with patch("apps.participants.registration_views.register_participant",
+                   side_effect=ValidationError("No ticket numbers remain")):
+            with self.assertRaises(ValidationError):
+                self.client.post(url, payload)
+        self.assertEqual(Participant.objects.count(), 0)
+        self.assertEqual(RegistrationSubmission.objects.count(), 0)
+        self.assertEqual(ConsentAcceptance.objects.count(), 0)
+        self.assertEqual(EventRegistration.objects.count(), 0)
+        self.assertEqual(QrTicket.objects.count(), 0)
 
     def test_start_screen_and_event_extension_point(self):
         self.assertEqual(self.client.get(reverse("participants:registration-start")).status_code, 200)

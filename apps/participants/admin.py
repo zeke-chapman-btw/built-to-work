@@ -1,4 +1,5 @@
 from django.contrib import admin
+from .consent_admin import ConsentAdminWorkflowMixin
 from .models import Participant, ParticipantAccount, ParticipantAccountRequest, ParticipantEmailChange, RegistrationForm, RegistrationFormVersion, RegistrationQuestion, RegistrationSubmission, ConsentDocumentVersion, ConsentAcceptance
 
 @admin.register(Participant)
@@ -53,9 +54,8 @@ class RegistrationSubmissionAdmin(admin.ModelAdmin):
     readonly_fields = ("answers", "answer_snapshot")
 
 @admin.register(ConsentDocumentVersion)
-class ConsentDocumentVersionAdmin(admin.ModelAdmin):
-    list_display = ("key", "version", "is_approved", "effective_at")
-
+class ConsentDocumentVersionAdmin(ConsentAdminWorkflowMixin, admin.ModelAdmin):
+    pass
 @admin.register(ConsentAcceptance)
 class ConsentAcceptanceAdmin(admin.ModelAdmin):
     list_display = ("participant", "document", "accepted_at")

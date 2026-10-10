@@ -1,5 +1,16 @@
 {% extends "internal/base.html" %}
 {% block title %}Event ticket | Built to Work{% endblock %}
 {% block content %}
-<main class="card" style="max-width:560px;margin:2rem auto;text-align:center"><h1>{{ event.name }}</h1><p>Your event ticket</p><img src="{{ ticket_qr_data }}" alt="Event QR ticket" style="width:min(300px,100%)"><p>Keep this code available for event check-in.</p>{% if already_checked_in %}<p><strong>Check-in is recorded.</strong></p>{% endif %}</main>
+<main class="card" style="max-width:620px;margin:2rem auto;text-align:center">
+  <p class="eyebrow">EVENT TICKET</p>
+  <h1>{{ event.name }}</h1>
+  <p>{{ ticket.registration.participant.preferred_name|default:ticket.registration.participant.first_name }} {{ ticket.registration.participant.last_name }}</p>
+  <p>{{ event.start_at|date:"F j, Y" }}</p>
+  <img src="{{ ticket_qr_data }}" alt="Event QR ticket" style="width:min(320px,100%)">
+  {% if ticket.ticket_number %}<p><strong>{{ ticket.ticket_number }}</strong></p>{% endif %}
+  <p>Screenshot this ticket now!</p>
+  <p><a class="button button-primary" href="{% url 'events:ticket_image' token=ticket.token %}" download="ticket-{{ ticket.ticket_number|default:ticket.token }}.png">Save Ticket Image</a></p>
+  <p class="muted">Keep this ticket available for event check-in.</p>
+  {% if already_checked_in %}<p><strong>Check-in is recorded.</strong></p>{% endif %}
+</main>
 {% endblock %}

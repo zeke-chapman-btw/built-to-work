@@ -1,3 +1,4 @@
+import uuid
 from base64 import b64encode
 from functools import wraps
 from io import BytesIO
@@ -35,7 +36,7 @@ def staff_required(view_func):
 
 def _ticket_qr_data(request, ticket):
     ticket_url = request.build_absolute_uri(reverse("events:ticket_present", kwargs={"token": ticket.token}))
-    image = qrcode.make(ticket_url, image_factory=SvgPathImage)
+    image = qrcode.make(f"tel:{ticket.ticket_number}" if ticket.ticket_number else ticket_url, image_factory=SvgPathImage)
     output = BytesIO()
     image.save(output)
     return "data:image/svg+xml;base64," + b64encode(output.getvalue()).decode("ascii")
@@ -216,6 +217,20 @@ def ticket_present(request, token):
         })
 
 
+def ticket_image(request, token):
+    from .ticket_renderer import ticket_png_bytes
+    resolution = resolve_ticket(token)
+    if resolution.status == "not_found":
+        raise Http404
+    if resolution.ticket is None:
+        raise Http404
+    ticket = resolution.ticket
+    if not ticket.ticket_number:
+        return HttpResponse("This legacy ticket needs staff assistance.", status=409)
+    response = HttpResponse(ticket_png_bytes(ticket), content_type="image/png")
+    response["Content-Disposition"] = f'inline; filename="ticket-{ticket.ticket_number or ticket.token}.png"'
+    return response
+
 @staff_required
 def event_station_assign(request, event_id):
     from apps.stations.models import EventStation
@@ -240,3 +255,52 @@ def event_station_assign(request, event_id):
         audit_action(actor=request.user, action="station.event_assignment.updated", instance=assignment, old_data=old_data, new_data={"enabled": assignment.enabled, "display_order": assignment.display_order})
     messages.success(request, "Station assigned to event." if created else "Station assignment updated.")
     return redirect("events:event_detail", event_id=event.pk)
+
+
+@staff_required
+def ticket_lookup(request, ticket_number):
+    from .models import QrTicket
+    ticket = get_object_or_404(QrTicket, ticket_number=ticket_number, is_current=True)
+    return redirect("events:ticket_present", token=ticket.token)
+
+
+@staff_required
+def ticket_recovery(request):
+    """Staff-only lookup; never creates or changes a ticket."""
+    from .models import QrTicket
+    query = request.GET.get('q', '').strip()[:120]
+    event_id = request.GET.get('event', '').strip()
+    tickets = QrTicket.objects.none()
+    if query or event_id:
+        tickets = QrTicket.objects.select_related('registration__participant', 'registration__event').filter(is_current=True)
+        if event_id:
+            try:
+                event = Event.objects.filter(pk=uuid.UUID(event_id)).first()
+            except ValueError:
+                event = None
+            tickets = tickets.filter(registration__event=event) if event else QrTicket.objects.none()
+        if query:
+            tickets = tickets.filter(
+                Q(ticket_number__icontains=query) |
+                Q(registration__participant__first_name__icontains=query) |
+                Q(registration__participant__last_name__icontains=query) |
+                Q(registration__participant__preferred_name__icontains=query) |
+                Q(registration__participant__contact_phone__icontains=query) |
+                Q(registration__participant__contact_email__icontains=query)
+            )
+        tickets = list(tickets.order_by('-issued_at')[:50])
+        for ticket in tickets:
+            audit_action(actor=request.user, action='ticket.recovery.viewed', instance=ticket)
+    return render(request, 'events/ticket_recovery.html', {
+        'page_title': 'Ticket recovery', 'tickets': tickets, 'query': query,
+        'event_id': event_id, 'events': Event.objects.order_by('-start_at')[:100],
+    })
+
+
+@staff_required
+def ticket_reprint(request, ticket_id):
+    if request.method != 'POST':
+        return HttpResponse(status=405)
+    ticket = get_object_or_404(QrTicket, pk=ticket_id, is_current=True)
+    audit_action(actor=request.user, action='ticket.recovery.reprinted', instance=ticket)
+    return redirect('events:ticket_image', token=ticket.token)

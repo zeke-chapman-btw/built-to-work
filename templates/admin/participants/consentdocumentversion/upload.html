@@ -1,0 +1,8 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>Upload consent PDF</h1>
+<p>Upload an unencrypted, text-based PDF. It will remain a draft until its displayed text has been reviewed and explicitly published.</p>
+<form method="post" enctype="multipart/form-data">{% csrf_token %}
+{{ form.as_p }}<input type="submit" value="Create draft">
+</form>
+{% endblock %}

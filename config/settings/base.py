@@ -96,6 +96,9 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+PRIVATE_CONSENT_ROOT = Path(os.environ.get("PRIVATE_CONSENT_ROOT", BASE_DIR / "private_consent_documents"))
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTHENTICATION_BACKENDS = [

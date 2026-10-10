@@ -9,3 +9,8 @@ htmlcov/
 staticfiles/
 # Development question uploads are runtime media; canonical review images live in static/kiosk/images/test-mode/.
 /assessment_questions/
+
+# Uploaded development media
+media/
+
+/private_consent_documents/

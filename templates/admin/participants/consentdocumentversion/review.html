@@ -1,0 +1,25 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>{{ document.title }} — version {{ document.version }}</h1>
+<p>Status: {% if document.is_approved %}Published{% elif document.text_verified_at %}Text verified, awaiting publication{% else %}Draft{% endif %}</p>
+<p>Original PDF SHA-256: <code>{{ document.content_hash }}</code></p>
+<p><a href="{{ pdf_url }}" target="_blank" rel="noopener">Open original PDF</a> · <a href="{{ preview_url }}">Preview participant view</a></p>
+{% if document.is_approved %}
+<h2>Published text</h2><div style="white-space:pre-wrap;max-width:70rem">{{ document.body }}</div>
+<p>Published by {{ document.published_by }} at {{ document.published_at }}.</p>
+{% else %}
+<h2>Review and correct extracted text</h2>
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="save">
+<textarea name="body" rows="24" style="width:min(100%,70rem)" required>{{ document.body }}</textarea>
+<p><button type="submit">Save text and open participant preview</button></p></form>
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="verify">
+<label><input type="checkbox" name="checked_against_pdf" required> I opened the original PDF and participant preview, and checked all displayed text against the PDF.</label>
+<p><button type="submit">Confirm text checked against PDF</button></p></form>
+{% if document.text_verified_at %}
+<p>Verified by {{ document.text_verified_by }} at {{ document.text_verified_at }}.</p>
+<form method="post" action="{{ publish_url }}">{% csrf_token %}
+<label><input type="checkbox" name="confirm_publish" required> Approve and publish this exact version for participant registration.</label>
+<p><button type="submit">Approve &amp; Publish</button></p></form>
+{% endif %}
+{% endif %}
+{% endblock %}

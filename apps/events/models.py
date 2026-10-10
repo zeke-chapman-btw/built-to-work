@@ -104,10 +104,40 @@ class EventRegistration(models.Model):
         return f"{self.participant} — {self.event}"
 
 
+class TicketAllocationBlock(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=32, unique=True)
+    start_number = models.BigIntegerField(unique=True)
+    end_number = models.BigIntegerField()
+    next_number = models.BigIntegerField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ("start_number",)
+    def clean(self):
+        super().clean()
+        if self.start_number < 0 or self.end_number > 9999999999 or self.start_number > self.end_number:
+            raise ValidationError("Ticket allocation block must contain ten-digit values.")
+        if not self.start_number <= self.next_number <= self.end_number + 1:
+            raise ValidationError("Ticket allocation counter is outside the block.")
+        overlap = type(self).objects.exclude(pk=self.pk).filter(
+            start_number__lte=self.end_number, end_number__gte=self.start_number
+        ).exists()
+        if overlap:
+            raise ValidationError("Ticket allocation blocks cannot overlap.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+    def __str__(self):
+        return self.name
+
+
 class QrTicket(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     registration = models.ForeignKey(EventRegistration, on_delete=models.PROTECT, related_name="tickets")
     token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    ticket_number = models.CharField(max_length=10, unique=True, null=True, blank=True)
     is_current = models.BooleanField(default=True)
     issued_at = models.DateTimeField(default=timezone.now)
     expires_at = models.DateTimeField()

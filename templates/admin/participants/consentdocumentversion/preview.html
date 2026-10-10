@@ -1,0 +1,9 @@
+{% extends "participants/registration_base.html" %}
+{% block title %}Consent preview — {{ document.title }}{% endblock %}
+{% block content %}
+<main class="reg-main"><p class="eyebrow">ADMIN PREVIEW — NOT PUBLISHED BY THIS ACTION</p>
+<h1 class="hero">{{ document.title }}</h1>
+<section class="card consent"><div class="consent-copy">{{ document.body|linebreaks }}</div>
+<label><input type="checkbox" disabled> I acknowledge this document</label></section>
+<p><a href="{{ review_url }}">Return to document review</a></p></main>
+{% endblock %}

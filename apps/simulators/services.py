@@ -167,7 +167,21 @@ def _ingest_atomic(*, submission_id, event_id, station_code, profile_id, profile
                 event=event, status=EventRegistration.Status.ACTIVE,
                 participant__contact_phone=normalized, participant__archived_at__isnull=True, participant__kind="person",
             )[:2])
-            if len(candidates) == 0:
+            # Accept current tickets via the kiosk's event-scoped resolver.
+            # Conflicting phone and ticket identities remain ambiguous.
+            from apps.events.services import resolve_ticket
+            ticket_resolution = resolve_ticket(normalized, expected_event=event)
+            ticket_statuses = {"valid", "already_checked_in"}
+            if ticket_resolution.status in ticket_statuses:
+                ticket_registration = ticket_resolution.ticket.registration
+                if ticket_registration.participant.archived_at is None:
+                    candidates = list({registration.pk: registration for registration in
+                                       [*candidates, ticket_registration]}.values())
+            # A known ticket for a different or ineligible Event must not
+            # fall back to an unrelated participant with the same phone digits.
+            if ticket_resolution.ticket is not None and ticket_resolution.status not in ticket_statuses:
+                reason = "unmatched_identifier"
+            elif len(candidates) == 0:
                 reason = "unmatched_identifier"
             elif len(candidates) > 1:
                 reason = "ambiguous_identifier"

@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from apps.core.models import AuditLog
 from .models import Attendance, Event, EventRegistration, QrTicket
+from .ticketing import allocate_ticket_number
 
 TICKET_GRACE = timedelta(hours=24)
 
@@ -63,7 +64,7 @@ def issue_ticket(*, registration, actor=None):
         current = QrTicket.objects.filter(registration=registration, is_current=True).first()
         if current:
             return current
-        ticket = QrTicket.objects.create(registration=registration, issued_by=actor, expires_at=_ticket_expiry(registration))
+        ticket = QrTicket.objects.create(registration=registration, ticket_number=allocate_ticket_number(), issued_by=actor, expires_at=_ticket_expiry(registration))
         audit_action(actor=actor, action="event.ticket.issued", instance=ticket, new_data={"registration_id": str(registration.pk), "expires_at": ticket.expires_at.isoformat()})
         return ticket
 
@@ -82,7 +83,7 @@ def reissue_ticket(*, registration, actor, reason="", expected_ticket_id=None):
         current.revoked_at = now
         current.reissue_reason = reason[:240]
         current.save(update_fields=("is_current", "revoked_at", "reissue_reason"))
-        replacement = QrTicket.objects.create(registration=registration, issued_by=actor, expires_at=_ticket_expiry(registration), reissue_reason=reason[:240])
+        replacement = QrTicket.objects.create(registration=registration, ticket_number=allocate_ticket_number(), issued_by=actor, expires_at=_ticket_expiry(registration), reissue_reason=reason[:240])
         current.superseded_by = replacement
         current.save(update_fields=("superseded_by",))
         audit_action(actor=actor, action="event.ticket.reissued", instance=replacement, new_data={"registration_id": str(registration.pk), "replaces_ticket_id": str(current.pk), "expires_at": replacement.expires_at.isoformat()}, reason=reason)
@@ -97,11 +98,16 @@ class TicketResolution:
 
 
 def resolve_ticket(token, *, expected_event=None):
+    raw_token = str(token).strip()
+    if raw_token.lower().startswith("tel:"):
+        raw_token = raw_token[4:]
+    ticket_qs = QrTicket.objects.select_related("registration__event", "registration__participant")
     try:
-        token = uuid.UUID(str(token))
+        token_uuid = uuid.UUID(raw_token)
     except (TypeError, ValueError, AttributeError):
-        return TicketResolution("not_found")
-    ticket = QrTicket.objects.select_related("registration__event", "registration__participant").filter(token=token).first()
+        ticket = ticket_qs.filter(ticket_number=raw_token, is_current=True).first()
+    else:
+        ticket = ticket_qs.filter(token=token_uuid).first()
     if ticket is None:
         return TicketResolution("not_found")
     registration = ticket.registration
