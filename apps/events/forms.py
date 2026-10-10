@@ -5,7 +5,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 
 from apps.participants.models import Participant
-from .models import Event, EventRegistration
+from .models import Event, EventGroup, EventRegistration
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M"
 
@@ -17,6 +17,8 @@ class EventForm(forms.ModelForm):
             "name", "code", "description", "start_at", "end_at", "timezone_name",
             "location_name", "address_line_1", "address_line_2", "city", "state",
             "postal_code", "country", "status", "allow_station_auto_check_in",
+            "registration_opens_at", "registration_closes_at", "registration_deadline_at",
+            "registration_capacity", "group_mode", "group_label",
         )
         widgets = {
             "start_at": forms.DateTimeInput(attrs={"type": "datetime-local"}, format=DATETIME_FORMAT),
@@ -76,10 +78,18 @@ class RegistrationForm(forms.Form):
         (EventRegistration.Source.WALK_IN, "Walk-in"),
     ), initial=EventRegistration.Source.STAFF)
     check_in_now = forms.BooleanField(required=False, label="Check in now")
+    group = forms.ModelChoiceField(queryset=EventGroup.objects.none(), required=False)
+    override_reason = forms.CharField(max_length=240, required=False, help_text="Required for a deadline or capacity exception.")
 
     def __init__(self, *args, **kwargs):
+        event = kwargs.pop("event", None)
         super().__init__(*args, **kwargs)
         self.fields["participant"].queryset = Participant.objects.filter(archived_at__isnull=True, kind=Participant.Kind.PERSON).order_by("last_name", "first_name")
+        if event is not None and event.group_mode != "disabled":
+            self.fields["group"].queryset = event.groups.filter(is_active=True).order_by("name")
+            self.fields["group"].label = event.group_label
+        else:
+            self.fields.pop("group")
         self.fields["participant"].label_from_instance = lambda person: f"{person.last_name}, {person.first_name} — {person.contact_email or person.contact_phone or 'no contact'}"
 
     def clean(self):

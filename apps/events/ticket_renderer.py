@@ -67,9 +67,33 @@ def ticket_png_bytes(ticket) -> bytes:
     draw.text((500, 255), fit(name, heading), font=heading, fill='#111111')
     draw.text((500, 325), fit(event.name, medium), font=medium, fill='#111111')
     draw.text((500, 378), event_date, font=body, fill='#333333')
+    if event.group_mode != 'disabled' and ticket.registration.group_id:
+        draw.text((500, 420), fit(f'{event.group_label}: {ticket.registration.group.name}', small), font=small, fill='#333333')
     draw.text((500, 465), 'TICKET NUMBER', font=small, fill='#555555')
     draw.text((500, 505), number, font=ImageFont.truetype(bold, 51), fill='#111111')
     draw.text((500, 595), 'Present this ticket at the BTW kiosk.', font=small, fill='#333333')
     output = BytesIO()
     canvas.save(output, format='PNG', optimize=True)
+    return output.getvalue()
+
+
+def bulk_ticket_pdf_bytes(tickets):
+    """Print-ready A4 sheets, six complete existing ticket images per page."""
+    from io import BytesIO
+    from PIL import Image
+
+    tickets = list(tickets)
+    if not tickets:
+        raise ValueError("Select at least one ticket.")
+    pages = []
+    for offset in range(0, len(tickets), 6):
+        page = Image.new("RGB", (2550, 3300), "white")
+        for slot, ticket in enumerate(tickets[offset:offset + 6]):
+            image = Image.open(BytesIO(ticket_png_bytes(ticket))).convert("RGB")
+            x = 130 + (slot % 2) * 1160
+            y = 480 + (slot // 2) * 850
+            page.paste(image, (x, y))
+        pages.append(page)
+    output = BytesIO()
+    pages[0].save(output, format="PDF", save_all=True, append_images=pages[1:], resolution=300.0)
     return output.getvalue()

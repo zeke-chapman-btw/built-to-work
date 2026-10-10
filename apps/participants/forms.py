@@ -111,10 +111,32 @@ import json
 
 class SnapshotRegistrationForm(forms.Form):
     """Participant intake form generated exclusively from an immutable published snapshot."""
-    def __init__(self, *args, questions=None, consent_document=None, **kwargs):
+    def __init__(self, *args, questions=None, consent_document=None, event=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.snapshot_questions = sorted(list(questions or []), key=lambda q: (q.get("position", 0), q.get("key", "")))
         self.consent_document = consent_document
+        self.event = event
+        if event is not None:
+            from apps.events.models import EventGroup
+            if event.group_mode != "disabled":
+                self.fields["event_group"] = forms.ModelChoiceField(
+                    queryset=EventGroup.objects.filter(event=event, is_active=True).order_by("name"),
+                    required=event.group_mode == "required", label=event.group_label,
+                    empty_label="Choose a group" if event.group_mode == "required" else "No group",
+                )
+            for question in event.registration_questions.filter(is_active=True).order_by("position", "id"):
+                field_name = f"event_answer_{question.key}"
+                label = question.label
+                if question.field_type == "long_text":
+                    field = forms.CharField(label=label, required=question.is_required, widget=forms.Textarea)
+                elif question.field_type == "single_choice":
+                    choices = [("", "Select one")] + [(str(item.get("value", "")), str(item.get("label", ""))) for item in question.options if isinstance(item, dict)]
+                    field = forms.ChoiceField(label=label, required=question.is_required, choices=choices)
+                elif question.field_type == "yes_no":
+                    field = forms.ChoiceField(label=label, required=question.is_required, choices=[("", "Select one"), ("yes", "Yes"), ("no", "No")])
+                else:
+                    field = forms.CharField(label=label, required=question.is_required, max_length=500)
+                self.fields[field_name] = field
         for q in self.snapshot_questions:
             key = q.get("key")
             if not key or key in self.fields:

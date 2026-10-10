@@ -87,7 +87,7 @@ def event_edit(request, event_id):
 @staff_required
 def event_detail(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
-    form = RegistrationForm(request.POST if request.method == "POST" and request.POST.get("action") == "register" else None)
+    form = RegistrationForm(request.POST if request.method == "POST" and request.POST.get("action") == "register" else None, event=event)
     if request.method == "POST" and request.POST.get("action") == "register" and form.is_valid():
         data = form.cleaned_data
         participant = data["participant"]
@@ -102,7 +102,8 @@ def event_detail(request, event_id):
                 participant = resolution.participant
         if participant is not None:
             try:
-                registration, created = register_participant(event=event, participant=participant, actor=request.user, source=data["source"])
+                registration, created = register_participant(event=event, participant=participant, actor=request.user, source=data["source"],
+                                                            group=data.get("group"), override_reason=data.get("override_reason", ""))
                 messages.success(request, "Participant registered and QR ticket issued." if created else "This participant is already actively registered for this event.")
                 if data["check_in_now"]:
                     _, checked_in = check_in_registration(registration=registration, actor=request.user, source=Attendance.Source.STAFF)
@@ -304,3 +305,56 @@ def ticket_reprint(request, ticket_id):
     ticket = get_object_or_404(QrTicket, pk=ticket_id, is_current=True)
     audit_action(actor=request.user, action='ticket.recovery.reprinted', instance=ticket)
     return redirect('events:ticket_image', token=ticket.token)
+
+
+@staff_required
+def registration_group_change(request, event_id, registration_id):
+    if request.method != "POST": return HttpResponse(status=405)
+    if not request.user.has_perm("events.change_eventregistration"): raise PermissionDenied
+    registration = get_object_or_404(EventRegistration, pk=registration_id, event_id=event_id)
+    group_id = request.POST.get("group", "").strip()
+    group = get_object_or_404(EventGroup, pk=group_id, event_id=event_id) if group_id else None
+    try:
+        _, changed = transfer_registration_group(registration=registration, destination=group, actor=request.user, override_reason=request.POST.get("override_reason", "").strip())
+        messages.success(request, "Group assignment updated." if changed else "Group assignment is unchanged.")
+    except ValidationError as exc:
+        messages.error(request, " ".join(exc.messages))
+    return redirect("events:registration_detail", event_id=event_id, registration_id=registration_id)
+
+@staff_required
+def registration_answers_correct(request, event_id, registration_id):
+    if request.method != "POST": return HttpResponse(status=405)
+    if not request.user.has_perm("events.change_eventregistration"): raise PermissionDenied
+    registration = get_object_or_404(EventRegistration, pk=registration_id, event_id=event_id)
+    answers = {key[7:]: value.strip() for key, value in request.POST.items() if key.startswith("answer_")}
+    try:
+        correct_registration_answers(registration=registration, answers=answers, actor=request.user, reason=request.POST.get("reason", ""))
+        messages.success(request, "Event-specific answers updated.")
+    except ValidationError as exc:
+        messages.error(request, " ".join(exc.messages))
+    return redirect("events:registration_detail", event_id=event_id, registration_id=registration_id)
+
+@staff_required
+def bulk_tickets(request, event_id):
+    if not request.user.has_perm("events.view_eventregistration"): raise PermissionDenied
+    from .ticket_renderer import bulk_ticket_pdf_bytes
+    event = get_object_or_404(Event, pk=event_id)
+    registrations = EventRegistration.objects.filter(event=event, status=EventRegistration.Status.ACTIVE).select_related("participant", "group")
+    if request.method == "GET":
+        return render(request, "events/bulk_tickets.html", {"event": event, "registrations": registrations, "groups": event.groups.order_by("name"), "page_title": "Bulk tickets"})
+    if request.method != "POST": return HttpResponse(status=405)
+    scope = request.POST.get("scope", "")
+    if scope == "group":
+        group = get_object_or_404(EventGroup, pk=request.POST.get("group", ""), event=event)
+        registrations = registrations.filter(group=group)
+    elif scope == "selected":
+        ids = request.POST.getlist("registrations")
+        if not ids or len(ids) > 1000: return HttpResponse("Select one or more participants.", status=400)
+        registrations = registrations.filter(pk__in=ids)
+    elif scope != "all": return HttpResponse("Choose a print scope.", status=400)
+    tickets = list(QrTicket.objects.filter(registration__in=registrations, is_current=True).select_related("registration__participant", "registration__event", "registration__group").order_by("registration__participant__last_name", "registration__participant__first_name"))
+    if not tickets: return HttpResponse("No current tickets are available for this selection.", status=400)
+    audit_action(actor=request.user, action="event.tickets.bulk_reprinted", instance=event, new_data={"scope": scope, "count": len(tickets), "ticket_ids": [str(ticket.pk) for ticket in tickets]})
+    response = HttpResponse(bulk_ticket_pdf_bytes(tickets), content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="{event.pk}-tickets.pdf"'
+    return response

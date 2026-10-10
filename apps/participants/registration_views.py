@@ -1,7 +1,7 @@
 import json
 import uuid
 from datetime import date
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
@@ -109,7 +109,7 @@ def registration_form(request):
             "event": event, "reason": "Registration is temporarily unavailable while BTW updates its approved consent information."
         }, status=503)
     questions = version.snapshot.get("questions", [])
-    form = SnapshotRegistrationForm(request.POST or None, questions=questions, consent_document=approved)
+    form = SnapshotRegistrationForm(request.POST or None, questions=questions, consent_document=approved, event=event)
     if request.method == "POST" and form.is_valid():
         data = form.cleaned_data
         age = age_for(data["date_of_birth"])
@@ -131,7 +131,14 @@ def registration_form(request):
                     "education_training": data.get("education_training", ""),
                     "skills_interests": data.get("certifications", ""),
                 })
-                answers = {k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in data.items() if k != "consent" and v not in (None, "", [])}
+                answers = {k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in data.items()
+                           if k not in ("consent", "event_group") and not k.startswith("event_answer_") and v not in (None, "", [])}
+                event_answers = {}
+                if event:
+                    for question in event.registration_questions.filter(is_active=True):
+                        answer = data.get(f"event_answer_{question.key}")
+                        if answer not in (None, "", []):
+                            event_answers[question.key] = {"label": question.label, "answer": answer}
                 submission = RegistrationSubmission.objects.create(
                     form_version=version, participant=participant, event=event,
                     status=RegistrationSubmission.Status.SUBMITTED, answers=answers,
@@ -142,13 +149,15 @@ def registration_form(request):
                 ConsentAcceptance.objects.create(participant=participant, submission=submission, document=approved,
                     metadata={"document_version": approved.version, "pdf_sha256": approved.content_hash})
                 if event:
-                    register_participant(event=event, participant=participant, actor=None, source="public")
+                    register_participant(event=event, participant=participant, actor=None, source="public",
+                                         group=data.get("event_group"), custom_answers=event_answers)
         except IntegrityError:
             prior = RegistrationSubmission.objects.filter(idempotency_key=request_key).first()
             if prior is None:
                 raise
             return _registration_complete(request, prior)
-        return _registration_complete(request, submission)
+        else:
+            return _registration_complete(request, submission)
     return render(request, "participants/registration_form.html", {
         "form": form, "event": event, "version": version,
         "consent_document": approved, "progress": 50, "registration_request_key": request_key,
