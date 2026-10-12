@@ -393,6 +393,33 @@ class ParticipantMatchReview(models.Model):
     resolution_note = models.CharField(max_length=240, blank=True)
 
 
+class ParticipantIdentityLink(models.Model):
+    """Reversible same-person link; source records retain their own participant UUID."""
+
+    review = models.OneToOneField(ParticipantMatchReview, on_delete=models.PROTECT, related_name="identity_link")
+    source_participant = models.ForeignKey(Participant, on_delete=models.PROTECT, related_name="source_identity_links")
+    candidate_participant = models.ForeignKey(Participant, on_delete=models.PROTECT, related_name="candidate_identity_links")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    reversed_at = models.DateTimeField(null=True, blank=True)
+    reversed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+
+
+class ParticipantMatchDecision(models.Model):
+    class Action(models.TextChoices):
+        SAME = "same", "Same person"
+        SEPARATE = "separate", "Keep separate"
+        REVERSE = "reverse", "Reverse link"
+
+    review = models.ForeignKey(ParticipantMatchReview, on_delete=models.PROTECT, related_name="decisions")
+    action = models.CharField(max_length=10, choices=Action.choices)
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    reason = models.CharField(max_length=500)
+    source_identity = models.UUIDField()
+    candidate_identity = models.UUIDField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 class BackupRecord(models.Model):
     class Status(models.TextChoices):
         SUCCEEDED = "succeeded", "Succeeded"

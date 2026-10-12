@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Participant match review</title>
+<style>body{font:16px system-ui,sans-serif;max-width:1100px;margin:2rem auto;padding:0 1rem;color:#171717}a{color:#a6192e}table{border-collapse:collapse;width:100%}th,td{padding:.7rem;text-align:left;border-bottom:1px solid #ddd}th{background:#f5f5f5}</style></head>
+<body><p><a href="{% url 'events:operations-dashboard' %}">Trailer operations</a></p><h1>Participant match review</h1>
+<p>Uncertain identities require a staff decision. A same-person decision links records without changing either participant UUID or their history.</p>
+<table><thead><tr><th>Event</th><th>Source name</th><th>Candidate</th><th>Status</th><th>Created</th><th></th></tr></thead><tbody>
+{% for review in reviews %}<tr><td>{{ review.envelope.preparation.event.name }}</td><td>{{ review.envelope.payload.participant.first_name }} {{ review.envelope.payload.participant.last_name }}</td><td>{{ review.candidate_participant.first_name }} {{ review.candidate_participant.last_name }}</td><td>{{ review.get_status_display }}</td><td>{{ review.envelope.created_at|date:"M j, Y H:i" }}</td><td><a href="{% url 'events:match-review-detail' review.id %}">Review</a></td></tr>
+{% empty %}<tr><td colspan="6">No match cases.</td></tr>{% endfor %}</tbody></table></body></html>

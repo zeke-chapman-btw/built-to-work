@@ -1,5 +1,6 @@
 """Encrypted, local database backups for trailer recovery."""
 import hashlib
+import json
 import os
 import sqlite3
 import tempfile
@@ -41,6 +42,7 @@ def _backup_root(database_path):
 def create_database_backup(trailer: TrailerInstance) -> BackupRecord:
     """Create a Fernet-encrypted, consistent snapshot of a file-backed SQLite DB."""
     destination = None
+    manifest_path = None
     record = None
     try:
         if "sqlite3" not in connection.settings_dict.get("ENGINE", ""):
@@ -69,6 +71,20 @@ def create_database_backup(trailer: TrailerInstance) -> BackupRecord:
         temp_path.write_bytes(encrypted)
         temp_path.chmod(0o600)
         os.replace(temp_path, destination)
+        # Encrypted authenticated sidecar binds portable metadata to this archive.
+        manifest_path = destination.with_suffix(".manifest.enc")
+        manifest = {
+            "format_version": 1,
+            "archive_name": destination.name,
+            "ciphertext_sha256": hashlib.sha256(encrypted).hexdigest(),
+            "trailer_identity": trailer.identity,
+            "trailer_id": str(trailer.pk),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        manifest_temp = manifest_path.with_suffix(".tmp")
+        manifest_temp.write_bytes(cipher.encrypt(json.dumps(manifest, sort_keys=True).encode("utf-8")))
+        manifest_temp.chmod(0o600)
+        os.replace(manifest_temp, manifest_path)
         record = BackupRecord.objects.create(
             trailer=trailer, storage_path=str(destination),
             ciphertext_hash=hashlib.sha256(encrypted).hexdigest(),
@@ -83,6 +99,9 @@ def create_database_backup(trailer: TrailerInstance) -> BackupRecord:
                 old_path = Path(previous.storage_path).resolve()
                 if old_path.is_relative_to(root) and old_path.is_file():
                     old_path.unlink()
+                    old_manifest = old_path.with_suffix(".manifest.enc")
+                    if old_manifest.is_file():
+                        old_manifest.unlink()
                 previous.status = BackupRecord.Status.EXPIRED
                 previous.storage_path = ""
                 previous.save(update_fields=["status", "storage_path"])
@@ -91,6 +110,8 @@ def create_database_backup(trailer: TrailerInstance) -> BackupRecord:
         if record is None:
             if destination and destination.exists():
                 destination.unlink()
+            if manifest_path and manifest_path.exists():
+                manifest_path.unlink()
             BackupRecord.objects.create(
                 trailer=trailer, storage_path="", ciphertext_hash="",
                 status=BackupRecord.Status.FAILED, error=str(exc)[:2000],

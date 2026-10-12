@@ -11,6 +11,7 @@ from django.db import connection
 from django.test import TestCase, TransactionTestCase
 
 from apps.events.backup_service import create_database_backup, restore_to_replacement
+from apps.events.portable_recovery import restore_portable_backup
 from apps.events.models import BackupRecord, TrailerInstance
 
 
@@ -75,6 +76,51 @@ class TrailerBackupTests(TransactionTestCase):
         with patch.dict(os.environ, {"BTW_TRAILER_BACKUP_KEY": Fernet.generate_key().decode("ascii")}):
             with self.assertRaises(InvalidToken):
                 restore_to_replacement(record, str(Path(self.storage.name) / "bad.sqlite3"), admin)
+    def test_portable_restore_binds_manifest_and_audits_recovered_database(self):
+        get_user_model().objects.create_superuser(username="portable-admin", password="test-only")
+        record = create_database_backup(self.trailer)
+        archive = Path(record.storage_path)
+        manifest = archive.with_suffix(".manifest.enc")
+        self.assertTrue(manifest.is_file())
+        self.assertNotIn(self.trailer.identity.encode(), manifest.read_bytes())
+        target = Path(self.storage.name) / "portable-restored.sqlite3"
+        restored = restore_portable_backup(
+            archive_path=archive, manifest_path=manifest, target_path=target,
+            admin_identifier="portable-admin", admin_password="test-only",
+        )
+        self.assertEqual(restored, target)
+        with sqlite3.connect(target) as db:
+            self.assertEqual(db.execute("SELECT identity FROM events_trailerinstance WHERE id=?",
+                                        (self.trailer.pk.hex,)).fetchone()[0], self.trailer.identity)
+            self.assertEqual(db.execute("SELECT COUNT(*) FROM core_auditlog WHERE action=?",
+                                        ("trailer_backup.portable_restore",)).fetchone()[0], 1)
+        with self.assertRaises(FileExistsError):
+            restore_portable_backup(
+                archive_path=archive, manifest_path=manifest, target_path=target,
+                admin_identifier="portable-admin", admin_password="test-only",
+            )
+        with self.assertRaises(PermissionError):
+            restore_portable_backup(
+                archive_path=archive, manifest_path=manifest,
+                target_path=Path(self.storage.name) / "unauthorized.sqlite3",
+                admin_identifier="portable-admin", admin_password="wrong",
+            )
+        damaged = Path(self.storage.name) / "changed.manifest.enc"
+        damaged.write_bytes(manifest.read_bytes() + b"tamper")
+        with self.assertRaises(ValueError):
+            restore_portable_backup(
+                archive_path=archive, manifest_path=damaged,
+                target_path=Path(self.storage.name) / "tampered.sqlite3",
+                admin_identifier="portable-admin", admin_password="test-only",
+            )
+        with patch.dict(os.environ, {"BTW_TRAILER_BACKUP_KEY": Fernet.generate_key().decode("ascii")}):
+            with self.assertRaises(InvalidToken):
+                restore_portable_backup(
+                    archive_path=archive, manifest_path=manifest,
+                    target_path=Path(self.storage.name) / "wrong-key.sqlite3",
+                    admin_identifier="portable-admin", admin_password="test-only",
+                )
+
     def test_retention_expires_old_ciphertext_and_preserves_metadata(self):
         with patch.dict(os.environ, {
             "BTW_BACKUP_FREQUENCY_MINUTES": "0",
@@ -86,6 +132,7 @@ class TrailerBackupTests(TransactionTestCase):
         first.refresh_from_db()
         self.assertEqual(first.status, BackupRecord.Status.EXPIRED)
         self.assertFalse(first_path.exists())
+        self.assertFalse(first_path.with_suffix(".manifest.enc").exists())
         self.assertEqual(first.storage_path, "")
         self.assertEqual(second.status, BackupRecord.Status.SUCCEEDED)
 from django.contrib.auth import get_user_model

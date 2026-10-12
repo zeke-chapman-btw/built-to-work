@@ -20,9 +20,13 @@ def build_sync_payload(item):
 @transaction.atomic
 def claim_sync_item(item_id):
     item = SyncOutboxItem.objects.select_for_update().select_related("preparation__trailer").get(pk=item_id)
-    if item.status not in (SyncOutboxItem.Status.PENDING, SyncOutboxItem.Status.FAILED):
+    now = timezone.now()
+    if item.status == SyncOutboxItem.Status.IN_FLIGHT:
+        if item.updated_at > now - timedelta(seconds=60):
+            return None
+    elif item.status not in (SyncOutboxItem.Status.PENDING, SyncOutboxItem.Status.FAILED):
         return None
-    if item.next_attempt_at and item.next_attempt_at > timezone.now():
+    elif item.next_attempt_at and item.next_attempt_at > now:
         return None
     item.status = SyncOutboxItem.Status.IN_FLIGHT
     item.attempts += 1
@@ -83,7 +87,7 @@ def authenticate_trailer(identity, raw_credential):
     return trailer
 
 
-def import_registration_if_safe(*, event, payload, participant=None, preparation=None):
+def import_registration_if_safe(*, event, payload, participant=None, preparation=None, reviewed_match=False):
     """Import one trailer registration without overwriting central identity data."""
     import uuid
     import re
@@ -173,7 +177,7 @@ def import_registration_if_safe(*, event, payload, participant=None, preparation
             if phone:
                 possible = possible | Participant.objects.filter(archived_at__isnull=True, contact_phone=phone)
             candidate = possible.exclude(identity_uuid=identity).first()
-            if candidate:
+            if candidate and not reviewed_match:
                 if preparation:
                     envelope, _ = OfflineRegistrationEnvelope.objects.get_or_create(
                         registration_id=registration_id,
@@ -188,12 +192,13 @@ def import_registration_if_safe(*, event, payload, participant=None, preparation
                         },
                     )
                     ParticipantMatchReview.objects.get_or_create(
-                        envelope=envelope, status=ParticipantMatchReview.Status.PENDING,
+                        envelope=envelope, status=ParticipantMatchReview.Status.OPEN,
                         defaults={"candidate_participant": candidate,
                                   "evidence": {"email_match": bool(email and candidate.contact_email.lower() == email.lower()),
                                                "phone_match": bool(phone and candidate.contact_phone == phone)}},
                     )
-                return None, "possible participant match requires authorized review; no records were merged"
+                envelope.status = OfflineRegistrationEnvelope.Status.REVIEW
+                envelope.save(update_fields=["status"])
 
         existing = EventRegistration.objects.filter(pk=registration_id).first()
         if existing and (existing.event_id != event.pk or existing.participant_id != getattr(participant, "pk", None)):
@@ -225,8 +230,10 @@ def import_registration_if_safe(*, event, payload, participant=None, preparation
         else:
             registration = existing
 
+        # Local integer IDs can collide across trailers. The registration UUID is global;
+        # original local IDs remain in the immutable receipt payload and consent metadata.
         submission, _ = RegistrationSubmission.objects.get_or_create(
-            pk=submission_id,
+            idempotency_key=f"offline:{registration_id}",
             defaults={
                 "form_version": form_version, "participant": participant, "event": event,
                 "status": RegistrationSubmission.Status.SUBMITTED,
@@ -234,21 +241,27 @@ def import_registration_if_safe(*, event, payload, participant=None, preparation
                 "answer_snapshot": submission_data.get("answer_snapshot") or form_version.snapshot,
                 "age_classification": submission_data.get("age_classification") or "",
                 "submitted_at": submitted_at, "source": "offline",
-                "idempotency_key": submission_data.get("idempotency_key") or f"offline:{registration_id}",
             },
         )
         if submission.participant_id != participant.pk or submission.event_id != event.pk:
+            transaction.set_rollback(True)
             return None, "submission identity belongs to another participant or event"
-
-        acceptance, _ = ConsentAcceptance.objects.get_or_create(
-            pk=consent_id,
-            defaults={"participant": participant, "submission": submission,
-                      "document": document, "accepted_at": accepted_at,
-                      "metadata": consent_data.get("metadata") or {"source": "offline_sync"}},
-        )
-        if acceptance.participant_id != participant.pk or acceptance.document_id != document.pk:
+        acceptance = ConsentAcceptance.objects.filter(submission=submission).first()
+        if acceptance is None:
+            origin = {
+                "trailer_identity": preparation.trailer.identity if preparation else "",
+                "source_submission_id": submission_id,
+                "source_acceptance_id": consent_id,
+            }
+            acceptance = ConsentAcceptance.objects.create(
+                participant=participant, submission=submission, document=document,
+                metadata={**(consent_data.get("metadata") or {}), "offline_origin": origin},
+            )
+            ConsentAcceptance.objects.filter(pk=acceptance.pk).update(accepted_at=accepted_at)
+        if (acceptance.participant_id != participant.pk or acceptance.document_id != document.pk
+                or acceptance.submission_id != submission.pk):
+            transaction.set_rollback(True)
             return None, "consent acceptance identity conflicts with existing evidence"
-
         if QrTicket.objects.filter(ticket_number=number).exclude(registration=registration).exists():
             transaction.set_rollback(True)
             return None, "ticket number is already allocated to another central registration"

@@ -15,3 +15,7 @@ Staff can inspect aggregate queue/receipt status at /events/sync/status/.
 The receiving API and outbox helpers are implemented in this repository, but a separate trailer and central deployment have not yet been exercised together. Per-trailer credential provisioning, a production worker/scheduler, and full participant/registration import reconciliation remain 7C-4B follow-up work. The current API deliberately fails closed when BTW_SYNC_API_TOKEN is unset.
 
 Build 7C-4C will cover recovery communications and operator-facing conflict resolution.
+
+## Additional virtual integration coverage (uncommitted development pass)
+
+python scripts/build_7c4b_virtual_integration.py uses independent SQLite databases and real HTTP requests. It now verifies an unavailable central server while the trailer continues registering, durable outbox state across worker restarts, delivery after reconnection, lost acknowledgment replay, two trailers with distinct credentials and reserved ticket ranges, cross-trailer/cross-event rejection, and an uncertain match stored as an OPEN review without merging the source participant. The source registration and original ticket remain usable while staff review is pending. The staff resolution and replacement-trailer recovery paths are documented in BUILD_7C4C_OPERATIONAL_FOUNDATION.md. SQLite does not validate PostgreSQL row-lock behavior; the PostgreSQL-only concurrency test remains a separate deployment check.
