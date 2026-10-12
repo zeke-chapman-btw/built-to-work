@@ -61,3 +61,59 @@ class EventRegistrationQuestionAdmin(admin.ModelAdmin):
     list_display = ("label", "event", "key", "is_required", "is_active", "position")
     list_filter = ("event", "is_required", "is_active")
     search_fields = ("label", "key", "event__name")
+
+
+# Build 7C-4C operational records are read-only in Django Admin.
+from django.contrib import admin as operational_admin
+from .models import BackupRecord, ParticipantMatchReview, TicketDelivery
+
+
+@operational_admin.register(BackupRecord)
+class BackupRecordAdmin(operational_admin.ModelAdmin):
+    list_display = ("trailer", "status", "created_at", "completed_at")
+    list_filter = ("status", "trailer")
+    readonly_fields = tuple(field.name for field in BackupRecord._meta.fields)
+    ordering = ("-created_at",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return bool(obj and super().has_view_permission(request, obj))
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@operational_admin.register(TicketDelivery)
+class TicketDeliveryAdmin(operational_admin.ModelAdmin):
+    list_display = ("registration", "channel", "status", "attempts", "created_at", "sent_at")
+    list_filter = ("channel", "status")
+    readonly_fields = tuple(field.name for field in TicketDelivery._meta.fields)
+    ordering = ("-created_at",)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return bool(obj and super().has_view_permission(request, obj))
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@operational_admin.register(ParticipantMatchReview)
+class ParticipantMatchReviewAdmin(operational_admin.ModelAdmin):
+    list_display = ("envelope", "candidate_participant", "status", "reviewed_by", "reviewed_at")
+    list_filter = ("status",)
+    readonly_fields = tuple(field.name for field in ParticipantMatchReview._meta.fields)
+    ordering = ("status", "id")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return bool(obj and super().has_view_permission(request, obj))
+
+    def has_delete_permission(self, request, obj=None):
+        return False

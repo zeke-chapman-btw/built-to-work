@@ -397,6 +397,7 @@ class BackupRecord(models.Model):
     class Status(models.TextChoices):
         SUCCEEDED = "succeeded", "Succeeded"
         FAILED = "failed", "Failed"
+        EXPIRED = "expired", "Expired"
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     trailer = models.ForeignKey(TrailerInstance, on_delete=models.PROTECT, related_name="backups")
     storage_path = models.CharField(max_length=500)

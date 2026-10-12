@@ -5,3 +5,4 @@ qrcode>=7.4,<9
 pypdf>=5,<7
 Pillow>=11,<13
 CairoSVG>=2.7,<3
+cryptography>=42

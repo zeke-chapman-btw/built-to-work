@@ -33,3 +33,7 @@ urlpatterns += [
     path("sync/ingest/", sync_views.sync_ingest, name="sync-ingest"),
     path("sync/status/", sync_views.sync_status, name="sync-status"),
 ]
+
+
+from . import operations_views
+urlpatterns += [path("operations/", operations_views.operations_dashboard, name="operations-dashboard")]
