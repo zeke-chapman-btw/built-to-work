@@ -74,7 +74,7 @@ def register_participant(*, event, participant, actor, source=EventRegistration.
                 raise ValidationError("Choose an active group for this event.")
         if event.group_mode == "disabled" and group is not None:
             raise ValidationError("Group selection is disabled for this event.")
-        if event.group_mode == "required" and group is None and source == EventRegistration.Source.PUBLIC:
+        if event.group_mode == "required" and group is None and source in (EventRegistration.Source.PUBLIC, EventRegistration.Source.ONLINE):
             raise ValidationError("Choose a group to continue.")
         override = _authorized_override(actor, override_reason)
         window_error = _registration_window_error(event, group, timezone.now())

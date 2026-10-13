@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from . import offline_views
 from . import sync_views
+from . import public_views
 app_name = "events"
 urlpatterns = [
  path("offline/", offline_views.offline_preparations, name="offline-preparations"),
@@ -19,6 +20,8 @@ urlpatterns = [
  path("", views.event_list, name="event_list"),
  path("create/", views.event_create, name="event_create"),
  path("<uuid:event_id>/tickets/bulk/", views.bulk_tickets, name="bulk_tickets"),
+ path("<uuid:event_id>/public/", public_views.public_settings, name="public-settings"),
+ path("<uuid:event_id>/public/qr.png", public_views.public_link_qr, name="public-link-qr"),
  path("<uuid:event_id>/registrations/<uuid:registration_id>/group/", views.registration_group_change, name="registration_group_change"),
  path("<uuid:event_id>/registrations/<uuid:registration_id>/answers/", views.registration_answers_correct, name="registration_answers_correct"),
  path("<uuid:event_id>/stations/", views.event_station_assign, name="station_assign"),

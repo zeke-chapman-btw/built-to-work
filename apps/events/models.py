@@ -42,6 +42,8 @@ class Event(models.Model):
     registration_capacity = models.PositiveIntegerField(null=True, blank=True)
     group_mode = models.CharField(max_length=12, choices=(("disabled", "Disabled"), ("optional", "Optional"), ("required", "Required")), default="disabled")
     group_label = models.CharField(max_length=80, default="Group")
+    public_registration_status = models.CharField(max_length=10, choices=(("disabled", "Disabled"), ("open", "Open"), ("paused", "Paused"), ("closed", "Closed")), default="disabled")
+    public_consent_document = models.ForeignKey("participants.ConsentDocumentVersion", null=True, blank=True, on_delete=models.PROTECT, related_name="public_events")
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="created_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -82,6 +84,17 @@ class Event(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class EventPublicSlug(models.Model):
+    """One globally unique slug per current or historical public Event URL."""
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="public_slugs")
+    slug = models.SlugField(max_length=100, unique=True)
+    is_current = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("event",), condition=Q(is_current=True), name="one_current_public_slug_per_event")]
 
 
 class EventGroup(models.Model):
@@ -132,6 +145,7 @@ class EventRegistration(models.Model):
 
     class Source(models.TextChoices):
         PUBLIC = "public", "Public registration"
+        ONLINE = "online", "Online pre-registration"
         STAFF = "staff", "Staff registration"
         WALK_IN = "walk_in", "Walk-in"
         IMPORT = "import", "Import"

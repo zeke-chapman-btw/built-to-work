@@ -80,7 +80,7 @@ def _registration_complete(request, submission):
     })
 
 
-def registration_form(request):
+def registration_form(request, *, fixed_event=None, public=False):
     # The rendered form carries a request key; resubmitting that form is idempotent.
     # Legacy/API POSTs without a key remain independent submissions.
     submitted_key = request.POST.get("registration_request_key", "") if request.method == "POST" else ""
@@ -88,10 +88,12 @@ def registration_form(request):
         request_key = uuid.UUID(submitted_key).hex if submitted_key else uuid.uuid4().hex
     except ValueError:
         return HttpResponseBadRequest("Invalid registration request key.")
+    if public and request.method == "POST" and not submitted_key:
+        return HttpResponseBadRequest("A registration request key is required.")
     form_model = standard_form()
     version = published_version(form_model)
-    event_id = request.GET.get("event") or request.POST.get("event")
-    event = None
+    event_id = None if fixed_event is not None else (request.GET.get("event") or request.POST.get("event"))
+    event = fixed_event
     if event_id:
         from apps.events.models import Event
         event = get_object_or_404(Event, pk=event_id)
@@ -103,19 +105,37 @@ def registration_form(request):
                     "event": event, "reason": "This form was already submitted for another event. Start a new registration."
                 }, status=409)
             return _registration_complete(request, prior)
-    approved = ConsentDocumentVersion.objects.filter(key="btw-intake", is_approved=True).order_by("-effective_at", "-version").first()
+    approved = (event.public_consent_document if public and event else
+                ConsentDocumentVersion.objects.filter(key="btw-intake", is_approved=True).order_by("-effective_at", "-version").first())
+    if approved and not approved.is_approved:
+        approved = None
     if not version or not approved:
         return render(request, "participants/registration_unavailable.html", {
             "event": event, "reason": "Registration is temporarily unavailable while BTW updates its approved consent information."
         }, status=503)
+    if public and request.method == "POST" and request.POST.get("consent_document_id") != str(approved.pk):
+        return render(request, "participants/registration_unavailable.html", {
+            "event": event, "reason": "The consent information changed. Please reload and review it before registering."
+        }, status=409)
     questions = version.snapshot.get("questions", [])
     form = SnapshotRegistrationForm(request.POST or None, questions=questions, consent_document=approved, event=event)
     if request.method == "POST" and form.is_valid():
+        from apps.events.models import EventRegistration
         data = form.cleaned_data
         age = age_for(data["date_of_birth"])
         classification = "minor" if age < 18 else "adult"
         try:
             with transaction.atomic():
+                if public:
+                    from apps.events.models import Event
+                    event = Event.objects.select_for_update().get(pk=event.pk)
+                    current_document = ConsentDocumentVersion.objects.select_for_update().get(pk=approved.pk)
+                    if (not current_document.is_approved or not current_document.body.strip()
+                        or (current_document.effective_at and current_document.effective_at > timezone.now())
+                            or event.status != Event.Status.UPCOMING or event.public_registration_status != "open"
+                            or not event.registration_is_open or event.end_at < timezone.now()
+                            or event.public_consent_document_id != approved.pk or not approved.is_approved):
+                        raise ValidationError("Registration is no longer available. Please reload this page.")
                 participant = Participant.objects.create(
                     first_name=data.get("first_name", ""), last_name=data.get("last_name", ""),
                     preferred_name=data.get("preferred_name", ""), contact_email=data.get("contact_email", ""),
@@ -139,17 +159,24 @@ def registration_form(request):
                         answer = data.get(f"event_answer_{question.key}")
                         if answer not in (None, "", []):
                             event_answers[question.key] = {"label": question.label, "answer": answer}
+                event_questions = ([{"key": q.key, "label": q.label, "field_type": q.field_type,
+                                     "options": q.options, "required": q.is_required, "position": q.position}
+                                    for q in event.registration_questions.filter(is_active=True).order_by("position", "id")]
+                                   if event else [])
                 submission = RegistrationSubmission.objects.create(
                     form_version=version, participant=participant, event=event,
                     status=RegistrationSubmission.Status.SUBMITTED, answers=answers,
-                    answer_snapshot={"questions": questions, "answers": answers},
+                    answer_snapshot={"questions": questions, "answers": answers, "event_questions": event_questions,
+                                     "event_answers": event_answers, "event_group_id": str(data["event_group"].pk) if data.get("event_group") else None},
+                    source="public_online" if public else "public",
                     age_classification=classification, submitted_at=timezone.now(),
                     idempotency_key=request_key,
                 )
                 ConsentAcceptance.objects.create(participant=participant, submission=submission, document=approved,
-                    metadata={"document_version": approved.version, "pdf_sha256": approved.content_hash})
+                    metadata={"document_version": approved.version, "pdf_sha256": approved.content_hash,
+                              "source": "public_online" if public else "public"})
                 if event:
-                    event_registration, created = register_participant(event=event, participant=participant, actor=None, source="public",
+                    event_registration, created = register_participant(event=event, participant=participant, actor=None, source=EventRegistration.Source.ONLINE if public else EventRegistration.Source.PUBLIC,
                                          group=data.get("event_group"), custom_answers=event_answers)
                     if created:
                         event_registration.ticket_email_opt_in = bool(data.get("ticket_email_opt_in"))
@@ -164,11 +191,16 @@ def registration_form(request):
             if prior is None:
                 raise
             return _registration_complete(request, prior)
+        except ValidationError as exc:
+            if not public:
+                raise
+            form.add_error(None, exc)
         else:
             return _registration_complete(request, submission)
     return render(request, "participants/registration_form.html", {
         "form": form, "event": event, "version": version,
         "consent_document": approved, "progress": 50, "registration_request_key": request_key,
+        "public_registration": public,
     })
 
 def _admin_only(request):
