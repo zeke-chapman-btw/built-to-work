@@ -117,3 +117,39 @@ class ParticipantMatchReviewAdmin(operational_admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+from .models import OperationalIncident, OperationalNotificationDelivery, OperationalNotificationRule
+
+@operational_admin.register(OperationalNotificationRule)
+class OperationalNotificationRuleAdmin(operational_admin.ModelAdmin):
+    list_display = ("kind", "event", "enabled", "updated_at")
+    list_filter = ("kind", "enabled")
+    fields = ("event", "kind", "enabled", "channels", "recipients")
+
+@operational_admin.register(OperationalIncident)
+class OperationalIncidentAdmin(operational_admin.ModelAdmin):
+    list_display = ("kind", "event", "status", "occurrences", "last_seen_at")
+    list_filter = ("kind", "status")
+    readonly_fields = ("fingerprint", "event", "kind", "summary", "occurrences", "created_at", "last_seen_at", "resolved_at")
+    fields = ("status",) + readonly_fields
+
+    def has_add_permission(self, request):
+        return False
+
+    def save_model(self, request, obj, form, change):
+        from django.utils import timezone
+        obj.resolved_at = timezone.now() if obj.status == OperationalIncident.Status.RESOLVED else None
+        super().save_model(request, obj, form, change)
+
+@operational_admin.register(OperationalNotificationDelivery)
+class OperationalNotificationDeliveryAdmin(operational_admin.ModelAdmin):
+    list_display = ("incident", "channel", "status", "attempts", "created_at", "sent_at")
+    list_filter = ("channel", "status")
+    readonly_fields = tuple(field.name for field in OperationalNotificationDelivery._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

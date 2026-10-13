@@ -42,6 +42,14 @@ def record_sync_failure(item_id, error, *, max_delay_seconds=3600):
     item.last_error = str(error)[:2000]
     item.next_attempt_at = timezone.now() + timedelta(seconds=delay)
     item.save(update_fields=["status", "last_error", "next_attempt_at", "updated_at"])
+    from .communications import emit_incident
+    from .models import Event, OperationalNotificationRule
+    event = item.preparation.event
+    if isinstance(event, Event):
+        emit_incident(kind=OperationalNotificationRule.Kind.SYNC_FAILURE,
+                      fingerprint=str(item.preparation_id),
+                      summary="Trailer synchronization is failing; queued registrations remain stored locally.",
+                      event=event)
     return item
 
 

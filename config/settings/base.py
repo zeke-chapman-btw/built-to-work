@@ -109,3 +109,16 @@ AUTHENTICATION_BACKENDS = [
 # The local capture API is disabled until a private LAN helper token is configured.
 SIMULATOR_INGESTION_TOKEN = os.environ.get("SIMULATOR_INGESTION_TOKEN", "")
 SIMULATOR_TEST_IDENTIFIER = os.environ.get("SIMULATOR_TEST_IDENTIFIER", "0000000000")
+
+# Trailer communications use deployment-provided providers. No real sends occur
+# until the sender and transport settings are configured.
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "25"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "false").lower() == "true"
+BTW_TICKET_EMAIL_FROM = os.environ.get("BTW_TICKET_EMAIL_FROM", "")
+BTW_SMS_PROVIDER_URL = os.environ.get("BTW_SMS_PROVIDER_URL", "")
+BTW_SMS_PROVIDER_TOKEN = os.environ.get("BTW_SMS_PROVIDER_TOKEN", "")
+BTW_CENTRAL_SYNC_URL = os.environ.get("BTW_CENTRAL_SYNC_URL", "")

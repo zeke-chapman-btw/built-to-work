@@ -117,6 +117,8 @@ class SnapshotRegistrationForm(forms.Form):
         self.consent_document = consent_document
         self.event = event
         if event is not None:
+            self.fields["ticket_email_opt_in"] = forms.BooleanField(required=False, label="Email my event ticket")
+            self.fields["ticket_sms_opt_in"] = forms.BooleanField(required=False, label="Text my event ticket")
             from apps.events.models import EventGroup
             if event.group_mode != "disabled":
                 self.fields["event_group"] = forms.ModelChoiceField(
@@ -198,4 +200,8 @@ class SnapshotRegistrationForm(forms.Form):
         if data.get("construction_experience") != "yes": data["years_experience"] = None
         if data.get("willing_to_travel") != "yes": data["travel_distance"] = None
         if data.get("current_industry") != "other": data["industry_other"] = ""
+        if data.get("ticket_email_opt_in") and not data.get("contact_email"):
+            self.add_error("contact_email" if "contact_email" in self.fields else "ticket_email_opt_in", "Email is required for ticket delivery.")
+        if data.get("ticket_sms_opt_in") and not data.get("contact_phone"):
+            self.add_error("contact_phone" if "contact_phone" in self.fields else "ticket_sms_opt_in", "Phone is required for ticket delivery.")
         return data

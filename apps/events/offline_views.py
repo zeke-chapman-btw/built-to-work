@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from PIL import Image
 
 from .models import OfflineEventPreparation, OfflineRegistrationEnvelope, EventRegistration
-from .offline import check_offline_readiness, activate_offline, create_offline_registration
+from .offline import check_offline_readiness, activate_offline, create_offline_registration, TicketRangeExhausted
 from .ticket_renderer import ticket_png_bytes
 from .views import staff_required
 
@@ -17,7 +17,17 @@ class OfflineRegistrationForm(forms.Form):
     last_name = forms.CharField(max_length=120, label="Last name")
     contact_email = forms.EmailField(required=False, label="Email")
     contact_phone = forms.CharField(max_length=40, required=False, label="Phone")
+    ticket_email_opt_in = forms.BooleanField(required=False, label="Email my ticket")
+    ticket_sms_opt_in = forms.BooleanField(required=False, label="Text my ticket")
     consent_ack = forms.BooleanField(required=True, label="I agree to the approved consent document")
+
+    def clean(self):
+        data = super().clean()
+        if data.get("ticket_email_opt_in") and not data.get("contact_email"):
+            self.add_error("contact_email", "Email is required to receive a ticket by email.")
+        if data.get("ticket_sms_opt_in") and not data.get("contact_phone"):
+            self.add_error("contact_phone", "Phone is required to receive a ticket by text.")
+        return data
 
     def __init__(self, *args, preparation=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -29,7 +39,7 @@ class OfflineRegistrationForm(forms.Form):
             label="Group",
         )
         self.question_definitions = list(
-            preparation.event.registration_questions.filter(is_active=True).order_by("position", "created_at")
+            preparation.event.registration_questions.filter(is_active=True).order_by("position", "id")
         )
         for question in self.question_definitions:
             options = question.options if isinstance(question.options, list) else []
@@ -82,6 +92,17 @@ def offline_register(request, preparation_id):
         try:
             _, registration, ticket, envelope = create_offline_registration(preparation=preparation, actor=request.user, data=data)
             return redirect("events:offline-ticket-png", envelope_id=envelope.pk)
+        except TicketRangeExhausted as exc:
+            from .communications import emit_incident
+            from .models import OperationalNotificationRule
+
+            emit_incident(
+                kind=OperationalNotificationRule.Kind.TICKET_EXHAUSTED,
+                fingerprint=str(preparation.pk),
+                summary="All reserved offline ticket ranges are exhausted.",
+                event=preparation.event,
+            )
+            form.add_error(None, str(exc))
         except ValidationError as exc:
             form.add_error(None, str(exc))
     return render(request, "events/offline_register.html", {"preparation": preparation, "form": form})

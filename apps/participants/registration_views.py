@@ -149,8 +149,16 @@ def registration_form(request):
                 ConsentAcceptance.objects.create(participant=participant, submission=submission, document=approved,
                     metadata={"document_version": approved.version, "pdf_sha256": approved.content_hash})
                 if event:
-                    register_participant(event=event, participant=participant, actor=None, source="public",
+                    event_registration, created = register_participant(event=event, participant=participant, actor=None, source="public",
                                          group=data.get("event_group"), custom_answers=event_answers)
+                    if created:
+                        event_registration.ticket_email_opt_in = bool(data.get("ticket_email_opt_in"))
+                        event_registration.ticket_sms_opt_in = bool(data.get("ticket_sms_opt_in"))
+                        if event_registration.ticket_email_opt_in or event_registration.ticket_sms_opt_in:
+                            event_registration.ticket_communication_opt_in_at = timezone.now()
+                        event_registration.save(update_fields=["ticket_email_opt_in", "ticket_sms_opt_in", "ticket_communication_opt_in_at"])
+                        from apps.events.communications import queue_ticket_delivery
+                        queue_ticket_delivery(event_registration)
         except IntegrityError:
             prior = RegistrationSubmission.objects.filter(idempotency_key=request_key).first()
             if prior is None:

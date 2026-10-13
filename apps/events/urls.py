@@ -38,6 +38,7 @@ urlpatterns += [
 from . import operations_views, reconciliation_views
 urlpatterns += [
     path("operations/", operations_views.operations_dashboard, name="operations-dashboard"),
+    path("operations/deliveries/<uuid:delivery_id>/retry/", operations_views.retry_ticket_delivery, name="retry-ticket-delivery"),
     path("operations/matches/", reconciliation_views.match_review_list, name="match-review-list"),
     path("operations/matches/<uuid:review_id>/", reconciliation_views.match_review_detail, name="match-review-detail"),
     path("operations/matches/<uuid:review_id>/resolve/", reconciliation_views.match_review_resolve, name="match-review-resolve"),

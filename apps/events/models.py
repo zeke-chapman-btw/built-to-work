@@ -1,8 +1,10 @@
 import uuid
+import re
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db import models
 from django.db.models import F, Q
 from django.utils import timezone
@@ -142,6 +144,9 @@ class EventRegistration(models.Model):
     custom_answers = models.JSONField(default=dict, blank=True)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.ACTIVE)
     source = models.CharField(max_length=12, choices=Source.choices, default=Source.STAFF)
+    ticket_email_opt_in = models.BooleanField(default=False)
+    ticket_sms_opt_in = models.BooleanField(default=False)
+    ticket_communication_opt_in_at = models.DateTimeField(null=True, blank=True)
     registered_at = models.DateTimeField(default=timezone.now)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="created_event_registrations")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -370,6 +375,9 @@ class TicketDelivery(models.Model):
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.QUEUED)
     provider_reference = models.CharField(max_length=160, blank=True)
     attempts = models.PositiveIntegerField(default=0)
+    next_attempt_at = models.DateTimeField(null=True, blank=True)
+    last_attempt_at = models.DateTimeField(null=True, blank=True)
+    idempotency_key = models.CharField(max_length=100, blank=True)
     last_error = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     sent_at = models.DateTimeField(null=True, blank=True)
@@ -418,6 +426,97 @@ class ParticipantMatchDecision(models.Model):
     source_identity = models.UUIDField()
     candidate_identity = models.UUIDField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class OperationalNotificationRule(models.Model):
+    """An event row overrides the global rule for the same incident kind."""
+    class Kind(models.TextChoices):
+        BACKUP_FAILURE = "backup_failure", "Backup failure"
+        SYNC_FAILURE = "sync_failure", "Synchronization failure"
+        TICKET_EXHAUSTED = "ticket_exhausted", "Ticket range exhausted"
+        OTHER = "other", "Other critical issue"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey(Event, null=True, blank=True, on_delete=models.CASCADE)
+    kind = models.CharField(max_length=24, choices=Kind.choices)
+    enabled = models.BooleanField(default=True)
+    channels = models.JSONField(default=list, blank=True)
+    recipients = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=("event", "kind"), condition=Q(event__isnull=False), name="unique_event_alert_rule"),
+            models.UniqueConstraint(fields=("kind",), condition=Q(event__isnull=True), name="unique_global_alert_rule"),
+        ]
+
+    def clean(self):
+        super().clean()
+        if not isinstance(self.channels, list) or any(not isinstance(item, str) for item in self.channels) or not set(self.channels) <= {"email", "sms"}:
+            raise ValidationError("Choose email and/or SMS channels.")
+        if not isinstance(self.recipients, list) or any(not isinstance(item, str) or not item.strip() for item in self.recipients):
+            raise ValidationError("Recipients must be nonempty addresses or phone numbers.")
+        if self.enabled:
+            if not self.channels or not self.recipients:
+                raise ValidationError("Enabled rules need channels and recipients.")
+            if "email" in self.channels:
+                if not any(self._valid_email(item) for item in self.recipients):
+                    raise ValidationError("Email alerts need a valid email recipient.")
+            if "sms" in self.channels and not any(re.fullmatch(r"\+?[0-9]{10,15}", item.strip()) for item in self.recipients):
+                raise ValidationError("SMS alerts need a valid phone recipient.")
+
+    @staticmethod
+    def _valid_email(value):
+        try:
+            validate_email(value.strip())
+            return True
+        except ValidationError:
+            return False
+
+
+class OperationalIncident(models.Model):
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        RESOLVED = "resolved", "Resolved"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    fingerprint = models.CharField(max_length=160)
+    event = models.ForeignKey(Event, null=True, blank=True, on_delete=models.PROTECT)
+    kind = models.CharField(max_length=24, choices=OperationalNotificationRule.Kind.choices)
+    summary = models.CharField(max_length=240)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN)
+    occurrences = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_seen_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("fingerprint",), condition=Q(status="open"), name="one_open_operational_incident")]
+
+
+class OperationalNotificationDelivery(models.Model):
+    class Status(models.TextChoices):
+        QUEUED = "queued", "Queued"
+        SENT = "sent", "Sent"
+        FAILED = "failed", "Failed"
+        UNCERTAIN = "uncertain", "Uncertain"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    incident = models.ForeignKey(OperationalIncident, on_delete=models.PROTECT, related_name="deliveries")
+    channel = models.CharField(max_length=8, choices=TicketDelivery.Channel.choices)
+    destination = models.CharField(max_length=254)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.QUEUED)
+    idempotency_key = models.CharField(max_length=100)
+    attempts = models.PositiveIntegerField(default=0)
+    next_attempt_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.CharField(max_length=240, blank=True)
+    provider_reference = models.CharField(max_length=160, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("incident", "channel", "destination"), name="one_alert_delivery_per_recipient")]
 
 
 class BackupRecord(models.Model):

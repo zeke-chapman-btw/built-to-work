@@ -116,6 +116,18 @@ def create_database_backup(trailer: TrailerInstance) -> BackupRecord:
                 trailer=trailer, storage_path="", ciphertext_hash="",
                 status=BackupRecord.Status.FAILED, error=str(exc)[:2000],
             )
+        try:
+            from .communications import emit_incident
+            from .models import OperationalNotificationRule
+
+            emit_incident(
+                kind=OperationalNotificationRule.Kind.BACKUP_FAILURE,
+                fingerprint=trailer.identity,
+                summary="Trailer backup failed; verify backup storage and configuration.",
+            )
+        except Exception as alert_exc:
+            import logging
+            logging.getLogger(__name__).warning("Backup alert could not be queued: %s", type(alert_exc).__name__)
         raise
 
 

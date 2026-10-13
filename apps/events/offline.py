@@ -12,6 +12,10 @@ class Readiness:
     ready: bool
     failures: tuple[str, ...]
 
+class TicketRangeExhausted(ValidationError):
+    """No reserved primary or backup ticket remains."""
+
+
 def check_offline_readiness(preparation):
     failures=[]
     preparation=OfflineEventPreparation.objects.select_related("event", "consent_document").prefetch_related("ticket_ranges").get(pk=preparation.pk)
@@ -59,7 +63,7 @@ def reserve_ticket_number(preparation):
             if item.next_number > item.end_number: item.is_exhausted=True
             item.save(update_fields=("next_number", "is_exhausted"))
             return f"{value:010d}"
-        raise ValidationError("All offline ticket ranges are exhausted.")
+        raise TicketRangeExhausted("All offline ticket ranges are exhausted.")
 
 def queue_sync(preparation, *, operation_key, operation_type, payload):
     with transaction.atomic():
@@ -138,6 +142,11 @@ def create_offline_registration(*, preparation, actor, data):
         registration, created = register_participant(event=preparation.event, participant=participant, actor=actor, source=EventRegistration.Source.STAFF, group=group, custom_answers=dict(data))
         if not created:
             raise ValidationError("This participant is already registered.")
+        registration.ticket_email_opt_in = bool(data.get("ticket_email_opt_in"))
+        registration.ticket_sms_opt_in = bool(data.get("ticket_sms_opt_in"))
+        if registration.ticket_email_opt_in or registration.ticket_sms_opt_in:
+            registration.ticket_communication_opt_in_at = timezone.now()
+        registration.save(update_fields=["ticket_email_opt_in", "ticket_sms_opt_in", "ticket_communication_opt_in_at"])
         number = reserve_ticket_number(preparation)
         ticket = QrTicket.objects.get(registration=registration, is_current=True)
         ticket.ticket_number = number
@@ -208,4 +217,6 @@ def create_offline_registration(*, preparation, actor, data):
             group_name=group.name if group else "", custom_answers=dict(data), payload=payload,
         )
         queue_sync(preparation=preparation, operation_key=f"registration:{envelope.id}", operation_type="registration.created", payload=envelope.payload)
+        from .communications import queue_ticket_delivery
+        queue_ticket_delivery(registration)
         return participant, registration, ticket, envelope
