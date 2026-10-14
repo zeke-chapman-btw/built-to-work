@@ -5,7 +5,7 @@ import hashlib
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
-from .models import Event, OfflineEventPreparation, OfflineTicketRange, SyncOutboxItem
+from .models import Event, OfflineEventPreparation, OfflineTicketRange, SyncOutboxItem, CentralEventDownload, EventRegistration
 
 @dataclass(frozen=True)
 class Readiness:
@@ -26,6 +26,22 @@ def check_offline_readiness(preparation):
     if not preparation.consent_document_id or not preparation.consent_document.is_approved: failures.append("approved consent document is not locally available")
     if not preparation.consent_hash or (preparation.consent_document_id and preparation.consent_hash != preparation.consent_document.content_hash): failures.append("consent integrity hash does not match")
     if not preparation.sync_identity: failures.append("synchronization identity is missing")
+    if preparation.consent_document_id and (not preparation.consent_document.original_pdf or not preparation.consent_document.original_pdf.storage.exists(preparation.consent_document.original_pdf.name)):
+        failures.append("approved consent PDF is not locally available")
+    download = CentralEventDownload.objects.filter(event_id=event.pk, trailer_identity=preparation.trailer.identity).first()
+    if download:
+        from .downsync import configuration_issues
+        if download.status == CentralEventDownload.Status.READY:
+            failures.extend(configuration_issues(preparation, download.config))
+        if download.central_event_updated_at and download.config.get("event", {}).get("updated_at"):
+            from .downsync import when
+            if download.central_event_updated_at > when(download.config["event"]["updated_at"]):
+                failures.append("central Event configuration has newer changes awaiting download")
+        if download.status != CentralEventDownload.Status.READY or not download.last_success_at:
+            failures.append("central event download is incomplete")
+        local_count = EventRegistration.objects.filter(event=event, status="active", source__in=("online", "public")).count()
+        if download.central_registration_count is not None and local_count < download.central_registration_count:
+            failures.append("central pre-registrations are not fully downloaded")
     ranges={item.kind:item for item in preparation.ticket_ranges.all()}
     if OfflineTicketRange.Kind.PRIMARY not in ranges: failures.append("primary ticket range is missing")
     if OfflineTicketRange.Kind.BACKUP not in ranges: failures.append("backup ticket range is missing")

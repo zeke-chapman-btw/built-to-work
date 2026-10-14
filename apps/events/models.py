@@ -568,3 +568,44 @@ class CentralSyncReceipt(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=("trailer_identity", "event_id"), name="sync_receipt_scope_idx")]
+
+
+class CentralEventDownload(models.Model):
+    """Durable central-to-trailer snapshot/checkpoint, separate from the outbound queue."""
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        DOWNLOADING = "downloading", "Downloading"
+        READY = "ready", "Ready"
+        FAILED = "failed", "Failed"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    trailer_identity = models.CharField(max_length=120)
+    event_id = models.UUIDField()
+    preparation_id = models.UUIDField()
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.PENDING)
+    checkpoint_at = models.DateTimeField(null=True, blank=True)
+    snapshot_at = models.DateTimeField(null=True, blank=True)
+    next_cursor = models.TextField(blank=True)
+    config = models.JSONField(default=dict)
+    downloaded_count = models.PositiveIntegerField(default=0)
+    central_registration_count = models.PositiveIntegerField(null=True, blank=True)
+    central_event_updated_at = models.DateTimeField(null=True, blank=True)
+    last_catalog_at = models.DateTimeField(null=True, blank=True)
+    last_success_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.TextField(blank=True)
+    attempts = models.PositiveIntegerField(default=0)
+    next_attempt_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("trailer_identity", "event_id"), name="one_central_download_per_event_trailer")]
+
+
+class CentralEventDownloadPage(models.Model):
+    download = models.ForeignKey(CentralEventDownload, on_delete=models.CASCADE, related_name="pages")
+    page_number = models.PositiveIntegerField()
+    records = models.JSONField(default=list)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("download", "page_number"), name="unique_central_download_page")]

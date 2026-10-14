@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from . import offline_views
 from . import sync_views
+from . import downsync_views
 from . import public_views
 app_name = "events"
 urlpatterns = [
@@ -35,6 +36,7 @@ urlpatterns = [
 urlpatterns += [
     path("sync/ingest/", sync_views.sync_ingest, name="sync-ingest"),
     path("sync/status/", sync_views.sync_status, name="sync-status"),
+    path("sync/download/", downsync_views.event_download, name="sync-download"),
 ]
 
 

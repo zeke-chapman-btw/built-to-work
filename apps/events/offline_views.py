@@ -57,7 +57,7 @@ class OfflineRegistrationForm(forms.Form):
 
 @staff_required
 def offline_preparations(request):
-    preparations = OfflineEventPreparation.objects.select_related("event", "trailer").order_by("event__starts_at")
+    preparations = OfflineEventPreparation.objects.select_related("event", "trailer").order_by("event__start_at")
     return render(request, "events/offline_preparations.html", {"preparations": preparations})
 
 
@@ -65,7 +65,10 @@ def offline_preparations(request):
 def offline_preparation_detail(request, preparation_id):
     preparation = get_object_or_404(OfflineEventPreparation.objects.select_related("event", "trailer", "consent_document"), pk=preparation_id)
     readiness = check_offline_readiness(preparation)
-    return render(request, "events/offline_preparation_detail.html", {"preparation": preparation, "readiness": readiness})
+    from .models import CentralEventDownload, EventRegistration
+    download = CentralEventDownload.objects.filter(event_id=preparation.event_id, trailer_identity=preparation.trailer.identity).first()
+    local_online_count = EventRegistration.objects.filter(event=preparation.event, source__in=("online", "public"), status="active").count()
+    return render(request, "events/offline_preparation_detail.html", {"preparation": preparation, "readiness": readiness, "download": download, "local_online_count": local_online_count})
 
 
 @staff_required
