@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+<head>
+<meta name="robots" content="noindex">
+</head>
+<body>
+<h1>Historical participant imports</h1>
+<p>Authorized staff only. Upload CSV or .xlsx, preview every row, then import. This does not issue tickets or create consent.</p>{% if error %}<p role="alert">{{ error }}</p>{% endif %}<form method="post" enctype="multipart/form-data">{% csrf_token %}<label>Source spreadsheet <input type="file" name="source_file" accept=".csv,.xlsx" required>
+</label>
+<button type="submit">Upload for preview</button>
+</form>
+<p>
+<a href="{% url 'participants:historical-export' %}">Export participants</a>
+</p>
+<h2>Recent batches</h2>
+<ul>{% for batch in batches %}<li>
+<a href="{% url 'participants:historical-batch' batch.id %}">{{ batch.original_filename }}</a> — {{ batch.status }} — {{ batch.created_at }}</li>{% empty %}<li>No imports yet.</li>{% endfor %}</ul>
+</body>
+</html>

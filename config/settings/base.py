@@ -122,3 +122,5 @@ BTW_TICKET_EMAIL_FROM = os.environ.get("BTW_TICKET_EMAIL_FROM", "")
 BTW_SMS_PROVIDER_URL = os.environ.get("BTW_SMS_PROVIDER_URL", "")
 BTW_SMS_PROVIDER_TOKEN = os.environ.get("BTW_SMS_PROVIDER_TOKEN", "")
 BTW_CENTRAL_SYNC_URL = os.environ.get("BTW_CENTRAL_SYNC_URL", "")
+
+PRIVATE_HISTORICAL_ROOT = Path(os.environ.get("PRIVATE_HISTORICAL_ROOT", BASE_DIR / "private_historical_imports"))

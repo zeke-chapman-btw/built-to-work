@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+<head>
+<meta name="robots" content="noindex">
+</head>
+<body>
+<h1>Map columns: {{ batch.original_filename }}</h1>{% if error %}<p role="alert">{{ error }}</p>{% endif %}<p>Select the source column for each BTW field. First and last names are required. Unmapped columns are retained in the source file and preview.</p>
+<p>Saved maps: {% for item in templates %}<a href="?template={{ item.pk }}">{{ item.name }}</a> {% empty %}None{% endfor %}</p>
+<form method="post">{% csrf_token %}<table>
+<tr>
+<th>BTW field</th>
+<th>Spreadsheet column</th>
+</tr>{% for field, chosen in mapped %}<tr>
+<td>{{ field }}</td>
+<td>
+<select name="map_{{ field }}">
+<option value="">Skip</option>{% for header in headers %}<option value="{{ header }}" {% if header == chosen %}selected{% endif %}>{{ header }}</option>{% endfor %}</select>
+</td>
+</tr>{% endfor %}</table>
+<label>Save mapping as <input name="template_name" maxlength="120">
+</label>
+<button type="submit">Preview rows</button>
+</form>
+<p>
+<a href="{% url 'participants:historical-index' %}">Back</a>
+</p>
+</body>
+</html>

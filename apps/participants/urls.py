@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, testing_views, registration_views
+from . import views, testing_views, registration_views, historical_views
 app_name = "participants"
 urlpatterns = [
     path("register/", registration_views.registration_start, name="registration-start"),
@@ -24,4 +24,9 @@ urlpatterns = [
     path("password-reset/confirm/<str:token>/", views.password_reset_confirm, name="password-reset-confirm"),
     path("staff/account-requests/", views.staff_requests, name="staff-requests"),
     path("staff/account-requests/<uuid:request_id>/", views.staff_resolve_request, name="staff-resolve-request"),
+    path("staff/historical/", historical_views.historical_index, name="historical-index"),
+    path("staff/historical/export/", historical_views.historical_export, name="historical-export"),
+    path("staff/historical/<uuid:batch_id>/map/", historical_views.historical_map, name="historical-map"),
+    path("staff/historical/<uuid:batch_id>/", historical_views.historical_batch, name="historical-batch"),
+    path("staff/historical/review/<int:row_id>/", historical_views.historical_review, name="historical-review"),
 ]

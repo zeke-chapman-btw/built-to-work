@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<head>
+<meta name="robots" content="noindex">
+</head>
+<body>
+<h1>Export historical participants</h1>
+<p>Authorized staff only. Downloads contain personal information; store them securely.</p>{% if error %}<p role="alert">{{ error }}</p>{% endif %}<p>Saved templates: {% for item in templates %}<a href="?template={{ item.pk }}">{{ item.name }}</a> {% empty %}None{% endfor %}</p>
+<form method="post">{% csrf_token %}<fieldset>
+<legend>Fields</legend>{% for field in fields %}<label>
+<input type="checkbox" name="fields" value="{{ field }}" {% if field in selected_fields %}checked{% endif %}>{{ field }}</label> {% endfor %}</fieldset>
+<fieldset>
+<legend>Filters</legend>
+<label>Event UUID <input name="event_id">
+</label>
+<label>From date (YYYY-MM-DD) <input name="date_from" type="date">
+</label>
+<label>To date <input name="date_to" type="date">
+</label>
+<label>Group <input name="group">
+</label>
+<label>Registration source <input name="registration_source">
+</label>
+<label>
+<input type="checkbox" name="without_events" value="1">Participants without events</label>
+</fieldset>
+<label>Format <select name="format">
+<option value="csv">CSV</option>
+<option value="xlsx">Excel (.xlsx)</option>
+</select>
+</label>
+<label>Save field template as <input name="template_name" maxlength="120">
+</label>
+<button type="submit">Download export</button>
+</form>
+<p>
+<a href="{% url 'participants:historical-index' %}">Imports</a>
+</p>
+</body>
+</html>

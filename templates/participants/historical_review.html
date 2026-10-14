@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head>
+<meta name="robots" content="noindex">
+</head>
+<body>
+<h1>Review possible duplicate: row {{ row.row_number }}</h1>
+<p>Source values: {{ row.raw_data }}</p>
+<p>Validated values: {{ row.normalized_data }}</p>{% if error %}<p role="alert">{{ error }}</p>{% endif %}<h2>Possible existing participants</h2>
+<ul>{% for person in matches %}<li>{{ person.first_name }} {{ person.last_name }} — {{ person.identity_uuid }} — {{ person.contact_email }}</li>{% empty %}<li>No current candidates; this row may match another row in the uploaded file.</li>{% endfor %}</ul>
+<form method="post">{% csrf_token %}<label>Decision <select name="decision">
+<option value="separate">Keep separate participant</option>
+<option value="link">Associate with existing participant</option>
+</select>
+</label>
+<label>Existing participant UUID <input name="participant_uuid">
+</label>
+<label>Required audit reason <textarea name="reason" required>
+</textarea>
+</label>
+<button type="submit">Resolve reviewed row</button>
+</form>
+<p>
+<a href="{% url 'participants:historical-batch' row.batch_id %}">Back to batch</a>
+</p>
+</body>
+</html>

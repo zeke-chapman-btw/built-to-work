@@ -7,6 +7,7 @@ from django.db.models.functions import Lower
 from apps.core.models import ArchivableModel, TimestampedModel
 from .normalization import normalize_email, normalize_phone
 from .consent_storage import PrivateConsentStorage
+from .historical_storage import PrivateHistoricalStorage
 
 class Participant(TimestampedModel, ArchivableModel):
     class Kind(models.TextChoices):
@@ -213,3 +214,96 @@ class ConsentAcceptance(TimestampedModel):
     document = models.ForeignKey(ConsentDocumentVersion, on_delete=models.PROTECT, related_name="acceptances")
     accepted_at = models.DateTimeField(auto_now_add=True)
     metadata = models.JSONField(default=dict, blank=True)
+
+
+class HistoricalMappingTemplate(models.Model):
+    class Kind(models.TextChoices):
+        IMPORT = "import", "Import"
+        EXPORT = "export", "Export"
+
+    name = models.CharField(max_length=120)
+    kind = models.CharField(max_length=8, choices=Kind.choices)
+    mapping = models.JSONField(default=dict, blank=True)
+    fields = models.JSONField(default=list, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
+class HistoricalImportBatch(models.Model):
+    class Status(models.TextChoices):
+        UPLOADED = "uploaded", "Uploaded"
+        PREVIEWED = "previewed", "Previewed"
+        IMPORTED = "imported", "Imported"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    source_file = models.FileField(storage=PrivateHistoricalStorage(), upload_to="sources/")
+    original_filename = models.CharField(max_length=255)
+    source_sha256 = models.CharField(max_length=64)
+    mapping = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.UPLOADED)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+
+class HistoricalImportRow(models.Model):
+    class Status(models.TextChoices):
+        READY = "ready", "Ready"
+        ERROR = "error", "Error"
+        REVIEW = "review", "Needs duplicate review"
+        IMPORTED = "imported", "Imported"
+        SKIPPED = "skipped", "Skipped"
+
+    batch = models.ForeignKey(HistoricalImportBatch, on_delete=models.CASCADE, related_name="rows")
+    row_number = models.PositiveIntegerField()
+    raw_data = models.JSONField(default=dict)
+    normalized_data = models.JSONField(default=dict)
+    status = models.CharField(max_length=10, choices=Status.choices)
+    error = models.TextField(blank=True)
+    possible_matches = models.JSONField(default=list, blank=True)
+    participant = models.ForeignKey(Participant, null=True, blank=True, on_delete=models.PROTECT)
+    review_reason = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("batch", "row_number"), name="historical_batch_row_unique")]
+        ordering = ("row_number",)
+
+
+class HistoricalEventRecord(models.Model):
+    participant = models.ForeignKey(Participant, on_delete=models.PROTECT, related_name="historical_events")
+    event = models.ForeignKey("events.Event", null=True, blank=True, on_delete=models.PROTECT)
+    event_name = models.CharField(max_length=255)
+    event_date = models.DateField(null=True, blank=True)
+    group_name = models.CharField(max_length=120, blank=True)
+    source_batch = models.ForeignKey(HistoricalImportBatch, on_delete=models.PROTECT)
+    source_row_number = models.PositiveIntegerField()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("source_batch", "source_row_number"), name="historical_event_source_unique")]
+
+
+class HistoricalSimulatorScore(models.Model):
+    participant = models.ForeignKey(Participant, on_delete=models.PROTECT, related_name="historical_simulator_scores")
+    event_record = models.ForeignKey(HistoricalEventRecord, null=True, blank=True, on_delete=models.PROTECT)
+    raw_score = models.DecimalField(max_digits=14, decimal_places=4)
+    score_method = models.CharField(max_length=120)
+    source = models.CharField(max_length=255)
+    scored_at = models.DateTimeField(null=True, blank=True)
+    source_batch = models.ForeignKey(HistoricalImportBatch, on_delete=models.PROTECT)
+    source_row_number = models.PositiveIntegerField()
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("source_batch", "source_row_number"), name="historical_score_source_unique")]
+
+
+class HistoricalExportRecord(models.Model):
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    criteria = models.JSONField(default=dict)
+    row_count = models.PositiveIntegerField()
+    format = models.CharField(max_length=4)
+    created_at = models.DateTimeField(auto_now_add=True)

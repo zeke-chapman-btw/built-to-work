@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+<meta name="robots" content="noindex">
+</head>
+<body>
+<h1>{{ batch.original_filename }}</h1>
+<p>Status: {{ batch.status }}. Source SHA-256: {{ batch.source_sha256 }}</p>{% if error %}<p role="alert">{{ error }}</p>{% endif %}<p>
+<a href="{% url 'participants:historical-map' batch.id %}">Map and preview columns</a>
+</p>{% if batch.status == 'previewed' %}<form method="post">{% csrf_token %}<button type="submit">Import ready rows</button>
+</form>{% endif %}<table>
+<tr>
+<th>Row</th>
+<th>Status</th>
+<th>Source data</th>
+<th>Validation / review</th>
+<th>Action</th>
+</tr>{% for row in rows %}<tr>
+<td>{{ row.row_number }}</td>
+<td>{{ row.status }}</td>
+<td>{{ row.raw_data }}</td>
+<td>{{ row.error }}{% if row.possible_matches %} Possible matches: {{ row.possible_matches|join:", " }}{% endif %}</td>
+<td>{% if row.status == 'review' %}<a href="{% url 'participants:historical-review' row.id %}">Review</a>{% endif %}</td>
+</tr>{% empty %}<tr>
+<td colspan="5">No preview rows.</td>
+</tr>{% endfor %}</table>
+<p>
+<a href="{% url 'participants:historical-index' %}">Imports</a>
+</p>
+</body>
+</html>
