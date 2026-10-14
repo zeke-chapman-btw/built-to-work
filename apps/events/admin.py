@@ -1,6 +1,6 @@
 from django.contrib import admin
+from .models import Event, EventGroup, EventRegistration, EventRegistrationQuestion, QrTicket
 
-from .models import Attendance, Event, EventGroup, EventRegistration, EventRegistrationQuestion, QrTicket
 
 
 class EventGroupInline(admin.TabularInline):
@@ -39,14 +39,6 @@ class QrTicketAdmin(admin.ModelAdmin):
     search_fields = ("registration__event__name", "registration__participant__first_name", "registration__participant__last_name")
     readonly_fields = ("id", "issued_at", "revoked_at", "superseded_by")
     exclude = ("token",)
-
-
-@admin.register(Attendance)
-class AttendanceAdmin(admin.ModelAdmin):
-    list_display = ("event", "participant", "checked_in_at", "source", "is_void")
-    list_filter = ("source", "is_void", "checked_in_at")
-    search_fields = ("event__name", "participant__first_name", "participant__last_name", "participant__contact_email")
-    readonly_fields = ("id", "checked_in_at", "created_at", "updated_at", "voided_at")
 
 
 @admin.register(EventGroup)

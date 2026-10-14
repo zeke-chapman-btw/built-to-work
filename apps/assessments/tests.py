@@ -761,7 +761,7 @@ class AssessmentEventConfigurationTests(TestCase):
         finish_response = client.post(finish_url)
         self.assertRedirects(finish_response, kiosk_url, fetch_redirect_response=False)
         from apps.events.services import resolve_ticket
-        self.assertEqual(resolve_ticket(ticket.token, expected_event=ticket.registration.event).status, "already_checked_in")
+        self.assertEqual(resolve_ticket(ticket.token, expected_event=ticket.registration.event).status, "valid")
         completed_rescan = client.post(kiosk_url, {"token": ticket.token})
         self.assertEqual(completed_rescan.status_code, 200)
         self.assertContains(completed_rescan, "You've already completed this assessment")

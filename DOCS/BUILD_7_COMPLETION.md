@@ -37,3 +37,25 @@ Historical scores remain provenance-bearing historical records and do not introd
 ## Future-build dependencies
 
 Duck Hunt and simulator/game experiences consume the existing event/participant identity and progression contracts. Any later build must preserve ticket, consent, official/nonofficial, event-scope, and synchronization invariants, and must not introduce event check-in, arrival tracking, or attendance scanning under BTW's stated policy.
+
+
+## Event check-in policy
+
+BTW does not use event check-in, arrival tracking, attendance scanning, or checked-in statuses. Ticket scans resolve the registration and permit the configured participant experience directly. The legacy Attendance table and historical records remain in the database for compatibility; no data-deleting migration is included.
+
+
+## Build 7 software closure
+
+Build 7 is software-complete for its defined development scope. The completed registration, ticket, consent, offline registration and synchronization, recovery, communications, operational tools, historical import/export, and participant activity workflows have been validated by the project test suite and virtual integration runners. This is a development-scope closure, not a production-readiness claim.
+
+BTW does not use event check-in, arrival tracking, or attendance scanning. Ticket scanning identifies a participant for the configured activity; it does not record attendance. Legacy Attendance records and schema remain preserved for historical compatibility and are not used by active workflows.
+
+The following remain deployment or integration verification requirements, not unfinished Build 7 software features:
+
+- PostgreSQL-specific concurrency and locking behavior.
+- Physical trailer hardware, printer, and network validation.
+- Real email and SMS provider configuration and delivery validation.
+- Upload and approval of BTW's actual consent document before registrations requiring it are enabled.
+- Validation against real historical participant files and their source-specific mappings.
+
+These checks must be completed in the relevant deployment environment before launch.

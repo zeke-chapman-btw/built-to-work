@@ -16,7 +16,6 @@ class EventForm(forms.ModelForm):
         fields = (
             "name", "code", "description", "start_at", "end_at", "timezone_name",
             "location_name", "address_line_1", "address_line_2", "city", "state",
-            "postal_code", "country", "status", "allow_station_auto_check_in",
             "registration_opens_at", "registration_closes_at", "registration_deadline_at",
             "registration_capacity", "group_mode", "group_label",
         )
@@ -77,7 +76,6 @@ class RegistrationForm(forms.Form):
         (EventRegistration.Source.STAFF, "Staff registration"),
         (EventRegistration.Source.WALK_IN, "Walk-in"),
     ), initial=EventRegistration.Source.STAFF)
-    check_in_now = forms.BooleanField(required=False, label="Check in now")
     group = forms.ModelChoiceField(queryset=EventGroup.objects.none(), required=False)
     override_reason = forms.CharField(max_length=240, required=False, help_text="Required for a deadline or capacity exception.")
 

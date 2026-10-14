@@ -20,8 +20,8 @@ from apps.participants.identity import find_or_create_participant
 from apps.stations.forms import StationForEventForm
 from apps.stations.services import assign_station
 from .forms import EventForm, RegistrationForm, ReissueTicketForm, VoidRegistrationForm
-from .models import Attendance, Event, EventRegistration, QrTicket
-from .services import audit_action, check_in_registration, register_participant, resolve_ticket, reissue_ticket, void_registration
+from .models import Event, EventRegistration, QrTicket
+from .services import audit_action, register_participant, resolve_ticket, reissue_ticket, void_registration
 
 
 def staff_required(view_func):
@@ -116,7 +116,6 @@ def event_detail(request, event_id):
         Prefetch("attendance_records", queryset=Attendance.objects.order_by("-checked_in_at"), to_attr="attendance_history"),
     ).order_by("participant__last_name", "participant__first_name")
     resolution = None
-    scan_form_token = request.POST.get("token", "") if request.method == "POST" and request.POST.get("action") == "scan" else ""
     if request.method == "POST" and request.POST.get("action") == "scan":
         resolution = resolve_ticket(scan_form_token, expected_event=event)
         if resolution.status == "valid":
@@ -135,8 +134,6 @@ def event_detail(request, event_id):
             "page_title": "Events",
             "event": event, "registrations": registrations, "station_form": StationForEventForm(), "station_assignments": event.station_assignments.select_related("station"), "experience_sessions": event.experience_sessions.select_related("participant").prefetch_related("activities"),
             "registration_count": EventRegistration.objects.filter(event=event, status=EventRegistration.Status.ACTIVE).count(),
-            "attendance_count": Attendance.objects.filter(event=event, is_void=False).count(),
-            "registration_form": form, "scan_form_token": scan_form_token, "scan_resolution": resolution,
         })
 
 
@@ -145,13 +142,11 @@ def registration_detail(request, event_id, registration_id):
     event = get_object_or_404(Event, pk=event_id)
     registration = get_object_or_404(EventRegistration.objects.select_related("event", "participant", "created_by"), pk=registration_id, event=event)
     ticket = registration.tickets.filter(is_current=True).first()
-    attendance = registration.attendance_records.filter(is_void=False).first()
     with timezone.override(ZoneInfo(registration.event.timezone_name)):
         return render(request, "events/registration_detail.html", {
             "page_title": "Events",
             "event": event, "registration": registration, "ticket": ticket,
             "ticket_qr_data": _ticket_qr_data(request, ticket) if ticket else None,
-            "attendance": attendance,
             "reissue_form": ReissueTicketForm(initial={"expected_ticket_id": ticket.pk}) if ticket else None,
             "void_form": VoidRegistrationForm() if registration.status == EventRegistration.Status.ACTIVE else None,
         })
@@ -188,7 +183,6 @@ def registration_void(request, event_id, registration_id):
     return redirect("events:registration_detail", event_id=event.pk, registration_id=registration.pk)
 
 
-@staff_required
 def registration_check_in(request, event_id, registration_id):
     event = get_object_or_404(Event, pk=event_id)
     registration = get_object_or_404(EventRegistration, pk=registration_id, event=event)

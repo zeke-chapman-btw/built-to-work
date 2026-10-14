@@ -78,31 +78,6 @@ class StationExperienceTests(TestCase):
         self.assertEqual(Attendance.objects.count(), 0)
         self.assertEqual(ExperienceSession.objects.count(), 0)
 
-    def test_auto_check_in_is_off_by_default_and_staff_check_in_is_required(self):
-        activate_event_context(assignment=self.kiosk_assignment, actor=self.staff)
-        registration = self.registration()
-        ticket = registration.tickets.get(is_current=True)
-        result = self.scan(self.kiosk, ticket.token)
-        self.assertEqual(result["status"], "staff_check_in_required")
-        self.assertEqual(Attendance.objects.count(), 0)
-        self.assertEqual(ExperienceSession.objects.count(), 0)
-
-    def test_auto_check_in_starts_official_session_once_and_records_source(self):
-        activate_event_context(assignment=self.kiosk_assignment, actor=self.staff)
-        self.event.allow_station_auto_check_in = True
-        self.event.save(update_fields=("allow_station_auto_check_in",))
-        registration = self.registration()
-        ticket = registration.tickets.get(is_current=True)
-        first = self.scan(self.kiosk, ticket.token)
-        second = self.scan(self.kiosk, ticket.token)
-        self.assertEqual(first["status"], "activity_in_progress")
-        self.assertEqual(second["status"], "activity_in_progress")
-        self.assertEqual(Attendance.objects.count(), 1)
-        self.assertEqual(Attendance.objects.get().source, Attendance.Source.STATION)
-        self.assertEqual(ExperienceSession.objects.filter(registration=registration).count(), 1)
-        self.assertEqual(ExperienceActivity.objects.filter(session__registration=registration).count(), 2)
-        self.assertEqual(ExperienceActivity.objects.get(session__registration=registration, activity=ExperienceActivity.Activity.KIOSK).status, ExperienceActivity.Status.IN_PROGRESS)
-
     def test_experience_progression_and_completion_are_ordered_and_idempotent(self):
         self.event.allow_station_auto_check_in = True
         self.event.save(update_fields=("allow_station_auto_check_in",))
@@ -149,47 +124,6 @@ class StationExperienceTests(TestCase):
         self.assertEqual(ExperienceSession.objects.filter(mode=ExperienceSession.Mode.OFFICIAL).count(), 0)
 
 
-    def test_kiosk_http_requires_staff_check_in_without_creating_experience(self):
-        registration = self.registration()
-        ticket = registration.tickets.get(is_current=True)
-        self.event.allow_station_auto_check_in = False
-        self.event.save(update_fields=("allow_station_auto_check_in",))
-        activate_event_context(assignment=self.kiosk_assignment, actor=self.staff)
-        response = self.client.post(
-            reverse("stations:kiosk", kwargs={"station_code": self.kiosk.code}),
-            {"token": ticket.token},
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Please ask a Built to Work team member for help before continuing.")
-        self.assertNotContains(response, "staff_check_in_required")
-        self.assertNotContains(response, ticket.token)
-        for internal_value in ("staff_check_in_required", "Staff_Check_In_Required", "Traceback", "ValidationError", "IntegrityError"):
-            self.assertNotContains(response, internal_value)
-        self.assertEqual(Attendance.objects.filter(registration=registration).count(), 0)
-        self.assertEqual(
-            ExperienceSession.objects.filter(registration=registration).count(), 0
-        )
-
-
-    def test_kiosk_http_requires_staff_check_in_without_creating_experience(self):
-        registration = self.registration()
-        ticket = registration.tickets.get(is_current=True)
-        self.event.allow_station_auto_check_in = False
-        self.event.save(update_fields=("allow_station_auto_check_in",))
-        activate_event_context(assignment=self.kiosk_assignment, actor=self.staff)
-        response = self.client.post(
-            reverse("stations:kiosk", kwargs={"station_code": self.kiosk.code}),
-            {"token": ticket.token},
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Please ask a Built to Work team member for help before continuing.")
-        self.assertNotContains(response, "staff_check_in_required")
-        self.assertEqual(Attendance.objects.filter(registration=registration).count(), 0)
-        self.assertEqual(
-            ExperienceSession.objects.filter(registration=registration).count(), 0
-        )
-
-
 class StationAccessTests(TestCase):
     def test_station_views_require_active_staff(self):
         response = self.client.get(reverse("stations:list"))
@@ -215,12 +149,6 @@ class StationOperatorPresentationTests(TestCase):
                 "activities": [],
             },
         )
-
-    def test_staff_check_in_status_has_human_readable_heading(self):
-        rendered = self.render_status("staff_check_in_required")
-        self.assertIn("Staff check-in required", rendered)
-        self.assertNotIn("staff_check_in_required", rendered)
-        self.assertNotIn("Staff_Check_In_Required", rendered)
 
     def test_unmapped_status_is_not_rendered_as_a_machine_code(self):
         rendered = self.render_status("future_internal_status")

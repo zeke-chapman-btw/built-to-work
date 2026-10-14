@@ -216,38 +216,12 @@ def resolve_ticket(token, *, expected_event=None):
         return TicketResolution("expired", ticket)
     if expected_event is not None and str(ticket.registration.event_id) != str(expected_event.pk):
         return TicketResolution("wrong_event", ticket)
-    attendance = Attendance.objects.filter(registration=registration, is_void=False).first()
-    if attendance:
-        return TicketResolution("already_checked_in", ticket, attendance)
     return TicketResolution("valid", ticket)
 
 
 def check_in_registration(*, registration, actor=None, source=Attendance.Source.STAFF):
-    """Create at most one active attendance row; repeated requests return the original."""
-    with transaction.atomic():
-        registration = EventRegistration.objects.select_for_update().select_related("event", "participant").get(pk=registration.pk)
-        if registration.participant.kind != "person":
-            raise ValidationError("The BTW test identity cannot be checked in officially.")
-        event = registration.event
-        if registration.status != EventRegistration.Status.ACTIVE:
-            raise ValidationError("This registration is no longer active.")
-        if event.status != Event.Status.UPCOMING or timezone.now() > event.end_at:
-            raise ValidationError("Check-in is closed for this event.")
-        existing = Attendance.objects.filter(registration=registration, is_void=False).first()
-        if existing:
-            return existing, False
-        try:
-            with transaction.atomic():
-                attendance = Attendance.objects.create(
-                    event=event, registration=registration, participant=registration.participant,
-                    source=source, checked_in_by=actor,
-                )
-        except IntegrityError:
-            return Attendance.objects.get(registration=registration, is_void=False), False
-        audit_action(actor=actor, action="event.attendance.checked_in", instance=attendance, source=source, new_data={"event_id": str(event.pk), "registration_id": str(registration.pk), "participant_id": str(registration.participant_id), "source": source, "checked_in_at": attendance.checked_in_at.isoformat()})
-        return attendance, True
-
-
+    """Compatibility guard: BTW does not use event check-in."""
+    raise ValidationError("Event check-in is not supported.")
 def void_registration(*, registration, actor, reason):
     with transaction.atomic():
         registration = EventRegistration.objects.select_for_update().get(pk=registration.pk)

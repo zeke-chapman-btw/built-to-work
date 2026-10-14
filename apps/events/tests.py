@@ -1,3 +1,4 @@
+from django.urls import Resolver404, resolve
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
@@ -95,23 +96,6 @@ class EventWorkflowTests(TestCase):
         self.assertEqual(resolved.status, "wrong_event")
         self.assertEqual(Attendance.objects.count(), 0)
 
-    def test_check_in_is_idempotent_and_links_correct_records(self):
-        registration = self.registration()
-        first, created = check_in_registration(
-            registration=registration, actor=self.actor, source=Attendance.Source.STAFF,
-        )
-        second, created_again = check_in_registration(
-            registration=registration, actor=self.actor, source=Attendance.Source.STAFF,
-        )
-        self.assertTrue(created)
-        self.assertFalse(created_again)
-        self.assertEqual(first.pk, second.pk)
-        self.assertEqual(first.event_id, self.event.pk)
-        self.assertEqual(first.registration_id, registration.pk)
-        self.assertEqual(first.participant_id, self.participant.pk)
-        self.assertEqual(Attendance.objects.count(), 1)
-
-
 class EventAccessTests(TestCase):
     def test_anonymous_user_cannot_access_internal_events(self):
         response = self.client.get("/events/")
@@ -126,3 +110,12 @@ class EventAccessTests(TestCase):
         response = self.client.get("/events/")
         self.assertIn(response.status_code, (302, 403))
         self.assertNotEqual(response.status_code, 200)
+
+class LegacyCheckInRemovalTests(TestCase):
+    def test_check_in_service_is_disabled(self):
+        with self.assertRaises(ValidationError):
+            check_in_registration(registration=None, actor=None, source=None)
+
+    def test_check_in_route_is_unavailable(self):
+        with self.assertRaises(Resolver404):
+            resolve("/events/00000000-0000-0000-0000-000000000000/registrations/00000000-0000-0000-0000-000000000000/check-in/")

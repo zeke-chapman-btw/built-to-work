@@ -284,7 +284,6 @@ def station_operate(request, station_code):
                     "station_unconfigured": "This station has no active event context.",
                     "event_not_open": "This event is not currently open for station activity.",
                     "wrong_event": "This ticket belongs to a different event. No experience was recorded.",
-                    "staff_check_in_required": "Check in this participant at the event desk first.",
                     "check_in_unavailable": "Check-in could not be recorded. Contact event staff.",
                     "revoked": "This ticket was replaced and is no longer valid.",
                     "expired": "This ticket has expired.",

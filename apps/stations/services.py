@@ -1,9 +1,9 @@
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
+from apps.events.models import Event, EventRegistration
+from apps.events.services import audit_action, resolve_ticket
 
-from apps.events.models import Attendance, Event, EventRegistration
-from apps.events.services import audit_action, check_in_registration, resolve_ticket
 from apps.games.services import configured_game
 from .models import EventStation, ExperienceActivity, ExperienceSession, Station
 
@@ -112,23 +112,13 @@ def process_station_scan(*, station_code, token, actor):
                 "activity": activity, "test_identity": True}
 
     resolution = resolve_ticket(token, expected_event=event)
-    if resolution.status == "valid":
-        if not event.allow_station_auto_check_in:
-            return {"status": "staff_check_in_required", "assignment": assignment}
-        try:
-            check_in_registration(registration=resolution.ticket.registration, actor=actor, source=Attendance.Source.STATION)
-        except ValidationError:
-            return {"status": "check_in_unavailable", "assignment": assignment}
-        resolution = resolve_ticket(token, expected_event=event)
     if resolution.status == "wrong_event":
         return {"status": "wrong_event", "assignment": assignment}
-    if resolution.status not in ("valid", "already_checked_in"):
+    if resolution.status != "valid":
         return {"status": resolution.status, "assignment": assignment}
     if resolution.ticket is None:
         return {"status": "not_found", "assignment": assignment}
     registration = resolution.ticket.registration
-    if not Attendance.objects.filter(registration=registration, is_void=False).exists():
-        return {"status": "staff_check_in_required", "assignment": assignment}
     try:
         with transaction.atomic():
             session, created = ExperienceSession.objects.get_or_create(

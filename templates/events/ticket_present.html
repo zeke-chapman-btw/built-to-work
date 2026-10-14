@@ -10,7 +10,7 @@
   {% if ticket.ticket_number %}<p><strong>{{ ticket.ticket_number }}</strong></p>{% endif %}
   <p>Screenshot this ticket now!</p>
   <p><a class="button button-primary" href="{% url 'events:ticket_image' token=ticket.token %}" download="ticket-{{ ticket.ticket_number|default:ticket.token }}.png">Save Ticket Image</a></p>
-  <p class="muted">Keep this ticket available for event check-in.</p>
-  {% if already_checked_in %}<p><strong>Check-in is recorded.</strong></p>{% endif %}
+  <p class="muted">Keep this ticket available for your event.</p>
+
 </main>
 {% endblock %}
