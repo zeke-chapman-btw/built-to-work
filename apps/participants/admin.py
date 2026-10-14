@@ -60,3 +60,5 @@ class ConsentDocumentVersionAdmin(ConsentAdminWorkflowMixin, admin.ModelAdmin):
 class ConsentAcceptanceAdmin(admin.ModelAdmin):
     list_display = ("participant", "document", "accepted_at")
     readonly_fields = ("accepted_at",)
+
+from . import qualification_admin

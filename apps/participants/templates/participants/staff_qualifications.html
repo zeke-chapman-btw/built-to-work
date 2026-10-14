@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Participant qualifications | BTW Staff</title>
+  <style>
+    body{font:16px/1.5 system-ui,sans-serif;color:#171717;background:#f5f6f7;margin:0}
+    main{max-width:1050px;margin:32px auto;padding:0 20px}
+    h1,h2{line-height:1.15} .card{background:white;border:1px solid #d8dadd;border-radius:10px;padding:20px;margin:16px 0}
+    input,select,textarea,button{font:inherit} input[type=text],input[type=number],select,textarea{box-sizing:border-box;width:100%;padding:10px;border:1px solid #777;border-radius:5px}
+    label{font-weight:650;display:block;margin:12px 0 4px} .btn{display:inline-block;background:#c92335;color:white;text-decoration:none;border:0;border-radius:5px;padding:10px 16px;font-weight:700;cursor:pointer}
+    .btn.secondary{background:#343a40}.muted{color:#555}.errorlist{color:#a20d23} ul.results{padding-left:22px} li{margin:8px 0}
+    .record{border-top:1px solid #ddd;padding:12px 0}.record:first-child{border-top:0}
+  </style>
+</head>
+<body>
+<main>
+  <p><strong>BTW Staff</strong> / Participant qualifications</p>
+  {% if mode == "directory" %}
+    <h1>Find a participant</h1>
+    <p class="muted">Search by participant name, email, phone, or exact participant ID.</p>
+    <section class="card">
+      <form method="get">
+        <label for="q">Participant search</label>
+        <input id="q" name="q" type="text" value="{{ query }}" required>
+        <p><button class="btn" type="submit">Search</button></p>
+      </form>
+    </section>
+    {% if query %}
+      <section class="card">
+        <h2>Search results</h2>
+        {% if participants %}
+          <ul class="results">
+          {% for person in participants %}
+            <li><a href="{% url 'participants:staff-participant-qualifications' person.pk %}">{{ person.first_name }} {{ person.last_name }}</a>{% if person.contact_email %} — {{ person.contact_email }}{% endif %}</li>
+          {% endfor %}
+          </ul>
+        {% else %}<p>No participants found.</p>{% endif %}
+      </section>
+    {% endif %}
+  {% else %}
+    <p><a href="{% url 'participants:staff-qualifications' %}">← Search participants</a></p>
+    <h1>{{ participant.first_name }} {{ participant.last_name }}</h1>
+    <p class="muted">Participant ID: {{ participant.pk }}</p>
+    <section class="card">
+      <h2>Qualifications</h2>
+      {% for record in records %}
+        <div class="record">
+          <strong>{% if record.catalog_entry %}{{ record.catalog_entry.name }}{% else %}{{ record.custom_name }}{% endif %}</strong>
+          {% if record.is_self_reported %}<span> · Self-reported</span>{% endif %}
+          {% if record.years_of_experience %}<p>{{ record.years_of_experience }} years of experience</p>{% endif %}
+          {% if record.experience_details %}<p>{{ record.experience_details|linebreaksbr }}</p>{% endif %}
+          {% if record.notes %}<p><strong>Staff notes:</strong> {{ record.notes|linebreaksbr }}</p>{% endif %}
+          <p class="muted">Source: {{ record.get_source_display }}{% if record.source_submission_id %}; registration answer provenance retained{% endif %}</p>
+          {% if can_change %}<a href="{% url 'participants:staff-participant-qualification-edit' participant.pk record.pk %}">Update qualification</a>{% endif %}
+        </div>
+      {% empty %}<p>No qualifications recorded.</p>{% endfor %}
+    </section>
+    {% if form and can_add and not is_edit or form and is_edit %}
+      <section class="card">
+        <h2>{% if is_edit %}Update qualification{% else %}Add qualification{% endif %}</h2>
+        <form method="post">{% csrf_token %}
+          {{ form.non_field_errors }}
+          {% for field in form %}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{% endfor %}
+          <p><button class="btn" type="submit">Save qualification</button></p>
+        </form>
+      </section>
+    {% endif %}
+  {% endif %}
+</main>
+</body>
+</html>

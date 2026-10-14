@@ -307,3 +307,5 @@ class HistoricalExportRecord(models.Model):
     row_count = models.PositiveIntegerField()
     format = models.CharField(max_length=4)
     created_at = models.DateTimeField(auto_now_add=True)
+
+from .qualification_models import QualificationCategory, QualificationCatalogEntry, ParticipantQualification, RegistrationQualificationMapping

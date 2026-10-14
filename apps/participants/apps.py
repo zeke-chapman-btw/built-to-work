@@ -5,3 +5,6 @@ class ParticipantsConfig(AppConfig):
     name = "apps.participants"
     label = "participants"
     verbose_name = "Participants"
+
+    def ready(self):
+        from . import qualification_signals
