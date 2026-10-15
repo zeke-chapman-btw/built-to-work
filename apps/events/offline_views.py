@@ -9,7 +9,7 @@ from PIL import Image
 from .models import OfflineEventPreparation, OfflineRegistrationEnvelope, EventRegistration
 from .offline import check_offline_readiness, activate_offline, create_offline_registration, TicketRangeExhausted
 from .ticket_renderer import ticket_png_bytes
-from .views import staff_required
+from .views import staff_permission_required
 
 
 class OfflineRegistrationForm(forms.Form):
@@ -55,13 +55,13 @@ class OfflineRegistrationForm(forms.Form):
                 self.fields[question.key] = forms.CharField(**kwargs)
 
 
-@staff_required
+@staff_permission_required('events.view_offlineeventpreparation')
 def offline_preparations(request):
     preparations = OfflineEventPreparation.objects.select_related("event", "trailer").order_by("event__start_at")
     return render(request, "events/offline_preparations.html", {"preparations": preparations})
 
 
-@staff_required
+@staff_permission_required('events.view_offlineeventpreparation')
 def offline_preparation_detail(request, preparation_id):
     preparation = get_object_or_404(OfflineEventPreparation.objects.select_related("event", "trailer", "consent_document"), pk=preparation_id)
     readiness = check_offline_readiness(preparation)
@@ -71,7 +71,7 @@ def offline_preparation_detail(request, preparation_id):
     return render(request, "events/offline_preparation_detail.html", {"preparation": preparation, "readiness": readiness, "download": download, "local_online_count": local_online_count})
 
 
-@staff_required
+@staff_permission_required('events.change_offlineeventpreparation')
 def offline_activate(request, preparation_id):
     preparation = get_object_or_404(OfflineEventPreparation, pk=preparation_id)
     if request.method != "POST":
@@ -84,7 +84,7 @@ def offline_activate(request, preparation_id):
     return redirect("events:offline-preparation-detail", preparation_id=preparation.pk)
 
 
-@staff_required
+@staff_permission_required('events.view_offlineeventpreparation', 'events.add_eventregistration')
 def offline_register(request, preparation_id):
     preparation = get_object_or_404(OfflineEventPreparation.objects.select_related("event", "consent_document"), pk=preparation_id)
     form = OfflineRegistrationForm(request.POST or None, preparation=preparation)
@@ -111,7 +111,7 @@ def offline_register(request, preparation_id):
     return render(request, "events/offline_register.html", {"preparation": preparation, "form": form})
 
 
-@staff_required
+@staff_permission_required('events.view_qrticket', 'events.view_eventregistration')
 def offline_ticket_png(request, envelope_id):
     envelope = get_object_or_404(OfflineRegistrationEnvelope, pk=envelope_id)
     registration = get_object_or_404(EventRegistration, pk=envelope.registration_id)
@@ -123,14 +123,14 @@ def offline_ticket_png(request, envelope_id):
     return response
 
 
-@staff_required
+@staff_permission_required('events.view_qrticket', 'events.view_eventregistration')
 def offline_print(request, envelope_id):
     envelope = get_object_or_404(OfflineRegistrationEnvelope, pk=envelope_id)
     messages.info(request, "Ticket is ready for local printing or PDF download.")
     return redirect("events:offline-ticket-png", envelope_id=envelope.pk)
 
 
-@staff_required
+@staff_permission_required('events.view_qrticket', 'events.view_eventregistration')
 def offline_ticket_pdf(request, envelope_id):
     envelope = get_object_or_404(OfflineRegistrationEnvelope, pk=envelope_id)
     registration = get_object_or_404(EventRegistration, pk=envelope.registration_id)

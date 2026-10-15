@@ -1,3 +1,4 @@
+from functools import wraps
 import uuid
 from base64 import b64encode
 from functools import wraps
@@ -21,7 +22,7 @@ from apps.stations.forms import StationForEventForm
 from apps.stations.services import assign_station
 from .forms import EventForm, RegistrationForm, ReissueTicketForm, VoidRegistrationForm
 from .models import Event, EventRegistration, QrTicket
-from .services import audit_action, register_participant, resolve_ticket, reissue_ticket, void_registration
+from .services import audit_action, register_participant, resolve_ticket, reissue_ticket, void_registration, transfer_registration_group
 
 
 def staff_required(view_func):
@@ -32,6 +33,24 @@ def staff_required(view_func):
             raise PermissionDenied
         return view_func(request, *args, **kwargs)
     return wrapped
+
+
+
+
+def staff_permission_required(*permissions):
+    """Require active staff and every listed Django model permission."""
+    def decorate(view_func):
+        @login_required(login_url="/admin/login/")
+        @wraps(view_func)
+        def wrapped(request, *args, **kwargs):
+            user = request.user
+            if not user.is_active or not user.is_staff:
+                raise PermissionDenied
+            if not all(user.has_perm(permission) for permission in permissions):
+                raise PermissionDenied
+            return view_func(request, *args, **kwargs)
+        return wrapped
+    return decorate
 
 
 def _ticket_qr_data(request, ticket):
@@ -48,7 +67,7 @@ def _event_snapshot(event):
             "timezone_name": event.timezone_name, "location_name": event.location_name}
 
 
-@staff_required
+@staff_permission_required('events.view_event')
 def event_list(request):
     events = Event.objects.annotate(
         registration_count=Count("registrations", filter=Q(registrations__status=EventRegistration.Status.ACTIVE), distinct=True),
@@ -58,7 +77,7 @@ def event_list(request):
     return render(request, "events/event_list.html", {"events": events, "page_title": "Events"})
 
 
-@staff_required
+@staff_permission_required('events.add_event')
 def event_create(request):
     form = EventForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
@@ -71,7 +90,7 @@ def event_create(request):
     return render(request, "events/event_form.html", {"form": form, "page_title": "Create event"})
 
 
-@staff_required
+@staff_permission_required('events.change_event')
 def event_edit(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
     form = EventForm(request.POST or None, instance=event)
@@ -84,7 +103,7 @@ def event_edit(request, event_id):
     return render(request, "events/event_form.html", {"form": form, "event": event, "page_title": "Edit event"})
 
 
-@staff_required
+@staff_permission_required('events.view_event')
 def event_detail(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
     form = RegistrationForm(request.POST if request.method == "POST" and request.POST.get("action") == "register" else None, event=event)
@@ -137,7 +156,7 @@ def event_detail(request, event_id):
         })
 
 
-@staff_required
+@staff_permission_required('events.view_eventregistration')
 def registration_detail(request, event_id, registration_id):
     event = get_object_or_404(Event, pk=event_id)
     registration = get_object_or_404(EventRegistration.objects.select_related("event", "participant", "created_by"), pk=registration_id, event=event)
@@ -152,7 +171,7 @@ def registration_detail(request, event_id, registration_id):
         })
 
 
-@staff_required
+@staff_permission_required('events.change_eventregistration')
 def registration_reissue(request, event_id, registration_id):
     event = get_object_or_404(Event, pk=event_id)
     registration = get_object_or_404(EventRegistration, pk=registration_id, event=event)
@@ -226,7 +245,7 @@ def ticket_image(request, token):
     response["Content-Disposition"] = f'inline; filename="ticket-{ticket.ticket_number or ticket.token}.png"'
     return response
 
-@staff_required
+@staff_permission_required('events.change_event')
 def event_station_assign(request, event_id):
     from apps.stations.models import EventStation
     from apps.stations.services import assign_station
@@ -252,14 +271,14 @@ def event_station_assign(request, event_id):
     return redirect("events:event_detail", event_id=event.pk)
 
 
-@staff_required
+@staff_permission_required('events.view_qrticket', 'events.view_eventregistration')
 def ticket_lookup(request, ticket_number):
     from .models import QrTicket
     ticket = get_object_or_404(QrTicket, ticket_number=ticket_number, is_current=True)
     return redirect("events:ticket_present", token=ticket.token)
 
 
-@staff_required
+@staff_permission_required('events.view_qrticket', 'events.view_eventregistration')
 def ticket_recovery(request):
     """Staff-only lookup; never creates or changes a ticket."""
     from .models import QrTicket
@@ -292,7 +311,7 @@ def ticket_recovery(request):
     })
 
 
-@staff_required
+@staff_permission_required('events.change_qrticket')
 def ticket_reprint(request, ticket_id):
     if request.method != 'POST':
         return HttpResponse(status=405)
@@ -301,7 +320,7 @@ def ticket_reprint(request, ticket_id):
     return redirect('events:ticket_image', token=ticket.token)
 
 
-@staff_required
+@staff_permission_required('events.change_eventregistration')
 def registration_group_change(request, event_id, registration_id):
     if request.method != "POST": return HttpResponse(status=405)
     if not request.user.has_perm("events.change_eventregistration"): raise PermissionDenied
@@ -315,7 +334,7 @@ def registration_group_change(request, event_id, registration_id):
         messages.error(request, " ".join(exc.messages))
     return redirect("events:registration_detail", event_id=event_id, registration_id=registration_id)
 
-@staff_required
+@staff_permission_required('events.change_eventregistration')
 def registration_answers_correct(request, event_id, registration_id):
     if request.method != "POST": return HttpResponse(status=405)
     if not request.user.has_perm("events.change_eventregistration"): raise PermissionDenied
@@ -328,7 +347,7 @@ def registration_answers_correct(request, event_id, registration_id):
         messages.error(request, " ".join(exc.messages))
     return redirect("events:registration_detail", event_id=event_id, registration_id=registration_id)
 
-@staff_required
+@staff_permission_required('events.view_qrticket', 'events.view_eventregistration')
 def bulk_tickets(request, event_id):
     if not request.user.has_perm("events.view_eventregistration"): raise PermissionDenied
     from .ticket_renderer import bulk_ticket_pdf_bytes
