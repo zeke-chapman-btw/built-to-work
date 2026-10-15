@@ -309,3 +309,5 @@ class HistoricalExportRecord(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 from .qualification_models import QualificationCategory, QualificationCatalogEntry, ParticipantQualification, RegistrationQualificationMapping
+
+from .participant_document_models import ParticipantDocumentCategory, ParticipantDocument, ParticipantDocumentAudit, QualificationDocumentLink

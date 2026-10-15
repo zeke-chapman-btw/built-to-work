@@ -43,6 +43,7 @@
     <p><a href="{% url 'participants:staff-qualifications' %}">← Search participants</a></p>
     <h1>{{ participant.first_name }} {{ participant.last_name }}</h1>
     <p class="muted">Participant ID: {{ participant.pk }}</p>
+    {% if perms.participants.view_participantdocument %}<p><a href="{% url 'participants:staff-participant-documents' participant.pk %}">Manage participant documents</a></p>{% endif %}
     <section class="card">
       <h2>Qualifications</h2>
       {% for record in records %}
@@ -52,6 +53,7 @@
           {% if record.years_of_experience %}<p>{{ record.years_of_experience }} years of experience</p>{% endif %}
           {% if record.experience_details %}<p>{{ record.experience_details|linebreaksbr }}</p>{% endif %}
           {% if record.notes %}<p><strong>Staff notes:</strong> {{ record.notes|linebreaksbr }}</p>{% endif %}
+          {% if perms.participants.view_participantdocument %}{% with links=record.document_links.all %}{% if links %}<p><strong>Supporting documents:</strong> {% for link in links %}<a href="{% url 'participants:staff-document-file' link.document.uuid %}">{{ link.document.original_filename }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}{% endwith %}{% endif %}
           <p class="muted">Source: {{ record.get_source_display }}{% if record.source_submission_id %}; registration answer provenance retained{% endif %}</p>
           {% if can_change %}<a href="{% url 'participants:staff-participant-qualification-edit' participant.pk record.pk %}">Update qualification</a>{% endif %}
         </div>

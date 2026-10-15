@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, testing_views, registration_views, historical_views, qualification_views
+from . import views, testing_views, registration_views, historical_views, qualification_views, document_views
 app_name = "participants"
 urlpatterns = [
     path("register/", registration_views.registration_start, name="registration-start"),
@@ -32,4 +32,16 @@ urlpatterns = [
     path("staff/qualifications/", qualification_views.qualification_directory, name="staff-qualifications"),
     path("staff/qualifications/<int:participant_id>/", qualification_views.participant_qualifications, name="staff-participant-qualifications"),
     path("staff/qualifications/<int:participant_id>/<int:qualification_id>/edit/", qualification_views.participant_qualifications, name="staff-participant-qualification-edit"),
+]
+
+urlpatterns += [
+    path("staff/documents/", document_views.document_directory, name="staff-document-directory"),
+    path("staff/documents/categories/", document_views.document_categories, name="staff-document-categories"),
+    path("staff/documents/<int:participant_id>/", document_views.participant_documents, name="staff-participant-documents"),
+    path("staff/documents/file/<uuid:document_uuid>/", document_views.document_download, name="staff-document-download"),
+    path("staff/documents/file/<uuid:document_uuid>/edit/", document_views.document_edit, name="staff-document-edit"),
+    path("staff/documents/file/<uuid:document_uuid>/archive/", document_views.document_archive, name="staff-document-archive"),
+    path("staff/documents/file/<uuid:document_uuid>/replace/", document_views.document_replace, name="staff-document-replace"),
+    path("staff/documents/file/<uuid:document_uuid>/qualification/<int:qualification_id>/link/", document_views.qualification_document_link, name="staff-document-qualification-link"),
+    path("staff/documents/file/<uuid:document_uuid>/qualification/<int:qualification_id>/unlink/", document_views.qualification_document_unlink, name="staff-document-qualification-unlink"),
 ]

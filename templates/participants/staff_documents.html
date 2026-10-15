@@ -1,0 +1,23 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<section class="container py-4">
+  <p><a href="{% url 'participants:staff-document-directory' %}">Document search</a></p>
+  <h1>Documents — {{ participant.first_name }} {{ participant.last_name }}</h1>
+  <p><a href="{% url 'participants:staff-participant-qualifications' participant.pk %}">View qualifications</a></p>
+  <h2>Upload supporting document</h2>
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}{{ form.as_p }}<button type="submit">Upload document</button></form>
+  <h2>Document history</h2>
+  {% for document in documents %}
+    <article class="card my-3"><div class="card-body">
+      <h3>{{ document.original_filename }} <small>{{ document.get_state_display }}</small></h3>
+      <p>{{ document.category.name }} · {{ document.file_size }} bytes · uploaded {{ document.uploaded_at }} by {{ document.uploaded_by|default:'Former user' }}</p>
+      <p>{{ document.description }}{% if document.issue_date %} · Issued {{ document.issue_date }}{% endif %}{% if document.expiration_date %} · Expires {{ document.expiration_date }}{% if document.is_expired %} (expired){% endif %}{% endif %}</p>
+      <a href="{% url 'participants:staff-document-download' document.uuid %}">Download securely</a> · <a href="{% url 'participants:staff-document-edit' document.uuid %}">Edit details</a>
+      {% if document.state == 'active' %}<a href="{% url 'participants:staff-document-replace' document.uuid %}">Replace</a><form method="post" action="{% url 'participants:staff-document-archive' document.uuid %}">{% csrf_token %}<label>Reason <input name="audit_reason" required maxlength="500"></label><button type="submit">Archive</button></form>{% endif %}
+      <h4>Supporting qualifications</h4><ul>{% for link in document.qualification_links.all %}<li>{{ link.qualification.category.name }} — {{ link.qualification.name|default:link.qualification }}</li>{% empty %}<li>No qualification links</li>{% endfor %}</ul>
+      {% if qualifications %}<form method="post" action="{% url 'participants:staff-document-qualification-link' document.uuid 0 %}" onsubmit="this.action=this.action.replace('/0/link/','/'+this.qualification_id.value+'/link/');">{% csrf_token %}<select name="qualification_id" required><option value="">Select qualification</option>{% for q in qualifications %}<option value="{{ q.pk }}">{{ q }}</option>{% endfor %}</select><input name="reason" required maxlength="500" placeholder="Reason"><button type="submit">Link qualification</button></form>{% endif %}
+      <details><summary>Audit history</summary><ul>{% for event in document.audit_events.all %}<li>{{ event.created_at }} — {{ event.get_action_display|default:event.action }} — {{ event.actor|default:'Former user' }}{% if event.reason %}: {{ event.reason }}{% endif %}</li>{% endfor %}</ul></details>
+    </div></article>
+  {% empty %}<p>No documents have been added for this participant.</p>{% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,18 @@
+from pathlib import Path
+from django.conf import settings
+from django.core.files.storage import FileSystemStorage
+
+
+class PrivateParticipantDocumentStorage(FileSystemStorage):
+    """Private local storage; files are served only by permission-checked views."""
+
+    def __init__(self, *args, **kwargs):
+        root = getattr(settings, "PRIVATE_DOCUMENT_ROOT", None)
+        if root is None:
+            root = Path(settings.BASE_DIR) / "private_media" / "participant_documents"
+        kwargs.setdefault("location", root)
+        kwargs.setdefault("base_url", None)
+        super().__init__(*args, **kwargs)
+
+    def url(self, name):
+        raise ValueError("Private participant documents have no public URL.")
