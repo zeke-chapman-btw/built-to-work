@@ -1,0 +1,50 @@
+services:
+  - type: web
+    name: btw-preview
+    runtime: python
+    branch: render-preview
+    plan: 0.5c-512mb
+    buildCommand: ./build.sh
+    preDeployCommand: python manage.py migrate --noinput
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 120
+    healthCheckPath: /health/
+    autoDeployTrigger: commit
+    numInstances: 1
+    disk:
+      name: btw-preview-private-files
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.14.3
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: btw-preview-db
+          property: connectionString
+      - key: ALLOWED_HOSTS
+        value: btw-preview.onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://btw-preview.onrender.com
+      - key: BTW_PREVIEW_GATE_ENABLED
+        value: "true"
+      - key: BTW_PREVIEW_GATE_USERNAME
+        sync: false
+      - key: BTW_PREVIEW_GATE_PASSWORD
+        sync: false
+      - key: PRIVATE_DOCUMENT_ROOT
+        value: /var/data/participant_documents
+      - key: PRIVATE_CONSENT_ROOT
+        value: /var/data/consent_documents
+      - key: PRIVATE_HISTORICAL_ROOT
+        value: /var/data/historical_imports
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.locmem.EmailBackend
+databases:
+  - name: btw-preview-db
+    databaseName: btw_preview
+    user: btw_preview
+    plan: 1g

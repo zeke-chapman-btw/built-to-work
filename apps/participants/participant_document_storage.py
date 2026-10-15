@@ -9,7 +9,7 @@ class PrivateParticipantDocumentStorage(FileSystemStorage):
     def __init__(self, *args, **kwargs):
         root = getattr(settings, "PRIVATE_DOCUMENT_ROOT", None)
         if root is None:
-            root = Path(settings.BASE_DIR) / "private_media" / "participant_documents"
+            root = Path(settings.PRIVATE_DOCUMENT_ROOT)
         kwargs.setdefault("location", root)
         kwargs.setdefault("base_url", None)
         super().__init__(*args, **kwargs)

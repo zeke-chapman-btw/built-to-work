@@ -28,3 +28,9 @@ CSRF_TRUSTED_ORIGINS = [
     for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin.strip()
 ]
+# Render terminates TLS at its edge and forwards the original scheme.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Serve collected static assets with WhiteNoise in production.
+MIDDLEWARE.insert(MIDDLEWARE.index("config.middleware.PreviewAccessMiddleware") + 1, "whitenoise.middleware.WhiteNoiseMiddleware")
+STORAGES = {"default": {"BACKEND": "django.core.files.storage.FileSystemStorage"}, "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"}}

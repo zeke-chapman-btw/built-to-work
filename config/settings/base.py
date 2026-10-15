@@ -29,6 +29,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "config.middleware.PreviewAccessMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -57,8 +58,13 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
 DATABASE_ENGINE = os.environ.get("DB_ENGINE", "sqlite").lower()
-if DATABASE_ENGINE == "sqlite":
+if DATABASE_URL:
+    import dj_database_url
+
+    DATABASES = {"default": dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)}
+elif DATABASE_ENGINE == "sqlite":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -94,11 +100,16 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = Path(os.environ.get("STATIC_ROOT", BASE_DIR / "staticfiles"))
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 PRIVATE_CONSENT_ROOT = Path(os.environ.get("PRIVATE_CONSENT_ROOT", BASE_DIR / "private_consent_documents"))
+PRIVATE_DOCUMENT_ROOT = Path(os.environ.get("PRIVATE_DOCUMENT_ROOT", BASE_DIR / "private_media" / "participant_documents"))
+BTW_PREVIEW_GATE_ENABLED = os.environ.get("BTW_PREVIEW_GATE_ENABLED", "false").lower() == "true"
+BTW_PREVIEW_GATE_USERNAME = os.environ.get("BTW_PREVIEW_GATE_USERNAME", "")
+BTW_PREVIEW_GATE_PASSWORD = os.environ.get("BTW_PREVIEW_GATE_PASSWORD", "")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTHENTICATION_BACKENDS = [
