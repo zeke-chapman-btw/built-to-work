@@ -1,3 +1,4 @@
+from . import verification_views
 from django.urls import path
 from . import views, testing_views, registration_views, historical_views, qualification_views, document_views
 app_name = "participants"
@@ -44,4 +45,6 @@ urlpatterns += [
     path("staff/documents/file/<uuid:document_uuid>/replace/", document_views.document_replace, name="staff-document-replace"),
     path("staff/documents/file/<uuid:document_uuid>/qualification/<int:qualification_id>/link/", document_views.qualification_document_link, name="staff-document-qualification-link"),
     path("staff/documents/file/<uuid:document_uuid>/qualification/<int:qualification_id>/unlink/", document_views.qualification_document_unlink, name="staff-document-qualification-unlink"),
+    path("staff/approvals/", verification_views.qualification_approvals, name="staff-qualification-approvals"),
+    path("staff/approvals/<str:kind>/<int:object_id>/", verification_views.qualification_approval_detail, name="staff-qualification-approval-detail"),
 ]

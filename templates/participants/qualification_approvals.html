@@ -1,0 +1,17 @@
+{% extends 'internal/base.html' %}
+{% block content %}
+<section class="panel">
+  <h2>Pending review</h2>
+  {% if pending_items %}
+    <div class="table-wrap"><table><thead><tr><th>Participant</th><th>Qualification / document</th><th>Type</th><th>Status</th><th>Dates</th><th></th></tr></thead><tbody>
+    {% for item in pending_items %}<tr>
+      <td>{{ item.target.participant.get_full_name|default:item.target.participant }}</td>
+      <td>{% if item.kind == 'qualification' %}{{ item.target.catalog_entry.name }}{% else %}{{ item.target.category.name }} — {{ item.target.original_filename }}{% endif %}</td>
+      <td>{{ item.kind|title }}</td><td>{{ item.summary.status|title }}</td>
+      <td>{% if item.kind == 'document' %}Issued {{ item.target.issue_date|default:'—' }} · Expires {{ item.target.expiration_date|default:'—' }}{% else %}Added {{ item.target.created_at|date:'Y-m-d' }}{% endif %}</td>
+      <td><a class="button" href="{% url 'participants:staff-qualification-approval-detail' item.kind item.target.pk %}">Review</a></td>
+    </tr>{% endfor %}
+    </tbody></table></div>
+  {% else %}<p>No qualification or document reviews are waiting.</p>{% endif %}
+</section>
+{% endblock %}

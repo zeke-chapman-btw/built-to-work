@@ -311,3 +311,5 @@ class HistoricalExportRecord(models.Model):
 from .qualification_models import QualificationCategory, QualificationCatalogEntry, ParticipantQualification, RegistrationQualificationMapping
 
 from .participant_document_models import ParticipantDocumentCategory, ParticipantDocument, ParticipantDocumentAudit, QualificationDocumentLink
+
+from .verification_models import ParticipantVerificationRecord

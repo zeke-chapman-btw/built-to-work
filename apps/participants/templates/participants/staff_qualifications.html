@@ -1,4 +1,5 @@
 <!doctype html>
+{% load verification_status %}
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -50,6 +51,7 @@
         <div class="record">
           <strong>{% if record.catalog_entry %}{{ record.catalog_entry.name }}{% else %}{{ record.custom_name }}{% endif %}</strong>
           {% if record.is_self_reported %}<span> · Self-reported</span>{% endif %}
+          {% with verification=record|verification_summary %}<p><strong>BTW verification:</strong> {{ verification.status|title }}{% if verification.method %} · {{ verification.method }}{% endif %}{% if verification.reviewer %} · reviewed by {{ verification.reviewer }}{% endif %}{% if verification.reviewed_at %} · {{ verification.reviewed_at|date:'Y-m-d' }}{% endif %}</p>{% if verification.reason %}<p>Review reason: {{ verification.reason }}</p>{% endif %}{% if record.is_self_reported and verification.status != 'verified' %}<p>Participant-reported; not independently verified.</p>{% endif %}{% if user.is_superuser or perms.participants.view_qualificationapprovals or perms.participants.review_qualificationapprovals %}<a href="{% url 'participants:staff-qualification-approval-detail' 'qualification' record.pk %}">Review verification history</a>{% endif %}{% endwith %}
           {% if record.years_of_experience %}<p>{{ record.years_of_experience }} years of experience</p>{% endif %}
           {% if record.experience_details %}<p>{{ record.experience_details|linebreaksbr }}</p>{% endif %}
           {% if record.notes %}<p><strong>Staff notes:</strong> {{ record.notes|linebreaksbr }}</p>{% endif %}

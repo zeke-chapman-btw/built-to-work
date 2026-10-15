@@ -1,4 +1,5 @@
 {% extends "internal/base.html" %}
+{% load verification_status %}
 {% block content %}
 <section class="container py-4">
   <p><a href="{% url 'participants:staff-document-directory' %}">Document search</a></p>
@@ -10,6 +11,11 @@
   {% for document in documents %}
     <article class="card my-3"><div class="card-body">
       <h3>{{ document.original_filename }} <small>{{ document.get_state_display }}</small></h3>
+      {% with verification=document|verification_summary %}
+      <p><strong>BTW verification:</strong> {{ verification.status|title }}{% if verification.method %} · {{ verification.method }}{% endif %}{% if verification.reviewer %} · reviewed by {{ verification.reviewer }}{% endif %}{% if verification.reviewed_at %} · {{ verification.reviewed_at|date:'Y-m-d' }}{% endif %}</p>
+      {% if verification.reason %}<p>Review reason: {{ verification.reason }}</p>{% endif %}
+      {% if user.is_superuser or perms.participants.view_qualificationapprovals or perms.participants.review_qualificationapprovals %}<a href="{% url 'participants:staff-qualification-approval-detail' 'document' document.pk %}">Review verification history</a>{% endif %}
+      {% endwith %}
       <p>{{ document.category.name }} · {{ document.file_size }} bytes · uploaded {{ document.uploaded_at }} by {{ document.uploaded_by|default:'Former user' }}</p>
       <p>{{ document.description }}{% if document.issue_date %} · Issued {{ document.issue_date }}{% endif %}{% if document.expiration_date %} · Expires {{ document.expiration_date }}{% if document.is_expired %} (expired){% endif %}{% endif %}</p>
       <a href="{% url 'participants:staff-document-download' document.uuid %}">Download securely</a> · <a href="{% url 'participants:staff-document-edit' document.uuid %}">Edit details</a>
