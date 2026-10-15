@@ -1,1 +1,5 @@
-:root{color-scheme:light;--ink:#252830;--muted:#737780;--page:#f5f6f7;--line:#e5e7eb;--red:#c82032;--dark:#202329;--sidebar:252px;--font:Arial,Helvetica,system-ui,sans-serif;--radius:10px;--focus:0 0 0 3px #c8203240}
+@font-face{font-family:BTW Futura;src:url("/static/kiosk/fonts/futura-condensed-pt-medium.otf") format("opentype");font-style:normal;font-weight:500;font-display:swap}
+@font-face{font-family:BTW Roboto;src:url("/static/kiosk/fonts/roboto-regular.ttf") format("truetype");font-style:normal;font-weight:400;font-display:swap}
+@font-face{font-family:BTW Roboto;src:url("/static/kiosk/fonts/roboto-medium.ttf") format("truetype");font-style:normal;font-weight:500;font-display:swap}
+@font-face{font-family:BTW Roboto;src:url("/static/kiosk/fonts/roboto-bold.ttf") format("truetype");font-style:normal;font-weight:700;font-display:swap}
+:root{color-scheme:light;--ink:#202329;--muted:#68707a;--page:#f4f5f6;--surface:#fff;--line:#dfe2e5;--brand-red:#D02030;--red:#D02030;--black:#000;--warm-yellow:#F2B632;--dark:#17191d;--sidebar:264px;--font:"BTW Roboto",Roboto,Arial,sans-serif;--font-display:"BTW Futura","Arial Narrow",sans-serif;--radius:10px;--focus:0 0 0 3px #d0203040}
