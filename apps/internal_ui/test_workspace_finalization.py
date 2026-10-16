@@ -16,7 +16,7 @@ class WorkspaceFinalizationTests(TestCase):
         )
         self.client.force_login(self.user, backend="django.contrib.auth.backends.ModelBackend")
 
-    def test_six_direct_workspaces_and_separate_settings_link(self):
+    def test_six_direct_workspaces_and_personal_settings_gear(self):
         response = self.client.get(reverse("internal:home"))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
@@ -25,7 +25,7 @@ class WorkspaceFinalizationTests(TestCase):
              ("operations", "OPERATIONS"), ("customers", "CUSTOMERS"), ("administration", "ADMIN")],
         )
         self.assertEqual(response.context["settings_link"]["url"], reverse("internal:settings"))
-        self.assertContains(response, ">SETTINGS</span>")
+        self.assertContains(response, 'aria-label="Personal settings"')
         self.assertNotContains(response, "<details")
         for workspace_id in ("events", "participants", "operations", "customers", "administration"):
             self.assertContains(response, reverse("internal:workspace", kwargs={"workspace_id": workspace_id}))
@@ -91,4 +91,4 @@ class WorkspaceFinalizationTests(TestCase):
                 response = self.client.get(reverse(route))
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, f'href="{reverse("internal:settings")}"')
-                self.assertContains(response, ">SETTINGS</span>")
+                self.assertContains(response, 'aria-label="Personal settings"')

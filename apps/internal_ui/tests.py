@@ -100,8 +100,8 @@ class PortalFoundationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "/events/")
         self.assertNotContains(response, "Active registrations")
-        self.assertContains(response, "Customers")
-        self.assertContains(response, "planned")
+        self.assertContains(response, "Create customer")
+        self.assertContains(response, "Planned")
 
     def test_dashboard_uses_permission_scoped_event_data(self):
         self.client.force_login(self.staff_user("event-reader", ("events", "view_event")))

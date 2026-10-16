@@ -104,5 +104,9 @@ footer { padding: 14px clamp(18px, 4vw, 58px); border-top: 1px solid var(--line)
 
 /* Keep Settings and the signed-in staff identity below the six workspaces. */
 .sidebar-bottom { margin-top: auto; padding: 12px 12px 18px; border-top: 1px solid #ffffff26; }
-.sidebar-bottom > .nav-item { margin-bottom: 8px; }
 .sidebar-bottom .sidebar-user { margin-top: 0; }
+
+/* Personal Settings stays beside the signed-in staff name. */
+.sidebar-bottom .sidebar-user { justify-content: space-between; gap: 10px; padding: 4px 5px; border-top: 0; }
+.settings-gear { display: inline-grid; width: 36px; height: 36px; flex: 0 0 36px; place-items: center; border-radius: 6px; color: #a6a9ac !important; font: 26px/1 Arial, sans-serif; }
+.settings-gear:hover, .settings-gear.active { background: #ffffff18; color: #fff !important; }

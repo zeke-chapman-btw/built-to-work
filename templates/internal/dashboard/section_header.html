@@ -1,0 +1,8 @@
+<div class="dashboard-section-header">
+  <h2 id="{{ section_id }}">{{ heading }}</h2>
+  <div class="dashboard-section-controls">
+    {% if mark_read %}<button type="button" disabled title="No updates feed is connected">Mark All as Read</button>{% endif %}
+    <button type="button" disabled title="Customization is not available in Phase 1">Edit Options <span class="dashboard-sr-only">(preview only)</span></button>
+    {% if view_more %}<button type="button" disabled title="Additional analytics are not connected">View More</button>{% endif %}
+  </div>
+</div>

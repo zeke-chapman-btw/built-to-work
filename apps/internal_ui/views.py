@@ -1,3 +1,4 @@
+from .dashboard import ANALYTICS_LABELS, quick_actions_for
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
@@ -23,8 +24,7 @@ def _require_staff(request):
 @login_required
 def home(request):
     _require_staff(request)
-    cards=[item for item in visible_workspaces(request.user,request.path) if item["id"]!="home"]
-    return render(request,"internal/dashboard.html",_staff_context(request,page_title="Dashboard",page_description="A clear starting point for your authorized BTW work.",workspace_cards=cards))
+    return render(request, "internal/dashboard.html", _staff_context(request, page_title="Dashboard", quick_actions=quick_actions_for(request.user), analytics_labels=ANALYTICS_LABELS))
 
 
 @login_required

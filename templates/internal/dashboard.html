@@ -1,7 +1,29 @@
 {% extends 'internal/base.html' %}
+{% load static %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'internal/css/dashboard.css' %}">{% endblock %}
+{% block body_class %} home-dashboard-page{% endblock %}
+{% block page_heading %}<h1 class="dashboard-sr-only">Home Dashboard</h1>{% endblock %}
 {% block content %}
-<section class="welcome card"><div><span class="badge">STAFF WORKSPACE</span><h2>Welcome to your workspace</h2><p>Choose a workflow below. Available actions depend on your BTW permissions.</p></div></section>
-<section aria-labelledby="dashboard-workspaces"><div class="section-heading"><div><p class="eyebrow">YOUR WORKSPACES</p><h2 id="dashboard-workspaces">Available now</h2></div></div>
-<div class="workspace-grid">{% for item in workspace_cards %}<a class="workspace-card card" href="{{ item.url }}"><span class="workspace-card-label">{{ item.label }}</span><strong>{{ item.label|title }}</strong><p>{{ item.description }}</p><span class="card-arrow" aria-hidden="true">→</span></a>{% empty %}<div class="empty-state card"><h2>No workspaces available</h2><p>Your account does not currently have access to a staff workflow.</p></div>{% endfor %}</div>
-</section>
+<div class="home-dashboard">
+  <section class="dashboard-section dashboard-updates" aria-labelledby="dashboard-updates-title">
+    {% include 'internal/dashboard/section_header.html' with section_id='dashboard-updates-title' heading='Updates' mark_read=True %}
+    <ul class="dashboard-update-list"><li>No updates connected in this visual preview.</li></ul>
+  </section>
+  <section class="dashboard-section" aria-labelledby="dashboard-actions-title">
+    {% include 'internal/dashboard/section_header.html' with section_id='dashboard-actions-title' heading='Quick Actions' %}
+    <div class="dashboard-actions">
+      {% for action in quick_actions %}
+        {% if action.url %}<a class="button card dashboard-action" href="{{ action.url }}">{{ action.label }}</a>
+        {% else %}<button class="button card dashboard-action" type="button" disabled>{{ action.label }}<small>Planned · preview only</small></button>{% endif %}
+      {% endfor %}
+    </div>
+  </section>
+  <section class="dashboard-section" aria-labelledby="dashboard-analytics-title">
+    {% include 'internal/dashboard/section_header.html' with section_id='dashboard-analytics-title' heading='Analytics' view_more=True %}
+    <p class="dashboard-preview-note">Layout preview · analytics data is not connected.</p>
+    <div class="dashboard-analytics">
+      {% for label in analytics_labels %}<article class="card dashboard-metric"><strong aria-label="Not available">—</strong><span>{{ label }}</span><small>Not connected</small></article>{% endfor %}
+    </div>
+  </section>
+</div>
 {% endblock %}
