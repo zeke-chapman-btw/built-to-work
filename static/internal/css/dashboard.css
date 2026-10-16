@@ -3,12 +3,17 @@
 .home-dashboard-page #main-content { background: #fff; max-width: none; padding: 28px 36px 36px; }
 .home-dashboard-page .home-dashboard { color: #111; }
 .home-dashboard-page .dashboard-section { margin: 0 0 24px; }
-.home-dashboard-page .dashboard-section-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; border-bottom: 2px solid var(--red); padding-bottom: 3px; }
+.home-dashboard-page .dashboard-section-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; border-bottom: 2px solid #b9bdc1; padding-bottom: 3px; }
 .home-dashboard-page .dashboard-section-header h2 { margin: 0; color: var(--red); font: 500 30px/1.15 var(--font-display); text-transform: uppercase; }
-.home-dashboard-page .dashboard-section-controls { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 18px; }
-.home-dashboard-page .dashboard-section-controls button { padding: 3px 0; border: 0; background: transparent; color: var(--red); font: 700 10px/1.25 var(--font); text-transform: uppercase; cursor: not-allowed; opacity: .65; }
-.home-dashboard-page .dashboard-update-list { min-height: 68px; margin: 12px 16px 0; padding: 0; list-style: none; color: #777d82; font-weight: 600; }
-.home-dashboard-page .dashboard-update-list li::before { content: "–"; margin-right: 10px; }
+.home-dashboard-page .dashboard-section-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 14px; min-width: 0; }
+.home-dashboard-page .dashboard-edit { margin-left: auto; flex-shrink: 0; white-space: nowrap; }
+.home-dashboard-page .dashboard-section-header button, .home-dashboard-page .dashboard-section-header a.dashboard-edit { padding: 3px 0; border: 0; background: transparent; color: var(--red); font: 700 10px/1.25 var(--font); text-transform: uppercase; cursor: not-allowed; opacity: .65; }
+.home-dashboard-page .dashboard-notifications { min-height: 68px; margin: 12px 16px 0; }
+.home-dashboard-page .dashboard-notification { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: #f4f5f6; }
+.home-dashboard-page .dashboard-notification-body { min-width: 0; overflow-wrap: anywhere; }
+.home-dashboard-page .dashboard-notification strong { display: block; font-size: 15px; }
+.home-dashboard-page .dashboard-notification p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.home-dashboard-page .dashboard-notification-status { flex-shrink: 0; background: #e3e5e7; color: #53595f; font-size: 10px; }
 .home-dashboard-page .dashboard-actions { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 28px 20px; padding: 20px 18px 0; }
 .home-dashboard-page .dashboard-action { display: flex; min-width: 0; min-height: 88px; flex-direction: column; gap: 4px; margin: 0; padding: 16px 10px; border: 0; border-radius: var(--radius); background: #e7e8e9; box-shadow: none; color: #000; text-align: center; text-transform: uppercase; font: 500 clamp(20px,1.9vw,28px)/1.15 var(--font-display); overflow-wrap: anywhere; }
 .home-dashboard-page a.dashboard-action:hover { background: #dcdedf; box-shadow: none; }
@@ -30,10 +35,13 @@
   .home-dashboard-page #main-content { padding: 22px 16px 28px; }
   .home-dashboard-page .dashboard-section-header { align-items: flex-start; gap: 8px; }
   .home-dashboard-page .dashboard-section-header h2 { font-size: 25px; flex-shrink: 0; }
-  .home-dashboard-page .dashboard-section-controls { gap: 6px 12px; }
-  .home-dashboard-page .dashboard-section-controls button { font-size: 9px; }
+  .home-dashboard-page .dashboard-section-heading { gap: 6px 10px; }
+  .home-dashboard-page .dashboard-section-header button, .home-dashboard-page .dashboard-section-header a.dashboard-edit { font-size: 9px; }
   .home-dashboard-page .dashboard-actions { grid-template-columns: 1fr; gap: 12px; padding-top: 16px; }
   .home-dashboard-page .dashboard-action { min-height: 70px; font-size: 25px; }
   .home-dashboard-page .dashboard-analytics { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
   .home-dashboard-page .dashboard-metric { min-height: 130px; }
 }
+
+.home-dashboard-page .dashboard-section-header a.dashboard-edit { cursor: pointer; opacity: 1; text-decoration: none; }
+.home-dashboard-page .dashboard-section-header a.dashboard-edit:hover { text-decoration: underline; }

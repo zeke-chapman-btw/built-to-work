@@ -31,13 +31,13 @@ class HomeDashboardPhaseOneTests(TestCase):
             self.assertContains(response, section)
         self.assertContains(response, 'No updates connected in this visual preview.')
         self.assertContains(response, 'analytics data is not connected')
-        self.assertEqual(len(response.context['quick_actions']), 9)
+        self.assertEqual(len(response.context['quick_actions']), 8)
         self.assertContains(response, 'class="card dashboard-metric"', count=6)
         self.assertContains(response, 'Not connected', count=6)
         self.assertContains(response, reverse('events:event_create'))
         self.assertContains(response, reverse('participants:staff-directory'))
         controls = Controls(); controls.feed(response.content.decode())
-        self.assertEqual(len(controls.buttons), 8)  # drawer toggle/scrim, five preview controls, planned customer
+        self.assertEqual(len(controls.buttons), 6)  # drawer toggle/scrim and four remaining preview controls
         preview_buttons = [b for b in controls.buttons if 'data-menu-toggle' not in b and 'data-scrim' not in b]
         self.assertTrue(all('disabled' in b for b in preview_buttons))
         self.assertEqual(response.content.decode().count('<h1'), 1)
@@ -61,7 +61,7 @@ class HomeDashboardPhaseOneTests(TestCase):
         staff = get_user_model().objects.create_user('limited-layout', password='test-password', is_staff=True)
         self.client.force_login(staff, backend='django.contrib.auth.backends.ModelBackend')
         response = self.client.get(reverse('internal:home'))
-        self.assertEqual([a['label'] for a in response.context['quick_actions']], ['Create customer', 'Personal settings'])
+        self.assertEqual([a['label'] for a in response.context['quick_actions']], ['Personal settings'])
         self.assertNotContains(response, 'href="'+reverse('events:event_create')+'"')
         self.assertNotContains(response, 'href="'+reverse('participants:staff-directory')+'"')
         staff.user_permissions.add(Permission.objects.get(content_type__app_label='events', codename='view_event'))

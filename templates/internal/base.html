@@ -10,7 +10,7 @@
   <a class="brand" href="{% url 'internal:home' %}" aria-label="Built to Work home"><img class="brand-logo" src="{% static 'internal/images/built-to-work-linear.svg' %}" alt="Built to Work"></a>
   <nav class="workspace-nav" aria-label="Workspaces">
     {% for item in navigation %}<a class="nav-item{% if item.active %} active{% endif %}" href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>
-      <span class="nav-icon nav-icon-{{ item.icon }}" aria-hidden="true">{% if item.icon == 'home' %}⌂{% elif item.icon == 'calendar' %}▦{% elif item.icon == 'people' %}♙{% elif item.icon == 'operations' %}▣{% elif item.icon == 'customers' %}♧{% else %}⚙{% endif %}</span><span>{{ item.label }}</span>
+      <span>{{ item.label }}</span>
     </a>{% endfor %}
   </nav>
   <div class="sidebar-bottom"><div class="sidebar-user"><span>{{ request.user.get_username }}</span><a class="settings-gear{% if settings_link.active %} active{% endif %}" href="{% url 'internal:settings' %}" aria-label="Personal settings" title="Personal settings"{% if settings_link.active %} aria-current="page"{% endif %}><span aria-hidden="true">⚙</span></a></div></div>

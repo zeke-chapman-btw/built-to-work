@@ -1,4 +1,8 @@
-from .dashboard import ANALYTICS_LABELS, quick_actions_for
+from .dashboard import ANALYTICS_LABELS, MAX_QUICK_ACTIONS, available_quick_actions, quick_actions_for
+from .forms import QuickActionsForm
+from django.contrib import messages
+from django.shortcuts import redirect
+from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
@@ -24,7 +28,7 @@ def _require_staff(request):
 @login_required
 def home(request):
     _require_staff(request)
-    return render(request, "internal/dashboard.html", _staff_context(request, page_title="Dashboard", quick_actions=quick_actions_for(request.user), analytics_labels=ANALYTICS_LABELS))
+    return render(request, "internal/dashboard.html", _staff_context(request, page_title="Dashboard", quick_actions=quick_actions_for(request.user), analytics_labels=ANALYTICS_LABELS, quick_actions_edit_url=reverse("internal:quick-actions-edit")))
 
 
 @login_required
@@ -43,3 +47,23 @@ def workspace(request,workspace_id):
 def settings(request):
     _require_staff(request)
     return render(request,"internal/settings.html",_staff_context(request,page_title="Settings",page_description="Manage your own staff account settings.",password_change_url=reverse("admin:password_change")))
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def quick_actions_edit(request):
+    _require_staff(request)
+    available = available_quick_actions(request.user)
+    if request.method == "POST" and request.POST.get("operation") == "restore":
+        request.user.quick_action_ids = None
+        request.user.save(update_fields=["quick_action_ids"])
+        messages.success(request, "Default Quick Actions restored.")
+        return redirect("internal:home")
+    form = QuickActionsForm(request.POST if request.method == "POST" else None, available=available)
+    if request.method == "POST" and form.is_valid():
+        request.user.quick_action_ids = form.cleaned_data["actions"]
+        request.user.save(update_fields=["quick_action_ids"])
+        messages.success(request, "Quick Actions saved.")
+        return redirect("internal:home")
+    selected = request.POST.getlist("actions") if form.is_bound else [action["id"] for action in quick_actions_for(request.user)]
+    slots = (selected + [""] * MAX_QUICK_ACTIONS)[:MAX_QUICK_ACTIONS]
+    return render(request, "internal/quick_actions_edit.html", _staff_context(request, page_title="Edit Quick Actions", available_actions=available, form=form, slots=slots))

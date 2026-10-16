@@ -7,14 +7,19 @@
 <div class="home-dashboard">
   <section class="dashboard-section dashboard-updates" aria-labelledby="dashboard-updates-title">
     {% include 'internal/dashboard/section_header.html' with section_id='dashboard-updates-title' heading='Updates' mark_read=True %}
-    <ul class="dashboard-update-list"><li>No updates connected in this visual preview.</li></ul>
+    <div class="dashboard-notifications" aria-label="Updates preview">
+      <article class="dashboard-notification" aria-labelledby="updates-preview-title">
+        <div class="dashboard-notification-body"><strong id="updates-preview-title">Activity updates</strong><p>No updates connected in this visual preview.</p></div>
+        <span class="badge dashboard-notification-status">Preview</span>
+      </article>
+    </div>
   </section>
   <section class="dashboard-section" aria-labelledby="dashboard-actions-title">
-    {% include 'internal/dashboard/section_header.html' with section_id='dashboard-actions-title' heading='Quick Actions' %}
+    {% include 'internal/dashboard/section_header.html' with section_id='dashboard-actions-title' heading='Quick Actions' edit_url=quick_actions_edit_url %}
     <div class="dashboard-actions">
       {% for action in quick_actions %}
-        {% if action.url %}<a class="button card dashboard-action" href="{{ action.url }}">{{ action.label }}</a>
-        {% else %}<button class="button card dashboard-action" type="button" disabled>{{ action.label }}<small>Planned · preview only</small></button>{% endif %}
+        <a class="button card dashboard-action" href="{{ action.url }}">{{ action.label }}</a>
+      {% empty %}<p>No Quick Actions selected. Use Edit to choose your actions.</p>
       {% endfor %}
     </div>
   </section>

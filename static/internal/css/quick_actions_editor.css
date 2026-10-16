@@ -1,0 +1,10 @@
+.quick-actions-editor { max-width: 900px; padding: 24px; }
+.quick-actions-editor .quick-action-slots { display: grid; gap: 14px; margin: 24px 0; }
+.quick-actions-editor .quick-action-slot { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.quick-actions-editor .quick-action-slot label { flex: 0 0 65px; }
+.quick-actions-editor .quick-action-slot select { flex: 1 1 240px; min-width: 0; max-width: 100%; }
+.quick-actions-editor .quick-action-order { display: flex; gap: 6px; }
+.quick-actions-editor .quick-action-order[hidden] { display: none; }
+.quick-actions-editor .quick-action-order button { min-height: 36px; padding: 6px 10px; }
+.quick-actions-editor .quick-action-editor-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+@media (max-width: 640px) { .quick-actions-editor .quick-action-slot { padding-bottom: 12px; border-bottom: 1px solid var(--line); } .quick-actions-editor .quick-action-order { margin-left: auto; } }
