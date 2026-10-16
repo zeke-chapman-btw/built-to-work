@@ -47,4 +47,4 @@ databases:
   - name: btw-preview-db
     databaseName: btw_preview
     user: btw_preview
-    plan: 1g
+    plan: 0.5c-1g

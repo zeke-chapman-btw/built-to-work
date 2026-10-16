@@ -2,7 +2,7 @@
 
 ## Purpose and status
 
-This configuration prepares the Django application for a private, browser-based development preview at a permanent Render URL. It is not production approval. No Render service, database, or Git branch has been created by this change.
+This configuration prepares the Django application for a private, browser-based development preview at a permanent Render URL. It is not production approval. The render-preview branch has been created and pushed. No Render service or database has been created yet.
 
 Use only synthetic development data. Do not import real participant records or legal documents. The preview is not a trailer server and does not run simulator ingestion, trailer synchronization, background delivery workers, or real email/SMS providers.
 
@@ -19,7 +19,7 @@ The web service uses:
 - Health check: /health/. It returns only {"status":"ok"}; the preview gate intentionally permits this path for Render probes.
 - WhiteNoise with compressed manifest storage for CSS, JavaScript, fonts, and official logos collected under STATIC_ROOT. No public media route is added.
 
-The minimum suggested web plan is Render's 0.5c-512mb single-instance plan, with one Gunicorn worker and two request threads. The Blueprint uses a 1g PostgreSQL plan. Increase these only if observed memory, load, or database usage requires it. The web service needs a paid plan to attach a persistent disk; the attached disk also means this preview should stay at one instance.
+The minimum suggested web plan is Render's 0.5c-512mb single-instance plan, with one Gunicorn worker and two request threads. The Blueprint uses Render's 0.5c-1g PostgreSQL plan. Increase these only if observed memory, load, or database usage requires it. The web service needs a paid plan to attach a persistent disk; the attached disk also means this preview should stay at one instance.
 
 ## Required Render environment
 
@@ -48,7 +48,7 @@ The preview uses a separate empty database. Do not copy the production database.
 ## First setup
 
 1. Review and approve the current application changes for preview use.
-2. Create render-preview from the approved Build 8 review checkpoint. This task intentionally does not create or push that branch.
+2. The render-preview branch is already published from the approved Build 8 review checkpoint.
 3. In Render, connect zeke-chapman-btw/built-to-work and apply the repository Blueprint. Confirm the service name btw-preview, branch, PostgreSQL database, and disk before creating resources.
 4. Enter a unique preview-gate username/password in the private Render environment prompts. Confirm that the generated service hostname exactly matches ALLOWED_HOSTS and CSRF_TRUSTED_ORIGINS.
 5. Wait for build, static collection, migration, and health checks to pass. If Render provides a different hostname, update both host settings and redeploy.
