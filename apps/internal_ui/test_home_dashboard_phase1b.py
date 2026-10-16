@@ -79,7 +79,7 @@ class HomeDashboardPolishTests(TestCase):
         self.assertIn('Activity updates', ''.join(notices[0]['text']))
         self.assertIn('No updates connected in this visual preview.', ''.join(notices[0]['text']))
         self.assertIn('Preview', ''.join(notices[0]['text']))
-        fragment = re.search(r'<article class="dashboard-notification".*?</article>', self.html, re.S).group()
+        fragment = re.search(r'<article class="dashboard-notification card".*?</article>', self.html, re.S).group()
         for forbidden in ('<a ', '<time', 'unread', '<li', 'href='):
             self.assertNotIn(forbidden, fragment)
         self.assertNotContains(self.response, 'dashboard-update-list')

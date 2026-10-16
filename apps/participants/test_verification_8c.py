@@ -81,7 +81,8 @@ class ParticipantVerificationWorkflowTests(TestCase):
 
     def test_self_reported_qualification_is_not_independently_verified(self):
         summary = qualification_verification_summary(self.qualification)
-        self.assertEqual(summary["status"], "self_reported")
+        self.assertEqual(summary["status"], "unverified")
+        self.assertTrue(self.qualification.is_self_reported)
         with self.assertRaises(ValidationError):
             record = ParticipantVerificationRecord(participant=self.participant, qualification=self.qualification, status="verified", method="self_reported", reviewer=self.admin, reviewed_at=timezone.now(), qualification_snapshot=qualification_snapshot(self.qualification))
             record.full_clean()

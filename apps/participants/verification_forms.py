@@ -6,7 +6,7 @@ from .verification_models import ParticipantVerificationRecord
 
 class VerificationDecisionForm(forms.Form):
     request_key = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
-    status = forms.ChoiceField(choices=(("verified", "Verify"), ("rejected", "Reject")))
+    status = forms.ChoiceField(choices=(("unverified", "Unverified"), ("pending", "Pending Review"), ("verified", "Verify"), ("rejected", "Reject")))
     method = forms.ChoiceField(choices=())
     reason = forms.CharField(widget=forms.Textarea(attrs={"rows": 3}), max_length=2000, label="Decision reason")
     evidence_notes = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 3}), max_length=4000, label="Supporting evidence")

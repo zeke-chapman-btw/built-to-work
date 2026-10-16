@@ -1,0 +1,12 @@
+/* Staff participant workflow only; shared tokens, cards and form components remain authoritative. */
+.participant-workflow .card { padding: 22px; }
+.participant-workflow h2 { margin: 0 0 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line); color: var(--red); font: 500 28px/1.15 var(--font-display); }
+.participant-workflow .table-scroll { width: 100%; overflow-x: auto; }
+.participant-workflow table { width: 100%; border-collapse: collapse; text-align: left; }
+.participant-workflow th, .participant-workflow td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.participant-workflow .actions { margin: 12px 0; }
+.participant-workflow .record, .participant-workflow .review-history { padding: 16px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.participant-workflow .record:last-child, .participant-workflow .review-history:last-child { border-bottom: 0; }
+.participant-workflow .errorlist { color: var(--red); }
+.participant-workflow .field input[type=checkbox] { width: auto; }
+@media (max-width: 640px) { .participant-workflow .card { padding: 16px; } .participant-workflow .profile-details { grid-template-columns: 1fr; } }

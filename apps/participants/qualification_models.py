@@ -66,6 +66,8 @@ class ParticipantQualification(TimestampedModel):
     participant = models.ForeignKey("participants.Participant", on_delete=models.PROTECT, related_name="qualifications")
     catalog_entry = models.ForeignKey(QualificationCatalogEntry, null=True, blank=True, on_delete=models.PROTECT, related_name="participant_records")
     custom_name = models.CharField(max_length=200, blank=True)
+    issue_date = models.DateField(null=True, blank=True)
+    expiration_date = models.DateField(null=True, blank=True)
     experience_details = models.TextField(blank=True)
     years_of_experience = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(80)])
     notes = models.TextField(blank=True)
@@ -92,6 +94,8 @@ class ParticipantQualification(TimestampedModel):
         indexes = [models.Index(fields=("participant", "is_active"), name="participant_qual_active_idx")]
 
     def clean(self):
+        if self.expiration_date and self.issue_date and self.expiration_date < self.issue_date:
+            raise ValidationError({"expiration_date": "Expiration cannot be before the issue date."})
         if bool(self.catalog_entry_id) == bool(self.custom_name.strip()):
             raise ValidationError("Choose one catalog qualification or enter one custom qualification.")
         if self.source_submission_id:

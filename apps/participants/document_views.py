@@ -21,7 +21,7 @@ MANAGE_PERMS = ('participants.view_participant', 'participants.manage_participan
 
 
 def _require_staff(user, *perms):
-    if not user.is_authenticated or not user.is_staff or not all(user.has_perm(permission) for permission in perms):
+    if not user.is_authenticated or not user.is_active or not user.is_staff or not all(user.has_perm(permission) for permission in perms):
         raise PermissionDenied
 
 
@@ -58,7 +58,7 @@ def participant_documents(request, participant_id):
     participant = get_object_or_404(Participant, pk=participant_id)
     docs = participant.documents.select_related(
         'category', 'uploaded_by', 'replaces'
-    ).prefetch_related('qualification_links__qualification__category', 'audit_events__actor')
+    ).prefetch_related('qualification_links__qualification__catalog_entry', 'audit_events__actor')
     form = ParticipantDocumentForm(participant=participant)
     if request.method == 'POST':
         _require_staff(request.user, *MANAGE_PERMS)
@@ -86,9 +86,13 @@ def participant_documents(request, participant_id):
                 raise
             messages.success(request, 'Document uploaded securely.')
             return redirect('participants:staff-participant-documents', participant_id=participant.pk)
-    qualifications = participant.qualifications.select_related('category').all()
+    qualifications = participant.qualifications.select_related('catalog_entry').all() if request.user.has_perm('participants.view_participantqualification') else ParticipantQualification.objects.none()
     return render(request, 'participants/staff_documents.html', {
         'participant': participant, 'documents': docs, 'qualifications': qualifications, 'form': form,
+        'page_title': 'Participant documents',
+        'can_view_audit': request.user.has_perm('participants.view_participant_document_audit') or request.user.has_perm('participants.view_participantdocumentaudit'),
+        'can_manage': all(request.user.has_perm(p) for p in MANAGE_PERMS),
+        'can_link': all(request.user.has_perm(p) for p in MANAGE_PERMS) and request.user.has_perm('participants.manage_qualification_document_links') and request.user.has_perm('participants.view_participantqualification'),
     })
 
 
@@ -103,15 +107,15 @@ def document_edit(request, document_uuid):
             locked = get_object_or_404(
                 ParticipantDocument.objects.select_for_update().select_related('participant'), uuid=document_uuid
             )
+            before = {
+                'category': locked.category_id, 'description': locked.description,
+                'issue_date': str(locked.issue_date or ''),
+                'expiration_date': str(locked.expiration_date or ''),
+            }
             form = ParticipantDocumentForm(request.POST, instance=locked, participant=locked.participant)
             form.fields.pop('file', None)
             if form.is_valid():
                 reason = form.cleaned_data['audit_reason']
-                before = {
-                    'category': locked.category_id, 'description': locked.description,
-                    'issue_date': str(locked.issue_date or ''),
-                    'expiration_date': str(locked.expiration_date or ''),
-                }
                 updated = form.save(commit=False)
                 updated.full_clean()
                 updated.save()
@@ -219,8 +223,12 @@ def document_download(request, document_uuid):
 def qualification_document_link(request, document_uuid, qualification_id):
     _require_staff(request.user, *MANAGE_PERMS, 'participants.manage_qualification_document_links')
     document = get_object_or_404(ParticipantDocument, uuid=document_uuid)
+    try:
+        qualification_key = int(qualification_id or request.POST.get('qualification_id', ''))
+    except (ValueError, TypeError):
+        raise Http404('Choose a valid qualification.')
     qualification = get_object_or_404(
-        ParticipantQualification, pk=qualification_id, participant_id=document.participant_id
+        ParticipantQualification, pk=qualification_key, participant_id=document.participant_id
     )
     reason = request.POST.get('reason', '').strip()
     if not reason:

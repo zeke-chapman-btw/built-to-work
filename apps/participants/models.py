@@ -313,3 +313,5 @@ from .qualification_models import QualificationCategory, QualificationCatalogEnt
 from .participant_document_models import ParticipantDocumentCategory, ParticipantDocument, ParticipantDocumentAudit, QualificationDocumentLink
 
 from .verification_models import ParticipantVerificationRecord
+
+from .participant_review_models import ParticipantReviewRecord

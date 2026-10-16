@@ -10,7 +10,8 @@ class ParticipantVerificationRecord(TimestampedModel):
     """Append-only review decision for one participant qualification or document."""
 
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
+        UNVERIFIED = "unverified", "Unverified"
+        PENDING = "pending", "Pending Review"
         VERIFIED = "verified", "Verified"
         REJECTED = "rejected", "Rejected"
         EXPIRED = "expired", "Expired"
@@ -62,6 +63,14 @@ class ParticipantVerificationRecord(TimestampedModel):
                 raise ValidationError({"evidence_document": "Evidence must belong to the same participant."})
             if evidence.state != evidence.State.ACTIVE:
                 raise ValidationError({"evidence_document": "Archived or superseded documents cannot support a new decision."})
+        if self.status == self.Status.VERIFIED and self.document_id:
+            from django.utils import timezone
+            if self.document.state != self.document.State.ACTIVE or (self.document.expiration_date and self.document.expiration_date < timezone.localdate()):
+                raise ValidationError("Only current, unexpired documents can be verified.")
+        if self.status == self.Status.VERIFIED and self.qualification_id and self.qualification.expiration_date:
+            from django.utils import timezone
+            if self.qualification.expiration_date < timezone.localdate():
+                raise ValidationError("Expired qualifications cannot be verified.")
         if self.status == self.Status.VERIFIED:
             if not self.reviewer_id or not self.reviewed_at:
                 raise ValidationError("A verified decision requires an authorized reviewer and review timestamp.")

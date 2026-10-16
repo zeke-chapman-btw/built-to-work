@@ -13,6 +13,8 @@ from apps.games.models import GameSession
 from .models import HistoricalSimulatorScore, Participant
 from .participant_document_models import ParticipantDocument
 from .qualification_models import ParticipantQualification
+from .participant_review_views import can_view_participant_reviews
+from .verification_services import can_view_qualification_approvals
 
 PAGE_SIZE = 25
 
@@ -20,7 +22,7 @@ PAGE_SIZE = 25
 def _staff_only(view_func):
     @wraps(view_func)
     def wrapped(request, *args, **kwargs):
-        if not request.user.is_staff:
+        if not request.user.is_active or not request.user.is_staff:
             raise PermissionDenied
         return view_func(request, *args, **kwargs)
     return wrapped
@@ -36,8 +38,8 @@ def _staff_workspace_context(request, *, title, description):
         "page_description": description,
         "can_view_registrations": _can(request.user, "events.view_eventregistration"),
         "can_view_tickets": _can(request.user, "events.view_qrticket"),
-        "can_view_qualifications": _can(request.user, "participants.view_participantqualification", "participants.manage_participant_qualifications"),
-        "can_view_documents": _can(request.user, "participants.view_participantdocument", "participants.manage_participant_documents"),
+        "can_view_qualifications": _can(request.user, "participants.view_participantqualification"),
+        "can_view_documents": _can(request.user, "participants.view_participantdocument"),
         "can_manage_documents": _can(request.user, "participants.manage_participant_documents"),
         "can_view_quiz_results": _can(request.user, "assessments.view_quizattempt"),
         "can_view_game_results": _can(request.user, "games.view_gamesession"),
@@ -97,6 +99,9 @@ def staff_profile(request, participant_id):
     context = _staff_workspace_context(
         request, title="Participant profile", description="Review this participant's existing records and history."
     )
+    context["can_view_internal_review"] = can_view_participant_reviews(request.user)
+    context["can_view_verification"] = can_view_qualification_approvals(request.user)
+    context["internal_review"] = participant.internal_reviews.select_related("reviewer").first() if context["can_view_internal_review"] else None
     context["participant"] = participant
     context["display_name"] = participant.preferred_name or participant.first_name
 

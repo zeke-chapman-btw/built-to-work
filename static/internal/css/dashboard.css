@@ -1,6 +1,5 @@
-/* Phase 1 visual layout. Every rule is restricted to the Home Dashboard. */
-.home-dashboard-page { background: #fff; }
-.home-dashboard-page #main-content { background: #fff; max-width: none; padding: 28px 36px 36px; }
+/* Home-only layout; page and card surfaces reuse the shared portal components. */
+.home-dashboard-page #main-content { max-width: none; padding: 28px 36px 36px; }
 .home-dashboard-page .home-dashboard { color: #111; }
 .home-dashboard-page .dashboard-section { margin: 0 0 24px; }
 .home-dashboard-page .dashboard-section-header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; border-bottom: 2px solid #b9bdc1; padding-bottom: 3px; }
@@ -9,19 +8,18 @@
 .home-dashboard-page .dashboard-edit { margin-left: auto; flex-shrink: 0; white-space: nowrap; }
 .home-dashboard-page .dashboard-section-header button, .home-dashboard-page .dashboard-section-header a.dashboard-edit { padding: 3px 0; border: 0; background: transparent; color: var(--red); font: 700 10px/1.25 var(--font); text-transform: uppercase; cursor: not-allowed; opacity: .65; }
 .home-dashboard-page .dashboard-notifications { min-height: 68px; margin: 12px 16px 0; }
-.home-dashboard-page .dashboard-notification { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: #f4f5f6; }
+.home-dashboard-page .dashboard-notification { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px; }
 .home-dashboard-page .dashboard-notification-body { min-width: 0; overflow-wrap: anywhere; }
 .home-dashboard-page .dashboard-notification strong { display: block; font-size: 15px; }
 .home-dashboard-page .dashboard-notification p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
 .home-dashboard-page .dashboard-notification-status { flex-shrink: 0; background: #e3e5e7; color: #53595f; font-size: 10px; }
 .home-dashboard-page .dashboard-actions { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 28px 20px; padding: 20px 18px 0; }
-.home-dashboard-page .dashboard-action { display: flex; min-width: 0; min-height: 88px; flex-direction: column; gap: 4px; margin: 0; padding: 16px 10px; border: 0; border-radius: var(--radius); background: #e7e8e9; box-shadow: none; color: #000; text-align: center; text-transform: uppercase; font: 500 clamp(20px,1.9vw,28px)/1.15 var(--font-display); overflow-wrap: anywhere; }
-.home-dashboard-page a.dashboard-action:hover { background: #dcdedf; box-shadow: none; }
+.home-dashboard-page .dashboard-action { display: flex; min-width: 0; min-height: 88px; flex-direction: column; gap: 4px; margin: 0; padding: 16px 10px; border-color: var(--line); border-radius: var(--radius); color: #000; text-align: center; text-transform: uppercase; font: 500 clamp(20px,1.9vw,28px)/1.15 var(--font-display); overflow-wrap: anywhere; }
 .home-dashboard-page .dashboard-action:disabled { color: #565b60; cursor: not-allowed; }
 .home-dashboard-page .dashboard-action small { font: 400 10px/1.3 var(--font); text-transform: none; }
 .home-dashboard-page .dashboard-preview-note { margin: 8px 18px 0; color: var(--muted); font-size: 11px; }
 .home-dashboard-page .dashboard-analytics { display: grid; grid-template-columns: repeat(6,minmax(0,1fr)); gap: 22px; padding: 12px 26px 0; }
-.home-dashboard-page .dashboard-metric { display: flex; min-height: 154px; min-width: 0; flex-direction: column; justify-content: center; align-items: center; gap: 8px; padding: 16px 8px; border: 0; border-radius: var(--radius); background: #e1e2e3; box-shadow: none; text-align: center; }
+.home-dashboard-page .dashboard-metric { display: flex; min-height: 154px; min-width: 0; flex-direction: column; justify-content: center; align-items: center; gap: 8px; padding: 16px 8px; text-align: center; }
 .home-dashboard-page .dashboard-metric strong { font: 500 38px/1 var(--font-display); }
 .home-dashboard-page .dashboard-metric span { font: 500 15px/1.1 var(--font-display); text-transform: uppercase; overflow-wrap: anywhere; }
 .home-dashboard-page .dashboard-metric small { color: #53595f; font-size: 10px; }

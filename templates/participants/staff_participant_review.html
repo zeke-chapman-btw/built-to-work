@@ -1,0 +1,8 @@
+{% extends 'internal/base.html' %}{% load static %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'internal/css/participant_workflow.css' %}">{% endblock %}
+{% block content %}<div class="content-admin participant-workflow">
+<p><a href="{% url 'participants:staff-profile' participant.pk %}">← Participant profile</a></p>
+<section class="card"><h2>{{ participant }}</h2><p>This is an internal BTW review. It is separate from qualification verification and is not an employer hiring decision. Scores and uploaded documents never approve a participant automatically.</p><p><strong>Current review:</strong> {% if latest %}{{ latest.get_status_display }}{% else %}Not reviewed{% endif %}</p></section>
+{% if can_decide %}<section class="card"><h2>Record internal review</h2><form method="post">{% csrf_token %}{{ form.request_key }}{{ form.previous_record }}{{ form.non_field_errors }}{% for field in form.visible_fields %}<div class="field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}<button class="button" type="submit">Save internal review</button></form></section>{% endif %}
+<section class="card"><h2>Review history</h2>{% for review in history %}<article class="review-history"><strong>{{ review.get_status_display }}</strong><p>{{ review.reviewer }} · {{ review.reviewed_at|date:'M j, Y H:i' }}</p><p>{{ review.internal_notes|linebreaksbr }}</p></article>{% empty %}<p>No internal reviews recorded.</p>{% endfor %}</section>
+</div>{% endblock %}

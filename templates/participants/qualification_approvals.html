@@ -1,17 +1,3 @@
-{% extends 'internal/base.html' %}
-{% block content %}
-<section class="panel">
-  <h2>Pending review</h2>
-  {% if pending_items %}
-    <div class="table-wrap"><table><thead><tr><th>Participant</th><th>Qualification / document</th><th>Type</th><th>Status</th><th>Dates</th><th></th></tr></thead><tbody>
-    {% for item in pending_items %}<tr>
-      <td>{{ item.target.participant.get_full_name|default:item.target.participant }}</td>
-      <td>{% if item.kind == 'qualification' %}{{ item.target.catalog_entry.name }}{% else %}{{ item.target.category.name }} — {{ item.target.original_filename }}{% endif %}</td>
-      <td>{{ item.kind|title }}</td><td>{{ item.summary.status|title }}</td>
-      <td>{% if item.kind == 'document' %}Issued {{ item.target.issue_date|default:'—' }} · Expires {{ item.target.expiration_date|default:'—' }}{% else %}Added {{ item.target.created_at|date:'Y-m-d' }}{% endif %}</td>
-      <td><a class="button" href="{% url 'participants:staff-qualification-approval-detail' item.kind item.target.pk %}">Review</a></td>
-    </tr>{% endfor %}
-    </tbody></table></div>
-  {% else %}<p>No qualification or document reviews are waiting.</p>{% endif %}
-</section>
-{% endblock %}
+{% extends 'internal/base.html' %}{% load static %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'internal/css/participant_workflow.css' %}">{% endblock %}
+{% block content %}<div class="content-admin participant-workflow"><section class="card"><h2>Qualifications and document verification</h2><p>Unverified, pending and expired records. Internal participant approval is reviewed separately from each participant profile.</p>{% for item in pending_items %}<article class="record"><strong>{{ item.target.participant }} — {{ item.target }}</strong><p>{{ item.summary.label }}{% if item.target.is_self_reported %} · Self-reported{% endif %}</p><a class="button" href="{% url 'participants:staff-qualification-approval-detail' item.kind item.target.pk %}">Review verification</a></article>{% empty %}<p>No qualifications or documents require review.</p>{% endfor %}</section></div>{% endblock %}

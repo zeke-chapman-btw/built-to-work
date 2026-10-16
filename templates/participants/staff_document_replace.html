@@ -1,2 +1,2 @@
-{% extends "internal/base.html" %}
-{% block content %}<section class="container py-4"><h1>Replace document</h1><p>The current document remains in history and will be marked replaced.</p><form method="post" enctype="multipart/form-data">{% csrf_token %}{{ form.as_p }}<button type="submit">Save replacement</button></form></section>{% endblock %}
+{% extends "internal/base.html" %}{% load static %}{% block extra_head %}<link rel="stylesheet" href="{% static 'internal/css/participant_workflow.css' %}">{% endblock %}
+{% block content %}<div class="content-admin participant-workflow"><section class="card"><h1>Replace document</h1><p>The current document remains in history and will be marked replaced.</p><form method="post" enctype="multipart/form-data">{% csrf_token %}{{ form.as_p }}<button type="submit">Save replacement</button></form></section></div>{% endblock %}

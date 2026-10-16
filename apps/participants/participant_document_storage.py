@@ -11,6 +11,8 @@ class PrivateParticipantDocumentStorage(FileSystemStorage):
         if root is None:
             root = Path(settings.PRIVATE_DOCUMENT_ROOT)
         kwargs.setdefault("location", root)
+        kwargs.setdefault("file_permissions_mode", 0o600)
+        kwargs.setdefault("directory_permissions_mode", 0o700)
         kwargs.setdefault("base_url", None)
         super().__init__(*args, **kwargs)
 
