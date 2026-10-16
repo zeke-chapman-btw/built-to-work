@@ -84,3 +84,11 @@ class WorkspaceFinalizationTests(TestCase):
         font_path = finders.find("kiosk/fonts/futura-condensed-pt-medium.otf")
         self.assertIsNotNone(font_path)
         self.assertEqual(Path(font_path).read_bytes()[:4], b"OTTO")
+
+    def test_settings_link_is_available_on_existing_feature_pages(self):
+        for route in ("events:event_list", "participants:staff-directory"):
+            with self.subTest(route=route):
+                response = self.client.get(reverse(route))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, f'href="{reverse("internal:settings")}"')
+                self.assertContains(response, ">SETTINGS</span>")
