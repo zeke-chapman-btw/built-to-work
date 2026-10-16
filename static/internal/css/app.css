@@ -4,16 +4,16 @@
   font-display: swap;
 }
 .internal-app, .internal-app * { box-sizing: border-box; }
-.internal-app { margin: 0; min-height: 100vh; background: var(--page); color: var(--ink); font: 15px/1.5 var(--font); }
+.internal-app { --font-display: "BTW Futura Condensed", "Arial Narrow", Arial, sans-serif; margin: 0; min-height: 100vh; background: var(--page); color: var(--ink); font: 15px/1.5 var(--font); }
 .internal-app a { color: inherit; text-decoration: none; }
 .internal-app a:focus-visible, .internal-app button:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
 .skip-link { position: fixed; top: 8px; left: 8px; z-index: 100; padding: 10px 14px; transform: translateY(-150%); background: #fff; color: #111; }
 .skip-link:focus { transform: none; }
 .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 60; display: flex; width: var(--sidebar); flex-direction: column; overflow-y: auto; background: #000; color: #fff; border-right: 4px solid var(--red); }
 .brand { display: flex; min-height: 112px; align-items: center; justify-content: center; padding: 20px 18px; border-bottom: 1px solid #ffffff24; }
-.brand-logo { display: block; width: min(250px, 100%); height: auto; max-height: 68px; object-fit: contain; }
+.brand-logo { display: block; width: min(210px, 100%); height: auto; max-height: 42px; margin-inline: auto; object-fit: contain; }
 .workspace-nav { display: grid; gap: 4px; padding: 20px 14px; }
-.nav-item { display: flex; min-height: 48px; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 700; letter-spacing: .04em; transition: background-color .15s ease, color .15s ease; }
+.nav-item { display: flex; min-height: 48px; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; color: #fff; font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: .04em; transition: background-color .15s ease, color .15s ease; }
 .nav-item:hover { background: #ffffff18; }
 .nav-item.active { background: var(--red); color: #fff; }
 .nav-icon { display: inline-grid; width: 24px; height: 24px; flex: 0 0 24px; place-items: center; color: var(--yellow); font-size: 20px; line-height: 1; }
@@ -101,3 +101,8 @@ footer { padding: 14px clamp(18px, 4vw, 58px); border-top: 1px solid var(--line)
 .profile-details dt { font-weight: 700; }
 .profile-details dd { margin: 0; overflow-wrap: anywhere; }
 @media (max-width: 600px) { .profile-details { grid-template-columns: 1fr; gap: 3px; } .profile-details dd { margin-bottom: 8px; } .participant-search button { width: 100%; } }
+
+/* Keep Settings and the signed-in staff identity below the six workspaces. */
+.sidebar-bottom { margin-top: auto; padding: 12px 12px 18px; border-top: 1px solid #ffffff26; }
+.sidebar-bottom > .nav-item { margin-bottom: 8px; }
+.sidebar-bottom .sidebar-user { margin-top: 0; }

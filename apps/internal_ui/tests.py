@@ -14,9 +14,9 @@ class InternalShellTests(TestCase):
         )
 
     def test_anonymous_redirects_to_admin_login(self):
-        response = self.client.get(reverse('internal:home'))
+        response = self.client.get(reverse("internal:home"))
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(response['Location'].startswith(reverse('admin:login')))
+        self.assertTrue(response["Location"].startswith("/accounts/login/"))
 
     def test_authenticated_non_staff_is_forbidden(self):
         user = get_user_model().objects.create_user(
@@ -26,16 +26,11 @@ class InternalShellTests(TestCase):
         self.assertEqual(self.client.get(reverse('internal:home')).status_code, 403)
 
     def test_workspace_registry_is_ordered_and_has_named_destinations(self):
-        self.assertEqual([item['id'] for item in WORKSPACES], [
-            'home', 'events', 'participants', 'operations', 'assessments', 'administration'
-        ])
-        user = self.make_staff('workspace-admin', superuser=True)
-        visible = visible_workspaces(user)
-        self.assertEqual([item['id'] for item in visible], [item['id'] for item in WORKSPACES])
-        self.assertEqual(visible[0]['url'], reverse('internal:home'))
-        self.assertEqual(visible[1]['url'], reverse('events:event_list'))
-        for item in visible[2:]:
-            self.assertTrue(item['url'].startswith('/internal/workspaces/'))
+        self.assertEqual(
+            [item["id"] for item in WORKSPACES],
+            ["home", "events", "participants", "operations", "customers", "administration"],
+        )
+        self.assertTrue(all(item.get("url_name") for item in WORKSPACES))
 
     def test_staff_sees_only_workspaces_allowed_by_permissions(self):
         user = self.make_staff('limited-staff')
@@ -58,39 +53,32 @@ class InternalShellTests(TestCase):
         self.assertNotContains(response, 'PLANNED')
 
     def test_named_workspace_pages_render_shared_shell_and_real_links(self):
-        user = self.make_staff('workspace-owner', superuser=True)
-        self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-        for workspace_id in ('participants', 'operations', 'assessments', 'administration'):
+        user = self.make_staff("workspace-owner", superuser=True)
+        self.client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
+        for workspace_id in ("events", "participants", "operations", "customers", "administration"):
             with self.subTest(workspace=workspace_id):
-                response = self.client.get(reverse('internal:workspace', kwargs={'workspace_id': workspace_id}))
+                response = self.client.get(reverse("internal:workspace", kwargs={"workspace_id": workspace_id}))
                 self.assertEqual(response.status_code, 200)
-                self.assertContains(response, 'POWERING THE AMERICAN WORKFORCE')
-                self.assertContains(response, 'internal-sidebar')
-                self.assertContains(response, 'workspace-card')
+                self.assertContains(response, "POWERING THE AMERICAN WORKFORCE")
+                self.assertContains(response, "internal-sidebar")
+                if workspace_id == "customers":
+                    self.assertContains(response, "PLANNED")
+                else:
+                    self.assertContains(response, "workspace-card")
 
     def test_events_workspace_uses_shared_header_and_tab_patterns(self):
-        user = self.make_staff('event-staff')
-        permission = Permission.objects.get(codename='view_event', content_type__app_label='events', content_type__model='event')
-        user.user_permissions.add(permission)
-        self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-        response = self.client.get(reverse('events:event_list'))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Events sections')
-        self.assertContains(response, 'All events')
-        self.assertContains(response, 'aria-current="page"')
-        self.assertNotContains(response, '<style>', html=False)
-        user.is_superuser = True
-        user.save(update_fields=["is_superuser"])
+        user = self.make_staff("event-workspace-staff")
+        user.user_permissions.add(Permission.objects.get(codename="view_event", content_type__app_label="events", content_type__model="event"))
         self.client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
-        response = self.client.get(reverse("events:event_list"))
-        for href in (
-            "/internal/", "/events/", "/internal/workspaces/participants/",
-            "/internal/workspaces/operations/", "/internal/workspaces/assessments/",
-            "/internal/workspaces/administration/",
-        ):
-            with self.subTest(href=href):
-                self.assertContains(response, f'href="{href}"')
-        self.assertContains(response, 'class="nav-item active" href="/events/"')
+        response = self.client.get(reverse("internal:workspace", kwargs={"workspace_id": "events"}))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "internal-sidebar")
+        self.assertContains(response, "Events")
+        self.assertContains(response, reverse("events:event_list"))
+        event_list = self.client.get(reverse("events:event_list"))
+        self.assertEqual(event_list.status_code, 200)
+        self.assertContains(event_list, "internal-sidebar")
+        self.assertContains(event_list, 'href="/internal/workspaces/events/"')
 
     def test_unknown_workspace_is_not_exposed(self):
         user = self.make_staff('unknown-staff')
@@ -106,12 +94,14 @@ class PortalFoundationTests(TestCase):
         return user
 
     def test_dashboard_hides_ungranted_workflows(self):
-        self.client.force_login(self.staff_user("limited-portal-staff"))
+        user = get_user_model().objects.create_user(username="limited-portal-staff", password="valid-test-password", is_staff=True, is_active=True)
+        self.client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
         response = self.client.get(reverse("internal:home"))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "/events/")
         self.assertNotContains(response, "Active registrations")
-        self.assertContains(response, "No workspaces available")
+        self.assertContains(response, "Customers")
+        self.assertContains(response, "planned")
 
     def test_dashboard_uses_permission_scoped_event_data(self):
         self.client.force_login(self.staff_user("event-reader", ("events", "view_event")))

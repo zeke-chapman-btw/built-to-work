@@ -10,10 +10,10 @@
   <a class="brand" href="{% url 'internal:home' %}" aria-label="Built to Work home"><img class="brand-logo" src="{% static 'internal/images/built-to-work-linear.svg' %}" alt="Built to Work"></a>
   <nav class="workspace-nav" aria-label="Workspaces">
     {% for item in navigation %}<a class="nav-item{% if item.active %} active{% endif %}" href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>
-      <span class="nav-icon nav-icon-{{ item.icon }}" aria-hidden="true">{% if item.icon == 'home' %}⌂{% elif item.icon == 'calendar' %}▦{% elif item.icon == 'people' %}♙{% elif item.icon == 'operations' %}▣{% elif item.icon == 'assessments' %}✓{% else %}⚙{% endif %}</span><span>{{ item.label }}</span>
+      <span class="nav-icon nav-icon-{{ item.icon }}" aria-hidden="true">{% if item.icon == 'home' %}⌂{% elif item.icon == 'calendar' %}▦{% elif item.icon == 'people' %}♙{% elif item.icon == 'operations' %}▣{% elif item.icon == 'customers' %}♧{% else %}⚙{% endif %}</span><span>{{ item.label }}</span>
     </a>{% endfor %}
   </nav>
-  <div class="sidebar-user"><i aria-hidden="true">{{ request.user.get_username|slice:":1"|upper }}</i><span>{{ request.user.get_username }}</span></div>
+  <div class="sidebar-bottom"><a class="nav-item{% if settings_link.active %} active{% endif %}" href="{{ settings_link.url }}"{% if settings_link.active %} aria-current="page"{% endif %}><span class="nav-icon" aria-hidden="true">⚙</span><span>SETTINGS</span></a><div class="sidebar-user"><i aria-hidden="true">{{ request.user.get_username|slice:":1"|upper }}</i><span>{{ request.user.get_username }}</span></div></div>
 </aside>
 <div class="main-column">
   <header class="topbar"><button class="menu-toggle" type="button" aria-label="Open navigation" aria-controls="internal-sidebar" aria-expanded="false" data-menu-toggle>☰</button><span class="portal-tagline">POWERING THE AMERICAN WORKFORCE</span><a class="sign-out" href="{% url 'admin:logout' %}">Sign out</a></header>
