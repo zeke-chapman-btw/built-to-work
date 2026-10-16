@@ -17,6 +17,7 @@ WORKSPACES = (
 
 WORKSPACE_LINKS = {
     "participants": (
+        {"label": "Directory", "description": "Search participants and open their unified profile.", "url_name": "participants:staff-directory", "permissions": ("participants.view_participant",)},
         {"label": "Qualifications", "description": "View and maintain recorded qualifications.", "url_name": "participants:staff-qualifications", "permissions": ("participants.view_participantqualification",)},
         {"label": "Documents", "description": "Open the authorized participant document queue.", "url_name": "participants:staff-document-directory", "permissions": ("participants.view_participantdocument",)},
         {"label": "Verification approvals", "description": "Review pending qualification verification decisions.", "url_name": "participants:staff-qualification-approvals", "permissions": ("participants.view_qualificationapprovals", "participants.review_qualificationapprovals")},
@@ -56,7 +57,21 @@ def visible_workspaces(user, current_path=""):
         if not _can_see(user, item["permissions"]):
             continue
         entry = _resolved(item)
-        entry["active"] = (current_path == entry["url"] if item["id"] == "home" else current_path.startswith(entry["url"]))
+        if item["id"] == "home":
+            entry["active"] = current_path == entry["url"]
+        else:
+            prefixes = {
+                "events": ("/events/",),
+                "participants": ("/participants/staff/",),
+                "operations": ("/stations/", "/events/operations/", "/events/offline-preparations/"),
+                "assessments": ("/assessments/",),
+                "administration": ("/admin/", "/participants/staff/registration-form/"),
+            }
+            entry["active"] = current_path.startswith(entry["url"]) or any(
+                current_path.startswith(prefix) for prefix in prefixes.get(item["id"], ())
+            )
+            if item["id"] == "events" and current_path.startswith(("/events/operations/", "/events/offline-preparations/")):
+                entry["active"] = False
         visible.append(entry)
     return visible
 

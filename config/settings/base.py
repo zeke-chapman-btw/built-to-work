@@ -49,6 +49,7 @@ TEMPLATES = [
             "context_processors": [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
+"apps.internal_ui.context_processors.workspace_navigation",
                 "django.contrib.messages.context_processors.messages",
             ],
         },

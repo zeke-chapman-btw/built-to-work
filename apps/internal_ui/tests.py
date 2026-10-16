@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .navigation import WORKSPACES, visible_workspaces
@@ -79,17 +79,23 @@ class InternalShellTests(TestCase):
         self.assertContains(response, 'All events')
         self.assertContains(response, 'aria-current="page"')
         self.assertNotContains(response, '<style>', html=False)
+        user.is_superuser = True
+        user.save(update_fields=["is_superuser"])
+        self.client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
+        response = self.client.get(reverse("events:event_list"))
+        for href in (
+            "/internal/", "/events/", "/internal/workspaces/participants/",
+            "/internal/workspaces/operations/", "/internal/workspaces/assessments/",
+            "/internal/workspaces/administration/",
+        ):
+            with self.subTest(href=href):
+                self.assertContains(response, f'href="{href}"')
+        self.assertContains(response, 'class="nav-item active" href="/events/"')
 
     def test_unknown_workspace_is_not_exposed(self):
         user = self.make_staff('unknown-staff')
         self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
         self.assertEqual(self.client.get(reverse('internal:workspace', kwargs={'workspace_id': 'future'})).status_code, 404)
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Permission
-from django.test import TestCase, override_settings
-from django.urls import reverse
-
-
 @override_settings(AUTHENTICATION_BACKENDS=["django.contrib.auth.backends.ModelBackend"])
 class PortalFoundationTests(TestCase):
     def staff_user(self, username, permission=None, superuser=False):

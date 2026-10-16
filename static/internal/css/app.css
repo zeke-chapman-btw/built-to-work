@@ -10,8 +10,8 @@
 .skip-link { position: fixed; top: 8px; left: 8px; z-index: 100; padding: 10px 14px; transform: translateY(-150%); background: #fff; color: #111; }
 .skip-link:focus { transform: none; }
 .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 60; display: flex; width: var(--sidebar); flex-direction: column; overflow-y: auto; background: #000; color: #fff; border-right: 4px solid var(--red); }
-.brand { display: flex; min-height: 96px; align-items: center; justify-content: center; padding: 20px 18px; border-bottom: 1px solid #ffffff24; }
-.brand-logo { display: block; width: min(205px, 100%); height: auto; max-height: 48px; object-fit: contain; }
+.brand { display: flex; min-height: 112px; align-items: center; justify-content: center; padding: 20px 18px; border-bottom: 1px solid #ffffff24; }
+.brand-logo { display: block; width: min(250px, 100%); height: auto; max-height: 68px; object-fit: contain; }
 .workspace-nav { display: grid; gap: 4px; padding: 20px 14px; }
 .nav-item { display: flex; min-height: 48px; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 700; letter-spacing: .04em; transition: background-color .15s ease, color .15s ease; }
 .nav-item:hover { background: #ffffff18; }
@@ -22,7 +22,7 @@
 .sidebar-user i { display: inline-grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 50%; background: var(--red); font-style: normal; font-weight: 700; }
 .main-column { min-height: 100vh; margin-left: var(--sidebar); }
 .topbar { position: sticky; top: 0; z-index: 30; display: flex; min-height: 78px; align-items: center; gap: 16px; padding: 12px clamp(20px, 3vw, 48px); border-bottom: 1px solid var(--line); background: #000; color: #fff; }
-.portal-tagline { font-family: "BTW Futura Condensed", Arial, sans-serif; font-size: clamp(17px, 1.8vw, 24px); line-height: 1.1; letter-spacing: .045em; color: #fff; }
+.portal-tagline { font-family: "BTW Futura Condensed", Arial, sans-serif; font-size: clamp(17px, 1.8vw, 24px); font-weight: 700; line-height: 1.1; letter-spacing: .045em; color: #fff; }
 .sign-out { margin-left: auto; padding: 8px 10px; color: #fff !important; font-size: 13px; font-weight: 700; }
 .menu-toggle { display: none; min-width: 42px; min-height: 42px; border: 1px solid #ffffff44; border-radius: 7px; background: transparent; color: #fff; font-size: 20px; cursor: pointer; }
 main { width: min(100%, 1600px); min-height: calc(100vh - 130px); margin: 0 auto; padding: clamp(22px, 3.2vw, 48px) clamp(18px, 4vw, 58px) 52px; }
@@ -84,3 +84,20 @@ footer { padding: 14px clamp(18px, 4vw, 58px); border-top: 1px solid var(--line)
 .status-pill { display: inline-flex; padding: 4px 9px; border-radius: 99px; background: #f0f1f2; color: #3d4249; font-size: 12px; font-weight: 700; white-space: nowrap; }
 .empty-actions { margin-top: 18px; }
 @media (max-width: 640px) { .event-list-heading { align-items: flex-start; flex-direction: column; padding: 18px; } .event-table { min-width: 650px; } .event-table th, .event-table td { padding: 12px; } }
+
+
+/* Participant directory and profile use the shared staff workspace card system. */
+.participant-search { display: grid; gap: 8px; max-width: 720px; margin: 20px 0; }
+.participant-search .form-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.participant-search input { flex: 1 1 260px; min-width: 0; padding: 11px 12px; border: 1px solid #cfd4d9; border-radius: 6px; font: inherit; }
+.participant-search button { border: 0; border-radius: 6px; padding: 11px 18px; background: var(--red); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.table-responsive { width: 100%; overflow-x: auto; }
+.workspace-table { width: 100%; border-collapse: collapse; }
+.workspace-table th, .workspace-table td { padding: 12px 10px; border-bottom: 1px solid #e0e3e6; text-align: left; vertical-align: top; }
+.workspace-table thead th { font-weight: 700; }
+.workspace-table a, .pagination a { color: var(--red); }
+.pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
+.profile-details { display: grid; grid-template-columns: minmax(130px, 190px) minmax(0, 1fr); gap: 8px 18px; margin: 16px 0 0; }
+.profile-details dt { font-weight: 700; }
+.profile-details dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .profile-details { grid-template-columns: 1fr; gap: 3px; } .profile-details dd { margin-bottom: 8px; } .participant-search button { width: 100%; } }

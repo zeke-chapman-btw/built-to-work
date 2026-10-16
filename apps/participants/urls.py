@@ -1,8 +1,10 @@
-from . import verification_views
+from . import verification_views, staff_directory_views
 from django.urls import path
 from . import views, testing_views, registration_views, historical_views, qualification_views, document_views
 app_name = "participants"
 urlpatterns = [
+    path("staff/directory/", staff_directory_views.staff_directory, name="staff-directory"),
+    path("staff/directory/<str:participant_id>/", staff_directory_views.staff_profile, name="staff-profile"),
     path("register/", registration_views.registration_start, name="registration-start"),
     path("register/event/<uuid:event_id>/", registration_views.registration_start, name="registration-event-start"),
     path("register/form/", registration_views.registration_form, name="registration-form"),
