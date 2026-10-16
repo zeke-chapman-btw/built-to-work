@@ -1,14 +1,21 @@
-{% extends "internal/base.html" %}{% load tz %}
-{% block title %}Events | Built to Work{% endblock %}
-{% block content %}<p><a href="{% url 'events:ticket_recovery' %}">Staff ticket recovery</a></p>
-<style>
-.events-page{max-width:1180px;margin:auto}.events-head{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1.5rem}.events-head h1{margin:0}.events-table{width:100%;border-collapse:collapse}.events-table th,.events-table td{padding:.9rem;text-align:left;border-bottom:1px solid #e5e7eb}.events-table th{font-size:.78rem;text-transform:uppercase;color:#6b7280}.events-table a{color:#a51e2c;font-weight:600}.event-pill{display:inline-block;padding:.25rem .6rem;border-radius:1rem;background:#f3f4f6;font-size:.78rem}
-@media(max-width:720px){.events-head{align-items:flex-start;flex-direction:column}.events-table th:nth-child(3),.events-table td:nth-child(3){display:none}.events-table th,.events-table td{padding:.65rem .35rem;font-size:.9rem}}
-</style>
-<section class="events-page">
-  <header class="events-head"><div><h1>Events</h1><p>Manage event schedules and registrations.</p></div><a class="button button-primary" href="{% url 'events:event_create' %}">Create event</a></header>
-  {% if events %}<div class="card" style="overflow-x:auto"><table class="events-table"><thead><tr><th>Event</th><th>Date and time</th><th>Location</th><th>Status</th><th>Registered</th></tr></thead><tbody>
-  {% for event in events %}<tr><td><a href="{% url 'events:event_detail' event.id %}">{{ event.name }}</a><br><small>{{ event.code|default:"" }}</small></td><td>{% timezone event.timezone_name %}{{ event.local_start_at|date:"M j, Y g:i A" }}{% endtimezone %}</td><td>{{ event.location_name|default:"—" }}</td><td><span class="event-pill">{{ event.get_status_display }}</span></td><td>{{ event.registration_count|default:0 }}</td></tr>{% endfor %}
-  </tbody></table></div>{% else %}<div class="card"><h2>No events yet</h2><p>Create an event to start registering participants.</p><a class="button button-primary" href="{% url 'events:event_create' %}">Create event</a></div>{% endif %}
+{% extends 'internal/base.html' %}
+{% load tz %}
+{% block title %}Events · Built to Work{% endblock %}
+{% block page_actions %}
+  {% if perms.events.view_qrticket or user.is_superuser %}<a class="button" href="{% url 'events:ticket_recovery' %}">Staff ticket recovery</a>{% endif %}
+  {% if perms.events.add_event or user.is_superuser %}<a class="button button-primary" href="{% url 'events:event_create' %}">Create event</a>{% endif %}
+{% endblock %}
+{% block workspace_tabs %}
+<nav class="workspace-tabs" aria-label="Events sections"><a class="workspace-tab active" aria-current="page" href="{% url 'events:event_list' %}">All events</a>{% if perms.events.view_offlineeventpreparation or perms.events.add_offlineeventpreparation or user.is_superuser %}<a class="workspace-tab" href="{% url 'events:offline-preparations' %}">Offline preparation</a>{% endif %}{% if perms.events.view_qrticket or user.is_superuser %}<a class="workspace-tab" href="{% url 'events:ticket_recovery' %}">Ticket recovery</a>{% endif %}</nav>
+{% endblock %}
+{% block content %}
+<section class="event-workspace" aria-label="Event list">
+  {% if events %}
+    <div class="event-list-card card"><div class="event-list-heading"><div><h2>Current events</h2><p>Manage the event workflows available to your account.</p></div><span class="result-count">{{ events|length }}{% if events|length == 1 %} event{% else %} events{% endif %}</span></div>
+      <div class="table-scroll"><table class="event-table"><thead><tr><th scope="col">Event</th><th scope="col">Date and time</th><th scope="col">Location</th><th scope="col">Status</th><th scope="col">Registered</th></tr></thead><tbody>
+      {% for event in events %}<tr><td><a class="event-name" href="{% url 'events:event_detail' event.id %}">{{ event.name }}</a>{% if event.code %}<small class="event-meta">{{ event.code }}</small>{% endif %}</td><td>{% timezone event.timezone_name %}{{ event.local_start_at|date:"M j, Y · g:i A" }}{% endtimezone %}</td><td>{{ event.location_name|default:"—" }}</td><td><span class="status-pill">{{ event.get_status_display }}</span></td><td>{{ event.registration_count|default:0 }}</td></tr>{% endfor %}
+      </tbody></table></div>
+    </div>
+  {% else %}<section class="empty-state card"><span class="badge">EVENTS</span><h2>No events yet</h2><p>When an event is available, its registrations and related tools will appear here.</p>{% if perms.events.add_event or user.is_superuser %}<div class="empty-actions"><a class="button button-primary" href="{% url 'events:event_create' %}">Create your first event</a></div>{% endif %}</section>{% endif %}
 </section>
 {% endblock %}
