@@ -48,6 +48,39 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class EventType(models.TextChoices):
+        NASCAR = "nascar", "NASCAR race"
+        RODEO = "rodeo", "Rodeo"
+        SKILLS = "skills_challenge", "Skills challenge"
+        TRADESHOW = "tradeshow", "Tradeshow"
+        JOB_FAIR = "job_fair", "Job fair"
+        OTHER = "other", "Other"
+
+    event_type = models.CharField(max_length=24, choices=EventType.choices, blank=True, db_index=True)
+    event_type_other = models.CharField(max_length=100, blank=True)
+    setup_date = models.DateField(null=True, blank=True)
+    staff_arrival_time = models.TimeField(null=True, blank=True)
+    daily_start_time = models.TimeField(null=True, blank=True)
+    daily_end_time = models.TimeField(null=True, blank=True)
+    return_date = models.DateField(null=True, blank=True)
+    contact_name = models.CharField(max_length=160, blank=True)
+    contact_email = models.EmailField(blank=True)
+    contact_phone = models.CharField(max_length=40, blank=True)
+    housing_information = models.TextField(blank=True)
+    logistics_instructions = models.TextField(blank=True)
+    staff_published_at = models.DateTimeField(null=True, blank=True, editable=False)
+    staff_published_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="published_staff_events", editable=False)
+    details_finalized_at = models.DateTimeField(null=True, blank=True, editable=False)
+    details_finalized_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="finalized_event_details", editable=False)
+
+    @property
+    def event_type_label(self):
+        return self.event_type_other if self.event_type == self.EventType.OTHER and self.event_type_other else self.get_event_type_display()
+
+    @property
+    def details_status(self):
+        return "Details finalized" if self.details_finalized_at else "Details in progress"
+
     class Meta:
         ordering = ("start_at", "name")
         constraints = [models.CheckConstraint(condition=Q(end_at__gte=F("start_at")), name="event_end_at_or_after_start")]
@@ -61,6 +94,26 @@ class Event(models.Model):
             raise ValidationError({"timezone_name": "Enter a valid IANA timezone, such as America/Chicago."})
         if self.start_at and self.end_at and self.end_at < self.start_at:
             raise ValidationError({"end_at": "Event end must be at or after event start."})
+        errors = {}
+        if self.start_at and self.end_at:
+            start_day, end_day = self.local_start_at.date(), self.local_end_at.date()
+            if self.setup_date and self.setup_date > start_day:
+                errors["setup_date"] = "Setup cannot be after the event starts."
+            if self.return_date and self.return_date < end_day:
+                errors["return_date"] = "Arrival home cannot be before the event ends."
+            if self.staff_arrival_time and (not self.setup_date or self.setup_date == start_day) and self.staff_arrival_time > self.local_start_at.time():
+                errors["staff_arrival_time"] = "Staff arrival must be at or before the event starts on that day."
+        if bool(self.daily_start_time) != bool(self.daily_end_time):
+            errors["daily_end_time"] = "Enter both daily operating times, or leave both blank."
+        elif self.daily_start_time and self.daily_end_time <= self.daily_start_time:
+            errors["daily_end_time"] = "Daily closing must be after daily opening. Use the event window for overnight events."
+        if self.start_at and self.end_at and self.daily_start_time and self.daily_end_time:
+            if self.daily_start_time < self.local_start_at.time():
+                errors["daily_start_time"] = "Daily opening cannot be before the first event window starts."
+            if self.daily_end_time > self.local_end_at.time():
+                errors["daily_end_time"] = "Daily closing cannot be after the final event window ends."
+        if errors:
+            raise ValidationError(errors)
 
     @property
     def registration_is_open(self):

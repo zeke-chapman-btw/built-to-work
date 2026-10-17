@@ -70,45 +70,114 @@ def _event_snapshot(event):
 
 @staff_permission_required('events.view_event')
 def event_list(request):
-    events = Event.objects.annotate(
-        registration_count=Count("registrations", filter=Q(registrations__status=EventRegistration.Status.ACTIVE), distinct=True),
-        status_order=Case(When(status=Event.Status.UPCOMING, then=Value(0)), When(status=Event.Status.DRAFT, then=Value(1)), default=Value(2), output_field=IntegerField()),
-    ).order_by("status_order", "start_at", "name")
-    return render(request, "events/event_list.html", {"events": events, "page_title": "Events"})
+    from datetime import UTC, date, datetime, time, timedelta
+    from django.core.paginator import Paginator
+    from .forms import EventFilterForm
+    data = request.GET.copy()
+    data.setdefault("view", "upcoming")
+    filters = EventFilterForm(data)
+    events = Event.objects.all()
+    selected = data.get("view", "upcoming")
+    valid = filters.is_valid()
+    if valid:
+        values = filters.cleaned_data
+        selected = values["view"]
+        now = timezone.now()
+        if selected == "current":
+            events = events.filter(status="upcoming", start_at__lte=now, end_at__gte=now)
+        elif selected == "upcoming":
+            events = events.filter(status="upcoming", start_at__gt=now)
+        elif selected != "all":
+            events = events.filter(status=selected)
+        if values["q"]:
+            q = values["q"]
+            events = events.filter(Q(name__icontains=q) | Q(code__icontains=q) | Q(location_name__icontains=q) | Q(city__icontains=q) | Q(event_type_other__icontains=q))
+        if values["event_type"]:
+            events = events.filter(event_type=values["event_type"])
+        if values["date_from"]:
+            events = events.filter(end_at__gte=datetime.combine(values["date_from"], time.min, tzinfo=UTC))
+        if values["date_to"] and values["date_to"] < date.max:
+            events = events.filter(start_at__lt=datetime.combine(values["date_to"] + timedelta(days=1), time.min, tzinfo=UTC))
+    else:
+        events = events.none()
+    events = events.order_by("-start_at" if selected in ("completed", "cancelled", "archived") else "start_at", "name", "pk")
+    page = Paginator(events, 20).get_page(request.GET.get("page"))
+    parameters = request.GET.copy(); parameters.pop("page", None)
+    tabs = []
+    for value, label in EventFilterForm.base_fields["view"].choices:
+        query = parameters.copy(); query["view"] = value
+        tabs.append({"id": value, "label": label, "url": "?" + query.urlencode()})
+    return render(request, "events/event_list.html", {"events": page, "page_obj": page, "filters": filters,
+        "view_tabs": tabs, "selected_view": selected, "view_label": dict(EventFilterForm.base_fields["view"].choices).get(selected, "Events"),
+        "page_query": parameters.urlencode(), "page_title": "Events", "page_description": "Plan, publish and manage event operations."}, status=200 if valid else 400)
 
 
 @staff_permission_required('events.add_event')
 def event_create(request):
-    form = EventForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        event = form.save(commit=False)
-        event.created_by = request.user
-        event.save()
-        audit_action(actor=request.user, action="event.created", instance=event, new_data=_event_snapshot(event))
-        messages.success(request, "Event created.")
-        return redirect("events:event_detail", event_id=event.pk)
-    return render(request, "events/event_form.html", {"form": form, "page_title": "Create event"})
+    from .event_management import save_event
+    if request.method not in ("GET", "POST"):
+        return HttpResponse(status=405)
+    form = EventForm()
+    if request.method == "POST":
+        event, form = save_event(data=request.POST, actor=request.user)
+        if event:
+            messages.success(request, "Event published to staff." if event.status == "upcoming" else "Event saved as a draft.")
+            return redirect("events:event_detail", event_id=event.pk)
+    return render(request, "events/event_form.html", {"form": form, "page_title": "Create event"}, status=400 if form.is_bound else 200)
 
 
 @staff_permission_required('events.change_event')
 def event_edit(request, event_id):
+    from .event_management import save_event
     event = get_object_or_404(Event, pk=event_id)
-    form = EventForm(request.POST or None, instance=event)
-    if request.method == "POST" and form.is_valid():
-        old_data = _event_snapshot(event)
-        event = form.save()
-        audit_action(actor=request.user, action="event.updated", instance=event, old_data=old_data, new_data=_event_snapshot(event))
-        messages.success(request, "Event updated.")
-        return redirect("events:event_detail", event_id=event.pk)
-    return render(request, "events/event_form.html", {"form": form, "event": event, "page_title": "Edit event"})
+    if request.method not in ("GET", "POST"):
+        return HttpResponse(status=405)
+    form = EventForm(instance=event)
+    if request.method == "POST":
+        saved, form = save_event(data=request.POST, actor=request.user, event_id=event.pk)
+        if saved:
+            messages.success(request, "Event saved. Changed details require finalization again." if saved.details_finalized_at is None else "Event saved.")
+            return redirect("events:event_detail", event_id=event.pk)
+    return render(request, "events/event_form.html", {"form": form, "event": event, "page_title": "Edit event"}, status=400 if form.is_bound else 200)
+
+
+@staff_permission_required('events.change_event')
+def event_action(request, event_id, action):
+    from .event_management import TRANSITIONS, transition_event, available_actions
+    from .forms import EventActionForm
+    event = get_object_or_404(Event, pk=event_id)
+    if action not in TRANSITIONS:
+        raise Http404
+    if request.method not in ("GET", "POST"):
+        return HttpResponse(status=405)
+    if request.method == "GET" and action not in {item["id"] for item in available_actions(event)}:
+        return HttpResponse("This action is not available for the event's current state.", status=409)
+    form = EventActionForm(initial={"revision": event.updated_at.isoformat()})
+    if request.method == "POST":
+        try:
+            changed, form = transition_event(event_id=event.pk, action=action, actor=request.user, data=request.POST)
+        except ValidationError as exc:
+            form = EventActionForm(request.POST); form.is_valid(); form.add_error(None, exc)
+            changed = None
+        if changed:
+            messages.success(request, TRANSITIONS[action][0] + " completed.")
+            return redirect("events:event_detail", event_id=event.pk)
+        event.refresh_from_db()
+    return render(request, "events/event_action.html", {"event": event, "form": form, "action_id": action,
+        "action_label": TRANSITIONS[action][0], "page_title": TRANSITIONS[action][0]}, status=400 if form.is_bound else 200)
 
 
 @staff_permission_required('events.view_event')
 def event_detail(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
+    section = request.GET.get("section", "overview")
+    if section not in ("overview", "results", "registrations"):
+        section = "overview"
+    if request.method == "POST":
+        section = "registrations"
     can_view_records = request.user.has_perms(("events.view_eventregistration", "participants.view_participant"))
     can_register = can_view_records and request.user.has_perm("events.add_eventregistration")
-    form = RegistrationForm(request.POST if request.method == "POST" else None, event=event) if can_register else None
+    form = RegistrationForm(request.POST if request.method == "POST" else None, event=event) if can_register and section == "registrations" else None
     if request.method == "POST":
         if request.POST.get("action") != "register":
             return HttpResponse("Unsupported event action.", status=400)
@@ -135,19 +204,20 @@ def event_detail(request, event_id):
                 form.add_error(None, "; ".join(exc.messages))
     elif request.method != "GET":
         return HttpResponse(status=405)
-    registrations = EventRegistration.objects.filter(event=event, status="active").select_related("participant").order_by("participant__last_name", "participant__first_name") if can_view_records else EventRegistration.objects.none()
+    registrations = EventRegistration.objects.filter(event=event, status="active").select_related("participant").order_by("participant__last_name", "participant__first_name") if can_view_records and section == "registrations" else EventRegistration.objects.none()
     from .experience_operations import can_view_event_operations, event_experience_overview
     can_view_operations = can_view_event_operations(request.user)
     can_view_offline = request.user.has_perms(("events.view_offlineeventpreparation", "events.view_syncoutboxitem", "events.view_centraleventdownload"))
-    overview = event_experience_overview(event, include_offline=can_view_offline) if can_view_operations else None
+    overview = event_experience_overview(event, include_offline=can_view_offline) if can_view_operations and section == "results" else None
+    from .event_management import available_actions
     with timezone.override(ZoneInfo(event.timezone_name)):
         return render(request, "events/event_detail.html", {
             "page_title": event.name, "page_description": "Event configuration and recorded experience progress.",
-            "event": event, "registrations": registrations, "registration_form": form,
+            "section": section, "management_actions": available_actions(event), "event": event, "registrations": registrations, "registration_form": form,
             "can_view_records": can_view_records, "can_view_operations": can_view_operations, "overview": overview,
             "station_form": StationForEventForm(), "station_assignments": event.station_assignments.select_related("station"),
             "experience_sessions": overview["sessions"] if overview else [],
-            "registration_count": registrations.values("participant_id").distinct().count() if can_view_records else None,
+            "registration_count": EventRegistration.objects.filter(event=event, status="active").values("participant_id").distinct().count() if can_view_records else None,
         }, status=400 if form is not None and form.is_bound and form.errors else 200)
 
 @staff_permission_required('events.view_eventregistration')

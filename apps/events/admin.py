@@ -23,6 +23,32 @@ class EventAdmin(admin.ModelAdmin):
     search_fields = ("name", "code", "location_name", "city")
     readonly_fields = ("id", "created_at", "updated_at")
 
+    def get_readonly_fields(self, request, obj=None):
+        return (*super().get_readonly_fields(request, obj), "status", "staff_published_at", "staff_published_by", "details_finalized_at", "details_finalized_by")
+
+    def has_change_permission(self, request, obj=None):
+        return bool(super().has_change_permission(request, obj) and (obj is None or obj.status != Event.Status.ARCHIVED))
+
+    def save_model(self, request, obj, form, change):
+        from django.core.exceptions import PermissionDenied
+        from django.db import transaction
+        from .event_management import event_snapshot
+        from .services import audit_action
+        with transaction.atomic():
+            old = Event.objects.select_for_update().get(pk=obj.pk) if change else None
+            if old and old.status == Event.Status.ARCHIVED:
+                raise PermissionDenied("Archived events are read-only.")
+            before = event_snapshot(old) if old else None
+            obj.status = old.status if old else Event.Status.DRAFT
+            if old and before != event_snapshot(obj):
+                obj.details_finalized_at = None
+                obj.details_finalized_by = None
+            if not change:
+                obj.created_by = request.user
+            super().save_model(request, obj, form, change)
+            audit_action(actor=request.user, action="event.updated" if change else "event.created", instance=obj, old_data=before, new_data=event_snapshot(obj), reason="Edited in Django administration; lifecycle actions remain in Events.")
+
+
 
 @admin.register(EventRegistration)
 class EventRegistrationAdmin(admin.ModelAdmin):

@@ -272,7 +272,7 @@ class EventIntegration8EDTests(TestCase):
 
     def test_event_detail_renders_real_overview_and_rejects_legacy_scan_action(self):
         self.session()
-        response=self.client.get(self.detail)
+        response=self.client.get(self.detail, {"section": "results"})
         self.assertContains(response,"Experience Overview")
         self.assertContains(response,"Configuration checks only")
         self.assertContains(response,"No offline event preparation")
@@ -299,7 +299,7 @@ class EventIntegration8EDTests(TestCase):
         self.session()
         user=self.staff("synthetic-operations-reader",OPERATIONS_PERMISSIONS)
         self.client.force_login(user,backend="django.contrib.auth.backends.ModelBackend")
-        response=self.client.get(self.detail)
+        response=self.client.get(self.detail, {"section": "results"})
         self.assertContains(response,"Experience Overview")
         self.assertNotContains(response,"SYNTHETIC PRIVATE APPROVAL NOTE")
         self.assertNotContains(response,"Register and issue ticket")
