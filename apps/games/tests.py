@@ -63,6 +63,7 @@ class GameFrameworkTests(TestCase):
         game = GameDefinition.objects.create(key="official_guard", display_name="Official Guard", implementation_key="official_guard")
         EventGameConfiguration.objects.create(event=self.event, game=game, configuration_version="1", settings={})
         _ensure_activity_rows(official_session)
+        official_session.activities.filter(activity="kiosk").update(status="completed", completed_at=timezone.now())
         run = resolve_and_start(experience_session=official_session)
         stale_test_context = GameSession(pk=run.pk, mode=GameSession.Mode.STAFF_TEST)
         with self.assertRaises(PermissionDenied):
@@ -86,7 +87,6 @@ class GameFrameworkTests(TestCase):
         game = GameDefinition.objects.create(key="review_game", display_name="Review Game", implementation_key="review_game")
         EventGameConfiguration.objects.create(event=self.event, game=game, configuration_version="1", settings={"rounds": 1})
         _ensure_activity_rows(session)
-        run = resolve_and_start(experience_session=session)
         kiosk = session.activities.get(activity=ExperienceActivity.Activity.KIOSK)
         now = timezone.now()
         kiosk.status = ExperienceActivity.Status.COMPLETED
@@ -94,8 +94,11 @@ class GameFrameworkTests(TestCase):
         kiosk.completed_at = now
         kiosk.save(update_fields=("status", "started_at", "completed_at"))
 
+        run = resolve_and_start(experience_session=session)
         completed = complete_game_session(game_session=run, raw_score=42, result_data={"rounds": 1})
-        repeated = complete_game_session(game_session=run, raw_score=99, result_data={"rounds": 9})
+        with self.assertRaises(ValidationError):
+            complete_game_session(game_session=run, raw_score=99, result_data={"rounds": 9})
+        repeated = complete_game_session(game_session=run, raw_score=42, result_data={"rounds": 1})
 
         completed.refresh_from_db()
         self.assertEqual(completed.status, GameSession.Status.COMPLETED)

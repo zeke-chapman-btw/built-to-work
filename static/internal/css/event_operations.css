@@ -1,0 +1,13 @@
+/* Event Detail only; reuse the established staff portal foundation. */
+.event-operations .card{padding:22px;min-width:0}
+.event-operations h2{font:500 28px/1.15 var(--font-display);color:var(--red);border-bottom:1px solid var(--line);padding-bottom:10px;margin:0 0 14px}
+.event-operations .experience-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:16px}
+.event-operations .experience-metrics article,.event-operations .readiness-list article,.event-operations .offline-preparation{padding:14px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.event-operations .experience-metrics strong{font:500 32px/1.1 var(--font-display)}
+.event-operations h3{font-size:16px;margin:8px 0}
+.event-operations .table-scroll{overflow-x:auto;width:100%}
+.event-operations table{width:100%;border-collapse:collapse;text-align:left}
+.event-operations th,.event-operations td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+.event-operations .actions{margin:12px 0}
+.event-operations select{max-width:100%}
+@media(max-width:640px){.event-operations .card{padding:16px}}

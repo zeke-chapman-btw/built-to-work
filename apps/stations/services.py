@@ -10,11 +10,27 @@ from .models import EventStation, ExperienceActivity, ExperienceSession, Station
 LEGACY_ACTIVITY_ORDER = (ExperienceActivity.Activity.KIOSK, ExperienceActivity.Activity.DUCK, ExperienceActivity.Activity.SIMULATOR)
 ACTIVITY_ORDER = LEGACY_ACTIVITY_ORDER  # Backward-compatible export for existing callers
 
+def validate_session_identity(session):
+    """Validate the existing registration identity before official workflow writes."""
+    if session.mode != ExperienceSession.Mode.OFFICIAL:
+        if session.registration_id or session.participant_id:
+            raise ValidationError("Test and demo experiences cannot use participant identities.")
+        return
+    if not session.registration_id or not session.participant_id:
+        raise ValidationError("An official experience requires a participant and registration.")
+    registration = session.registration
+    if registration.event_id != session.event_id or registration.participant_id != session.participant_id:
+        raise ValidationError("Experience, registration, participant and event must agree.")
+    if registration.status != EventRegistration.Status.ACTIVE or session.participant.kind != "person" or session.participant.archived_at is not None:
+        raise ValidationError("An active participant registration is required.")
+
 def activity_order_for_session(session):
     has_game_activity = session.activities.filter(activity=ExperienceActivity.Activity.GAME).exists()
     has_legacy_duck_activity = session.activities.filter(activity=ExperienceActivity.Activity.DUCK).exists()
     if has_legacy_duck_activity and not has_game_activity:
         return LEGACY_ACTIVITY_ORDER
+    if session.mode == ExperienceSession.Mode.OFFICIAL and not has_game_activity and session.activities.filter(activity="kiosk").exists() and session.activities.filter(activity="simulator").exists():
+        return (ExperienceActivity.Activity.KIOSK, ExperienceActivity.Activity.SIMULATOR)
     if configured_game(session.event) or has_game_activity:
         return (ExperienceActivity.Activity.KIOSK, ExperienceActivity.Activity.GAME, ExperienceActivity.Activity.SIMULATOR)
     return (ExperienceActivity.Activity.KIOSK, ExperienceActivity.Activity.SIMULATOR)
@@ -84,8 +100,9 @@ def _prior_steps_complete(session, activity):
     return None
 
 
+@transaction.atomic
 def process_station_scan(*, station_code, token, actor):
-    assignment = EventStation.objects.select_related("event", "station").filter(
+    assignment = EventStation.objects.select_for_update().select_related("event", "station").filter(
         station__code=station_code, station__is_active=True, enabled=True, is_active_context=True,
     ).first()
     if assignment is None:
@@ -125,8 +142,13 @@ def process_station_scan(*, station_code, token, actor):
                 registration=registration,
                 defaults={"event": event, "participant": registration.participant, "mode": ExperienceSession.Mode.OFFICIAL, "created_by": actor},
             )
+            session = ExperienceSession.objects.select_for_update().get(pk=session.pk)
             if session.event_id != event.pk or session.participant_id != registration.participant_id:
                 return {"status": "wrong_event", "assignment": assignment}
+            try:
+                validate_session_identity(session)
+            except ValidationError:
+                return {"status": "registration_inactive", "assignment": assignment}
             _ensure_activity_rows(session)
             station_type = assignment.station.station_type
             activity_name = STATION_ACTIVITY[station_type]
@@ -145,10 +167,9 @@ def process_station_scan(*, station_code, token, actor):
                 activity.started_at = now
                 activity.save(update_fields=("status", "started_at"))
                 audit_action(actor=actor, action="experience.activity.started", instance=activity, new_data={"activity": activity_name, "session_id": str(session.pk)})
-            return {"status": "activity_in_progress" if activity.status == ExperienceActivity.Status.IN_PROGRESS else activity.status, "assignment": assignment, "session": session, "activity": activity, "created": created}
+            return {"status": "activity_in_progress" if activity.status == ExperienceActivity.Status.IN_PROGRESS else activity.status, "assignment": assignment, "session": session, "activity": activity, "created": created, "ticket_id": str(resolution.ticket.pk)}
     except IntegrityError:
-        session = ExperienceSession.objects.get(registration=registration)
-        return {"status": "activity_in_progress", "assignment": assignment, "session": session}
+        return {"status": "scan_conflict", "assignment": assignment}
 
 
 def complete_activity(*, session, activity_name, actor):
@@ -159,6 +180,9 @@ def complete_activity(*, session, activity_name, actor):
         activity = ExperienceActivity.objects.select_for_update().get(session=session, activity=activity_name)
         if activity.status == ExperienceActivity.Status.COMPLETED:
             return activity, False
+        validate_session_identity(session)
+        if session.completed_at is not None or _prior_steps_complete(session, activity_name):
+            raise ValidationError("Earlier experience activities must finish before this step.")
         if activity.status != ExperienceActivity.Status.IN_PROGRESS:
             raise ValidationError("Only an in-progress activity can be completed.")
         activity.status = ExperienceActivity.Status.COMPLETED
@@ -201,6 +225,7 @@ def complete_simulator_from_capture(*, session):
         raise ValidationError("Only official experiences accept simulator results.")
     with transaction.atomic():
         session = ExperienceSession.objects.select_for_update().get(pk=session.pk)
+        validate_session_identity(session)
         if session.completed_at is not None:
             raise ValidationError("This experience is already complete.")
         if _prior_steps_complete(session, ExperienceActivity.Activity.SIMULATOR):

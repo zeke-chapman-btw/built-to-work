@@ -36,6 +36,10 @@ class DuckHuntTests(TestCase):
         if mode == ExperienceSession.Mode.OFFICIAL:
             p = Participant.objects.create(first_name="Synthetic", last_name="Duck")
             reg = EventRegistration.objects.create(event=self.event, participant=p)
+            self.event.status = "upcoming"
+            self.event.save(update_fields=["status"])
+            EventStation.objects.filter(event=self.event, station=self.station).update(is_active_context=True)
+            QrTicket.objects.create(registration=reg, expires_at=self.event.end_at)
             identity = {"participant": p, "registration": reg}
         exp = ExperienceSession.objects.create(event=self.event, mode=mode, **identity)
         _ensure_activity_rows(exp)

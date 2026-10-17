@@ -4,6 +4,7 @@ import hashlib
 import json
 import re
 import uuid
+from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 
 from django.conf import settings
@@ -197,7 +198,9 @@ def _ingest_atomic(*, submission_id, event_id, station_code, profile_id, profile
                     reason = "experience_missing"
                 else:
                     capture.experience_session = experience
-                    if SimulatorCapture.objects.filter(
+                    if captured_at < experience.started_at - timedelta(minutes=5) or captured_at > timezone.now() + timedelta(minutes=5):
+                        reason = "capture_timestamp_out_of_order"
+                    elif SimulatorCapture.objects.filter(
                         experience_session=experience, is_official=True, voided_at__isnull=True,
                     ).exists():
                         reason = "existing_official_result"
@@ -277,7 +280,7 @@ def ingest_capture(*, submission_id, event_id, station_code, profile_id, profile
 
 def reconcile_capture(*, capture, registration, actor, reason, corrected_total_score=None, replace_existing=False):
     """Authorized backend operation; no participant-facing reconciliation endpoint."""
-    if not (getattr(actor, "is_staff", False) or getattr(actor, "is_superuser", False)):
+    if not (getattr(actor, "is_authenticated", False) and actor.is_active and actor.is_staff and actor.has_perm("simulators.change_simulatorcapture")):
         raise PermissionDenied("Staff authorization is required.")
     if not reason or not reason.strip():
         raise ValidationError("A reconciliation reason is required.")

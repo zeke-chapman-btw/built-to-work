@@ -10,6 +10,7 @@ from qrcode.image.svg import SvgPathImage
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
 from django.db.models import Count, Prefetch, Q, Case, When, Value, IntegerField
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -71,7 +72,6 @@ def _event_snapshot(event):
 def event_list(request):
     events = Event.objects.annotate(
         registration_count=Count("registrations", filter=Q(registrations__status=EventRegistration.Status.ACTIVE), distinct=True),
-        attendance_count=Count("attendance_records", filter=Q(attendance_records__is_void=False), distinct=True),
         status_order=Case(When(status=Event.Status.UPCOMING, then=Value(0)), When(status=Event.Status.DRAFT, then=Value(1)), default=Value(2), output_field=IntegerField()),
     ).order_by("status_order", "start_at", "name")
     return render(request, "events/event_list.html", {"events": events, "page_title": "Events"})
@@ -106,55 +106,49 @@ def event_edit(request, event_id):
 @staff_permission_required('events.view_event')
 def event_detail(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
-    form = RegistrationForm(request.POST if request.method == "POST" and request.POST.get("action") == "register" else None, event=event)
-    if request.method == "POST" and request.POST.get("action") == "register" and form.is_valid():
-        data = form.cleaned_data
-        participant = data["participant"]
-        if participant is None:
-            resolution = find_or_create_participant(
-                first_name=data["first_name"], last_name=data["last_name"],
-                email=data.get("contact_email"), phone=data.get("contact_phone"),
-            )
-            if resolution.status == "ambiguous":
-                form.add_error(None, "Those contact details match different participants. Select the correct participant before registering.")
-            else:
-                participant = resolution.participant
-        if participant is not None:
+    can_view_records = request.user.has_perms(("events.view_eventregistration", "participants.view_participant"))
+    can_register = can_view_records and request.user.has_perm("events.add_eventregistration")
+    form = RegistrationForm(request.POST if request.method == "POST" else None, event=event) if can_register else None
+    if request.method == "POST":
+        if request.POST.get("action") != "register":
+            return HttpResponse("Unsupported event action.", status=400)
+        if not can_register:
+            raise PermissionDenied
+        if form.is_valid():
+            data = form.cleaned_data
             try:
-                registration, created = register_participant(event=event, participant=participant, actor=request.user, source=data["source"],
-                                                            group=data.get("group"), override_reason=data.get("override_reason", ""))
+                with transaction.atomic():
+                    participant = data["participant"]
+                    if participant is None:
+                        if not request.user.has_perm("participants.add_participant"):
+                            raise PermissionDenied
+                        resolution = find_or_create_participant(first_name=data["first_name"], last_name=data["last_name"],
+                            email=data.get("contact_email"), phone=data.get("contact_phone"))
+                        if resolution.participant is None:
+                            raise ValidationError("Participant identity needs staff review. Select the correct existing participant.")
+                        participant = resolution.participant
+                    registration, created = register_participant(event=event, participant=participant, actor=request.user,
+                        source=data["source"], group=data.get("group"), override_reason=data.get("override_reason", ""))
                 messages.success(request, "Participant registered and QR ticket issued." if created else "This participant is already actively registered for this event.")
-                if data["check_in_now"]:
-                    _, checked_in = check_in_registration(registration=registration, actor=request.user, source=Attendance.Source.STAFF)
-                    messages.success(request, "Participant checked in." if checked_in else "Participant was already checked in.")
                 return redirect("events:registration_detail", event_id=event.pk, registration_id=registration.pk)
             except ValidationError as exc:
-                form.add_error(None, exc)
-    registrations = EventRegistration.objects.filter(event=event, status=EventRegistration.Status.ACTIVE).select_related("participant").prefetch_related(
-        Prefetch("tickets", queryset=QrTicket.objects.order_by("-issued_at"), to_attr="ticket_history"),
-        Prefetch("attendance_records", queryset=Attendance.objects.order_by("-checked_in_at"), to_attr="attendance_history"),
-    ).order_by("participant__last_name", "participant__first_name")
-    resolution = None
-    if request.method == "POST" and request.POST.get("action") == "scan":
-        resolution = resolve_ticket(scan_form_token, expected_event=event)
-        if resolution.status == "valid":
-            attendance, created = check_in_registration(registration=resolution.ticket.registration, actor=request.user, source=Attendance.Source.QR_SCAN)
-            resolution = resolve_ticket(scan_form_token, expected_event=event)
-            messages.success(request, "Check-in recorded." if created else "Participant was already checked in.")
-        elif resolution.status == "already_checked_in":
-            local_time = timezone.localtime(resolution.attendance.checked_in_at, ZoneInfo(event.timezone_name)).strftime("%I:%M %p").lstrip("0")
-            messages.info(request, f"Already checked in at {local_time}.")
-        elif resolution.status == "wrong_event":
-            messages.error(request, f"This ticket belongs to {resolution.ticket.registration.event.name}, not {event.name}. No check-in was recorded.")
-        else:
-            messages.error(request, {"expired": "This ticket has expired.", "revoked": "This ticket was replaced and is no longer valid.", "registration_inactive": "This registration is no longer active.", "not_found": "No ticket was found for that code."}.get(resolution.status, "Ticket could not be accepted."))
+                form.add_error(None, "; ".join(exc.messages))
+    elif request.method != "GET":
+        return HttpResponse(status=405)
+    registrations = EventRegistration.objects.filter(event=event, status="active").select_related("participant").order_by("participant__last_name", "participant__first_name") if can_view_records else EventRegistration.objects.none()
+    from .experience_operations import can_view_event_operations, event_experience_overview
+    can_view_operations = can_view_event_operations(request.user)
+    can_view_offline = request.user.has_perms(("events.view_offlineeventpreparation", "events.view_syncoutboxitem", "events.view_centraleventdownload"))
+    overview = event_experience_overview(event, include_offline=can_view_offline) if can_view_operations else None
     with timezone.override(ZoneInfo(event.timezone_name)):
         return render(request, "events/event_detail.html", {
-            "page_title": "Events",
-            "event": event, "registrations": registrations, "station_form": StationForEventForm(), "station_assignments": event.station_assignments.select_related("station"), "experience_sessions": event.experience_sessions.select_related("participant").prefetch_related("activities"),
-            "registration_count": EventRegistration.objects.filter(event=event, status=EventRegistration.Status.ACTIVE).count(),
-        })
-
+            "page_title": event.name, "page_description": "Event configuration and recorded experience progress.",
+            "event": event, "registrations": registrations, "registration_form": form,
+            "can_view_records": can_view_records, "can_view_operations": can_view_operations, "overview": overview,
+            "station_form": StationForEventForm(), "station_assignments": event.station_assignments.select_related("station"),
+            "experience_sessions": overview["sessions"] if overview else [],
+            "registration_count": registrations.values("participant_id").distinct().count() if can_view_records else None,
+        }, status=400 if form is not None and form.is_bound and form.errors else 200)
 
 @staff_permission_required('events.view_eventregistration')
 def registration_detail(request, event_id, registration_id):
@@ -186,7 +180,7 @@ def registration_reissue(request, event_id, registration_id):
     return redirect("events:registration_detail", event_id=event.pk, registration_id=registration.pk)
 
 
-@staff_required
+@staff_permission_required("events.change_eventregistration")
 def registration_void(request, event_id, registration_id):
     event = get_object_or_404(Event, pk=event_id)
     registration = get_object_or_404(EventRegistration, pk=registration_id, event=event)

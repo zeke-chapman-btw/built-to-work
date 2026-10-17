@@ -184,6 +184,11 @@ class AssessmentEventConfigurationTests(TestCase):
         second = self.create_ready_config(f"{prefix}-second", 10)
         participant = Participant.objects.create(first_name="Workflow", last_name=prefix)
         registration = EventRegistration.objects.create(event=self.event, participant=participant)
+        from apps.events.models import QrTicket
+        from django.utils import timezone
+        self.event.status = "upcoming"
+        self.event.save(update_fields=["status"])
+        QrTicket.objects.create(registration=registration, expires_at=self.event.end_at)
         session = ExperienceSession.objects.create(
             event=self.event, mode="official", registration=registration, participant=participant
         )
@@ -478,8 +483,12 @@ class AssessmentEventConfigurationTests(TestCase):
         from apps.assessments.services import create_attempt
 
         official, session, selected_ids = self.create_official_attempt("official-and-demo")
-        first_demo = create_attempt(session, selected_ids, is_official=False)
-        second_demo = create_attempt(session, selected_ids, is_official=False)
+        from apps.stations.models import ExperienceSession
+        with self.assertRaises(ValidationError):
+            create_attempt(session, selected_ids, is_official=False)
+        demo_session = ExperienceSession.objects.create(event=self.event, mode="staff_test")
+        first_demo = create_attempt(demo_session, selected_ids, is_official=False)
+        second_demo = create_attempt(demo_session, selected_ids, is_official=False)
         official.refresh_from_db()
 
         self.assertTrue(official.is_official)

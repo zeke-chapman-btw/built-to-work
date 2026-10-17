@@ -83,9 +83,12 @@ def reserve_ticket_number(preparation):
 
 def queue_sync(preparation, *, operation_key, operation_type, payload):
     with transaction.atomic():
-        item, created=SyncOutboxItem.objects.get_or_create(preparation=preparation, operation_key=operation_key, defaults={"operation_type":operation_type,"payload":payload})
+        item, created=SyncOutboxItem.objects.get_or_create(operation_key=operation_key, defaults={"preparation":preparation,"operation_type":operation_type,"payload":payload})
+        item = SyncOutboxItem.objects.select_for_update().get(pk=item.pk)
+        if not created and (item.preparation_id != preparation.pk or item.operation_type != operation_type or item.payload != payload):
+            raise ValidationError("This operation key is already associated with different event data.")
         if not created and item.status in (SyncOutboxItem.Status.FAILED, SyncOutboxItem.Status.PENDING):
-            item.payload=payload; item.status=SyncOutboxItem.Status.PENDING; item.next_attempt_at=timezone.now(); item.save(update_fields=("payload","status","next_attempt_at","updated_at"))
+            item.status=SyncOutboxItem.Status.PENDING; item.next_attempt_at=timezone.now(); item.save(update_fields=("status","next_attempt_at","updated_at"))
         return item, created
 
 def claim_ready(limit=50):
@@ -144,7 +147,11 @@ def create_offline_registration(*, preparation, actor, data):
     email = str(data.get("contact_email", data.get("email", ""))).strip()
     phone = str(data.get("contact_phone", data.get("phone", ""))).strip()
     with transaction.atomic():
-        participant = Participant.objects.create(first_name=first_name, last_name=last_name, contact_email=email, contact_phone=phone)
+        from apps.participants.identity import find_or_create_participant
+        resolution = find_or_create_participant(first_name=first_name, last_name=last_name, email=email, phone=phone, identity_uuid=data.get("participant_identity") or data.get("identity_uuid"))
+        if resolution.participant is None:
+            raise ValidationError("Participant identity needs staff review before registration.")
+        participant = resolution.participant
         submission = RegistrationSubmission.objects.create(
             form_version=form_version, participant=participant, event=preparation.event,
             status=RegistrationSubmission.Status.SUBMITTED, answers=dict(data),

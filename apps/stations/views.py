@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from apps.events.models import Event
-from apps.events.views import staff_required
+from apps.events.views import staff_required, staff_permission_required
 from .kiosk_review import TEST_EVENT_CODE
 from .forms import EventStationForm, ExperienceModeForm, SkipActivityForm, StationForEventForm, StationForm
 from .models import EventStation, ExperienceActivity, ExperienceSession, Station
@@ -78,7 +78,7 @@ def station_assign(request, station_id):
     return redirect("stations:detail", station_id=station.pk)
 
 
-@staff_required
+@staff_permission_required('stations.change_eventstation')
 def assignment_activate(request, assignment_id):
     assignment = get_object_or_404(EventStation.objects.select_related("station", "event"), pk=assignment_id)
     if request.method != "POST":
@@ -169,6 +169,7 @@ def participant_kiosk(request, station_code):
                 request.session["test_kiosk_session"] = str(session.pk)
             else:
                 request.session["participant_kiosk_session"] = str(session.pk)
+                request.session["participant_kiosk_ticket"] = result.get("ticket_id")
             return redirect(
                 "assessments:station_start",
                 station_code=station_code,
@@ -302,6 +303,10 @@ def station_operate(request, station_code):
             activity_name = request.POST.get("activity")
             if activity_name != STATION_ACTIVITY[assignment.station.station_type]:
                 raise PermissionDenied
+            if session.mode == ExperienceSession.Mode.OFFICIAL:
+                raise PermissionDenied("Official activity completion must come from its result integration.")
+            if not request.user.has_perm("stations.change_experienceactivity"):
+                raise PermissionDenied
             try:
                 _, changed = complete_activity(session=session, activity_name=activity_name, actor=request.user)
                 messages.success(request, "Experience step completed." if changed else "This step was already complete.")
@@ -310,6 +315,8 @@ def station_operate(request, station_code):
                 messages.error(request, " ".join(exc.messages) if isinstance(exc, ValidationError) else "The experience step is not available.")
                 result = {"session": session, "status": "activity_in_progress"}
         elif action == "skip":
+            if not request.user.has_perm("stations.change_experienceactivity"):
+                raise PermissionDenied
             session = get_object_or_404(ExperienceSession, pk=request.POST.get("session_id"), event=assignment.event)
             activity_name = request.POST.get("activity")
             if activity_name != STATION_ACTIVITY[assignment.station.station_type]:

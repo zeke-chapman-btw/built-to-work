@@ -113,7 +113,11 @@ def _start_section(section, now):
 
 @transaction.atomic
 def create_attempt(session, selected_config_ids, *, is_official=True, actor=None, replacement_for=None, start_first_section=True):
-    session = type(session).objects.select_for_update().select_related("registration__event", "registration__participant").get(pk=session.pk)
+    session = type(session).objects.select_for_update().get(pk=session.pk)
+    from apps.stations.services import validate_session_identity
+    validate_session_identity(session)
+    if is_official != (session.mode == "official"):
+        raise ValidationError("Assessment mode must match the experience.")
     if is_official and session.mode != "official":
         raise ValidationError("A nonofficial experience cannot create an official assessment.")
     if is_official and session.participant.kind != "person":
@@ -197,7 +201,13 @@ def submit_answer(section, question_position, choice_key, now=None):
         return False
     if section.attempt.status != QuizAttempt.Status.ACTIVE:
         return False
-    snapshot = next((item for item in section.questions_snapshot if item["position"] == int(question_position)), None)
+    try:
+        position = int(question_position)
+    except (TypeError, ValueError):
+        return False
+    if section.attempt.sections.filter(position__lt=section.position).exclude(status=AssessmentSection.Status.COMPLETE).exists():
+        return False
+    snapshot = next((item for item in section.questions_snapshot if item["position"] == position), None)
     if not snapshot:
         return False
     choice = next((item for item in snapshot["choices"] if item["key"] == str(choice_key)), None)

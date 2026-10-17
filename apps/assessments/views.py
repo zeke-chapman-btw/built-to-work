@@ -274,6 +274,19 @@ def _kiosk_session(request, station_code, session_id):
             raise Http404
     elif session.mode != ExperienceSession.Mode.OFFICIAL or session.registration_id is None:
         raise Http404
+    if session.mode == ExperienceSession.Mode.OFFICIAL:
+        from apps.stations.services import validate_session_identity
+        from apps.events.models import QrTicket
+        try:
+            validate_session_identity(session)
+        except ValidationError:
+            raise Http404
+        tickets = QrTicket.objects.filter(registration_id=session.registration_id, is_current=True, revoked_at__isnull=True, expires_at__gte=timezone.now())
+        grant_ticket = request.session.get("participant_kiosk_ticket")
+        if grant_ticket:
+            tickets = tickets.filter(pk=grant_ticket)
+        if not tickets.exists() or not session.event.is_current or not EventStation.objects.filter(event=session.event, station=station, enabled=True, is_active_context=True).exists():
+            raise Http404
     if not EventStation.objects.filter(event=session.event, station=station, enabled=True).exists():
         raise Http404
     return station, session

@@ -15,6 +15,16 @@ def configured_game(event):
 def next_activity(event):
     return 'game' if configured_game(event) else 'simulator'
 
+def _validate_official_progress(experience):
+    if experience.mode != "official":
+        return
+    from apps.stations.services import validate_session_identity, _prior_steps_complete, activity_order_for_session
+    validate_session_identity(experience)
+    if ExperienceActivity.Activity.GAME not in activity_order_for_session(experience):
+        raise ValidationError("This experience has no configured Game step.")
+    if _prior_steps_complete(experience, ExperienceActivity.Activity.GAME):
+        raise ValidationError("Complete the required Kiosk activity before starting the Game.")
+
 def resolve_and_start(*, experience_session):
     config = configured_game(experience_session.event)
     if config is None:
@@ -23,11 +33,17 @@ def resolve_and_start(*, experience_session):
     if mode not in GameSession.Mode.values:
         raise ValidationError('Unsupported experience mode.')
     with transaction.atomic():
+        experience_session = type(experience_session).objects.select_for_update().get(pk=experience_session.pk)
+        _validate_official_progress(experience_session)
+        if experience_session.mode == "official" and GameSession.objects.filter(experience_session=experience_session).exclude(status="voided").exclude(game=config.game).exists():
+            raise ValidationError("Game configuration changed during this experience; staff review is required.")
         existing = GameSession.objects.select_for_update().filter(experience_session=experience_session, game=config.game).exclude(status=GameSession.Status.VOIDED).first()
         if existing:
             if existing.status == GameSession.Status.IN_PROGRESS:
                 _mark_game_activity_started(experience_session)
             return existing
+        if experience_session.completed_at is not None:
+            raise ValidationError("A completed experience cannot start another Game run.")
         try:
             with transaction.atomic():
                 run = GameSession.objects.create(event=experience_session.event, experience_session=experience_session, game=config.game, mode=mode, status=GameSession.Status.IN_PROGRESS, game_version=config.game.implementation_version, configuration_version=config.configuration_version, configuration_snapshot=config.settings, started_at=timezone.now())
@@ -75,6 +91,9 @@ def complete_game_session(*, game_session, raw_score=None, result_data=None, act
             "event", "experience_session", "game"
         ).get(pk=game_session.pk)
         experience = run.experience_session
+        _validate_official_progress(experience)
+        if run.status == GameSession.Status.COMPLETED and ((raw_score is not None and raw_score != run.raw_score) or (result_data is not None and result_data != run.result_data)):
+            raise ValidationError("This Game result is already recorded with different data.")
         if run.mode not in GameSession.Mode.values or run.mode != experience.mode:
             raise ValidationError("Game mode does not match its experience session.")
         if run.event_id != experience.event_id:

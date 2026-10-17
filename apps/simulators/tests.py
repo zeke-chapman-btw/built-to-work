@@ -43,6 +43,8 @@ class SimulatorCaptureTests(TestCase):
         )
         ExperienceActivity.objects.create(session=self.experience, activity=ExperienceActivity.Activity.SIMULATOR)
         self.staff = get_user_model().objects.create_user("sim-staff", password="test-password", is_staff=True)
+        from django.contrib.auth.models import Permission
+        self.staff.user_permissions.add(Permission.objects.get(content_type__app_label="simulators", codename="change_simulatorcapture"))
 
     def payload(self, **changes):
         data = {
