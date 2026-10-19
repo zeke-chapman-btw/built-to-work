@@ -1,0 +1,3 @@
+{% extends 'operations/base.html' %}{% load static %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/workdays.css' %}?v=9e">{% endblock %}
+{% block operations_content %}<div class="workdays-page"><nav class="workday-actions" aria-label="Staff workday navigation"><a href="{% url 'staffing:schedule' %}">My Schedule</a><a href="{% url 'workdays:mine' %}">My Workday History</a>{% if can_manage %}<a href="{% url 'workdays:index' %}">Staff Workdays</a><a href="{% url 'workdays:reports' %}">Workday &amp; Mileage Reports</a>{% endif %}{% if can_configure %}<a href="{% url 'workdays:settings' %}">Staff Compensation Settings</a>{% endif %}</nav>{% block workday_content %}{% endblock %}</div>{% endblock %}

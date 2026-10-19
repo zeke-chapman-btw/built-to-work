@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "apps.accounts.apps.AccountsConfig",
     "apps.staffing.apps.StaffingConfig",
     "apps.operations.apps.OperationsConfig",
+    "apps.workdays.apps.WorkdaysConfig",
     'apps.participants.apps.ParticipantsConfig',
     'apps.events.apps.EventsConfig',
     "apps.games.apps.GamesConfig",
