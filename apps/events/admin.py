@@ -24,7 +24,8 @@ class EventAdmin(admin.ModelAdmin):
     readonly_fields = ("id", "created_at", "updated_at")
 
     def get_readonly_fields(self, request, obj=None):
-        return (*super().get_readonly_fields(request, obj), "status", "staff_published_at", "staff_published_by", "details_finalized_at", "details_finalized_by")
+        protected=("start_at","end_at","timezone_name","setup_date") if obj and obj.staff_assignments.filter(status="confirmed").exists() else ()
+        return (*super().get_readonly_fields(request, obj), "status", "staff_published_at", "staff_published_by", "details_finalized_at", "details_finalized_by", *protected)
 
     def has_change_permission(self, request, obj=None):
         return bool(super().has_change_permission(request, obj) and (obj is None or obj.status != Event.Status.ARCHIVED))
@@ -39,6 +40,9 @@ class EventAdmin(admin.ModelAdmin):
             if old and old.status == Event.Status.ARCHIVED:
                 raise PermissionDenied("Archived events are read-only.")
             before = event_snapshot(old) if old else None
+            if old:
+                from apps.staffing.services import validate_event_schedule
+                validate_event_schedule(obj, before)
             obj.status = old.status if old else Event.Status.DRAFT
             if old and before != event_snapshot(obj):
                 obj.details_finalized_at = None

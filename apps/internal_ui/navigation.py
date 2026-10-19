@@ -3,15 +3,16 @@ from django.urls import reverse
 
 WORKSPACES = (
     {"id":"home","label":"HOME","icon":"home","url_name":"internal:home","description":"Your authorized BTW work at a glance.","permissions":()},
-    {"id":"events","label":"EVENTS","icon":"calendar","url_name":"internal:workspace","url_kwargs":{"workspace_id":"events"},"description":"Events, registrations, and ticket workflows.","permissions":("events.view_event","events.add_event","events.view_eventregistration")},
+    {"id":"events","label":"EVENTS","icon":"calendar","url_name":"internal:workspace","url_kwargs":{"workspace_id":"events"},"description":"Events, registrations, and ticket workflows.","permissions":("events.view_event","events.add_event","events.view_eventregistration","staffing.manage_event_staffing")},
     {"id":"participants","label":"PARTICIPANTS","icon":"people","url_name":"internal:workspace","url_kwargs":{"workspace_id":"participants"},"description":"Existing participant records and review workflows.","permissions":("participants.view_participant","participants.view_participantqualification","participants.view_participantdocument","participants.view_qualificationapprovals","participants.view_historicalimportbatch","participants.view_participantaccountrequest")},
-    {"id":"operations","label":"OPERATIONS","icon":"operations","url_name":"internal:workspace","url_kwargs":{"workspace_id":"operations"},"description":"Stations, trailer operations, synchronization, and assessments.","permissions":("stations.view_station","events.view_trailer","events.view_syncoperation","events.view_ticketdelivery","events.view_matchreview","events.view_operationalincident","assessments.view_assessmentcategory","assessments.add_assessmentcategory")},
+    {"id":"operations","label":"OPERATIONS","icon":"operations","url_name":"internal:workspace","url_kwargs":{"workspace_id":"operations"},"description":"Stations, trailer operations, synchronization, and assessments.","permissions":("stations.view_station","events.view_trailer","events.view_syncoperation","events.view_ticketdelivery","events.view_matchreview","events.view_operationalincident","assessments.view_assessmentcategory","assessments.add_assessmentcategory","staffing.view_staffprofile","staffing.manage_event_staffing")},
     {"id":"customers","label":"CUSTOMERS","icon":"customers","url_name":"internal:workspace","url_kwargs":{"workspace_id":"customers"},"description":"Customer management is planned; no customer records or tools are available yet.","permissions":(),"planned":True},
     {"id":"administration","label":"ADMIN","icon":"settings","url_name":"internal:workspace","url_kwargs":{"workspace_id":"administration"},"description":"Authorized BTW configuration and staff administration.","permissions":("auth.view_user","auth.change_user","participants.change_registrationform","participants.view_testparticipant","participants.change_testparticipant")},
 )
 
 WORKSPACE_LINKS = {
     "events": (
+        {"label":"My staff schedule","description":"Published opportunities, own requests and confirmed assignments.","url_name":"staffing:schedule","permissions":()},
         {"label":"Events","description":"View event schedules, configuration, and existing operations.","url_name":"events:event_list","permissions":("events.view_event","events.add_event","events.view_eventregistration")},
     ),
     "participants": (
@@ -23,6 +24,8 @@ WORKSPACE_LINKS = {
         {"label":"Account requests","description":"Review participant account requests.","url_name":"participants:staff-requests","permissions":("participants.view_participantaccountrequest","participants.change_participantaccountrequest")},
     ),
     "operations": (
+        {"label":"Staff directory","description":"Manage staff profiles and assignment history.","url_name":"staffing:directory","permissions":("staffing.view_staffprofile",)},
+        {"label":"Staff availability requests","description":"Review pending requests and open event staffing.","url_name":"staffing:queue","permissions":("staffing.manage_event_staffing",)},
         {"label":"Operations dashboard","description":"Review synchronization, deliveries, and operational incidents.","url_name":"events:operations-dashboard","permissions":("events.view_syncoperation","events.view_operationalincident","events.view_ticketdelivery")},
         {"label":"Offline event preparation","description":"Prepare events for authorized trailer use.","url_name":"events:offline-preparations","permissions":("events.view_offlineeventpreparation","events.add_offlineeventpreparation")},
         {"label":"Stations","description":"Open the existing station operations workspace.","url_name":"stations:list","permissions":("stations.view_station",)},
@@ -36,9 +39,9 @@ WORKSPACE_LINKS = {
 }
 
 ACTIVE_PREFIXES = {
-    "events":("/events/",),
+    "events":("/events/","/staff/"),
     "participants":("/participants/",),
-    "operations":("/events/operations/","/events/offline-preparations/","/stations/","/assessments/"),
+    "operations":("/staff/directory/","/staff/requests/","/events/operations/","/events/offline-preparations/","/stations/","/assessments/"),
     "administration":("/admin/","/participants/staff/registration-form/","/participants/testing/"),
 }
 
@@ -56,10 +59,12 @@ def visible_workspaces(user,current_path=""):
     visible=[]
     for item in WORKSPACES:
         if not _can_see(user,item["permissions"]):
-            continue
+            from apps.staffing.models import StaffProfile
+            if item["id"] != "events" or not StaffProfile.objects.filter(user=user,is_active=True).exists():
+                continue
         entry=_resolved(item)
         entry["active"]=current_path==entry["url"] or any(current_path.startswith(prefix) for prefix in ACTIVE_PREFIXES.get(item["id"],()))
-        if item["id"]=="events" and current_path.startswith(("/events/operations/","/events/offline-preparations/")):
+        if item["id"]=="events" and current_path.startswith(("/staff/directory/","/staff/requests/","/events/operations/","/events/offline-preparations/")):
             entry["active"]=False
         if item["id"]=="participants" and current_path.startswith(("/participants/staff/registration-form/","/participants/testing/")):
             entry["active"]=False

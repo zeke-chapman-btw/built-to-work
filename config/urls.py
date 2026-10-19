@@ -9,6 +9,7 @@ urlpatterns = [
     path("participants/", include("apps.participants.urls")),
     path("stations/", include("apps.stations.urls")),
     path("events/", include("apps.events.urls")),
+    path("staff/", include("apps.staffing.urls")),
     path("e/<slug:slug>/", public_views.public_event_registration, name="public-event-registration"),
     path("quizzes/", include("apps.assessments.urls")),
     path("games/", include("apps.games.urls")),

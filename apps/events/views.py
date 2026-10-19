@@ -171,6 +171,10 @@ def event_action(request, event_id, action):
 def event_detail(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
     section = request.GET.get("section", "overview")
+    if section == "staffing":
+        if not request.user.has_perm("staffing.manage_event_staffing"):
+            raise PermissionDenied
+        return redirect("staffing:event", event_id=event.pk)
     if section not in ("overview", "results", "registrations"):
         section = "overview"
     if request.method == "POST":

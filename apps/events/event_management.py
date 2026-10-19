@@ -1,6 +1,6 @@
 """Permission-controlled Event editing and explicit lifecycle transitions."""
 from datetime import UTC, datetime
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
 from .forms import EventActionForm, EventForm
@@ -64,6 +64,13 @@ def save_event(*, data, actor, event_id=None):
     if form.errors:
         return None, form
     event = form.save(commit=False)
+    if event_id:
+        from apps.staffing.services import validate_event_schedule
+        try:
+            validate_event_schedule(event, before)
+        except ValidationError as exc:
+            form.add_error(None, exc)
+            return None, form
     if not event_id:
         event.created_by = actor
     changed = before is None or any(before[name] != event_snapshot(event)[name] for name in EventForm.Meta.fields)
