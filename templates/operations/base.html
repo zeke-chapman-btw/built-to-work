@@ -1,0 +1,4 @@
+{% extends 'internal/base.html' %}{% load static %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'internal/css/event_management.css' %}"><link rel="stylesheet" href="{% static 'internal/css/operations.css' %}?v=9d">{% endblock %}
+{% block page_heading %}{% endblock %}
+{% block content %}<div class="events-page operations-page"><header class="event-header"><p class="eyebrow">BUILT TO WORK</p><h1>{{ page_title }}</h1></header>{% block operations_content %}{% endblock %}</div>{% endblock %}

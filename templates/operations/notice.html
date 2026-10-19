@@ -1,0 +1,1 @@
+{% extends 'operations/base.html' %}{% block operations_content %}<section class="card"><h2>Action unavailable</h2><p>{{ notice }}</p><a href="{% url 'operations:tasks' %}">Tasks</a> · <a href="{% url 'operations:events' %}">Event operations</a></section>{% endblock %}

@@ -171,6 +171,10 @@ def event_action(request, event_id, action):
 def event_detail(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
     section = request.GET.get("section", "overview")
+    if section in ("tasks","notes","documents"):
+        from apps.operations.services import require_manager
+        require_manager(request.user,{"tasks":"tasks","notes":"event_notes","documents":"event_documents"}[section])
+        return redirect("operations:event",event_id=event.pk,section=section)
     if section == "staffing":
         if not request.user.has_perm("staffing.manage_event_staffing"):
             raise PermissionDenied
