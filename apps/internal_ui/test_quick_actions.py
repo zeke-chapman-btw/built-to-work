@@ -22,7 +22,7 @@ class QuickActionsTests(TestCase):
     def test_catalog_defaults_are_existing_routes_and_no_placeholders(self):
         defaults = [a['id'] for a in QUICK_ACTIONS if a['default']]
         self.assertEqual(self.ids(), defaults)
-        self.assertEqual(len(defaults), 8)
+        self.assertEqual(len(defaults), 9)
         self.assertEqual(len({a['id'] for a in QUICK_ACTIONS}), len(QUICK_ACTIONS))
         for action in available_quick_actions(self.user):
             self.assertEqual(self.client.get(action['url']).status_code, 200, action['id'])
@@ -85,7 +85,7 @@ class QuickActionsTests(TestCase):
         other.refresh_from_db()
         self.assertIsNone(other.quick_action_ids)
         self.client.force_login(other, backend='django.contrib.auth.backends.ModelBackend')
-        self.assertEqual(self.ids(), ['settings'])
+        self.assertEqual(self.ids(), ['create-task', 'settings'])
         self.save([])
         self.client.force_login(self.user, backend='django.contrib.auth.backends.ModelBackend')
         self.assertEqual(self.ids(), ['events'])
@@ -98,7 +98,7 @@ class QuickActionsTests(TestCase):
         staff.groups.add(group)
         self.client.force_login(staff, backend='django.contrib.auth.backends.ModelBackend')
         response = self.client.get(self.editor)
-        self.assertEqual([a['id'] for a in response.context['available_actions']], ['events', 'settings'])
+        self.assertEqual([a['id'] for a in response.context['available_actions']], ['create-task', 'events', 'settings'])
         self.assertRedirects(self.save(['events', 'settings']), self.home)
         group.permissions.remove(permission)
         self.assertEqual(self.ids(), ['settings'])
@@ -109,7 +109,7 @@ class QuickActionsTests(TestCase):
         staff = get_user_model().objects.create_user('qa-create', password='test-password', is_staff=True)
         staff.user_permissions.add(Permission.objects.get(content_type__app_label='events', codename='add_event'))
         self.client.force_login(staff, backend='django.contrib.auth.backends.ModelBackend')
-        self.assertEqual(self.ids(), ['create-event', 'settings'])
+        self.assertEqual(self.ids(), ['create-task', 'create-event', 'settings'])
         self.assertContains(self.save(['events']), 'Select a valid choice')
 
     def test_operations_uses_destination_permission(self):

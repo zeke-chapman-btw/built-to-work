@@ -49,44 +49,23 @@ class HomeDashboardPolishTests(TestCase):
         self.assertEqual(gear[0]['attrs']['href'], reverse('internal:settings'))
         self.assertEqual(gear[0]['attrs']['aria-label'], 'Personal settings')
 
-    def test_secondary_actions_are_with_heading_and_edit_is_separate(self):
+    def test_four_panel_headings_and_real_secondary_actions(self):
         headers = self.markup.with_class('dashboard-section-header')
-        self.assertEqual(len(headers), 3)
-        for header, heading, secondary in zip(headers, ('Updates', 'Quick Actions', 'Analytics'), ('Mark All as Read', None, 'View More')):
-            with self.subTest(heading=heading):
-                group, edit = header['children']
-                self.assertEqual(group['children'][0]['tag'], 'h2')
-                self.assertEqual(''.join(group['children'][0]['text']).strip(), heading)
-                if heading == 'Updates':
-                    self.assertEqual(edit['tag'], 'a')
-                    self.assertEqual(edit['attrs']['href'], reverse('operations:updates'))
-                    self.assertIn('View all', ''.join(edit['text']))
-                    forms=[n for n in group['children'] if n['tag']=='form']
-                    self.assertEqual(len(forms),1)
-                    self.assertEqual(forms[0]['attrs']['method'],'post')
-                    self.assertEqual(forms[0]['attrs']['action'],reverse('operations:updates-read-all'))
-                    self.assertIn('Mark All as Read',''.join(forms[0]['text']))
-                    continue
-                if heading == 'Quick Actions':
-                    self.assertEqual(edit['tag'], 'a')
-                    self.assertEqual(edit['attrs']['href'], reverse('internal:quick-actions-edit'))
-                else:
-                    self.assertEqual(edit['tag'], 'button')
-                    self.assertIn('disabled', edit['attrs'])
-                self.assertEqual(edit['text'][0].strip(), 'Edit')
-                secondary_buttons = [n for n in group['children'] if n['tag'] == 'button']
-                self.assertEqual(len(secondary_buttons), int(secondary is not None))
-                if secondary:
-                    self.assertIn(secondary, ''.join(secondary_buttons[0]['text']))
-                    self.assertIn('disabled', secondary_buttons[0]['attrs'])
-                    self.assertIn('Unavailable', secondary_buttons[0]['attrs']['title'])
+        self.assertEqual(len(headers), 4)
+        headings = [''.join(h['children'][0]['text']).strip() for h in headers]
+        for actual, expected in zip(headings, ('My Tasks', 'Recent Updates', 'Quick Actions', 'At a Glance')):
+            self.assertIn(expected, actual)
+        self.assertContains(self.response, reverse('operations:tasks') + '?view=mine')
+        self.assertContains(self.response, reverse('operations:updates'))
+        self.assertContains(self.response, reverse('internal:quick-actions-edit'))
+        self.assertContains(self.response, reverse('operations:updates-read-all'))
+        self.assertNotContains(self.response, 'Unavailable')
         self.assertNotContains(self.response, 'Edit Options')
 
     def test_updates_empty_state_links_to_real_feed(self):
         notices = self.markup.with_class('dashboard-notification')
         self.assertEqual(len(notices), 1)
-        self.assertEqual(notices[0]['tag'], 'article')
-        self.assertIn('Task updates', ''.join(notices[0]['text']))
+        self.assertEqual(notices[0]['tag'], 'li')
         self.assertIn('No task updates yet.', ''.join(notices[0]['text']))
         self.assertIn('Open Updates', ''.join(notices[0]['text']))
         self.assertContains(self.response, reverse('operations:updates'))

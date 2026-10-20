@@ -101,6 +101,11 @@ def event_list(request):
     else:
         events = events.none()
     events = events.order_by("-start_at" if selected in ("completed", "cancelled", "archived") else "start_at", "name", "pk")
+    can_view_staffing = request.user.has_perm("staffing.manage_event_staffing")
+    if can_view_staffing:
+        from django.db.models import Count
+        events = events.select_related("staffing_plan").annotate(confirmed_staff=Count(
+            "staff_assignments", filter=Q(staff_assignments__status="confirmed"), distinct=True))
     page = Paginator(events, 20).get_page(request.GET.get("page"))
     parameters = request.GET.copy(); parameters.pop("page", None)
     tabs = []
@@ -108,7 +113,7 @@ def event_list(request):
         query = parameters.copy(); query["view"] = value
         tabs.append({"id": value, "label": label, "url": "?" + query.urlencode()})
     return render(request, "events/event_list.html", {"events": page, "page_obj": page, "filters": filters,
-        "view_tabs": tabs, "selected_view": selected, "view_label": dict(EventFilterForm.base_fields["view"].choices).get(selected, "Events"),
+        "can_view_staffing": can_view_staffing, "view_tabs": tabs, "selected_view": selected, "view_label": dict(EventFilterForm.base_fields["view"].choices).get(selected, "Events"),
         "page_query": parameters.urlencode(), "page_title": "Events", "page_description": "Plan, publish and manage event operations."}, status=200 if valid else 400)
 
 

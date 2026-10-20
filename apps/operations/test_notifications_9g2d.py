@@ -188,7 +188,7 @@ class TaskNotifications9G2DTests(TestCase):
         self.assertContains(response,'No task updates')
         t=self.create();self.login();home=self.client.get(reverse('internal:home'))
         self.assertContains(home,t.title);self.assertContains(home,reverse('operations:updates'))
-        self.assertContains(home,'Quick Actions');self.assertContains(home,'Analytics')
+        self.assertContains(home,'Quick Actions');self.assertContains(home,'At a Glance')
     def test_read_does_not_dismiss_live_due_attention(self):
         t=self.create(due_date=timezone.localdate().isoformat());self.login()
         self.client.post(reverse('operations:updates-read-all'))

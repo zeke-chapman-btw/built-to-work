@@ -2,30 +2,25 @@
 {% load static %}
 {% block extra_head %}<link rel="stylesheet" href="{% static 'internal/css/dashboard.css' %}">{% endblock %}
 {% block body_class %} home-dashboard-page{% endblock %}
-{% block page_heading %}<h1 class="dashboard-sr-only">Home Dashboard</h1>{% endblock %}
+{% block page_heading %}<header class="page-header dashboard-page-header"><div><h1>Home Dashboard</h1><p class="page-description">Your work and operational activity at a glance.</p></div><a class="button button-primary" data-task-create href="{% url 'operations:quick-create' %}">+ Create Task</a></header>{% endblock %}
 {% block content %}
 <div class="home-dashboard">
-  <section class="dashboard-section dashboard-updates" aria-labelledby="dashboard-updates-title">
-    <div class="dashboard-section-header"><div class="dashboard-section-heading"><h2 id="dashboard-updates-title">Updates</h2><form method="post" action="{% url 'operations:updates-read-all' %}">{% csrf_token %}<input type="hidden" name="return_to" value="home"><button type="submit"{% if not task_updates.unread %} disabled{% endif %}>Mark All as Read</button></form></div><a class="dashboard-edit" href="{% url 'operations:updates' %}">View all</a></div>
-    <div class="dashboard-notifications" aria-label="Recent task updates">
-      {% for notice in task_updates.recent %}<article class="dashboard-notification card"><div class="dashboard-notification-body"><strong>{{ notice.get_kind_display }}</strong><p><a href="{% url 'operations:task' notice.task_id %}">{{ notice.task.title }}</a></p><p>{{ notice.message }}</p><time datetime="{{ notice.created_at|date:'c' }}">{{ notice.created_at|date:'M j, g:i A T' }}</time></div><span class="badge dashboard-notification-status">{% if notice.read_at %}Read{% else %}New{% endif %}</span></article>{% empty %}<article class="dashboard-notification card"><div class="dashboard-notification-body"><strong>Task updates</strong><p>No task updates yet. Assignments and important changes from others will appear here.</p><a href="{% url 'operations:updates' %}">Open Updates</a></div></article>{% endfor %}
-    </div>
+  <section class="card dashboard-section dashboard-tasks" aria-labelledby="dashboard-tasks-title">
+    <header class="dashboard-section-header"><div class="dashboard-section-heading"><span class="dashboard-icon" aria-hidden="true">✓</span><h2 id="dashboard-tasks-title">My Tasks</h2><span class="result-count">{{ home_task_count }} open</span></div><a class="dashboard-edit" href="{% url 'operations:tasks' %}?view=mine">View all tasks</a></header>
+    <ul class="dashboard-list">{% for task in home_tasks %}<li class="dashboard-task"><div class="dashboard-row-heading"><a href="{% url 'operations:task' task.pk %}">{{ task.title }}</a><span class="status-pill">{{ task.get_status_display }}</span></div>{% if task.linked_event_count %}<p class="dashboard-context">{{ task.event_label|truncatechars:100 }}</p>{% endif %}<div class="dashboard-row-meta"><span>{% if task.due_date %}Due {{ task.due_date|date:'M j, Y' }}{% else %}No due date{% endif %}</span><span class="task-priority task-priority-{{ task.priority }}">{{ task.get_priority_display }} priority</span>{% if task.is_overdue %}<span class="task-overdue">Overdue</span>{% elif task.is_due_soon %}<span class="task-due-soon">Due soon</span>{% endif %}</div></li>{% empty %}<li class="dashboard-empty"><strong>No open tasks assigned to you</strong><p>Assigned work will appear here. Open Tasks to review work you created.</p></li>{% endfor %}</ul>
   </section>
-  <section class="dashboard-section" aria-labelledby="dashboard-actions-title">
-    {% include 'internal/dashboard/section_header.html' with section_id='dashboard-actions-title' heading='Quick Actions' edit_url=quick_actions_edit_url %}
-    <div class="dashboard-actions">
-      {% for action in quick_actions %}
-        <a class="button card dashboard-action" href="{{ action.url }}">{{ action.label }}</a>
-      {% empty %}<p>No Quick Actions selected. Use Edit to choose your actions.</p>
-      {% endfor %}
-    </div>
+  <section class="card dashboard-section dashboard-updates" aria-labelledby="dashboard-updates-title">
+    <header class="dashboard-section-header"><div class="dashboard-section-heading"><span class="dashboard-icon dashboard-icon-yellow" aria-hidden="true">↗</span><h2 id="dashboard-updates-title">Recent Updates</h2><span class="result-count">{{ task_updates.unread }} unread</span></div><a class="dashboard-edit" href="{% url 'operations:updates' %}">View all updates</a></header>
+    <ul class="dashboard-list dashboard-notifications" aria-label="Recent task updates">{% for notice in task_updates.recent|slice:":3" %}<li class="dashboard-notification{% if not notice.read_at %} is-unread{% endif %}"><div class="dashboard-row-heading"><a class="dashboard-record-link" href="{% url 'operations:task' notice.task_id %}">{{ notice.task.title }}</a><span class="notification-read-state">{% if notice.read_at %}Read{% else %}New{% endif %}</span></div><p>{{ notice.message }}</p><div class="dashboard-notice-footer"><time datetime="{{ notice.created_at|date:'c' }}">{{ notice.created_at|date:'M j, g:i A T' }}</time>{% if not notice.read_at %}<form method="post" action="{% url 'operations:updates-read' notice.pk %}">{% csrf_token %}<input type="hidden" name="return_to" value="home"><button class="dashboard-read" type="submit">Mark as read<span class="notification-sr-only">: {{ notice.task.title }}</span></button></form>{% endif %}</div></li>{% empty %}<li class="dashboard-notification dashboard-empty"><strong>No task updates yet.</strong><p>Assignments and important changes from others will appear here. Your own actions remain in task history.</p><a href="{% url 'operations:updates' %}">Open Updates</a></li>{% endfor %}</ul>
+    <form class="dashboard-section-footer" method="post" action="{% url 'operations:updates-read-all' %}">{% csrf_token %}<input type="hidden" name="return_to" value="home"><button class="dashboard-read" type="submit"{% if not task_updates.unread %} disabled{% endif %}>Mark All as Read</button></form>
   </section>
-  <section class="dashboard-section" aria-labelledby="dashboard-analytics-title">
-    {% include 'internal/dashboard/section_header.html' with section_id='dashboard-analytics-title' heading='Analytics' view_more=True %}
-    <p class="dashboard-preview-note">Layout preview · analytics data is not connected.</p>
-    <div class="dashboard-analytics">
-      {% for label in analytics_labels %}<article class="card dashboard-metric"><strong aria-label="Not available">—</strong><span>{{ label }}</span><small>Not connected</small></article>{% endfor %}
-    </div>
+  <section class="card dashboard-section" aria-labelledby="dashboard-actions-title">
+    <header class="dashboard-section-header"><div class="dashboard-section-heading"><span class="dashboard-icon" aria-hidden="true">＋</span><h2 id="dashboard-actions-title">Quick Actions</h2></div><a class="dashboard-edit" href="{{ quick_actions_edit_url }}">Edit</a></header>
+    <div class="dashboard-actions">{% for action in quick_actions %}<a class="button dashboard-action"{% if action.id == 'create-task' %} data-task-create{% endif %} href="{{ action.url }}">{{ action.label }}<span aria-hidden="true">↗</span></a>{% empty %}<p>No Quick Actions selected. Use Edit to choose your actions.</p>{% endfor %}</div>
+  </section>
+  <section class="card dashboard-section" aria-labelledby="dashboard-analytics-title">
+    <header class="dashboard-section-header"><div class="dashboard-section-heading"><span class="dashboard-icon dashboard-icon-yellow" aria-hidden="true">▥</span><h2 id="dashboard-analytics-title">At a Glance</h2></div></header><p class="dashboard-scope">Live operational counts · scope shown for each metric.</p>
+    <div class="dashboard-analytics">{% for metric in home_metrics %}<a class="dashboard-metric" href="{{ metric.url }}"><strong>{{ metric.value }}</strong><span>{{ metric.label }}</span><small>{{ metric.scope }}</small></a>{% endfor %}</div>
   </section>
 </div>
 {% endblock %}

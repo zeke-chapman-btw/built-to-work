@@ -1,4 +1,5 @@
-from .dashboard import ANALYTICS_LABELS, MAX_QUICK_ACTIONS, available_quick_actions, quick_actions_for
+from .home_data import home_data
+from .dashboard import MAX_QUICK_ACTIONS, available_quick_actions, quick_actions_for
 from .forms import QuickActionsForm
 from django.contrib import messages
 from django.shortcuts import redirect
@@ -28,7 +29,7 @@ def _require_staff(request):
 @login_required
 def home(request):
     _require_staff(request)
-    return render(request, "internal/dashboard.html", _staff_context(request, page_title="Dashboard", quick_actions=quick_actions_for(request.user), analytics_labels=ANALYTICS_LABELS, quick_actions_edit_url=reverse("internal:quick-actions-edit")))
+    return render(request, "internal/dashboard.html", _staff_context(request, page_title="Dashboard", quick_actions=quick_actions_for(request.user), **home_data(request.user), quick_actions_edit_url=reverse("internal:quick-actions-edit")))
 
 
 @login_required

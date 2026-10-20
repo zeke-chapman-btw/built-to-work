@@ -24,26 +24,24 @@ class HomeDashboardPhaseOneTests(TestCase):
         self.user = get_user_model().objects.create_superuser('layout-review', 'layout@example.test', 'test-only-password')
         self.client.force_login(self.user, backend='django.contrib.auth.backends.ModelBackend')
 
-    def test_dashboard_sections_are_honest_preview_and_reuse_existing_routes(self):
+    def test_dashboard_sections_use_live_data_and_existing_routes(self):
         response = self.client.get(reverse('internal:home'))
         self.assertEqual(response.status_code, 200)
-        for section in ('Updates', 'Quick Actions', 'Analytics'):
+        for section in ('My Tasks', 'Recent Updates', 'Quick Actions', 'At a Glance'):
             self.assertContains(response, section)
         self.assertContains(response, 'No task updates yet.')
         self.assertContains(response, reverse('operations:updates'))
-        self.assertContains(response, 'analytics data is not connected')
-        self.assertEqual(len(response.context['quick_actions']), 8)
-        self.assertContains(response, 'class="card dashboard-metric"', count=6)
-        self.assertContains(response, 'Not connected', count=6)
+        self.assertNotContains(response, 'analytics data is not connected')
+        self.assertEqual(len(response.context['quick_actions']), 9)
+        self.assertEqual(len(response.context['home_metrics']), 4)
         self.assertContains(response, reverse('events:event_create'))
         self.assertContains(response, reverse('participants:staff-directory'))
+        self.assertContains(response, reverse('admin:participants_participant_add'))
         controls = Controls(); controls.feed(response.content.decode())
-        self.assertEqual(len(controls.buttons), 7)  # shell/modal, empty live Updates read action, two Analytics preview controls
-        self.assertEqual(sum("data-task-close" in b for b in controls.buttons), 1)
-        preview_buttons = [b for b in controls.buttons if 'data-menu-toggle' not in b and 'data-scrim' not in b and 'data-task-close' not in b and 'sign-out' not in b.get('class', '').split()]
-        self.assertEqual(len(preview_buttons), 3)
-        self.assertEqual(sum(b.get('type') == 'submit' for b in preview_buttons), 1)
-        self.assertTrue(all('disabled' in b for b in preview_buttons))
+        read_buttons = [b for b in controls.buttons if b.get('class') == 'dashboard-read']
+        self.assertEqual(len(read_buttons), 1)
+        self.assertIn('disabled', read_buttons[0])
+        self.assertEqual(read_buttons[0]['type'], 'submit')
         self.assertEqual(response.content.decode().count('<h1'), 1)
 
     def test_settings_gear_replaces_row_on_home_and_existing_feature_pages(self):
@@ -65,7 +63,7 @@ class HomeDashboardPhaseOneTests(TestCase):
         staff = get_user_model().objects.create_user('limited-layout', password='test-password', is_staff=True)
         self.client.force_login(staff, backend='django.contrib.auth.backends.ModelBackend')
         response = self.client.get(reverse('internal:home'))
-        self.assertEqual([a['label'] for a in response.context['quick_actions']], ['Personal settings'])
+        self.assertEqual([a['label'] for a in response.context['quick_actions']], ['Create Task', 'Personal settings'])
         self.assertNotContains(response, 'href="'+reverse('events:event_create')+'"')
         self.assertNotContains(response, 'href="'+reverse('participants:staff-directory')+'"')
         staff.user_permissions.add(Permission.objects.get(content_type__app_label='events', codename='view_event'))
