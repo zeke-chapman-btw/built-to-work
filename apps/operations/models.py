@@ -18,9 +18,11 @@ class Task(UUIDModel, TimestampedModel):
     due_date=models.DateField(null=True,blank=True)
     priority=models.CharField(max_length=10,choices=Priority.choices,default=Priority.NORMAL)
     status=models.CharField(max_length=16,choices=Status.choices,default=Status.TODO)
-    created_by=models.ForeignKey(settings.AUTH_USER_MODEL,null=True,on_delete=models.SET_NULL,related_name="operational_tasks_created")
+    created_by=models.ForeignKey(settings.AUTH_USER_MODEL,null=True,blank=True,on_delete=models.SET_NULL,related_name="operational_tasks_created")
     completed_at=models.DateTimeField(null=True,blank=True)
     completed_by=models.ForeignKey(settings.AUTH_USER_MODEL,null=True,blank=True,on_delete=models.SET_NULL,related_name="operational_tasks_completed")
+    archived_at=models.DateTimeField(null=True,blank=True,db_index=True)
+    archived_by=models.ForeignKey(settings.AUTH_USER_MODEL,null=True,blank=True,on_delete=models.SET_NULL,related_name="operational_tasks_archived")
     class Meta:
         ordering=("due_date","-created_at")
         permissions=[("manage_tasks","Can manage all operational tasks and assignments")]

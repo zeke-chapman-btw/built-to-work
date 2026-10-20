@@ -74,16 +74,15 @@ class Operations9DTests(TestCase):
         t=self.task(assigned_staff=str(self.other_person.pk));self.login(self.employee);self.assertEqual(self.client.get(reverse('operations:task',args=[t.pk])).status_code,404)
     def test_staff_can_progress_and_complete_with_attribution(self):
         t=self.task();t=self.status(t,'in_progress',self.employee);t=self.status(t,'completed',self.employee);self.assertEqual(t.completed_by,self.employee);self.assertIsNotNone(t.completed_at);self.assertEqual(t.status,'completed')
-    def test_staff_cannot_cancel_or_reopen(self):
-        t=self.task();obj,form=svc.task_status(actor=self.employee,task_id=t.pk,data=dict(revision=t.updated_at.isoformat(),reason='SYNTHETIC',status='cancelled'));self.assertIsNone(obj)
-        t=self.status(t,actor=self.employee)
-        with self.assertRaises(ValidationError):self.status(t,'in_progress',self.employee)
+    def test_assignee_can_cancel_and_reopen(self):
+        t=self.task();t=self.status(t,'cancelled',self.employee);t=self.status(t,'completed',self.employee)
+        t=self.status(t,'in_progress',self.employee);self.assertIsNone(t.completed_at)
     def test_staff_cannot_change_ownership_via_status_post(self):
         t=self.task();self.login(self.employee);r=self.client.post(reverse('operations:task-status',args=[t.pk]),dict(revision=t.updated_at.isoformat(),reason='SYNTHETIC',status='completed',assigned_staff=str(self.other_person.pk),title='ATTACK'))
         self.assertEqual(r.status_code,302);t.refresh_from_db();self.assertEqual(t.assigned_staff,self.person);self.assertNotEqual(t.title,'ATTACK')
-    def test_staff_cannot_create_edit_or_reassign_tasks(self):
+    def test_staff_can_create_and_edit_assigned_tasks(self):
         t=self.task();self.login(self.employee)
-        for url in ['/operations/tasks/create/',reverse('operations:task-edit',args=[t.pk])]:self.assertEqual(self.client.post(url,{}).status_code,403)
+        for url in ['/operations/tasks/create/',reverse('operations:task-edit',args=[t.pk])]:self.assertEqual(self.client.get(url).status_code,200)
     def test_completed_history_survives_manager_reopening(self):
         t=self.status(self.task());completed=t.completed_at;t=self.status(t,'todo');self.assertIsNone(t.completed_at);self.assertTrue(AuditLog.objects.filter(action='operations.task.completed',object_id=str(t.pk)).exists());self.assertIsNotNone(completed)
     def test_cancelled_history_is_not_deleted(self):
@@ -108,11 +107,14 @@ class Operations9DTests(TestCase):
     def test_task_list_paginates(self):
         for i in range(23):self.task(title=f'SYNTHETIC {i}')
         r=self.client.get('/operations/tasks/?page=2&view=all');self.assertEqual(len(r.context['tasks']),3);self.assertContains(r,'Previous')
-    def test_draft_event_tasks_hidden_from_staff(self):
-        t=self.task(event=str(self.event.pk));self.event.status='draft';self.event.save();self.login(self.employee);self.assertNotContains(self.client.get('/operations/my-tasks/'),t.title);self.assertEqual(self.client.get(reverse('operations:task',args=[t.pk])).status_code,404)
-    def test_archived_event_rejects_task_write(self):
+    def test_task_access_independent_of_draft_event_access(self):
+        t=self.task(event=str(self.event.pk));self.event.status='draft';self.event.save();self.login(self.employee)
+        self.assertContains(self.client.get('/operations/my-tasks/'),t.title)
+        r=self.client.get(reverse('operations:task',args=[t.pk]));self.assertEqual(r.status_code,200)
+        self.assertNotContains(r,self.event.name)
+    def test_archived_event_task_lifecycle_preserves_relationship(self):
         t=self.task(event=str(self.event.pk));self.event.status='archived';self.event.save()
-        with self.assertRaises(ValidationError):self.status(t)
+        t=self.status(t);self.assertEqual(t.event_id,self.event.pk)
     def test_note_creation_author_and_timestamps(self):
         n=self.note(actor=self.employee);self.assertEqual(n.author,self.employee);self.assertEqual(n.visibility,'staff');self.assertIsNotNone(n.created_at)
     def test_note_edit_preserves_author_and_audit_content(self):
@@ -217,10 +219,11 @@ class Operations9DTests(TestCase):
         from apps.events.downsync import EVENT_FIELDS
         for name in ['operational_tasks','operational_notes','operational_documents']:self.assertNotIn(name,EVENT_FIELDS)
 
-    def test_manager_permissions_do_not_apply_without_event_view_permission(self):
+    def test_task_admin_does_not_require_event_view_permission(self):
         self.manager.user_permissions.remove(Permission.objects.get(content_type__app_label='events',codename='view_event'))
         actor=get_user_model().objects.get(pk=self.manager.pk)
-        with self.assertRaises(PermissionDenied):svc.save_task(actor=actor,data={})
+        self.assertTrue(svc.task_access.task_admin(actor))
+        self.assertIsNotNone(self.task())
     def test_staff_event_links_discover_operations_without_manager_event_access(self):
         self.login(self.employee);r=self.client.get(reverse('staffing:staff-event',args=[self.event.pk]));self.assertContains(r,self.event_url('notes'));self.assertNotContains(r,'SYNTHETIC CONFIDENTIAL EVENT DESCRIPTION')
     def test_task_view_navigation_is_available_on_mobile(self):

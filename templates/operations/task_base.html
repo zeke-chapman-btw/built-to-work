@@ -1,0 +1,3 @@
+{% extends 'operations/base.html' %}{% load static %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/tasks.css' %}">{% endblock %}
+{% block operations_content %}<div class="task-page">{% block task_content %}{% endblock %}</div>{% endblock %}

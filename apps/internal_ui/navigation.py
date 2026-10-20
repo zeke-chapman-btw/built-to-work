@@ -28,7 +28,7 @@ WORKSPACE_LINKS = {
         {"label":"My Workday History","description":"Your daily check-ins and recorded workdays.","url_name":"workdays:mine","permissions":()},
         {"label":"Staff Workdays & Mileage","description":"Manage event-day rosters, corrections and individual trips.","url_name":"workdays:index","permissions":("workdays.manage_workdays",)},
         {"label":"Workday & Reimbursement Reports","description":"Review daily compensation and trip reimbursements; export CSV.","url_name":"workdays:reports","permissions":("workdays.manage_workdays",)},
-        {"label":"Tasks","description":"Create, assign and review operational tasks.","url_name":"operations:tasks","permissions":("operations.manage_tasks",)},
+        {"label":"Tasks","description":"Create, assign and review operational tasks.","url_name":"operations:tasks","permissions":()},
         {"label":"My Tasks","description":"Your assigned work and completed history.","url_name":"operations:my-tasks","permissions":()},
         {"label":"Event notes and documents","description":"Authorized event notes and operational attachments.","url_name":"operations:events","permissions":()},
         {"label":"Staff directory","description":"Manage staff profiles and assignment history.","url_name":"staffing:directory","permissions":("staffing.view_staffprofile",)},

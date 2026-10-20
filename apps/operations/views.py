@@ -16,7 +16,8 @@ from apps.events.models import Event
 from apps.staffing.models import StaffProfile
 from .models import Task,EventNote,EventDocument
 from .forms import TaskForm,StatusForm,NoteForm,DocumentForm,DemoForm,RevisionForm
-from . import services as svc,storage
+from . import services as svc,storage,task_access,task_history
+from .forms import TaskRevisionForm
 
 def staff_view(fn):
     @login_required(login_url="/admin/login/")
@@ -29,56 +30,96 @@ def staff_view(fn):
     return wrapped
 
 def form_page(request,form,title,back):
-    return render(request,"operations/form.html",dict(form=form,page_title=title,back=back),status=400 if form.is_bound else 200)
+    template = "operations/task_form.html" if isinstance(form, (TaskForm, StatusForm, TaskRevisionForm)) else "operations/form.html"
+    return render(request,template,dict(form=form,page_title=title,back=back),status=400 if form.is_bound else 200)
+
 @staff_view
 def task_list(request,mine=False):
-    if request.method!="GET":raise PermissionDenied
-    managing=svc.manager(request.user,"tasks");qs=svc.tasks_for(request.user)
-    view=request.GET.get("view","open")
-    if mine:
-        p=svc.person(request.user);qs=qs.filter(assigned_staff=p) if p else qs.none()
-    if view not in ("all","mine","open","completed","overdue"):view="open"
-    p=svc.person(request.user)
-    if view=="mine":qs=qs.filter(assigned_staff=p) if p else qs.none()
-    if view=="open":qs=qs.filter(status__in=("todo","in_progress"))
-    if view=="completed":qs=qs.filter(status="completed")
-    if view=="overdue":qs=qs.filter(status__in=("todo","in_progress"),due_date__lt=timezone.localdate())
-    filters={k:request.GET.get(k,"").strip()[:200] for k in ("q","status","priority","assignee","event")}
-    if filters["q"]:qs=qs.filter(Q(title__icontains=filters["q"])|Q(description__icontains=filters["q"]))
-    for field,choices in (("status",Task.Status.values),("priority",Task.Priority.values)):
-        if filters[field] in choices:qs=qs.filter(**{field:filters[field]})
+    if request.method != "GET":
+        raise PermissionDenied
+    managing = task_access.task_admin(request.user)
+    allowed = svc.tasks_for(request.user)
+    qs = allowed
+    view = request.GET.get("view", "open")
+    if view not in ("all", "mine", "open", "completed", "overdue", "archived"):
+        view = "open"
+    qs = qs.filter(archived_at__isnull=view != "archived")
+    if mine or view == "mine":
+        qs = qs.filter(assigned_staff__user=request.user)
+    if view == "open":
+        qs = qs.filter(status__in=("todo", "in_progress"))
+    if view == "completed":
+        qs = qs.filter(status="completed")
+    if view == "overdue":
+        qs = qs.filter(status__in=("todo", "in_progress"), due_date__lt=timezone.localdate())
+    filters = {k:request.GET.get(k, "").strip()[:200] for k in ("q", "status", "priority", "assignee", "event")}
+    if filters["q"]:
+        qs = qs.filter(Q(title__icontains=filters["q"]) | Q(description__icontains=filters["q"]))
+    for field, choices in (("status", Task.Status.values), ("priority", Task.Priority.values)):
+        if filters[field] in choices:
+            qs = qs.filter(**{field:filters[field]})
     if managing:
-        for field,key in (("assignee","assigned_staff_id"),("event","event_id")):
+        for field, key in (("assignee", "assigned_staff_id"), ("event", "event_id")):
             if filters[field]:
-                try:qs=qs.filter(**{key:filters[field]})
-                except (ValidationError,ValueError):qs=qs.none()
-    query=request.GET.copy();query.pop("page",None)
-    return render(request,"operations/tasks.html",dict(page_title="Tasks" if managing and not mine else "My Tasks",managing=managing,tasks=Paginator(qs.order_by("due_date","-created_at"),20).get_page(request.GET.get("page")),view=view,filters=filters,statuses=Task.Status.choices,priorities=Task.Priority.choices,people=StaffProfile.objects.all() if managing else [],events=Event.objects.all() if managing else [],query=query.urlencode(),today=timezone.localdate()))
+                try:
+                    qs = qs.filter(**{key:filters[field]})
+                except (ValidationError, ValueError):
+                    qs = qs.none()
+    page = Paginator(qs.order_by("due_date", "-created_at"), 20).get_page(request.GET.get("page"))
+    page.object_list = task_access.present_tasks(request.user, page.object_list)
+    query = request.GET.copy()
+    query.pop("page", None)
+    return render(request, "operations/tasks.html", dict(page_title="My Tasks" if mine else "Tasks", managing=managing,
+        can_create=True, tasks=page, view=view, filters=filters, statuses=Task.Status.choices, priorities=Task.Priority.choices,
+        people=StaffProfile.objects.filter(tasks__in=allowed).distinct() if managing else [],
+        events=task_access.events_for(request.user).filter(operational_tasks__in=allowed).distinct() if managing else [],
+        query=query.urlencode(), today=timezone.localdate()))
+
 @staff_view
 def task_detail(request,task_id):
-    if request.method!="GET":raise PermissionDenied
-    obj=get_object_or_404(svc.tasks_for(request.user),pk=task_id)
-    managing=svc.manager(request.user,"tasks")
-    return render(request,"operations/task.html",dict(page_title=obj.title,task=obj,managing=managing,can_change=managing or obj.status in ("todo","in_progress")))
+    if request.method != "GET":
+        raise PermissionDenied
+    obj = get_object_or_404(svc.tasks_for(request.user), pk=task_id)
+    task_access.present_tasks(request.user, [obj])
+    history = Paginator(task_history.entries_for(request.user, obj), 20).get_page(request.GET.get("history_page"))
+    rows = task_history.present_history(request.user, history.object_list)
+    return render(request, "operations/task.html", dict(page_title=obj.title, task=obj, managing=True,
+        can_change=True, history=history, history_rows=rows, today=timezone.localdate()))
+
 @staff_view
 def task_edit(request,task_id=None,event_id=None):
-    svc.require_manager(request.user,"tasks")
-    obj=get_object_or_404(Task,pk=task_id) if task_id else Task()
-    event=get_object_or_404(Event,pk=event_id) if event_id else None
-    svc.mutable(event or (obj.event if obj.event_id else None));form=TaskForm(instance=obj,event=event)
-    if request.method=="POST":
-        saved,form=svc.save_task(actor=request.user,data=request.POST,task_id=task_id,event_id=event_id)
-        if saved:messages.success(request,"Task saved.");return redirect("operations:task",task_id=saved.pk)
-    return form_page(request,form,"Edit Task" if task_id else "Create Task",reverse("operations:tasks"))
+    obj = get_object_or_404(svc.tasks_for(request.user), pk=task_id) if task_id else Task()
+    event = get_object_or_404(task_access.events_for(request.user).exclude(status="archived"), pk=event_id) if event_id else None
+    form = TaskForm(instance=obj, event=event, actor=request.user)
+    if request.method == "POST":
+        saved, form = svc.save_task(actor=request.user,data=request.POST,task_id=task_id,event_id=event_id)
+        if saved:
+            messages.success(request, "Task saved.")
+            return redirect("operations:task", task_id=saved.pk)
+    back = reverse("operations:task", args=[obj.pk]) if task_id else reverse("operations:tasks")
+    return form_page(request,form,"Edit task" if task_id else "Create task",back)
+
 @staff_view
 def task_status(request,task_id):
-    obj=get_object_or_404(svc.tasks_for(request.user),pk=task_id)
-    form=StatusForm(manager=svc.manager(request.user,"tasks"),initial={"revision":obj.updated_at.isoformat()})
-    if request.method=="POST":
-        saved,form=svc.task_status(actor=request.user,task_id=obj.pk,data=request.POST)
-        if saved:messages.success(request,"Task status updated.");return redirect("operations:task",task_id=obj.pk)
-    return form_page(request,form,"Update task status",reverse("operations:task",args=[obj.pk]))
+    obj = get_object_or_404(svc.tasks_for(request.user),pk=task_id)
+    form = StatusForm(initial={"revision":obj.updated_at.isoformat(), "status":obj.status})
+    if request.method == "POST":
+        saved, form = svc.task_status(actor=request.user, task_id=obj.pk, data=request.POST)
+        if saved:
+            messages.success(request,"Task status updated.")
+            return redirect("operations:task", task_id=obj.pk)
+    return form_page(request,form,"Change task status",reverse("operations:task", args=[obj.pk]))
 
+@staff_view
+def task_archive(request,task_id,restore=False):
+    obj = get_object_or_404(svc.tasks_for(request.user), pk=task_id)
+    form = TaskRevisionForm(initial={"revision":obj.updated_at.isoformat()})
+    if request.method == "POST":
+        saved, form = svc.task_archive(actor=request.user, task_id=obj.pk, data=request.POST, restore=restore)
+        if saved:
+            messages.success(request, "Task restored." if restore else "Task archived. History is retained.")
+            return redirect("operations:task", task_id=obj.pk)
+    return form_page(request, form, "Restore task" if restore else "Archive task", reverse("operations:task", args=[obj.pk]))
 KINDS={"tasks":"tasks","notes":"event_notes","documents":"event_documents"}
 @staff_view
 def event_operations(request,event_id,section="tasks"):
@@ -95,7 +136,9 @@ def event_operations(request,event_id,section="tasks"):
         if saved:messages.success(request,"Event note added.");return redirect("operations:event",event_id=event.pk,section="notes")
     tabs=[(name,reverse("operations:event",args=[event.pk,name])) for name,k in KINDS.items() if svc.manager(request.user,k) or svc.assigned_event(request.user,event)]
     back=reverse("events:event_detail",args=[event.pk]) if request.user.has_perm("events.view_event") else reverse("staffing:staff-event",args=[event.pk])
-    return render(request,"operations/event.html",dict(page_title=event.name,event=event,section=section,tabs=tabs,back=back,managing=managing,can_write=event.status!="archived",tasks=Paginator(svc.tasks_for(request.user).filter(event=event),20).get_page(request.GET.get("page")),notes=Paginator(notes,30).get_page(request.GET.get("page")),documents=Paginator(docs,20).get_page(request.GET.get("page")),form=form,uploads_available=storage.uploads_available(),demo_available=settings.DEBUG or getattr(settings,"BTW_PREVIEW_GATE_ENABLED",False)),status=400 if form.is_bound else 200)
+    task_page = Paginator(svc.tasks_for(request.user).filter(event=event,archived_at__isnull=True),20).get_page(request.GET.get("page"))
+    task_page.object_list = task_access.present_tasks(request.user,task_page.object_list)
+    return render(request,"operations/event.html",dict(page_title=event.name,event=event,section=section,tabs=tabs,back=back,managing=managing,can_write=event.status!="archived",tasks=task_page,notes=Paginator(notes,30).get_page(request.GET.get("page")),documents=Paginator(docs,20).get_page(request.GET.get("page")),form=form,uploads_available=storage.uploads_available(),demo_available=settings.DEBUG or getattr(settings,"BTW_PREVIEW_GATE_ENABLED",False)),status=400 if form.is_bound else 200)
 @staff_view
 def events_index(request):
     if request.method!="GET":raise PermissionDenied

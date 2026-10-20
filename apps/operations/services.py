@@ -12,7 +12,8 @@ from apps.staffing.models import StaffProfile,StaffAssignment
 from apps.staffing.services import require_staff,revision
 from .models import Task,EventNote,EventDocument
 from .forms import TaskForm,StatusForm,NoteForm,DocumentForm,DemoForm,RevisionForm
-from . import storage
+from . import storage, task_access
+from .forms import TaskRevisionForm
 
 def manager(user,kind):
     return bool(user.is_authenticated and user.is_active and user.is_staff and user.has_perm("operations.manage_"+kind) and user.has_perm("events.view_event"))
@@ -33,60 +34,99 @@ def event_access(user,event,kind):
 def mutable(event):
     if event and event.status=="archived":raise ValidationError("Archived event operations are read-only. History is retained.")
 def tasks_for(user):
-    require_staff(user)
-    qs=Task.objects.select_related("event","assigned_staff","created_by","completed_by")
-    if manager(user,"tasks"):return qs
-    p=person(user)
-    return qs.filter(assigned_staff=p).exclude(event__status="draft") if p else qs.none()
+    return task_access.tasks_for(user)
 def snap(obj):
     return json.loads(json.dumps({f.attname:getattr(obj,f.attname) for f in obj._meta.fields},cls=DjangoJSONEncoder))
 def audit(user,action,obj,before=None,reason=""):
     audit_action(actor=user,action="operations."+action,instance=obj,old_data=before,new_data=snap(obj),reason=reason)
 
 @transaction.atomic
-def save_task(*,actor,data,task_id=None,event_id=None):
-    require_manager(actor,"tasks")
-    # Lock associated Events in stable order before Task rows, shared with event management.
-    old_event=Task.objects.get(pk=task_id).event_id if task_id else None
-    target=data.get("event") or event_id
-    ids=sorted(set(str(v) for v in (old_event,target) if v))
-    if ids:list(Event.objects.select_for_update().filter(pk__in=ids).order_by("pk"))
-    obj=Task.objects.select_for_update().get(pk=task_id) if task_id else Task()
-    mutable(obj.event if obj.event_id else None)
-    revision(obj,data.get("revision"))
-    before=snap(obj) if task_id else None
-    event=Event.objects.get(pk=event_id) if event_id else None
-    form=TaskForm(data,instance=obj,event=event)
-    if not form.is_valid():return None,form
-    mutable(form.cleaned_data["event"])
-    staff=StaffProfile.objects.select_for_update().get(pk=form.cleaned_data["assigned_staff"].pk)
-    if not staff.is_active and (not task_id or str(staff.pk)!=before["assigned_staff_id"]):raise ValidationError("Choose active staff.")
-    obj=form.save(commit=False)
-    if not task_id:obj.created_by=actor
-    obj.full_clean();obj.save()
-    audit(actor,"task.updated" if task_id else "task.created",obj,before,form.cleaned_data["reason"])
-    if before and before["assigned_staff_id"]!=str(obj.assigned_staff_id):audit(actor,"task.reassigned",obj,before,form.cleaned_data["reason"])
-    return obj,form
+def save_task(*, actor, data, task_id=None, event_id=None):
+    task_access.require_task_staff(actor)
+    initial = tasks_for(actor).filter(pk=task_id).first() if task_id else None
+    if task_id and initial is None:
+        raise PermissionDenied
+    old_event = initial.event_id if initial else None
+    ids = []
+    for value in (old_event, data.get("event") or event_id):
+        try:
+            ids.append(uuid.UUID(str(value)))
+        except (ValueError, TypeError, AttributeError):
+            pass
+    list(Event.objects.select_for_update().filter(pk__in=sorted(set(ids))).order_by("pk"))
+    obj = Task.objects.select_for_update().get(pk=task_id) if task_id else Task()
+    if task_id:
+        task_access.require_task_access(actor, obj)
+    revision(obj, data.get("revision"))
+    before = snap(obj) if task_id else None
+    event = task_access.events_for(actor).filter(pk=event_id).first() if event_id else None
+    if event_id and event is None:
+        raise PermissionDenied
+    form = TaskForm(data, instance=obj, event=event, actor=actor)
+    if not form.is_valid():
+        return None, form
+    profile = StaffProfile.objects.select_for_update().get(pk=form.cleaned_data["assigned_staff"].pk)
+    if not before or before["assigned_staff_id"] != str(profile.pk):
+        from django.contrib.auth import get_user_model
+        account = get_user_model().objects.select_for_update().filter(pk=profile.user_id).first()
+        if not profile.is_active or not account or not account.is_active or not account.is_staff:
+            form.add_error("assigned_staff", "Choose an active staff login.")
+            return None, form
+    obj = form.save(commit=False)
+    if not task_id:
+        obj.created_by = actor
+    obj.full_clean()
+    meaningful = ("title", "description", "assigned_staff_id", "event_id", "due_date", "priority")
+    if before and all(before[key] == snap(obj)[key] for key in meaningful):
+        return obj, form
+    obj.save()
+    action = "task.created" if not before else ("task.reassigned" if before["assigned_staff_id"] != str(obj.assigned_staff_id) else "task.updated")
+    audit(actor, action, obj, before, form.cleaned_data["reason"])
+    return obj, form
+
 @transaction.atomic
-def task_status(*,actor,task_id,data):
-    require_staff(actor)
-    initial=Task.objects.get(pk=task_id)
-    if initial.event_id:Event.objects.select_for_update().get(pk=initial.event_id)
-    obj=Task.objects.select_for_update().get(pk=task_id)
-    is_manager=manager(actor,"tasks")
-    if not is_manager and not tasks_for(actor).filter(pk=obj.pk).exists():raise PermissionDenied
-    mutable(obj.event if obj.event_id else None)
-    form=StatusForm(data,manager=is_manager)
-    if not form.is_valid():return None,form
-    revision(obj,form.cleaned_data["revision"])
-    status=form.cleaned_data["status"]
-    if not is_manager and (obj.status not in ("todo","in_progress") or status not in ("in_progress","completed")):raise ValidationError("Only managers can reopen or cancel tasks.")
-    if status==obj.status:raise ValidationError("The task already has this status.")
-    before=snap(obj);obj.status=status
-    obj.completed_at=timezone.now() if status=="completed" else None
-    obj.completed_by=actor if status=="completed" else None
-    obj.full_clean();obj.save();audit(actor,"task.completed" if status=="completed" else "task.status",obj,before,form.cleaned_data["reason"])
-    return obj,form
+def task_status(*, actor, task_id, data):
+    task_access.require_task_staff(actor)
+    obj = Task.objects.select_for_update().get(pk=task_id)
+    task_access.require_task_access(actor, obj)
+    form = StatusForm(data)
+    if not form.is_valid():
+        return None, form
+    revision(obj, form.cleaned_data["revision"])
+    status = form.cleaned_data["status"]
+    if status == obj.status:
+        form.add_error("status", "The task already has this status.")
+        return None, form
+    before = snap(obj)
+    obj.status = status
+    obj.completed_at = timezone.now() if status == "completed" else None
+    obj.completed_by = actor if status == "completed" else None
+    obj.full_clean()
+    obj.save()
+    action = "task.completed" if status == "completed" else ("task.reopened" if before["status"] == "completed" and status in ("todo", "in_progress") else "task.status")
+    audit(actor, action, obj, before, form.cleaned_data["reason"])
+    return obj, form
+
+@transaction.atomic
+def task_archive(*, actor, task_id, data, restore=False):
+    task_access.require_task_staff(actor)
+    obj = Task.objects.select_for_update().get(pk=task_id)
+    task_access.require_task_access(actor, obj)
+    form = TaskRevisionForm(data)
+    if not form.is_valid():
+        return None, form
+    revision(obj, form.cleaned_data["revision"])
+    if bool(obj.archived_at) != restore:
+        form.add_error(None, "This task is already active." if restore else "This task is already archived.")
+        return None, form
+    before = snap(obj)
+    obj.archived_at = None if restore else timezone.now()
+    obj.archived_by = None if restore else actor
+    obj.full_clean()
+    obj.save()
+    audit(actor, "task.restored" if restore else "task.archived", obj, before, form.cleaned_data["reason"])
+    return obj, form
+
 @transaction.atomic
 def save_note(*,actor,event_id,data,note_id=None):
     require_staff(actor)
