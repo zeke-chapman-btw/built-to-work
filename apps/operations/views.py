@@ -18,6 +18,9 @@ from .models import Task,EventNote,EventDocument
 from .forms import TaskForm,StatusForm,NoteForm,DocumentForm,DemoForm,RevisionForm
 from . import services as svc,storage,task_access,task_history
 from .forms import TaskRevisionForm
+from .collaboration_forms import TaskLinksForm, TaskCommentForm
+from . import collaboration, task_links
+from .models import TaskEventLink, TaskParticipantLink, TaskComment
 
 def staff_view(fn):
     @login_required(login_url="/admin/login/")
@@ -30,7 +33,7 @@ def staff_view(fn):
     return wrapped
 
 def form_page(request,form,title,back):
-    template = "operations/task_form.html" if isinstance(form, (TaskForm, StatusForm, TaskRevisionForm)) else "operations/form.html"
+    template = "operations/task_form.html" if isinstance(form, (TaskForm, StatusForm, TaskRevisionForm, TaskCommentForm)) else "operations/form.html"
     return render(request,template,dict(form=form,page_title=title,back=back),status=400 if form.is_bound else 200)
 
 @staff_view
@@ -84,7 +87,9 @@ def task_detail(request,task_id):
     history = Paginator(task_history.entries_for(request.user, obj), 20).get_page(request.GET.get("history_page"))
     rows = task_history.present_history(request.user, history.object_list)
     return render(request, "operations/task.html", dict(page_title=obj.title, task=obj, managing=True,
-        can_change=True, history=history, history_rows=rows, today=timezone.localdate()))
+        can_change=True, history=history, history_rows=rows, today=timezone.localdate(),
+        linked_records=task_links.display_links(request.user,obj),
+        comment_form=TaskCommentForm(initial={"revision":obj.updated_at.isoformat()})))
 
 @staff_view
 def task_edit(request,task_id=None,event_id=None):
@@ -120,6 +125,56 @@ def task_archive(request,task_id,restore=False):
             messages.success(request, "Task restored." if restore else "Task archived. History is retained.")
             return redirect("operations:task", task_id=obj.pk)
     return form_page(request, form, "Restore task" if restore else "Archive task", reverse("operations:task", args=[obj.pk]))
+@staff_view
+def task_link_add(request,task_id):
+    task=get_object_or_404(svc.tasks_for(request.user),pk=task_id)
+    source=request.POST if request.method=="POST" else request.GET
+    event_query=source.get("event_q","").strip()[:150]
+    participant_query=source.get("participant_q","").strip()[:150]
+    form=TaskLinksForm(actor=request.user,event_query=event_query,participant_query=participant_query,initial={"revision":task.updated_at.isoformat()})
+    if request.method=="POST":
+        saved,form=collaboration.add_links(actor=request.user,task_id=task.pk,data=request.POST,event_query=event_query,participant_query=participant_query)
+        if saved:
+            messages.success(request,"Linked records updated.")
+            return redirect("operations:task",task_id=task.pk)
+    return render(request,"operations/task_links.html",dict(page_title="Link records",task=task,form=form,
+        event_query=event_query,participant_query=participant_query),status=400 if form.is_bound else 200)
+
+@staff_view
+def task_link_remove(request,task_id,kind,link_id):
+    task=get_object_or_404(svc.tasks_for(request.user),pk=task_id)
+    if kind=="primary":
+        if link_id!=task.pk or not task.event_id:
+            raise Http404
+    elif kind in ("event","participant"):
+        get_object_or_404(TaskEventLink if kind=="event" else TaskParticipantLink,task=task,pk=link_id)
+    else:
+        raise Http404
+    form=TaskRevisionForm(initial={"revision":task.updated_at.isoformat()})
+    if request.method=="POST":
+        saved,form=collaboration.remove_link(actor=request.user,task_id=task.pk,kind=kind,link_id=link_id,data=request.POST)
+        if saved:
+            messages.success(request,"Record unlinked. The record and activity history are retained.")
+            return redirect("operations:task",task_id=task.pk)
+    return form_page(request,form,"Remove linked record",reverse("operations:task",args=[task.pk]))
+
+@staff_view
+def task_comment(request,task_id,comment_id=None):
+    task=get_object_or_404(svc.tasks_for(request.user),pk=task_id)
+    comment=get_object_or_404(TaskComment,task=task,pk=comment_id) if comment_id else None
+    if comment and comment.author_id!=request.user.pk and not task_access.task_admin(request.user):
+        raise PermissionDenied
+    if task.archived_at:
+        raise ValidationError("Restore this task before adding or editing comments.")
+    form=TaskCommentForm(initial={"revision":comment.updated_at.isoformat() if comment else task.updated_at.isoformat(),"content":comment.content if comment else ""})
+    if request.method=="POST":
+        saved,form=collaboration.save_comment(actor=request.user,task_id=task.pk,comment_id=comment_id,data=request.POST)
+        if saved:
+            messages.success(request,"Comment updated; prior content remains in activity." if comment else "Comment added.")
+            last=Paginator(task_history.entries_for(request.user,task),20).num_pages
+            return redirect(reverse("operations:task",args=[task.pk])+"?history_page="+str(last)+"#task-history")
+    return form_page(request,form,"Edit comment" if comment else "Add comment",reverse("operations:task",args=[task.pk]))
+
 KINDS={"tasks":"tasks","notes":"event_notes","documents":"event_documents"}
 @staff_view
 def event_operations(request,event_id,section="tasks"):
@@ -136,7 +191,7 @@ def event_operations(request,event_id,section="tasks"):
         if saved:messages.success(request,"Event note added.");return redirect("operations:event",event_id=event.pk,section="notes")
     tabs=[(name,reverse("operations:event",args=[event.pk,name])) for name,k in KINDS.items() if svc.manager(request.user,k) or svc.assigned_event(request.user,event)]
     back=reverse("events:event_detail",args=[event.pk]) if request.user.has_perm("events.view_event") else reverse("staffing:staff-event",args=[event.pk])
-    task_page = Paginator(svc.tasks_for(request.user).filter(event=event,archived_at__isnull=True),20).get_page(request.GET.get("page"))
+    task_page = Paginator(task_links.event_tasks(svc.tasks_for(request.user),event).filter(archived_at__isnull=True),20).get_page(request.GET.get("page"))
     task_page.object_list = task_access.present_tasks(request.user,task_page.object_list)
     return render(request,"operations/event.html",dict(page_title=event.name,event=event,section=section,tabs=tabs,back=back,managing=managing,can_write=event.status!="archived",tasks=task_page,notes=Paginator(notes,30).get_page(request.GET.get("page")),documents=Paginator(docs,20).get_page(request.GET.get("page")),form=form,uploads_available=storage.uploads_available(),demo_available=settings.DEBUG or getattr(settings,"BTW_PREVIEW_GATE_ENABLED",False)),status=400 if form.is_bound else 200)
 @staff_view

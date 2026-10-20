@@ -198,7 +198,7 @@ class TaskFoundation9G2ATests(TestCase):
         t=self.create()
         for i in range(22):
             t,form=svc.save_task(actor=self.creator,task_id=t.pk,data=self.edit_data(t,title='SYNTHETIC change '+str(i)))
-        self.login(self.creator);r=self.client.get(reverse('operations:task',args=[t.pk]));self.assertEqual(len(r.context['history_rows']),20);self.assertContains(r,'Older activity')
+        self.login(self.creator);r=self.client.get(reverse('operations:task',args=[t.pk]));self.assertEqual(len(r.context['history_rows']),20);self.assertContains(r,'Next activity')
         self.assertEqual(self.client.post(reverse('operations:task',args=[t.pk]),{}).status_code,403)
         self.login(self.other);self.assertEqual(self.client.get(reverse('operations:task',args=[t.pk])+'?history_page=2').status_code,404)
 

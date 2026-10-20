@@ -49,8 +49,12 @@ def events_for(user):
 
 def present_tasks(user, rows):
     rows = list(rows)
-    ids = {row.event_id for row in rows if row.event_id}
-    visible = set(events_for(user).filter(pk__in=ids).values_list("pk", flat=True))
+    from .models import TaskEventLink
+    grouped = {row.pk:set([row.event_id]) if row.event_id else set() for row in rows}
+    for task_id, event_id in TaskEventLink.objects.filter(task_id__in=grouped).values_list("task_id", "event_id"):
+        grouped[task_id].add(event_id)
+    ids = set().union(*grouped.values()) if grouped else set()
+    visible = {e.pk:e.name for e in events_for(user).filter(pk__in=ids)}
     for row in rows:
-        row.event_label = row.event.name if row.event_id in visible else ("Associated event (restricted)" if row.event_id else "Standalone task")
+        row.event_label = " · ".join(visible.get(pk, "Associated event (restricted)") for pk in sorted(grouped[row.pk])) or "Standalone task"
     return rows

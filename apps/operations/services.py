@@ -36,7 +36,11 @@ def mutable(event):
 def tasks_for(user):
     return task_access.tasks_for(user)
 def snap(obj):
-    return json.loads(json.dumps({f.attname:getattr(obj,f.attname) for f in obj._meta.fields},cls=DjangoJSONEncoder))
+    data = json.loads(json.dumps({f.attname:getattr(obj,f.attname) for f in obj._meta.fields},cls=DjangoJSONEncoder))
+    if isinstance(obj, Task):
+        from .task_links import snapshot
+        data.update(snapshot(obj))
+    return data
 def audit(user,action,obj,before=None,reason=""):
     audit_action(actor=user,action="operations."+action,instance=obj,old_data=before,new_data=snap(obj),reason=reason)
 
@@ -77,9 +81,13 @@ def save_task(*, actor, data, task_id=None, event_id=None):
         obj.created_by = actor
     obj.full_clean()
     meaningful = ("title", "description", "assigned_staff_id", "event_id", "due_date", "priority")
-    if before and all(before[key] == snap(obj)[key] for key in meaningful):
+    after = snap(obj)
+    if before and all(before[key] == after[key] for key in meaningful):
         return obj, form
     obj.save()
+    if obj.event_id:
+        from .models import TaskEventLink
+        TaskEventLink.objects.filter(task=obj,event_id=obj.event_id).delete()
     action = "task.created" if not before else ("task.reassigned" if before["assigned_staff_id"] != str(obj.assigned_staff_id) else "task.updated")
     audit(actor, action, obj, before, form.cleaned_data["reason"])
     return obj, form

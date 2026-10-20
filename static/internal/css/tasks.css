@@ -1,4 +1,18 @@
 /* Task-only extension of the existing BTW shell, cards and form conventions. */
+.task-page .task-selector-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.task-page .task-selector { min-width: 0; border: 1px solid var(--line, #d9dfe5); border-radius: 8px; padding: 16px; }
+.task-page .task-selector legend { font-weight: 700; padding: 0 7px; }
+.task-page .task-selector label { display: flex; align-items: center; gap: 10px; min-height: 44px; overflow-wrap: anywhere; }
+.task-page .task-selector input[type="checkbox"] { flex: 0 0 22px; width: 22px; height: 22px; }
+.task-page .task-linked-records { list-style: none; padding: 0; }
+.task-page .task-linked-records li { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; border-top: 1px solid var(--line, #d9dfe5); padding: 14px 0; overflow-wrap: anywhere; }
+.task-page .task-linked-records small { display: block; color: #52606e; }
+.task-page .comment-composer textarea { width: 100%; min-height: 120px; }
+.task-page .comment-composer label { display: block; font-weight: 700; }
+.task-page .comment-composer .helptext { display: block; margin-top: 7px; color: #52606e; }
+.task-page .task-links-form .event-actions { margin-top: 22px; }
+@media (max-width: 700px) { .task-page .task-selector-grid { grid-template-columns: minmax(0, 1fr); } }
+
 .task-page { max-width: 1180px; }
 .task-page .task-toolbar, .task-page .task-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .task-page .task-toolbar { justify-content: space-between; margin-bottom: 20px; }

@@ -28,6 +28,26 @@ class Task(UUIDModel, TimestampedModel):
         permissions=[("manage_tasks","Can manage all operational tasks and assignments")]
         constraints=[models.CheckConstraint(condition=(models.Q(status="completed",completed_at__isnull=False)|(~models.Q(status="completed") & models.Q(completed_at__isnull=True,completed_by__isnull=True))),name="operations_task_completion_state")]
     def __str__(self): return self.title
+class TaskEventLink(UUIDModel, TimestampedModel):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="event_links")
+    event = models.ForeignKey("events.Event", on_delete=models.PROTECT, related_name="task_links")
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("task", "event"), name="operations_unique_task_event_link")]
+
+class TaskParticipantLink(UUIDModel, TimestampedModel):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="participant_links")
+    participant = models.ForeignKey("participants.Participant", on_delete=models.PROTECT, related_name="task_links")
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("task", "participant"), name="operations_unique_task_participant_link")]
+
+class TaskComment(UUIDModel, TimestampedModel):
+    task = models.ForeignKey(Task, on_delete=models.PROTECT, related_name="comments")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="task_comments")
+    content = models.TextField(max_length=4000)
+    edited_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="task_comments_edited")
+    class Meta:
+        ordering = ("created_at", "pk")
+
 class Visibility(models.TextChoices):
     MANAGERS="managers", "Managers only"
     STAFF="staff", "Assigned event staff"
