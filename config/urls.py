@@ -4,6 +4,7 @@ from apps.core.views import health, home
 from apps.events import public_views
 
 urlpatterns = [
+    path("reports/", include("apps.event_reports.urls")),
     path("internal/", include("apps.internal_ui.urls")),
     path("admin/", admin.site.urls),
     path("participants/", include("apps.participants.urls")),

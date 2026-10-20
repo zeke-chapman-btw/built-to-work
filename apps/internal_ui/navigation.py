@@ -5,9 +5,9 @@ WORKSPACES = (
     {"id":"home","label":"HOME","icon":"home","url_name":"internal:home","description":"Your authorized BTW work at a glance.","permissions":()},
     {"id":"events","label":"EVENTS","icon":"calendar","url_name":"internal:workspace","url_kwargs":{"workspace_id":"events"},"description":"Events, registrations, and ticket workflows.","permissions":("events.view_event","events.add_event","events.view_eventregistration","staffing.manage_event_staffing")},
     {"id":"participants","label":"PARTICIPANTS","icon":"people","url_name":"internal:workspace","url_kwargs":{"workspace_id":"participants"},"description":"Existing participant records and review workflows.","permissions":("participants.view_participant","participants.view_participantqualification","participants.view_participantdocument","participants.view_qualificationapprovals","participants.view_historicalimportbatch","participants.view_participantaccountrequest")},
-    {"id":"operations","label":"OPERATIONS","icon":"operations","url_name":"internal:workspace","url_kwargs":{"workspace_id":"operations"},"description":"Stations, trailer operations, synchronization, and assessments.","permissions":("stations.view_station","events.view_trailer","events.view_syncoperation","events.view_ticketdelivery","events.view_matchreview","events.view_operationalincident","assessments.view_assessmentcategory","assessments.add_assessmentcategory","staffing.view_staffprofile","staffing.manage_event_staffing","operations.manage_tasks","operations.manage_event_notes","operations.manage_event_documents","workdays.manage_workdays")},
+    {"id":"operations","label":"OPERATIONS","icon":"operations","url_name":"internal:workspace","url_kwargs":{"workspace_id":"operations"},"description":"Stations, trailer operations, synchronization, and assessments.","permissions":("stations.view_station","events.view_trailer","events.view_syncoperation","events.view_ticketdelivery","events.view_matchreview","events.view_operationalincident","assessments.view_assessmentcategory","assessments.add_assessmentcategory","staffing.view_staffprofile","staffing.manage_event_staffing","operations.manage_tasks","operations.manage_event_notes","operations.manage_event_documents","workdays.manage_workdays","event_reports.view_event_reports")},
     {"id":"customers","label":"CUSTOMERS","icon":"customers","url_name":"internal:workspace","url_kwargs":{"workspace_id":"customers"},"description":"Customer management is planned; no customer records or tools are available yet.","permissions":(),"planned":True},
-    {"id":"administration","label":"ADMIN","icon":"settings","url_name":"internal:workspace","url_kwargs":{"workspace_id":"administration"},"description":"Authorized BTW configuration and staff administration.","permissions":("auth.view_user","auth.change_user","participants.change_registrationform","participants.view_testparticipant","participants.change_testparticipant","workdays.manage_compensation")},
+    {"id":"administration","label":"ADMIN","icon":"settings","url_name":"internal:workspace","url_kwargs":{"workspace_id":"administration"},"description":"Authorized BTW configuration and staff administration.","permissions":("auth.view_user","auth.change_user","participants.change_registrationform","participants.view_testparticipant","participants.change_testparticipant","workdays.manage_compensation","event_reports.manage_expense_categories")},
 )
 
 WORKSPACE_LINKS = {
@@ -24,6 +24,7 @@ WORKSPACE_LINKS = {
         {"label":"Account requests","description":"Review participant account requests.","url_name":"participants:staff-requests","permissions":("participants.view_participantaccountrequest","participants.change_participantaccountrequest")},
     ),
     "operations": (
+        {"label":"Event Reports & Analytics","description":"Review event costs, expenses, incentives and verified performance.","url_name":"event_reports:index","permissions":("event_reports.view_event_reports",)},
         {"label":"My Workday History","description":"Your daily check-ins and recorded workdays.","url_name":"workdays:mine","permissions":()},
         {"label":"Staff Workdays & Mileage","description":"Manage event-day rosters, corrections and individual trips.","url_name":"workdays:index","permissions":("workdays.manage_workdays",)},
         {"label":"Workday & Reimbursement Reports","description":"Review daily compensation and trip reimbursements; export CSV.","url_name":"workdays:reports","permissions":("workdays.manage_workdays",)},
@@ -38,6 +39,7 @@ WORKSPACE_LINKS = {
         {"label":"Quizzes and tests","description":"Manage assessment content using existing workflows.","url_name":"assessments:dashboard","permissions":("assessments.view_assessmentcategory","assessments.add_assessmentcategory")},
     ),
     "administration": (
+        {"label":"Expense Categories","description":"Configure expense categories and incentive-purchase treatment.","url_name":"event_reports:categories","permissions":("event_reports.manage_expense_categories",)},
         {"label":"Staff Compensation Settings","description":"Manage staff roles, daily pay, per diem and mileage rates.","url_name":"workdays:settings","permissions":("workdays.manage_compensation",)},
         {"label":"Django administration","description":"Open the restricted Django configuration interface.","url_name":"admin:index","permissions":("auth.view_user","auth.change_user")},
         {"label":"Registration form builder","description":"Configure published registration forms.","url_name":"participants:registration-forms","permissions":("participants.change_registrationform",)},
@@ -48,8 +50,8 @@ WORKSPACE_LINKS = {
 ACTIVE_PREFIXES = {
     "events":("/events/","/staff/"),
     "participants":("/participants/",),
-    "operations":("/workdays/events/","/workdays/records/","/workdays/trips/","/workdays/mine/","/workdays/reports/","/operations/","/staff/directory/","/staff/requests/","/events/operations/","/events/offline-preparations/","/stations/","/assessments/"),
-    "administration":("/workdays/compensation/","/admin/","/participants/staff/registration-form/","/participants/testing/"),
+    "operations":("/reports/","/workdays/events/","/workdays/records/","/workdays/trips/","/workdays/mine/","/workdays/reports/","/operations/","/staff/directory/","/staff/requests/","/events/operations/","/events/offline-preparations/","/stations/","/assessments/"),
+    "administration":("/reports/categories/","/workdays/compensation/","/admin/","/participants/staff/registration-form/","/participants/testing/"),
 }
 
 def _can_see(user, permissions):
@@ -71,6 +73,8 @@ def visible_workspaces(user,current_path=""):
                 continue
         entry=_resolved(item)
         entry["active"]=current_path==entry["url"] or any(current_path.startswith(prefix) for prefix in ACTIVE_PREFIXES.get(item["id"],()))
+        if item["id"]=="operations" and current_path.startswith("/reports/categories/"):
+            entry["active"]=False
         if item["id"]=="operations" and current_path=="/workdays/":
             entry["active"]=True
         if item["id"]=="events" and current_path.startswith(("/staff/directory/","/staff/requests/","/events/operations/","/events/offline-preparations/")):
@@ -88,4 +92,5 @@ def visible_settings_link(user,current_path=""):
     return item
 
 def visible_workspace_links(user,workspace_id):
-    return [_resolved(item) for item in WORKSPACE_LINKS.get(workspace_id,()) if _can_see(user,item["permissions"]) ]
+    from apps.event_reports.services import can_report
+    return [_resolved(item) for item in WORKSPACE_LINKS.get(workspace_id,()) if _can_see(user,item["permissions"]) and (item["url_name"]!="event_reports:index" or can_report(user))]
