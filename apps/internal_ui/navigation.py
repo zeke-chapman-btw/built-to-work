@@ -50,8 +50,8 @@ WORKSPACE_LINKS = {
 ACTIVE_PREFIXES = {
     "events":("/events/","/staff/"),
     "participants":("/participants/",),
-    "operations":("/reports/","/workdays/events/","/workdays/records/","/workdays/trips/","/workdays/mine/","/workdays/reports/","/operations/","/staff/directory/","/staff/requests/","/events/operations/","/events/offline-preparations/","/stations/","/assessments/"),
-    "administration":("/reports/categories/","/workdays/compensation/","/admin/","/participants/staff/registration-form/","/participants/testing/"),
+    "operations":("/reports/","/workdays/events/","/workdays/records/","/workdays/trips/","/workdays/mine/","/workdays/reports/","/operations/","/staff/directory/","/staff/requests/","/events/operations/","/events/offline-preparations/","/stations/","/assessments/","/quizzes/"),
+    "administration":("/reports/categories/","/workdays/compensation/","/admin/","/participants/staff/registration-forms/","/participants/staff/testing/"),
 }
 
 def _can_see(user, permissions):
@@ -79,7 +79,7 @@ def visible_workspaces(user,current_path=""):
             entry["active"]=True
         if item["id"]=="events" and current_path.startswith(("/staff/directory/","/staff/requests/","/events/operations/","/events/offline-preparations/")):
             entry["active"]=False
-        if item["id"]=="participants" and current_path.startswith(("/participants/staff/registration-form/","/participants/testing/")):
+        if item["id"]=="participants" and current_path.startswith(("/participants/staff/registration-forms/","/participants/staff/testing/")):
             entry["active"]=False
         visible.append(entry)
     return visible

@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from .auth import ParticipantAuthenticationBackend
-from .forms import AccountRequestForm, EmailChangeForm, ParticipantLoginForm, ParticipantProfileForm, SetPasswordForm, StaffRequestResolutionForm
+from .forms import AccountRequestForm, EmailChangeForm, ParticipantLoginForm, ParticipantProfileForm, PasswordResetRequestForm, SetPasswordForm, StaffRequestResolutionForm
 from .models import ParticipantAccount, ParticipantAccountRequest, ParticipantEmailChange
 from .services import audit, begin_account_request, create_pending_account, find_participant_matches
 from .tokens import VERIFY_SALT, SET_PASSWORD_SALT, EMAIL_CHANGE_SALT, make_token, read_token
@@ -124,16 +124,16 @@ def verify_email_change(request, token):
     return render(request, "participants/message.html", {"title": "Email updated", "message": "Your participant sign-in email has been changed."})
 
 def password_reset_request(request):
-    if request.method == "POST":
-        email = normalize_email(request.POST.get("email", ""))
+    form = PasswordResetRequestForm(request.POST if request.method == "POST" else None)
+    if request.method == "POST" and form.is_valid():
+        email = form.cleaned_data["email"]
         account = ParticipantAccount.objects.filter(login_email__iexact=email, status=ParticipantAccount.Status.ACTIVE, user__is_active=True).first()
         if account:
             token = make_token(account.user_id, SET_PASSWORD_SALT + ".reset")
             url = request.build_absolute_uri(reverse("participants:password-reset-confirm", kwargs={"token": token}))
             send_mail("Reset your participant password", f"Reset within 24 hours: {url}", None, [email])
         return render(request, "participants/message.html", {"title": "Check your email", "message": "If an active participant account matches, a reset link has been sent."})
-    return render(request, "participants/form.html", {"title": "Reset password", "form": None})
-
+    return render(request, "participants/form.html", {"title": "Reset password", "form": form, "password_reset": True, "submit_label": "Send reset link"})
 def password_reset_confirm(request, token):
     key = read_token(token, SET_PASSWORD_SALT + ".reset")
     account = ParticipantAccount.objects.filter(user_id=key, status=ParticipantAccount.Status.ACTIVE).first() if key else None

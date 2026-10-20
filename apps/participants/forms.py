@@ -26,6 +26,13 @@ class ParticipantLoginForm(forms.Form):
     password = forms.CharField(widget=forms.PasswordInput)
     def clean_email(self): return normalize_email(self.cleaned_data["email"])
 
+class PasswordResetRequestForm(forms.Form):
+    email = forms.EmailField(label="Email", widget=forms.EmailInput(attrs={"autocomplete": "email"}))
+
+    def clean_email(self):
+        return normalize_email(self.cleaned_data["email"])
+
+
 class SetPasswordForm(forms.Form):
     password1 = forms.CharField(widget=forms.PasswordInput)
     password2 = forms.CharField(widget=forms.PasswordInput)
