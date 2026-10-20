@@ -48,6 +48,9 @@ def workspace(user, params, *, mine=False):
         if filters[key] in choices:qs=qs.filter(**{key:filters[key]})
     due=filters['due']
     if due=='overdue':qs=qs.filter(status__in=('todo','in_progress'),due_date__lt=today)
+    elif due=='soon':
+        from .due_dates import DUE_SOON_DAYS
+        qs=qs.filter(status__in=('todo','in_progress'),due_date__range=(today,today+timedelta(days=DUE_SOON_DAYS)))
     elif due=='today':qs=qs.filter(due_date=today)
     elif due=='week':qs=qs.filter(due_date__range=(today,today+timedelta(days=7)))
     elif due=='undated':qs=qs.filter(due_date__isnull=True)

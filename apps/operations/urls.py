@@ -1,7 +1,10 @@
 from django.urls import path
-from . import views, task_workspace_views
+from . import views, task_workspace_views, notification_views
 app_name="operations"
 urlpatterns=[
+ path("tasks/updates/",notification_views.updates,name="updates"),
+ path("tasks/updates/read-all/",notification_views.read_all,name="updates-read-all"),
+ path("tasks/updates/<uuid:notification_id>/read/",notification_views.read,name="updates-read"),
  path("my-tasks/",views.task_list,{"mine":True},name="my-tasks"),
  path("tasks/",views.task_list,name="tasks"),
  path("tasks/quick-create/",task_workspace_views.quick_task,name="quick-create"),

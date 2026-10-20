@@ -48,6 +48,27 @@ class TaskComment(UUIDModel, TimestampedModel):
     class Meta:
         ordering = ("created_at", "pk")
 
+class TaskNotification(UUIDModel):
+    class Kind(models.TextChoices):
+        ASSIGNED='assigned','Assigned'
+        REASSIGNED='reassigned','Reassigned'
+        COMMENT='comment','Comment'
+        STATUS='status','Status changed'
+        CHANGED='changed','Due date / priority'
+        ARCHIVED='archived','Archived'
+        RESTORED='restored','Restored'
+    recipient=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='task_notifications')
+    task=models.ForeignKey(Task,on_delete=models.CASCADE,related_name='notifications')
+    source_event=models.ForeignKey('core.AuditLog',on_delete=models.CASCADE,related_name='task_notifications')
+    kind=models.CharField(max_length=16,choices=Kind.choices)
+    message=models.CharField(max_length=240)
+    created_at=models.DateTimeField(auto_now_add=True)
+    read_at=models.DateTimeField(null=True,blank=True)
+    class Meta:
+        ordering=('-created_at','-pk')
+        constraints=[models.UniqueConstraint(fields=('source_event','recipient'),name='operations_unique_notice_event_recipient')]
+        indexes=[models.Index(fields=('recipient','read_at','-created_at'),name='ops_notice_recipient_read_idx')]
+
 class Visibility(models.TextChoices):
     MANAGERS="managers", "Managers only"
     STAFF="staff", "Assigned event staff"

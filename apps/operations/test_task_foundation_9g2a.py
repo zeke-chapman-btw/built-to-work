@@ -132,7 +132,9 @@ class TaskFoundation9G2ATests(TestCase):
         self.assertEqual(t.status,'completed');self.assertEqual(t.completed_at,completed)
         self.login(self.creator)
         for url in ['/operations/tasks/','/operations/tasks/?view=all','/operations/tasks/?view=completed']:
-            self.assertNotContains(self.client.get(url),t.title)
+            response=self.client.get(url)
+            # Archived task history may appear in the new notification bell; task lists exclude it.
+            self.assertNotIn(t.pk,[row.pk for row in response.context['tasks']])
         self.assertContains(self.client.get('/operations/tasks/?view=archived'),t.title)
         self.assertContains(self.client.get(reverse('operations:task',args=[t.pk])),'Task archived')
         t=self.archive(t,self.creator,True);self.assertContains(self.client.get('/operations/tasks/?view=completed'),t.title)

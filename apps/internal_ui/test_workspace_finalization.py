@@ -26,7 +26,7 @@ class WorkspaceFinalizationTests(TestCase):
         )
         self.assertEqual(response.context["settings_link"]["url"], reverse("internal:settings"))
         self.assertContains(response, 'aria-label="Personal settings"')
-        self.assertNotContains(response, "<details")
+        self.assertContains(response, "data-notification-bell", count=1)  # Native bell disclosure; workspace navigation remains direct.
         for workspace_id in ("events", "participants", "operations", "customers", "administration"):
             self.assertContains(response, reverse("internal:workspace", kwargs={"workspace_id": workspace_id}))
 

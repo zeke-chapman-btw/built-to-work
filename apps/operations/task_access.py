@@ -57,7 +57,6 @@ def present_tasks(user, rows):
     visible = {e.pk:e.name for e in events_for(user).filter(pk__in=ids)}
     from .task_links import participants_for
     from .models import TaskParticipantLink
-    from django.utils import timezone
     people = {row.pk: set() for row in rows}
     for task_id, participant_id in TaskParticipantLink.objects.filter(task_id__in=people).values_list("task_id", "participant_id"):
         people[task_id].add(participant_id)
@@ -67,6 +66,9 @@ def present_tasks(user, rows):
         row.linked_event_count = len(grouped[row.pk])
         row.linked_participant_count = len(people[row.pk])
         row.participant_label = " · ".join(labels.get(pk, "Associated participant (restricted)") for pk in sorted(people[row.pk]))
-        row.is_overdue = bool(not row.archived_at and row.due_date and row.due_date < timezone.localdate() and row.status in ("todo", "in_progress"))
+        from .due_dates import due_state
+        state=due_state(row)
+        row.is_overdue = state == "overdue"
+        row.is_due_soon = state == "soon"
         row.event_label = " · ".join(visible.get(pk, "Associated event (restricted)") for pk in sorted(grouped[row.pk])) or "Standalone task"
     return rows

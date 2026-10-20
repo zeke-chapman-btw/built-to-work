@@ -1,0 +1,51 @@
+/* Shared in-app Updates surfaces, using the existing BTW shell and task cards. */
+.topbar .portal-tagline { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.notification-bell { position:relative; flex:0 0 auto; margin-left:auto; }
+.notification-bell > summary { display:flex; align-items:center; justify-content:center; gap:6px; min-width:44px; min-height:44px; padding:8px; box-sizing:border-box; border:1px solid #ffffff65; border-radius:24px; color:#fff; cursor:pointer; list-style:none; }
+.notification-bell > summary::-webkit-details-marker { display:none; }
+.notification-bell[open] > summary { background:#ffffff20; }
+.notification-count { font-size:12px; font-weight:700; padding:3px 6px; min-width:22px; text-align:center; border-radius:12px; background:#cb1730; color:#fff; }
+.notification-popover { position:absolute; z-index:90; top:calc(100% + 12px); right:0; width:min(370px,calc(100vw - 32px)); max-height:70vh; overflow:auto; padding:20px; border:1px solid #dbe1e8; border-radius:14px; background:#fff; color:#18222e; box-shadow:0 12px 40px #14243633; box-sizing:border-box; }
+.notification-popover header { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.notification-popover h2 { margin:0; font-size:20px; }
+.notification-popover a { color:#16283e; }
+.notification-popover ul,.notification-feed { list-style:none; padding:0; margin:16px 0; }
+.notification-popover li { border-top:1px solid #e1e5eb; padding:14px 0; overflow-wrap:anywhere; }
+.notification-popover li > a { display:block; font-weight:700; margin:5px 0; }
+.notification-popover li p { margin:6px 0; font-size:14px; line-height:1.5; }
+.notification-popover time { font-size:12px; color:#52606e; }
+.notification-kind { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#52606e; }
+.notification-attention-link { border:1px solid #ead6aa; border-radius:8px; padding:12px; font-size:14px; }
+.notification-sr-only { position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; }
+.notification-feed { display:grid; gap:16px; }
+.task-page .notification-card { margin:0; border:1px solid #dbe1e8; border-radius:12px; padding:24px; overflow-wrap:anywhere; }
+.task-page .notification-card.is-unread { border-left:4px solid #bd1830; background:#fffafb; }
+.notification-card-heading { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+.notification-card-heading time { margin-left:auto; font-size:13px; color:#52606e; }
+.notification-card h3 { margin:14px 0 8px; font-size:20px; }
+.notification-card h3 a { color:#16283e; text-decoration:none; }
+.notification-card h3 a:hover { text-decoration:underline; }
+.notification-read-state { font-size:12px; border-radius:10px; background:#edf0f4; color:#52606e; padding:4px 8px; }
+.is-unread .notification-read-state { background:#f9e1e5; color:#97162c; font-weight:700; }
+.notification-card .button,.updates-workspace .button { min-height:44px; }
+.due-attention-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; }
+.due-attention h2 { margin-top:0; }
+.due-attention ul { list-style:none; margin:0; padding:0; }
+.due-attention li { padding:12px 0; border-top:1px solid #edf0f4; overflow-wrap:anywhere; }
+.due-attention li a { display:block; color:#16283e; font-weight:700; }
+.due-attention time { display:block; font-size:13px; margin-top:5px; color:#52606e; }
+.task-due-soon { background:#fff4dc; color:#7d5010; border-radius:8px; padding:5px 9px; font-size:13px; font-weight:700; }
+.notification-pagination { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:16px; }
+.notification-bell :focus-visible,.updates-workspace :focus-visible { outline:3px solid #155eb6; outline-offset:3px; }
+.notification-bell > summary:focus-visible { outline-color:#fff; }
+.dashboard-updates .dashboard-section-heading form { display:inline; }
+.dashboard-updates .dashboard-section-heading button { min-height:44px; }
+.dashboard-updates .dashboard-notification-body time { display:block; margin-top:8px; color:#52606e; font-size:12px; }
+.dashboard-updates .dashboard-notification-body a { font-weight:700; color:#16283e; }
+@media(max-width:700px) {
+ .topbar { gap:10px; }
+ .notification-popover { position:fixed; right:12px; top:68px; width:calc(100vw - 24px); max-height:calc(100dvh - 96px); }
+ .due-attention-grid { grid-template-columns:minmax(0,1fr); gap:16px; }
+ .task-page .notification-card { padding:18px; }
+ .notification-card-heading time { margin-left:0; flex-basis:100%; }
+}

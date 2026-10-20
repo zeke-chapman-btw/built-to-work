@@ -4,6 +4,8 @@
 <title>{% block title %}{{ page_title|default:'BTW workspace' }} · Built to Work{% endblock %}</title>
 <link rel="stylesheet" href="{% static 'internal/css/tokens.css' %}"><link rel="stylesheet" href="{% static 'internal/css/app.css' %}"><link rel="stylesheet" href="{% static 'internal/css/content_admin.css' %}">
 <link rel="stylesheet" href="{% static 'internal/css/task_create.css' %}">
+<link rel="stylesheet" href="{% static 'internal/css/notifications.css' %}">
+<script src="{% static 'internal/js/notifications.js' %}" defer></script>
 <script src="{% static 'internal/js/task_create.js' %}" defer></script>
 <script src="{% static 'internal/js/shell.js' %}" defer></script>{% block extra_head %}{% endblock %}
 </head><body class="internal-app{% block body_class %}{% endblock %}">
@@ -18,7 +20,7 @@
   <div class="sidebar-bottom"><div class="sidebar-user"><span>{{ request.user.get_username }}</span><a class="settings-gear{% if settings_link.active %} active{% endif %}" href="{% url 'internal:settings' %}" aria-label="Personal settings" title="Personal settings"{% if settings_link.active %} aria-current="page"{% endif %}><span aria-hidden="true">⚙</span></a></div></div>
 </aside>
 <div class="main-column">
-  <header class="topbar"><button class="menu-toggle" type="button" aria-label="Open navigation" aria-controls="internal-sidebar" aria-expanded="false" data-menu-toggle>☰</button><span class="portal-tagline">POWERING THE AMERICAN WORKFORCE</span><form class="sign-out-form" method="post" action="{% url 'admin:logout' %}">{% csrf_token %}<button class="sign-out" type="submit">Sign out</button></form></header>
+  <header class="topbar"><button class="menu-toggle" type="button" aria-label="Open navigation" aria-controls="internal-sidebar" aria-expanded="false" data-menu-toggle>☰</button><span class="portal-tagline">POWERING THE AMERICAN WORKFORCE</span>{% include 'operations/notification_bell.html' %}<form class="sign-out-form" method="post" action="{% url 'admin:logout' %}">{% csrf_token %}<button class="sign-out" type="submit">Sign out</button></form></header>
   <main id="main-content">
     {% if messages %}<div class="messages" aria-live="polite">{% for message in messages %}<p class="alert">{{ message }}</p>{% endfor %}</div>{% endif %}
     {% block page_heading %}<header class="page-header"><div><p class="eyebrow">BUILT TO WORK</p><h1>{{ page_title|default:'Dashboard' }}</h1>{% if page_description %}<p class="page-description">{{ page_description }}</p>{% endif %}</div><div class="page-actions">{% block page_actions %}{% endblock %}</div></header>{% endblock %}

@@ -57,6 +57,16 @@ class HomeDashboardPolishTests(TestCase):
                 group, edit = header['children']
                 self.assertEqual(group['children'][0]['tag'], 'h2')
                 self.assertEqual(''.join(group['children'][0]['text']).strip(), heading)
+                if heading == 'Updates':
+                    self.assertEqual(edit['tag'], 'a')
+                    self.assertEqual(edit['attrs']['href'], reverse('operations:updates'))
+                    self.assertIn('View all', ''.join(edit['text']))
+                    forms=[n for n in group['children'] if n['tag']=='form']
+                    self.assertEqual(len(forms),1)
+                    self.assertEqual(forms[0]['attrs']['method'],'post')
+                    self.assertEqual(forms[0]['attrs']['action'],reverse('operations:updates-read-all'))
+                    self.assertIn('Mark All as Read',''.join(forms[0]['text']))
+                    continue
                 if heading == 'Quick Actions':
                     self.assertEqual(edit['tag'], 'a')
                     self.assertEqual(edit['attrs']['href'], reverse('internal:quick-actions-edit'))
@@ -72,14 +82,13 @@ class HomeDashboardPolishTests(TestCase):
                     self.assertIn('Unavailable', secondary_buttons[0]['attrs']['title'])
         self.assertNotContains(self.response, 'Edit Options')
 
-    def test_update_placeholder_is_an_honest_noninteractive_notification(self):
+    def test_updates_empty_state_links_to_real_feed(self):
         notices = self.markup.with_class('dashboard-notification')
         self.assertEqual(len(notices), 1)
         self.assertEqual(notices[0]['tag'], 'article')
-        self.assertIn('Activity updates', ''.join(notices[0]['text']))
-        self.assertIn('No updates connected in this visual preview.', ''.join(notices[0]['text']))
-        self.assertIn('Preview', ''.join(notices[0]['text']))
-        fragment = re.search(r'<article class="dashboard-notification card".*?</article>', self.html, re.S).group()
-        for forbidden in ('<a ', '<time', 'unread', '<li', 'href='):
-            self.assertNotIn(forbidden, fragment)
+        self.assertIn('Task updates', ''.join(notices[0]['text']))
+        self.assertIn('No task updates yet.', ''.join(notices[0]['text']))
+        self.assertIn('Open Updates', ''.join(notices[0]['text']))
+        self.assertContains(self.response, reverse('operations:updates'))
+        self.assertNotContains(self.response, 'No updates connected in this visual preview.')
         self.assertNotContains(self.response, 'dashboard-update-list')

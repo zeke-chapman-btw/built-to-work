@@ -6,12 +6,9 @@
 {% block content %}
 <div class="home-dashboard">
   <section class="dashboard-section dashboard-updates" aria-labelledby="dashboard-updates-title">
-    {% include 'internal/dashboard/section_header.html' with section_id='dashboard-updates-title' heading='Updates' mark_read=True %}
-    <div class="dashboard-notifications" aria-label="Updates preview">
-      <article class="dashboard-notification card" aria-labelledby="updates-preview-title">
-        <div class="dashboard-notification-body"><strong id="updates-preview-title">Activity updates</strong><p>No updates connected in this visual preview.</p></div>
-        <span class="badge dashboard-notification-status">Preview</span>
-      </article>
+    <div class="dashboard-section-header"><div class="dashboard-section-heading"><h2 id="dashboard-updates-title">Updates</h2><form method="post" action="{% url 'operations:updates-read-all' %}">{% csrf_token %}<input type="hidden" name="return_to" value="home"><button type="submit"{% if not task_updates.unread %} disabled{% endif %}>Mark All as Read</button></form></div><a class="dashboard-edit" href="{% url 'operations:updates' %}">View all</a></div>
+    <div class="dashboard-notifications" aria-label="Recent task updates">
+      {% for notice in task_updates.recent %}<article class="dashboard-notification card"><div class="dashboard-notification-body"><strong>{{ notice.get_kind_display }}</strong><p><a href="{% url 'operations:task' notice.task_id %}">{{ notice.task.title }}</a></p><p>{{ notice.message }}</p><time datetime="{{ notice.created_at|date:'c' }}">{{ notice.created_at|date:'M j, g:i A T' }}</time></div><span class="badge dashboard-notification-status">{% if notice.read_at %}Read{% else %}New{% endif %}</span></article>{% empty %}<article class="dashboard-notification card"><div class="dashboard-notification-body"><strong>Task updates</strong><p>No task updates yet. Assignments and important changes from others will appear here.</p><a href="{% url 'operations:updates' %}">Open Updates</a></div></article>{% endfor %}
     </div>
   </section>
   <section class="dashboard-section" aria-labelledby="dashboard-actions-title">
