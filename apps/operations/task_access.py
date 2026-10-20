@@ -55,6 +55,18 @@ def present_tasks(user, rows):
         grouped[task_id].add(event_id)
     ids = set().union(*grouped.values()) if grouped else set()
     visible = {e.pk:e.name for e in events_for(user).filter(pk__in=ids)}
+    from .task_links import participants_for
+    from .models import TaskParticipantLink
+    from django.utils import timezone
+    people = {row.pk: set() for row in rows}
+    for task_id, participant_id in TaskParticipantLink.objects.filter(task_id__in=people).values_list("task_id", "participant_id"):
+        people[task_id].add(participant_id)
+    person_ids = set().union(*people.values()) if people else set()
+    labels = {p.pk: str(p) for p in participants_for(user).filter(pk__in=person_ids, kind="person", archived_at__isnull=True)}
     for row in rows:
+        row.linked_event_count = len(grouped[row.pk])
+        row.linked_participant_count = len(people[row.pk])
+        row.participant_label = " · ".join(labels.get(pk, "Associated participant (restricted)") for pk in sorted(people[row.pk]))
+        row.is_overdue = bool(not row.archived_at and row.due_date and row.due_date < timezone.localdate() and row.status in ("todo", "in_progress"))
         row.event_label = " · ".join(visible.get(pk, "Associated event (restricted)") for pk in sorted(grouped[row.pk])) or "Standalone task"
     return rows

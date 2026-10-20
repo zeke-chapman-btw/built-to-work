@@ -1,0 +1,28 @@
+/* Shared task creation surface on workspace and authorized record pages. */
+.task-dialog { width:min(780px,calc(100% - 32px)); max-height:calc(100dvh - 32px); padding:0; border:0; border-radius:16px; color:#18222e; box-shadow:0 20px 70px #0006; overflow:auto; }
+.task-dialog:not([open]) { display:none; }
+.task-dialog::backdrop { background:rgb(12 19 27 / 65%); }
+.task-dialog-top { position:sticky; top:0; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:16px; background:#fff; border-bottom:1px solid #e0e5ea; padding:14px 24px; }
+.task-dialog-content { padding:24px; background:#fff; }
+.task-dialog .button,.task-quick-form .button { min-height:44px; }
+.task-dialog h2,.task-create-page h2 { margin-top:0; }
+.task-quick-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px 22px; }
+.task-quick-wide { grid-column:1/-1; }
+.task-quick-field { min-width:0; }
+.task-quick-field label { display:block; margin:0 0 7px; font-weight:700; }
+.task-quick-field input:not([type=hidden]),.task-quick-field select,.task-quick-field textarea { box-sizing:border-box; width:100%; min-height:44px; max-width:100%; padding:10px 12px; border:1px solid #cbd3dd; border-radius:8px; font:inherit; background:#fff; color:#18222e; }
+.task-quick-field textarea { min-height:100px; resize:vertical; }
+.task-quick-field select[multiple] { min-height:160px; }
+.task-quick-field small { display:block; font-size:13px; color:#52606e; margin-top:6px; }
+.task-context-pill { background:#f7f0f1; border-left:4px solid #bd1830; padding:12px; overflow-wrap:anywhere; }
+.task-link-options { margin-top:24px; padding:16px; border:1px solid #dce2e9; border-radius:10px; }
+.task-link-options summary { cursor:pointer; font-weight:700; min-height:44px; }
+.task-link-options summary span { color:#52606e; font-weight:400; }
+.task-record-status,.task-quick-feedback { min-height:20px; font-size:13px; color:#52606e; }
+.task-quick-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:20px; align-items:center; }
+.task-quick-errors { border-left:4px solid #ad1830; background:#fff2f3; padding:12px 16px; margin:16px 0; }
+.task-quick-errors h3 { margin:0; }
+.task-quick-form .errorlist { color:#961629; }
+.task-dialog :focus-visible,.task-quick-form :focus-visible { outline:3px solid #155eb6; outline-offset:3px; }
+.task-dialog[aria-busy=true],.task-dialog button:disabled { cursor:wait; }
+@media(max-width:700px) { .task-dialog { width:calc(100% - 20px); max-height:calc(100dvh - 20px); margin:auto; } .task-dialog-top { padding:12px 16px; } .task-dialog-content { padding:18px 16px; } .task-quick-grid { grid-template-columns:minmax(0,1fr); } .task-quick-actions .button { flex:1 1 auto; text-align:center; } }

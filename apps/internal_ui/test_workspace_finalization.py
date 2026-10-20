@@ -16,13 +16,13 @@ class WorkspaceFinalizationTests(TestCase):
         )
         self.client.force_login(self.user, backend="django.contrib.auth.backends.ModelBackend")
 
-    def test_six_direct_workspaces_and_personal_settings_gear(self):
+    def test_direct_workspaces_and_personal_settings_gear(self):
         response = self.client.get(reverse("internal:home"))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             [(item["id"], item["label"]) for item in response.context["navigation"]],
             [("home", "HOME"), ("events", "EVENTS"), ("participants", "PARTICIPANTS"),
-             ("operations", "OPERATIONS"), ("customers", "CUSTOMERS"), ("administration", "ADMIN")],
+             ("tasks", "TASKS"), ("operations", "OPERATIONS"), ("customers", "CUSTOMERS"), ("administration", "ADMIN")],
         )
         self.assertEqual(response.context["settings_link"]["url"], reverse("internal:settings"))
         self.assertContains(response, 'aria-label="Personal settings"')
@@ -56,7 +56,7 @@ class WorkspaceFinalizationTests(TestCase):
         staff = get_user_model().objects.create_user(username="limited-staff", password="test-only-password", is_staff=True)
         self.client.force_login(staff, backend="django.contrib.auth.backends.ModelBackend")
         nav = visible_workspaces(staff)
-        self.assertEqual([item["id"] for item in nav], ["home", "customers"])
+        self.assertEqual([item["id"] for item in nav], ["home", "tasks", "customers"])
         self.assertEqual(self.client.get(reverse("internal:workspace", kwargs={"workspace_id": "participants"})).status_code, 403)
         permission = Permission.objects.get(content_type__app_label="participants", codename="view_participant")
         staff.user_permissions.add(permission)

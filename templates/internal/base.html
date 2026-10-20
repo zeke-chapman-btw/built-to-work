@@ -3,6 +3,8 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}{{ page_title|default:'BTW workspace' }} · Built to Work{% endblock %}</title>
 <link rel="stylesheet" href="{% static 'internal/css/tokens.css' %}"><link rel="stylesheet" href="{% static 'internal/css/app.css' %}"><link rel="stylesheet" href="{% static 'internal/css/content_admin.css' %}">
+<link rel="stylesheet" href="{% static 'internal/css/task_create.css' %}">
+<script src="{% static 'internal/js/task_create.js' %}" defer></script>
 <script src="{% static 'internal/js/shell.js' %}" defer></script>{% block extra_head %}{% endblock %}
 </head><body class="internal-app{% block body_class %}{% endblock %}">
 <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -24,4 +26,4 @@
     {% block content %}{% endblock %}
   </main><footer>Built to Work · Internal workspace</footer>
 </div><button class="scrim" type="button" aria-label="Close navigation" data-scrim hidden></button>
-</body></html>
+{% include 'operations/task_dialog.html' %}</body></html>

@@ -38,10 +38,10 @@ class HomeDashboardPolishTests(TestCase):
         self.markup = Markup()
         self.markup.feed(self.html)
 
-    def test_six_text_navigation_labels_and_personal_settings_gear(self):
+    def test_workspace_text_navigation_labels_and_personal_settings_gear(self):
         nav = self.markup.with_class('workspace-nav')[0]
         links = [n for n in nav['children'] if n['tag'] == 'a']
-        self.assertEqual([''.join(n['text']).strip() for n in links], ['HOME', 'EVENTS', 'PARTICIPANTS', 'OPERATIONS', 'CUSTOMERS', 'ADMIN'])
+        self.assertEqual([''.join(n['text']).strip() for n in links], ['HOME', 'EVENTS', 'PARTICIPANTS', 'TASKS', 'OPERATIONS', 'CUSTOMERS', 'ADMIN'])
         self.assertEqual([n['attrs']['href'] for n in links], [n['url'] for n in self.response.context['navigation']])
         self.assertNotContains(self.response, 'nav-icon')
         gear = self.markup.with_class('settings-gear')

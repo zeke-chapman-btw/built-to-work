@@ -19,7 +19,8 @@ from .forms import TaskForm,StatusForm,NoteForm,DocumentForm,DemoForm,RevisionFo
 from . import services as svc,storage,task_access,task_history
 from .forms import TaskRevisionForm
 from .collaboration_forms import TaskLinksForm, TaskCommentForm
-from . import collaboration, task_links
+from . import collaboration, task_links, workspace
+from urllib.parse import urlencode
 from .models import TaskEventLink, TaskParticipantLink, TaskComment
 
 def staff_view(fn):
@@ -32,52 +33,21 @@ def staff_view(fn):
         except ValidationError as exc:return render(request,"operations/notice.html",{"page_title":"Action unavailable","notice":" ".join(exc.messages)},status=409)
     return wrapped
 
+def task_destination(request,task):
+    return workspace.detail_url(task,request.POST.get('return_to',request.GET.get('return_to','')))
 def form_page(request,form,title,back):
-    template = "operations/task_form.html" if isinstance(form, (TaskForm, StatusForm, TaskRevisionForm, TaskCommentForm)) else "operations/form.html"
-    return render(request,template,dict(form=form,page_title=title,back=back),status=400 if form.is_bound else 200)
-
+    is_task=isinstance(form,(TaskForm,StatusForm,TaskRevisionForm,TaskCommentForm))
+    template='operations/task_form.html' if is_task else 'operations/form.html'
+    task_return_to=workspace.return_path(request.POST.get('return_to',request.GET.get('return_to','')))
+    if is_task:
+        if back==reverse('operations:tasks'):back=task_return_to
+        elif back.startswith(reverse('operations:tasks')):back+='?'+urlencode({'return_to':task_return_to})
+    return render(request,template,dict(form=form,page_title=title,back=back,task_return_to=task_return_to),status=400 if form.is_bound else 200)
 @staff_view
 def task_list(request,mine=False):
-    if request.method != "GET":
-        raise PermissionDenied
-    managing = task_access.task_admin(request.user)
-    allowed = svc.tasks_for(request.user)
-    qs = allowed
-    view = request.GET.get("view", "open")
-    if view not in ("all", "mine", "open", "completed", "overdue", "archived"):
-        view = "open"
-    qs = qs.filter(archived_at__isnull=view != "archived")
-    if mine or view == "mine":
-        qs = qs.filter(assigned_staff__user=request.user)
-    if view == "open":
-        qs = qs.filter(status__in=("todo", "in_progress"))
-    if view == "completed":
-        qs = qs.filter(status="completed")
-    if view == "overdue":
-        qs = qs.filter(status__in=("todo", "in_progress"), due_date__lt=timezone.localdate())
-    filters = {k:request.GET.get(k, "").strip()[:200] for k in ("q", "status", "priority", "assignee", "event")}
-    if filters["q"]:
-        qs = qs.filter(Q(title__icontains=filters["q"]) | Q(description__icontains=filters["q"]))
-    for field, choices in (("status", Task.Status.values), ("priority", Task.Priority.values)):
-        if filters[field] in choices:
-            qs = qs.filter(**{field:filters[field]})
-    if managing:
-        for field, key in (("assignee", "assigned_staff_id"), ("event", "event_id")):
-            if filters[field]:
-                try:
-                    qs = qs.filter(**{key:filters[field]})
-                except (ValidationError, ValueError):
-                    qs = qs.none()
-    page = Paginator(qs.order_by("due_date", "-created_at"), 20).get_page(request.GET.get("page"))
-    page.object_list = task_access.present_tasks(request.user, page.object_list)
-    query = request.GET.copy()
-    query.pop("page", None)
-    return render(request, "operations/tasks.html", dict(page_title="My Tasks" if mine else "Tasks", managing=managing,
-        can_create=True, tasks=page, view=view, filters=filters, statuses=Task.Status.choices, priorities=Task.Priority.choices,
-        people=StaffProfile.objects.filter(tasks__in=allowed).distinct() if managing else [],
-        events=task_access.events_for(request.user).filter(operational_tasks__in=allowed).distinct() if managing else [],
-        query=query.urlencode(), today=timezone.localdate()))
-
+    if request.method != 'GET':raise PermissionDenied
+    from .task_workspace_views import workspace_page
+    return workspace_page(request,mine=mine)
 @staff_view
 def task_detail(request,task_id):
     if request.method != "GET":
@@ -89,7 +59,8 @@ def task_detail(request,task_id):
     return render(request, "operations/task.html", dict(page_title=obj.title, task=obj, managing=True,
         can_change=True, history=history, history_rows=rows, today=timezone.localdate(),
         linked_records=task_links.display_links(request.user,obj),
-        comment_form=TaskCommentForm(initial={"revision":obj.updated_at.isoformat()})))
+        comment_form=TaskCommentForm(initial={"revision":obj.updated_at.isoformat()}),
+        task_back_url=workspace.return_path(request.GET.get("return_to",""))))
 
 @staff_view
 def task_edit(request,task_id=None,event_id=None):
@@ -100,7 +71,7 @@ def task_edit(request,task_id=None,event_id=None):
         saved, form = svc.save_task(actor=request.user,data=request.POST,task_id=task_id,event_id=event_id)
         if saved:
             messages.success(request, "Task saved.")
-            return redirect("operations:task", task_id=saved.pk)
+            return redirect(task_destination(request,saved))
     back = reverse("operations:task", args=[obj.pk]) if task_id else reverse("operations:tasks")
     return form_page(request,form,"Edit task" if task_id else "Create task",back)
 
@@ -112,7 +83,7 @@ def task_status(request,task_id):
         saved, form = svc.task_status(actor=request.user, task_id=obj.pk, data=request.POST)
         if saved:
             messages.success(request,"Task status updated.")
-            return redirect("operations:task", task_id=obj.pk)
+            return redirect(task_destination(request, obj))
     return form_page(request,form,"Change task status",reverse("operations:task", args=[obj.pk]))
 
 @staff_view
@@ -123,7 +94,7 @@ def task_archive(request,task_id,restore=False):
         saved, form = svc.task_archive(actor=request.user, task_id=obj.pk, data=request.POST, restore=restore)
         if saved:
             messages.success(request, "Task restored." if restore else "Task archived. History is retained.")
-            return redirect("operations:task", task_id=obj.pk)
+            return redirect(task_destination(request, obj))
     return form_page(request, form, "Restore task" if restore else "Archive task", reverse("operations:task", args=[obj.pk]))
 @staff_view
 def task_link_add(request,task_id):
@@ -136,9 +107,9 @@ def task_link_add(request,task_id):
         saved,form=collaboration.add_links(actor=request.user,task_id=task.pk,data=request.POST,event_query=event_query,participant_query=participant_query)
         if saved:
             messages.success(request,"Linked records updated.")
-            return redirect("operations:task",task_id=task.pk)
+            return redirect(task_destination(request, task))
     return render(request,"operations/task_links.html",dict(page_title="Link records",task=task,form=form,
-        event_query=event_query,participant_query=participant_query),status=400 if form.is_bound else 200)
+        event_query=event_query,participant_query=participant_query,return_to=workspace.return_path(source.get("return_to",""))),status=400 if form.is_bound else 200)
 
 @staff_view
 def task_link_remove(request,task_id,kind,link_id):
@@ -155,7 +126,7 @@ def task_link_remove(request,task_id,kind,link_id):
         saved,form=collaboration.remove_link(actor=request.user,task_id=task.pk,kind=kind,link_id=link_id,data=request.POST)
         if saved:
             messages.success(request,"Record unlinked. The record and activity history are retained.")
-            return redirect("operations:task",task_id=task.pk)
+            return redirect(task_destination(request, task))
     return form_page(request,form,"Remove linked record",reverse("operations:task",args=[task.pk]))
 
 @staff_view
@@ -172,7 +143,7 @@ def task_comment(request,task_id,comment_id=None):
         if saved:
             messages.success(request,"Comment updated; prior content remains in activity." if comment else "Comment added.")
             last=Paginator(task_history.entries_for(request.user,task),20).num_pages
-            return redirect(reverse("operations:task",args=[task.pk])+"?history_page="+str(last)+"#task-history")
+            return redirect(task_destination(request,task)+"&history_page="+str(last)+"#task-history")
     return form_page(request,form,"Edit comment" if comment else "Add comment",reverse("operations:task",args=[task.pk]))
 
 KINDS={"tasks":"tasks","notes":"event_notes","documents":"event_documents"}

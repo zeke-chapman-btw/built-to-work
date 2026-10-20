@@ -161,7 +161,7 @@ class NavigationAndHeading9GTests(TestCase):
     def test_corrected_route_context_does_not_grant_workspace_visibility(self):
         limited = get_user_model().objects.create_user(username='synthetic-limited-9g', is_staff=True)
         for path in ['/quizzes/', '/participants/staff/registration-forms/', '/participants/staff/testing/']:
-            self.assertEqual([item['id'] for item in visible_workspaces(limited, path)], ['home', 'customers'])
+            self.assertEqual([item['id'] for item in visible_workspaces(limited, path)], ['home', 'tasks', 'customers'])
         self.client.force_login(limited)
         # The existing assessment landing page is staff-accessible without a workspace grant.
         self.assertEqual(self.client.get(reverse('assessments:dashboard')).status_code, 200)

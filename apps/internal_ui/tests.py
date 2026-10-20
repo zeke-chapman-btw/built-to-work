@@ -28,7 +28,7 @@ class InternalShellTests(TestCase):
     def test_workspace_registry_is_ordered_and_has_named_destinations(self):
         self.assertEqual(
             [item["id"] for item in WORKSPACES],
-            ["home", "events", "participants", "operations", "customers", "administration"],
+            ["home", "events", "participants", "tasks", "operations", "customers", "administration"],
         )
         self.assertTrue(all(item.get("url_name") for item in WORKSPACES))
 

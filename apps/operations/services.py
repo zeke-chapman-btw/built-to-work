@@ -45,7 +45,7 @@ def audit(user,action,obj,before=None,reason=""):
     audit_action(actor=user,action="operations."+action,instance=obj,old_data=before,new_data=snap(obj),reason=reason)
 
 @transaction.atomic
-def save_task(*, actor, data, task_id=None, event_id=None):
+def save_task(*, actor, data, task_id=None, event_id=None, creation_id=None):
     task_access.require_task_staff(actor)
     initial = tasks_for(actor).filter(pk=task_id).first() if task_id else None
     if task_id and initial is None:
@@ -58,7 +58,7 @@ def save_task(*, actor, data, task_id=None, event_id=None):
         except (ValueError, TypeError, AttributeError):
             pass
     list(Event.objects.select_for_update().filter(pk__in=sorted(set(ids))).order_by("pk"))
-    obj = Task.objects.select_for_update().get(pk=task_id) if task_id else Task()
+    obj = Task.objects.select_for_update().get(pk=task_id) if task_id else (Task(pk=creation_id) if creation_id else Task())
     if task_id:
         task_access.require_task_access(actor, obj)
     revision(obj, data.get("revision"))

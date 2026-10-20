@@ -1,9 +1,13 @@
 from django.urls import path
-from . import views
+from . import views, task_workspace_views
 app_name="operations"
 urlpatterns=[
  path("my-tasks/",views.task_list,{"mine":True},name="my-tasks"),
  path("tasks/",views.task_list,name="tasks"),
+ path("tasks/quick-create/",task_workspace_views.quick_task,name="quick-create"),
+ path("tasks/quick-create/event/<uuid:event_id>/",task_workspace_views.quick_task,name="quick-create-event"),
+ path("tasks/quick-create/participant/<int:participant_id>/",task_workspace_views.quick_task,name="quick-create-participant"),
+ path("tasks/record-lookup/",task_workspace_views.record_lookup,name="task-record-lookup"),
  path("tasks/create/",views.task_edit,name="task-add"),
  path("tasks/<uuid:task_id>/",views.task_detail,name="task"),
  path("tasks/<uuid:task_id>/edit/",views.task_edit,name="task-edit"),

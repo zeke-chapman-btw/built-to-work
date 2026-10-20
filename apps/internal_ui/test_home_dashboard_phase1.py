@@ -37,8 +37,9 @@ class HomeDashboardPhaseOneTests(TestCase):
         self.assertContains(response, reverse('events:event_create'))
         self.assertContains(response, reverse('participants:staff-directory'))
         controls = Controls(); controls.feed(response.content.decode())
-        self.assertEqual(len(controls.buttons), 7)  # drawer toggle/scrim, POST sign out and four preview controls
-        preview_buttons = [b for b in controls.buttons if 'data-menu-toggle' not in b and 'data-scrim' not in b and 'sign-out' not in b.get('class', '').split()]
+        self.assertEqual(len(controls.buttons), 8)  # shared modal close, drawer toggle/scrim, sign out, four preview controls
+        self.assertEqual(sum("data-task-close" in b for b in controls.buttons), 1)
+        preview_buttons = [b for b in controls.buttons if 'data-menu-toggle' not in b and 'data-scrim' not in b and 'data-task-close' not in b and 'sign-out' not in b.get('class', '').split()]
         self.assertEqual(len(preview_buttons), 4)
         self.assertTrue(all('disabled' in b for b in preview_buttons))
         self.assertEqual(response.content.decode().count('<h1'), 1)

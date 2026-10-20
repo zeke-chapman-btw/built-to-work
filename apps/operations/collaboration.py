@@ -16,11 +16,11 @@ def record(actor, task, action, before, after):
 
 
 @transaction.atomic
-def add_links(*, actor, task_id, data, event_query="", participant_query=""):
+def add_links(*, actor, task_id, data, event_query="", participant_query="", include_selected=False):
     require_task_staff(actor)
     initial = Task.objects.get(pk=task_id)
     require_task_access(actor, initial)
-    form = TaskLinksForm(data, actor=actor, event_query=event_query, participant_query=participant_query)
+    form = TaskLinksForm(data, actor=actor, event_query=event_query, participant_query=participant_query, include_selected=include_selected)
     if not form.is_valid():
         return None, form
     events = list(form.cleaned_data["events"])

@@ -1,3 +1,4 @@
+import uuid
 from django import forms
 from django.db.models import Q
 from apps.events.models import Event
@@ -13,7 +14,7 @@ class TaskLinksForm(TaskRevisionForm):
     participants = forms.ModelMultipleChoiceField(queryset=Participant.objects.none(), required=False,
         widget=forms.CheckboxSelectMultiple, label="Participants (up to 20 search results)")
 
-    def __init__(self, *args, actor, event_query="", participant_query="", **kwargs):
+    def __init__(self, *args, actor, event_query="", participant_query="", include_selected=False, **kwargs):
         super().__init__(*args, **kwargs)
         events = events_for(actor).exclude(status="archived")
         if event_query:
@@ -26,6 +27,19 @@ class TaskLinksForm(TaskRevisionForm):
         ids = list(people.order_by("last_name", "first_name", "pk").values_list("pk", flat=True)[:20])
         self.fields["participants"].queryset = people.filter(pk__in=ids).order_by("last_name", "first_name", "pk")
         self.fields["participants"].label_from_instance = lambda person: str(person)
+        if include_selected and self.is_bound:
+            def submitted(name):
+                raw=self.data.getlist(name) if hasattr(self.data,'getlist') else self.data.get(name,[])
+                return ([raw] if isinstance(raw,str) else list(raw))[:50]
+            event_ids=[]
+            for value in submitted('events'):
+                try:event_ids.append(uuid.UUID(str(value)))
+                except (ValueError,TypeError):pass
+            person_ids=[int(value) for value in submitted('participants') if str(value).isdigit() and len(str(value))<19]
+            current=list(self.fields['events'].queryset.values_list('pk',flat=True))
+            self.fields['events'].queryset=events_for(actor).exclude(status='archived').filter(pk__in=current+event_ids).order_by('name','pk')
+            current=list(self.fields['participants'].queryset.values_list('pk',flat=True))
+            self.fields['participants'].queryset=participants_for(actor).filter(kind='person',archived_at__isnull=True,pk__in=current+person_ids).order_by('last_name','first_name','pk')
 
     def clean(self):
         data = super().clean()

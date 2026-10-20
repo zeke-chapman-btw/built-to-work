@@ -5,6 +5,7 @@ WORKSPACES = (
     {"id":"home","label":"HOME","icon":"home","url_name":"internal:home","description":"Your authorized BTW work at a glance.","permissions":()},
     {"id":"events","label":"EVENTS","icon":"calendar","url_name":"internal:workspace","url_kwargs":{"workspace_id":"events"},"description":"Events, registrations, and ticket workflows.","permissions":("events.view_event","events.add_event","events.view_eventregistration","staffing.manage_event_staffing")},
     {"id":"participants","label":"PARTICIPANTS","icon":"people","url_name":"internal:workspace","url_kwargs":{"workspace_id":"participants"},"description":"Existing participant records and review workflows.","permissions":("participants.view_participant","participants.view_participantqualification","participants.view_participantdocument","participants.view_qualificationapprovals","participants.view_historicalimportbatch","participants.view_participantaccountrequest")},
+    {"id":"tasks","label":"TASKS","icon":"tasks","url_name":"operations:tasks","description":"Your tasks, assignments and shared activity.","permissions":()},
     {"id":"operations","label":"OPERATIONS","icon":"operations","url_name":"internal:workspace","url_kwargs":{"workspace_id":"operations"},"description":"Stations, trailer operations, synchronization, and assessments.","permissions":("stations.view_station","events.view_trailer","events.view_syncoperation","events.view_ticketdelivery","events.view_matchreview","events.view_operationalincident","assessments.view_assessmentcategory","assessments.add_assessmentcategory","staffing.view_staffprofile","staffing.manage_event_staffing","operations.manage_tasks","operations.manage_event_notes","operations.manage_event_documents","workdays.manage_workdays","event_reports.view_event_reports")},
     {"id":"customers","label":"CUSTOMERS","icon":"customers","url_name":"internal:workspace","url_kwargs":{"workspace_id":"customers"},"description":"Customer management is planned; no customer records or tools are available yet.","permissions":(),"planned":True},
     {"id":"administration","label":"ADMIN","icon":"settings","url_name":"internal:workspace","url_kwargs":{"workspace_id":"administration"},"description":"Authorized BTW configuration and staff administration.","permissions":("auth.view_user","auth.change_user","participants.change_registrationform","participants.view_testparticipant","participants.change_testparticipant","workdays.manage_compensation","event_reports.manage_expense_categories")},
@@ -48,6 +49,7 @@ WORKSPACE_LINKS = {
 }
 
 ACTIVE_PREFIXES = {
+    "tasks":("/operations/tasks/","/operations/my-tasks/"),
     "events":("/events/","/staff/"),
     "participants":("/participants/",),
     "operations":("/reports/","/workdays/events/","/workdays/records/","/workdays/trips/","/workdays/mine/","/workdays/reports/","/operations/","/staff/directory/","/staff/requests/","/events/operations/","/events/offline-preparations/","/stations/","/assessments/","/quizzes/"),
@@ -73,6 +75,8 @@ def visible_workspaces(user,current_path=""):
                 continue
         entry=_resolved(item)
         entry["active"]=current_path==entry["url"] or any(current_path.startswith(prefix) for prefix in ACTIVE_PREFIXES.get(item["id"],()))
+        if item["id"]=="operations" and current_path.startswith(("/operations/tasks/","/operations/my-tasks/")):
+            entry["active"]=False
         if item["id"]=="operations" and current_path.startswith("/reports/categories/"):
             entry["active"]=False
         if item["id"]=="operations" and current_path=="/workdays/":

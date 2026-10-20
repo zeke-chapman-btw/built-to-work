@@ -1,5 +1,5 @@
 {% extends "internal/base.html" %}
-{% load static verification_status %}
+{% load static verification_status task_ui %}
 {% block extra_head %}<link rel="stylesheet" href="{% static 'internal/css/participant_workflow.css' %}">{% endblock %}
 {% block title %}{{ display_name }} | Participant profile{% endblock %}
 
@@ -7,6 +7,7 @@
 <p><a href="{% url 'participants:staff-directory' %}">← Back to participants</a></p>
 <section class="card">
   <h2>{{ display_name }} {{ participant.last_name }}</h2>
+  {% task_create_action participant=participant as task_creation_action %}{% if task_creation_action %}<p><a class="button button-primary" data-task-create href="{{ task_creation_action }}">+ Add Task</a></p>{% endif %}
   <dl class="profile-details">
     <dt>Participant ID</dt><dd>{{ participant.pk }}</dd>
     {% if participant.preferred_name %}<dt>Preferred name</dt><dd>{{ participant.preferred_name }}</dd>{% endif %}
