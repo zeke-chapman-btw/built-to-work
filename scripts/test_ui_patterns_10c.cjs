@@ -1,0 +1,25 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const path = require('node:path');
+let assertions = 0;
+const check = (actual, expected) => { assert.deepEqual(actual, expected); assertions++; };
+const handlers = {};
+let focused = 0;
+function menu() { return { open: true, contains(target) { return target.menu === this; }, querySelector() { return { focus() { focused++; } }; } }; }
+const a = menu(), b = menu();
+const document = { addEventListener(name, fn) { handlers[name] = fn; }, querySelectorAll() { return [a,b].filter(m => m.open); } };
+vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../static/internal/js/ui_patterns.js'), 'utf8'), {document});
+let prevented = 0;
+handlers.keydown({key:'Enter',target:{menu:a},preventDefault(){prevented++;}});
+check(a.open,true);check(prevented,0);
+handlers.keydown({key:'Escape',target:{},preventDefault(){prevented++;}});
+check(a.open,true);check(b.open,true);
+handlers.keydown({key:'Escape',target:{menu:a},preventDefault(){prevented++;}});
+check(a.open,false);check(b.open,true);check(focused,1);check(prevented,1);
+a.open=true;
+handlers.pointerdown({target:{menu:a}});
+check(a.open,true);check(b.open,false);
+handlers.pointerdown({target:{}});
+check(a.open,false);check(focused,1);
+console.log('PASS shared disclosure controls: '+assertions+' assertions (Escape, focus return, unrelated keys, inside/outside pointer behavior).');

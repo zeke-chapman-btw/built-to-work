@@ -89,7 +89,11 @@ def detail(request,event_id):
     metric_rows=[{'label':label,'value':report['metrics'][key]} for label,key in labels]
     review=report['cost']['review']
     review_form=ReviewForm(initial={'revision':svc.review_token(event,review),'manual_reviewed':review.manual_reviewed if review else False,'incentives_reviewed':review.incentives_reviewed if review else False,'staff_reviewed':review.staff_reviewed if review else False})
-    return page(request,'detail',page_title='Event Cost & Performance',event=event,report=report,expense_filter=form,expenses=Paginator(expenses,30).get_page(request.GET.get('page')),incentives=Paginator(lines,30).get_page(request.GET.get('incentive_page')),review_form=review_form,notes=notes,notes_access=notes_access,definitions=reporting.METRIC_DEFINITIONS,category_totals=category_totals,metric_rows=metric_rows,status=200 if valid else 400)
+    report_section = request.GET.get("section")
+    if report_section not in ("expenses", "report"):
+        report_section = "all"  # Existing URLs, anchors, filters and exports retain their combined view.
+    title = "Expenses" if report_section == "expenses" else "Event Report" if report_section == "report" else "Event Cost & Performance"
+    return page(request,'detail',page_title=title,report_section=report_section,event=event,report=report,expense_filter=form,expenses=Paginator(expenses,30).get_page(request.GET.get('page')),incentives=Paginator(lines,30).get_page(request.GET.get('incentive_page')),review_form=review_form,notes=notes,notes_access=notes_access,definitions=reporting.METRIC_DEFINITIONS,category_totals=category_totals,metric_rows=metric_rows,status=200 if valid else 400)
 
 @portal
 def entry(request,event_id=None,record_id=None,kind='expense'):

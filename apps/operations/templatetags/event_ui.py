@@ -1,7 +1,7 @@
 from django import template
 from django.urls import reverse
 from apps.event_reports.services import can_report
-from apps.internal_ui.event_presentation import event_tabs, event_tools
+from apps.internal_ui.event_presentation import event_tabs, event_tools, staff_tabs
 register = template.Library()
 
 @register.inclusion_tag("events/event_header.html", takes_context=True)
@@ -21,12 +21,23 @@ def event_navigation(context, event, active=""):
     if not active:
         namespace=match.namespace if match else ""
         if namespace=="staffing": active="staff"
-        elif namespace=="workdays": active="workdays"
-        elif namespace=="event_reports": active="expenses"
+        elif namespace=="workdays": active="staff"
+        elif namespace=="event_reports":
+            kind = match.kwargs.get("kind") if match else ""
+            active = "expenses" if context.get("report_section") == "expenses" or (match and match.url_name in ("expense-add", "expense-edit", "incentive-add", "incentive-edit")) or kind in ("expense", "incentive") else "report"
         else: active=context.get("section","overview")
-    return dict(event_tabs=event_tabs(request.user,event),active_event_tab=active)
+    tabs = event_tabs(request.user,event)
+    more = [tab for tab in tabs if tab["id"] in ("tasks", "notes", "documents")]
+    current = next((tab for tab in more if tab["id"] == active), None)
+    return dict(primary_event_tabs=[tab for tab in tabs if tab not in more], more_event_tabs=more, active_event_tab=active, more_active=bool(current), active_more_label=current["label"] if current else "")
 
 @register.inclusion_tag("events/operational_tools.html", takes_context=True)
 def event_operational_tools(context,event):
     from apps.operations.setup_presentation import setup_context
-    return dict(event=event,tools=event_tools(context["request"].user,event), **setup_context(context["request"].user,event))
+    from apps.operations.health_presentation import health_context
+    return dict(event=event,tools=event_tools(context["request"].user,event), **setup_context(context["request"].user,event), **health_context(context["request"].user,event))
+
+
+@register.inclusion_tag("events/staff_navigation.html", takes_context=True)
+def staff_navigation(context, event, active="workdays"):
+    return dict(staff_tabs=staff_tabs(context["request"].user, event), selected_staff_tab=active)

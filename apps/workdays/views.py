@@ -84,7 +84,7 @@ def event_roster(request,event_id):
     roster=[{'staff':a.assignment.staff,'recorded':a.assignment.staff_id in recorded} for a in assignments]
     days=Workday.objects.filter(event=event,work_date=selected).select_related('staff','role')
     trips=MileageTrip.objects.filter(event=event).select_related('staff','rate','approved_by')
-    return page(request,'event',page_title='Staff Workdays · '+event.name,event=event,calendar=calendar,selected=selected,roster=roster,days=days,trips=trips,distance=EventMileage.objects.filter(event=event).first(),origin=ORIGIN,totals=reports.totals(Workday.objects.filter(event=event),trips))
+    return page(request,'event',page_title='Workdays & mileage',event=event,calendar=calendar,selected=selected,roster=roster,days=days,trips=trips,distance=EventMileage.objects.filter(event=event).first(),origin=ORIGIN,totals=reports.totals(Workday.objects.filter(event=event),trips))
 
 @staff_view
 def workday_edit(request,event_id=None,record_id=None):

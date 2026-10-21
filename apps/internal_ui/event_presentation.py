@@ -42,17 +42,18 @@ def event_tabs(user, event):
         add("overview", "Info", "events:event_detail", [event.pk])
     if view_event and user.has_perm("staffing.manage_event_staffing"):
         add("staff", "Staff", "staffing:event", [event.pk])
+    elif workday_manager(user):
+        add("staff", "Staff", "workdays:event", [event.pk])
     from apps.operations.template_services import can_view_setup
     if event_tools(user, event) or can_view_setup(user):
         add("operations", "Operations", "events:event_detail", [event.pk], "?section=operations")
     if view_event and can_view_event_operations(user):
         add("results", "Results", "events:event_detail", [event.pk], "?section=results")
     if view_event and user.has_perms(("events.view_eventregistration", "participants.view_participant")):
-        add("registrations", "Registrations", "events:event_detail", [event.pk], "?section=registrations")
-    if workday_manager(user):
-        add("workdays", "Workdays & Mileage", "workdays:event", [event.pk])
+        add("registrations", "Registrations & tickets", "events:event_detail", [event.pk], "?section=registrations")
     if can_report(user):
-        add("expenses", "Expenses & Report", "event_reports:detail", [event.pk], "#expenses")
+        add("expenses", "Expenses", "event_reports:detail", [event.pk], "?section=expenses")
+        add("report", "Report", "event_reports:detail", [event.pk], "?section=report")
     for section, kind in (("tasks", "tasks"), ("notes", "event_notes"), ("documents", "event_documents")):
         if manager(user, kind) or assigned:
             add(section, section.title(), "operations:event", [event.pk, section])
@@ -70,3 +71,13 @@ def operations_home(user):
     featured = present(upcoming[0]) if upcoming else None
     return dict(featured=featured, other_events=[present(e) for e in upcoming[1:]],
         event_index_url=reverse("events:event_list" if user.has_perm("events.view_event") else "staffing:schedule"))
+
+
+def staff_tabs(user, event):
+    """Link existing staff and workday views without widening endpoint policy."""
+    tabs = []
+    if staff_user(user) and user.has_perms(("events.view_event", "staffing.manage_event_staffing")):
+        tabs.append(dict(id="assignments", label="Assignments & coverage", url=reverse("staffing:event", args=[event.pk])))
+    if workday_manager(user):
+        tabs.append(dict(id="workdays", label="Workdays & mileage", url=reverse("workdays:event", args=[event.pk])))
+    return tabs

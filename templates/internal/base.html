@@ -8,7 +8,7 @@
 <script src="{% static 'internal/js/notifications.js' %}" defer></script>
 <script src="{% static 'internal/js/task_create.js' %}" defer></script>
 <script src="{% static 'internal/js/shell.js' %}" defer></script>{% block extra_head %}{% endblock %}
-<link rel="stylesheet" href="{% static 'internal/css/build10a.css' %}"></head><body class="internal-app{% if floating_task_create_url %} has-task-create{% endif %}{% if event %} has-event-context{% endif %}{% block body_class %}{% endblock %}">
+<link rel="stylesheet" href="{% static 'internal/css/build10a.css' %}"><link rel="stylesheet" href="{% static 'internal/css/btw_ui.css' %}?v=10c-events-4"><script src="{% static 'internal/js/ui_patterns.js' %}" defer></script></head><body class="internal-app{% if floating_task_create_url %} has-task-create{% endif %}{% if event %} has-event-context{% endif %}{% block body_class %}{% endblock %}">
 <a class="skip-link" href="#main-content">Skip to main content</a>
 <aside class="sidebar" id="internal-sidebar" aria-label="Main navigation">
   <nav class="workspace-nav" aria-label="Workspaces">

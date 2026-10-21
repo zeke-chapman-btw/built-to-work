@@ -10,12 +10,17 @@ from .models import Event, EventGroup, EventRegistration
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M"
 
 
+def _local_input_value(value):
+    """Native datetime-local supports milliseconds; unchanged edits retain the stored instant."""
+    return value.isoformat(timespec="milliseconds" if value.microsecond else "seconds" if value.second else "minutes")
+
+
 class EventForm(forms.ModelForm):
-    start_at = forms.CharField(label="Event start (local time)", widget=forms.DateTimeInput(attrs={"type": "datetime-local"}))
-    end_at = forms.CharField(label="Event end (local time)", widget=forms.DateTimeInput(attrs={"type": "datetime-local"}))
-    registration_opens_at = forms.CharField(required=False, widget=forms.DateTimeInput(attrs={"type": "datetime-local"}))
-    registration_closes_at = forms.CharField(required=False, widget=forms.DateTimeInput(attrs={"type": "datetime-local"}))
-    registration_deadline_at = forms.CharField(required=False, widget=forms.DateTimeInput(attrs={"type": "datetime-local"}))
+    start_at = forms.CharField(label="Event start (local time)", widget=forms.DateTimeInput(attrs={"type": "datetime-local", "step": "any"}))
+    end_at = forms.CharField(label="Event end (local time)", widget=forms.DateTimeInput(attrs={"type": "datetime-local", "step": "any"}))
+    registration_opens_at = forms.CharField(required=False, widget=forms.DateTimeInput(attrs={"type": "datetime-local", "step": "any"}))
+    registration_closes_at = forms.CharField(required=False, widget=forms.DateTimeInput(attrs={"type": "datetime-local", "step": "any"}))
+    registration_deadline_at = forms.CharField(required=False, widget=forms.DateTimeInput(attrs={"type": "datetime-local", "step": "any"}))
     revision = forms.CharField(required=False, widget=forms.HiddenInput)
 
     FIELD_GROUPS = (
@@ -44,6 +49,8 @@ class EventForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._original_timezone = self.instance.timezone_name
+        self._original_datetimes = {name: getattr(self.instance, name) for name in ("start_at", "end_at", "registration_opens_at", "registration_closes_at", "registration_deadline_at")}
         self.fields["timezone_name"].help_text = "Use an IANA timezone, for example America/New_York. All date/time entries below use this timezone."
         self.fields["start_at"].help_text = "The event start and end define the existing QR/kiosk operating window. Setup and travel dates do not extend it."
         self.fields["daily_start_time"].help_text = "Optional daily planning hours; enter both times. These do not change the QR/kiosk window."
@@ -53,7 +60,10 @@ class EventForm(forms.ModelForm):
             zone = ZoneInfo(self.instance.timezone_name)
             for name in ("start_at", "end_at", "registration_opens_at", "registration_closes_at", "registration_deadline_at"):
                 value = getattr(self.instance, name)
-                self.initial[name] = value.astimezone(zone).strftime(DATETIME_FORMAT) if value else ""
+                local_value = value.astimezone(zone).replace(tzinfo=None) if value else None
+                self.initial[name] = _local_input_value(local_value) if local_value else ""
+                if local_value and local_value.microsecond % 1000:
+                    self.fields[name].help_text += " The picker shows milliseconds; an unchanged value preserves the full stored timestamp."
 
     @property
     def grouped_fields(self):
@@ -77,6 +87,10 @@ class EventForm(forms.ModelForm):
             try:
                 value = datetime.fromisoformat(raw)
                 if value.tzinfo is None:
+                    original = self._original_datetimes.get(name)
+                    if original and cleaned.get("timezone_name") == self._original_timezone and value in (original.astimezone(zone).replace(tzinfo=None), datetime.fromisoformat(_local_input_value(original.astimezone(zone).replace(tzinfo=None)))):
+                        cleaned[name] = original
+                        continue
                     candidates = [value.replace(tzinfo=zone, fold=fold) for fold in (0, 1)]
                     valid = [v for v in candidates if v.astimezone(UTC).astimezone(zone).replace(tzinfo=None) == value]
                     if not valid or len({v.utcoffset() for v in valid}) > 1:

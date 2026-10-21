@@ -1,9 +1,9 @@
 {% extends "internal/base.html" %}
 {% block title %}Public registration | {{ event.name }}{% endblock %}
 {% block page_heading %}{% endblock %}{% block content %}
-<section style="max-width:960px;margin:auto">
+<section class="events-page btw-event-settings">
 <p><a href="{% url 'events:event_detail' event.id %}">← {{ event.name }}</a></p>
-<h1 class="page-title">Public registration</h1>
+<h1 class="record-title">Public registration</h1>
 <p>Share a registration link for this event. The trailer registration route remains separate.</p>
 <div class="card"><h2>Link and availability</h2>
 <form method="post">{% csrf_token %}{{ form.non_field_errors }}

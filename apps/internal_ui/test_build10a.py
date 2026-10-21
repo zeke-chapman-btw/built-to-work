@@ -77,7 +77,7 @@ class Build10ATests(TestCase):
         response=self.client.get(reverse('events:event_detail',args=[self.next.pk])+'?section=operations')
         self.assertContains(response,'Public registration settings')
         self.assertNotContains(response,'Station assignments')
-        self.assertContains(response,'Event Health Monitor is not available yet')
+        self.assertContains(response,'Policy-dependent Health Monitor verification is pending')
         self.assertNotContains(response,'Ready with Exceptions')
         self.assertEqual(response.context['section'],'operations')
     def test_event_visibility_is_required_for_operations_section(self):
@@ -90,7 +90,7 @@ class Build10ATests(TestCase):
         tabs={x['id']:x for x in event_tabs(self.admin,self.next)}
         self.assertEqual(tabs['staff']['url'],reverse('staffing:event',args=[self.next.pk]))
         self.assertEqual(tabs['tasks']['url'],reverse('operations:event',args=[self.next.pk,'tasks']))
-        self.assertTrue(tabs['expenses']['url'].endswith('#expenses'))
+        self.assertEqual(tabs['expenses']['url'],reverse('event_reports:detail',args=[self.next.pk])+'?section=expenses')
         self.assertEqual(len(tabs),10)
     def test_event_name_and_lifecycle_confirmation_are_preserved(self):
         self.login(self.admin);response=self.client.get(reverse('events:event_detail',args=[self.next.pk]))
@@ -146,11 +146,11 @@ class Build10ATests(TestCase):
         self.client.get(reverse('internal:workspace',args=['operations']))
         self.assertEqual(before,(Task.objects.count(),EventNote.objects.count()))
 
-    def test_event_has_one_contextual_task_action_and_no_floating_overlap(self):
+    def test_event_has_one_floating_contextual_task_action(self):
         self.login(self.admin)
         response=self.client.get(reverse('events:event_detail',args=[self.next.pk]))
         self.assertContains(response,'data-global-task-create',count=1)
-        self.assertNotContains(response,'button-primary global-task-create')
+        self.assertContains(response,'button-primary global-task-create',count=1)
         self.assertContains(response,reverse('operations:quick-create-event',args=[self.next.pk]))
     def test_workday_admin_navigation_has_only_one_active_workspace(self):
         active=[x['id'] for x in visible_workspaces(self.admin,reverse('workdays:index')) if x['active']]

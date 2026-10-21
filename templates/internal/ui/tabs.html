@@ -1,0 +1,1 @@
+{% if items %}<nav class="btw-tabs btw-tabs-{{ variant }}{% if variant == 'status' %} event-view-tabs{% endif %}" aria-label="{{ label }}">{% for item in items %}<a href="{{ item.url }}"{% if item.id == selected %} class="active" aria-current="page"{% endif %}>{{ item.label }}</a>{% endfor %}</nav>{% endif %}

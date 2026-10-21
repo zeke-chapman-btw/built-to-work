@@ -1,5 +1,6 @@
-{% extends 'staffing/base.html' %}
-{% block staff_content %}<a href="{{ back_url }}">← Go back</a><section class="card"><h2>{{ page_title }}</h2>
+{% extends 'staffing/base.html' %}{% load event_ui %}
+{% block page_heading %}{% if event %}{% event_header event %}{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block staff_content %}{% if event %}{% event_navigation event "staff" %}{% endif %}<a href="{{ back_url }}">← Go back</a><section class="card btw-form-card"><h2>{{ page_title }}</h2>
 {% if person %}<p>{{ person }}</p>{% endif %}{% if record %}<p>{{ record.staff }} · {{ record.event.name }}</p><p>Requested days: {{ record.requested_dates|join:', ' }}</p><p>{{ record.note|linebreaksbr }}</p><p>Approval immediately confirms an assignment; no second employee acceptance is required.</p>{% endif %}{% if old_assignment %}<p>{{ old_assignment.staff }} · {{ old_assignment.event.name }}</p><p>Removing this assignment retains its history and any original approved request.</p>{% endif %}
 {% if event %}<p>{{ event.name }} · {{ event.timezone_name }}</p>{% endif %}
 <form method="post">{% csrf_token %}{{ form.non_field_errors }}{% for field in form.hidden_fields %}{{ field }}{{ field.errors }}{% endfor %}
