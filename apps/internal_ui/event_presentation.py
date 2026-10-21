@@ -17,7 +17,8 @@ def event_tools(user, event):
     if user.is_superuser or user.has_perm("assessments.change_eventassessmentcategory"):
         add("Quizzes & Tests", "assessments:event_configuration", [event.pk], "Choose assessment categories and question sets for this event.")
     if user.has_perm("events.change_event"):
-        add("Station assignments", "events:station_assign", [event.pk], "Manage station assignments for this event.")
+        if can_view_event_operations(user):
+            add("Station assignments", "events:event_detail", [event.pk], "Manage station assignments using the existing event form.", "?section=results#event-stations")
         add("Public registration settings", "events:public-settings", [event.pk], "Manage registration availability and the event’s public link.")
     if user.has_perm("games.view_eventgameconfiguration") or user.has_perm("games.change_eventgameconfiguration"):
         add("Game configuration", "admin:games_eventgameconfiguration_changelist", description="Review this event’s selected game and settings.", suffix="?event__id__exact="+str(event.pk))
@@ -41,7 +42,8 @@ def event_tabs(user, event):
         add("overview", "Info", "events:event_detail", [event.pk])
     if view_event and user.has_perm("staffing.manage_event_staffing"):
         add("staff", "Staff", "staffing:event", [event.pk])
-    if event_tools(user, event):
+    from apps.operations.template_services import can_view_setup
+    if event_tools(user, event) or can_view_setup(user):
         add("operations", "Operations", "events:event_detail", [event.pk], "?section=operations")
     if view_event and can_view_event_operations(user):
         add("results", "Results", "events:event_detail", [event.pk], "?section=results")

@@ -6,7 +6,7 @@ WORKSPACES = (
     {"id":"events","label":"EVENTS","icon":"calendar","url_name":"events:event_list","description":"Events, registrations, and ticket workflows.","permissions":("events.view_event","events.add_event","events.view_eventregistration","staffing.manage_event_staffing")},
     {"id":"participants","label":"PARTICIPANTS","icon":"people","url_name":"internal:workspace","url_kwargs":{"workspace_id":"participants"},"description":"Existing participant records and review workflows.","permissions":("participants.view_participant","participants.view_participantqualification","participants.view_participantdocument","participants.view_qualificationapprovals","participants.view_historicalimportbatch","participants.view_participantaccountrequest")},
     {"id":"tasks","label":"TASKS","icon":"tasks","url_name":"operations:tasks","description":"Your tasks, assignments and shared activity.","permissions":()},
-    {"id":"operations","label":"OPERATIONS","icon":"operations","url_name":"internal:workspace","url_kwargs":{"workspace_id":"operations"},"description":"Stations, trailer operations, synchronization, and assessments.","permissions":("events.view_event","stations.view_station","events.view_trailer","events.view_syncoperation","events.view_ticketdelivery","events.view_matchreview","events.view_operationalincident","assessments.view_assessmentcategory","assessments.add_assessmentcategory","staffing.view_staffprofile","staffing.manage_event_staffing","operations.manage_tasks","operations.manage_event_notes","operations.manage_event_documents","workdays.manage_workdays","event_reports.view_event_reports")},
+    {"id":"operations","label":"OPERATIONS","icon":"operations","url_name":"internal:workspace","url_kwargs":{"workspace_id":"operations"},"description":"Stations, trailer operations, synchronization, and assessments.","permissions":("events.view_event","stations.view_station","events.view_trailer","events.view_syncoperation","events.view_ticketdelivery","events.view_matchreview","events.view_operationalincident","assessments.view_assessmentcategory","assessments.add_assessmentcategory","staffing.view_staffprofile","staffing.manage_event_staffing","operations.view_operationstemplate","operations.manage_tasks","operations.manage_event_notes","operations.manage_event_documents","workdays.manage_workdays","event_reports.view_event_reports")},
     {"id":"customers","label":"CUSTOMERS","icon":"customers","url_name":"internal:workspace","url_kwargs":{"workspace_id":"customers"},"description":"Customer management is planned; no customer records or tools are available yet.","permissions":(),"planned":True},
     {"id":"administration","label":"ADMIN","icon":"settings","url_name":"internal:workspace","url_kwargs":{"workspace_id":"administration"},"description":"Authorized BTW configuration and staff administration.","permissions":("staffing.view_staffprofile","workdays.manage_workdays","auth.view_user","auth.change_user","participants.change_registrationform","participants.view_testparticipant","participants.change_testparticipant","workdays.manage_compensation","event_reports.manage_expense_categories")},
 )
@@ -54,7 +54,11 @@ WORKSPACE_LINKS = {'events': ({'label': 'My staff schedule',
                    'url_name': 'participants:staff-requests',
                    'permissions': ('participants.view_participantaccountrequest',
                                    'participants.change_participantaccountrequest')}),
- 'operations': ({'label': 'Operational monitoring',
+ 'operations': ({'label': 'Operations Templates',
+                 'description': 'Reusable published revisions and controlled event setup.',
+                 'url_name': 'operations:templates',
+                 'permissions': ('operations.view_operationstemplate',)},
+                {'label': 'Operational monitoring',
                  'description': 'Review synchronization, deliveries, and operational incidents.',
                  'url_name': 'events:operations-dashboard',
                  'permissions': ('events.view_syncoutboxitem',)},
@@ -162,6 +166,8 @@ def visible_workspaces(user,current_path=""):
         if current_path.startswith(("/reports/events/","/workdays/events/")) and item["id"] in ("events","operations"):
             entry["active"]=item["id"]=="events"
         visible.append(entry)
+        if current_path.startswith("/operations/setup/events/") and item["id"] in ("events","operations"):
+            entry["active"]=item["id"]=="events"
     return visible
 
 def visible_settings_link(user,current_path=""):

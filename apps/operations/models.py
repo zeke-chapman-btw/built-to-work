@@ -98,3 +98,5 @@ class EventDocument(UUIDModel, TimestampedModel):
     class Meta:
         ordering=("-created_at","pk")
         permissions=[("manage_event_documents","Can manage event operational documents")]
+
+from .template_models import OperationsTemplate, OperationsTemplateRevision, OperationsTemplateResource, EventOperationsApplication

@@ -28,4 +28,5 @@ def event_navigation(context, event, active=""):
 
 @register.inclusion_tag("events/operational_tools.html", takes_context=True)
 def event_operational_tools(context,event):
-    return dict(tools=event_tools(context["request"].user,event))
+    from apps.operations.setup_presentation import setup_context
+    return dict(event=event,tools=event_tools(context["request"].user,event), **setup_context(context["request"].user,event))

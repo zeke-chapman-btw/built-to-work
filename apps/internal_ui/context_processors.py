@@ -10,4 +10,4 @@ def workspace_navigation(request):
         "quick-create", "quick-create-event", "quick-create-participant", "task-add", "event-task-add"))
     return {"navigation": visible_workspaces(user, request.path),
             "task_creation_enabled": not creating_task,
-            "task_action_in_event_header": bool(match and (match.namespace,match.url_name) in (("events","event_detail"),("staffing","event"),("operations","event"),("workdays","event"),("event_reports","detail"))), **shell_context(user)}
+            "task_action_in_event_header": bool(match and (match.namespace,match.url_name) in (("events","event_detail"),("staffing","event"),("operations","event"),("operations","template-apply"),("workdays","event"),("event_reports","detail"))), **shell_context(user)}

@@ -1,6 +1,6 @@
 {% extends "internal/base.html" %}{% load static tz task_ui event_ui %}
 {% block title %}{{ event.name }} | Events{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'internal/css/event_operations.css' %}"><link rel="stylesheet" href="{% static 'internal/css/event_management.css' %}?v=9b">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'internal/css/operations_templates.css' %}"><link rel="stylesheet" href="{% static 'internal/css/event_operations.css' %}"><link rel="stylesheet" href="{% static 'internal/css/event_management.css' %}?v=9b">{% endblock %}
 {% block page_heading %}{% event_header event %}{% endblock %}
 {% block content %}<div class="events-page event-operations">
 {% event_navigation event %}

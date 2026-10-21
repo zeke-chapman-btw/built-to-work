@@ -1,7 +1,13 @@
 from django.urls import path
-from . import views, task_workspace_views, notification_views
+from . import views, task_workspace_views, notification_views, template_views
 app_name="operations"
 urlpatterns=[
+ path("templates/",template_views.template_list,name="templates"),
+ path("templates/create/",template_views.template_edit,name="template-create"),
+ path("templates/revisions/<uuid:revision_id>/",template_views.template_detail,name="template-detail"),
+ path("templates/revisions/<uuid:revision_id>/edit/",template_views.template_edit,name="template-edit"),
+ path("templates/revisions/<uuid:revision_id>/actions/<str:action>/",template_views.template_action,name="template-action"),
+ path("setup/events/<uuid:event_id>/apply/<uuid:revision_id>/",template_views.template_apply,name="template-apply"),
  path("tasks/updates/",notification_views.updates,name="updates"),
  path("tasks/updates/read-all/",notification_views.read_all,name="updates-read-all"),
  path("tasks/updates/<uuid:notification_id>/read/",notification_views.read,name="updates-read"),

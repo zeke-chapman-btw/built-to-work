@@ -75,8 +75,9 @@ class Build10ATests(TestCase):
     def test_operations_is_functional_without_health_monitor_grant(self):
         self.grant('events.view_event','events.change_event');self.login()
         response=self.client.get(reverse('events:event_detail',args=[self.next.pk])+'?section=operations')
-        self.assertContains(response,'Station assignments')
-        self.assertContains(response,'Event Health Monitor and reusable operations templates are not available yet')
+        self.assertContains(response,'Public registration settings')
+        self.assertNotContains(response,'Station assignments')
+        self.assertContains(response,'Event Health Monitor is not available yet')
         self.assertNotContains(response,'Ready with Exceptions')
         self.assertEqual(response.context['section'],'operations')
     def test_event_visibility_is_required_for_operations_section(self):
