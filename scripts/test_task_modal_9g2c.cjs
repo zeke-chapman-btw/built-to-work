@@ -3,9 +3,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const source = fs.readFileSync('static/internal/js/task_create.js','utf8');
-function environment() {
+function environment(withWorkspace=true) {
   const handlers = {}, pending = [], requests = [], timers = [];
-  const document = {activeElement:null,addEventListener(name,fn){handlers[name]=fn;},querySelector(s){return s==='#task-create-dialog'?dialog:s==='[data-task-workspace]'?workspace:null;},createElement(tag){return new Node(tag);}};
+  const document = {activeElement:null,addEventListener(name,fn){handlers[name]=fn;},querySelector(s){return s==='#task-create-dialog'?dialog:s==='[data-task-workspace]'?(withWorkspace?workspace:null):s==='[data-global-task-create]'?floating:null;},createElement(tag){return new Node(tag);}};
   class Node {
     constructor(tag='button'){this.tagName=tag.toUpperCase();this.disabled=false;this.tabIndex=0;this.isConnected=true;this.dataset={};this.children=[];this.attrs={};this.matches={};this.events={};this.textContent='';}
     focus(){document.activeElement=this;}
@@ -31,7 +31,7 @@ function environment() {
   dialog.contains=node=>node===form;
   dialog.querySelectorAll=s=>s==='button[type="submit"]'?[submit]:[close,title,cancel,submit];
   dialog.showModal=()=>{dialog.open=true;};dialog.close=()=>{dialog.open=false;return dialog.events.close();};
-  workspace.matches['[data-task-status]']=status;workspace.matches['.task-add-floating']=floating;
+  workspace.matches['[data-task-status]']=status;
   const fetch=(url,options={})=>{requests.push({url,options});return new Promise((resolve,reject)=>pending.push({resolve,reject}));};
   const context={document,window:{location:{href:'https://local.invalid/operations/tasks/?view=mine',origin:'https://local.invalid'}},URL,WeakMap,Map,Set,AbortController,FormData:class{constructor(f){this.form=f;}},fetch,setTimeout:fn=>{timers.push(fn);return timers.length;},clearTimeout:()=>{},DOMParser:class{parseFromString(){return{querySelector:()=>({innerHTML:'UPDATED'})};}}};
   vm.runInNewContext(source,context);
@@ -62,11 +62,22 @@ async function flush(){await Promise.resolve();await Promise.resolve();await Pro
   {
     const e=environment();const opening=e.handlers.click(e.event(e.trigger));e.respond();await opening;
     const post=e.handlers.submit(e.event(e.form));e.respond(201,'',{url:'/operations/tasks/synthetic/?return_to=safe',title:'<script>plain text</script>',replayed:false});await post;assert.equal(e.content.children[0].textContent,'Task created');assert.equal(e.content.children[1].textContent,'<script>plain text</script>');assert.equal(e.content.children[2].children[0].textContent,'View task');assert.equal(e.document.activeElement,e.content.children[0]);
-    const closing=e.dialog.close();e.respond(200,'REFRESH');await closing;assert.equal(e.workspace.innerHTML,'UPDATED');assert.equal(e.document.activeElement,e.floating);assert(e.status.textContent.includes('up to date'));checks+=6;
+    const closing=e.dialog.close();e.respond(200,'REFRESH');await closing;assert.equal(e.workspace.innerHTML,'UPDATED');assert.equal(e.document.activeElement,e.trigger);assert(e.status.textContent.includes('up to date'));checks+=6;
   }
   {
     const e=environment();const opening=e.handlers.click(e.event(e.trigger));e.pending.shift().reject(new Error('Unavailable'));await opening;assert(e.content.children[0].textContent.includes('full-page'));assert.equal(e.content.children[1].href,e.trigger.href);checks+=2;
     e.handlers.input(e.event(e.input));const searching=e.timers.shift()();e.respond(200,'',{results:[{id:'two',label:'Another event'}]});await searching;assert.equal(e.select.options.length,2);assert.equal(e.select.options[0].selected,true);assert.equal(e.select.options[1].textContent,'Another event');checks+=3;
+  }
+  {
+    const e=environment();const opening=e.handlers.click(e.event(e.trigger));e.respond();await opening;
+    const post=e.handlers.submit(e.event(e.form));e.respond(201,'',{url:'/operations/tasks/synthetic/',title:'Synthetic removed opener',replayed:false});await post;
+    e.trigger.isConnected=false;const closing=e.dialog.close();e.respond(200,'REFRESH');await closing;
+    assert.equal(e.document.activeElement,e.floating);checks++;
+  }
+  {
+    const e=environment(false);const opening=e.handlers.click(e.event(e.trigger));e.respond();await opening;
+    const post=e.handlers.submit(e.event(e.form));e.respond(201,'',{url:'/operations/tasks/synthetic/',title:'Synthetic other workspace',replayed:false});await post;
+    await e.dialog.close();assert.equal(e.document.activeElement,e.trigger);assert.equal(e.requests.length,2);checks+=2;
   }
   console.log('PASS task modal: '+checks+' assertions across keyboard, focus, close, duplicate submit, validation, retry, success, fallback and record lookup.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

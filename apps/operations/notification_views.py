@@ -1,4 +1,4 @@
-"""Staff-only Updates feed and explicit CSRF-protected read actions."""
+"""Staff-only Notifications feed and explicit CSRF-protected read actions."""
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import HttpResponseNotAllowed
@@ -11,7 +11,7 @@ from . import notifications,due_dates
 def updates(request):
     if request.method!='GET':return HttpResponseNotAllowed(['GET'])
     page=Paginator(notifications.visible_notifications(request.user),20).get_page(request.GET.get('page'))
-    return render(request,'operations/updates.html',{'page_title':'Updates','notification_page':page,'due_attention':due_dates.due_attention(request.user)})
+    return render(request,'operations/updates.html',{'page_title':'Notifications','notification_page':page,'due_attention':due_dates.due_attention(request.user)})
 
 def destination(request):
     if request.POST.get('return_to')=='home':return reverse('internal:home')

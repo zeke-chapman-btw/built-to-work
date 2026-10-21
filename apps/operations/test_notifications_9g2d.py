@@ -185,10 +185,10 @@ class TaskNotifications9G2DTests(TestCase):
         self.assertEqual((TaskNotification.objects.count(),AuditLog.objects.count()),before)
     def test_empty_updates_and_connected_home_without_redesign(self):
         self.login(self.other);response=self.client.get(reverse('operations:updates'))
-        self.assertContains(response,'No task updates')
+        self.assertContains(response,'No task notifications')
         t=self.create();self.login();home=self.client.get(reverse('internal:home'))
         self.assertContains(home,t.title);self.assertContains(home,reverse('operations:updates'))
-        self.assertContains(home,'Quick Actions');self.assertContains(home,'At a Glance')
+        self.assertContains(home,'Quick Actions');self.assertContains(home,'Analytics')
     def test_read_does_not_dismiss_live_due_attention(self):
         t=self.create(due_date=timezone.localdate().isoformat());self.login()
         self.client.post(reverse('operations:updates-read-all'))

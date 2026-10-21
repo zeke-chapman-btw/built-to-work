@@ -1,4 +1,4 @@
-{% load static %}<!doctype html>
+{% load static task_ui %}{% global_task_create_url as floating_task_create_url %}<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}{{ page_title|default:'BTW workspace' }} · Built to Work{% endblock %}</title>
@@ -8,10 +8,9 @@
 <script src="{% static 'internal/js/notifications.js' %}" defer></script>
 <script src="{% static 'internal/js/task_create.js' %}" defer></script>
 <script src="{% static 'internal/js/shell.js' %}" defer></script>{% block extra_head %}{% endblock %}
-</head><body class="internal-app{% block body_class %}{% endblock %}">
+</head><body class="internal-app{% if floating_task_create_url %} has-task-create{% endif %}{% block body_class %}{% endblock %}">
 <a class="skip-link" href="#main-content">Skip to main content</a>
 <aside class="sidebar" id="internal-sidebar" aria-label="Main navigation">
-  <a class="brand" href="{% url 'internal:home' %}" aria-label="Built to Work home"><img class="brand-logo" src="{% static 'internal/images/built-to-work-linear.svg' %}" alt="Built to Work"></a>
   <nav class="workspace-nav" aria-label="Workspaces">
     {% for item in navigation %}<a class="nav-item{% if item.active %} active{% endif %}" href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>
       <span>{{ item.label }}</span>
@@ -20,12 +19,13 @@
   <div class="sidebar-bottom"><div class="sidebar-user"><span>{{ request.user.get_username }}</span><a class="settings-gear{% if settings_link.active %} active{% endif %}" href="{% url 'internal:settings' %}" aria-label="Personal settings" title="Personal settings"{% if settings_link.active %} aria-current="page"{% endif %}><span aria-hidden="true">⚙</span></a></div></div>
 </aside>
 <div class="main-column">
-  <header class="topbar"><button class="menu-toggle" type="button" aria-label="Open navigation" aria-controls="internal-sidebar" aria-expanded="false" data-menu-toggle>☰</button><a class="topbar-brand" href="{% url 'internal:home' %}" aria-label="Built to Work home">BUILT<span>TO</span>WORK</a><span class="portal-tagline">POWERING THE AMERICAN WORKFORCE</span>{% include 'operations/notification_bell.html' %}<form class="sign-out-form" method="post" action="{% url 'admin:logout' %}">{% csrf_token %}<button class="sign-out" type="submit">Sign out</button></form></header>
+  <header class="topbar"><button class="menu-toggle" type="button" aria-label="Open navigation" aria-controls="internal-sidebar" aria-expanded="false" data-menu-toggle>☰</button><a class="topbar-brand" href="{% url 'internal:home' %}" aria-label="Built to Work home"><img class="brand-logo" src="{% static 'internal/images/built-to-work-linear.svg' %}" alt="Built to Work"></a><span class="portal-tagline">POWERING THE AMERICAN WORKFORCE</span>{% include 'operations/notification_bell.html' %}<form class="sign-out-form" method="post" action="{% url 'admin:logout' %}">{% csrf_token %}<button class="sign-out" type="submit">Sign out</button></form></header>
   <main id="main-content">
     {% if messages %}<div class="messages" aria-live="polite">{% for message in messages %}<p class="alert">{{ message }}</p>{% endfor %}</div>{% endif %}
     {% block page_heading %}<header class="page-header"><div><p class="eyebrow">BUILT TO WORK</p><h1>{{ page_title|default:'Dashboard' }}</h1>{% if page_description %}<p class="page-description">{{ page_description }}</p>{% endif %}</div><div class="page-actions">{% block page_actions %}{% endblock %}</div></header>{% endblock %}
     {% block workspace_tabs %}{% endblock %}
     {% block content %}{% endblock %}
+    {% if floating_task_create_url %}<a class="button button-primary global-task-create" data-task-create data-global-task-create href="{{ floating_task_create_url }}">+ Create Task</a>{% endif %}
   </main><footer>Built to Work · Internal workspace</footer>
 </div><button class="scrim" type="button" aria-label="Close navigation" data-scrim hidden></button>
 {% include 'operations/task_dialog.html' %}</body></html>

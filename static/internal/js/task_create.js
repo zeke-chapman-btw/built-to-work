@@ -71,7 +71,7 @@
       if (!next) throw new Error('Workspace unavailable');
       workspace.innerHTML = next.innerHTML;
       workspace.querySelector('[data-task-status]').textContent = 'Task created. Your workspace is up to date.';
-      const trigger = workspace.querySelector('.task-add-floating'); if (trigger) trigger.focus();
+      const trigger = previous && previous.isConnected ? previous : document.querySelector('[data-global-task-create]'); if (trigger) trigger.focus();
     } catch (_) {
       const status = workspace.querySelector('[data-task-status]');
       if (status) status.textContent = 'Task created. Refresh this workspace to update the list.';

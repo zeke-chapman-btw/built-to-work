@@ -1,6 +1,6 @@
 {% extends 'operations/task_base.html' %}
 {% block task_content %}<section class="task-workspace" data-task-workspace>
-<div class="task-toolbar"><div><p class="task-purpose">Manage your work and follow up on tasks you’ve assigned.</p><p class="event-help">Start with your assignments, or switch views to follow work you created.</p></div><a class="button button-primary" data-task-create href="{{ quick_create_url }}">+ Add Task</a></div>
+<div class="task-toolbar"><div><p class="task-purpose">Manage your work and follow up on tasks you’ve assigned.</p><p class="event-help">Start with your assignments, or switch views to follow work you created.</p></div></div>
 <div class="task-summary" aria-label="Accessible task summary"><div><span>Open tasks</span><strong>{{ summary.open }}</strong></div><div><span>Overdue</span><strong>{{ summary.overdue }}</strong></div><div><span>Completed</span><strong>{{ summary.completed }}</strong></div></div>
 <nav class="task-views task-workspace-views" aria-label="Task views">{% for tab in tabs %}<a href="{{ tab.url }}"{% if tab.active %} aria-current="page"{% endif %}>{{ tab.label }} <span>{{ tab.count }}</span></a>{% endfor %}</nav>
 <section class="card task-filter-card"><h2 class="sr-only">Find tasks</h2><form method="get" class="ops-filters filter-toolbar"><input type="hidden" name="view" value="{{ view }}"><div class="field"><label for="task-q">Search tasks</label><input id="task-q" name="q" value="{{ filters.q }}" placeholder="Title or description"></div>
@@ -11,4 +11,4 @@
 </div></details></form></section>
 <div class="task-results-heading"><h2>{{ tasks.paginator.count }} task{{ tasks.paginator.count|pluralize }}</h2><p class="event-help">Open work first, then due date and priority. Archived tasks stay in Archived.</p></div><p class="task-workspace-status" role="status" data-task-status></p>
 <div class="task-grid task-workspace-list">{% include 'operations/task_rows.html' %}</div>{% include 'operations/pages.html' with page=tasks %}
-<a class="button button-primary task-add-floating" data-task-create href="{{ quick_create_url }}">+ Add Task</a></section>{% endblock %}
+</section>{% endblock %}

@@ -19,3 +19,14 @@ def task_create_action(context, event=None, participant=None):
     if person:
         return reverse('operations:quick-create-participant', args=[person.pk])
     return ''
+
+
+@register.simple_tag(takes_context=True)
+def global_task_create_url(context):
+    """Shared staff action; views may set task_creation_enabled=False."""
+    from apps.operations.task_access import staff_user
+    request = context.get('request')
+    if not request or not staff_user(request.user) or context.get('task_creation_enabled') is False:
+        return ''
+    contextual = task_create_action(context, event=context.get('event'), participant=context.get('participant'))
+    return contextual or context.get('quick_create_url') or reverse('operations:quick-create')

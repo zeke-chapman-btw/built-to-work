@@ -33,6 +33,16 @@ def home(request):
 
 
 @login_required
+@require_http_methods(["GET"])
+def reports(request):
+    _require_staff(request)
+    from .reporting import report_destinations
+    return render(request, "internal/reports.html", _staff_context(request,
+        page_title="Reports & Analytics", page_description="Open the reporting areas available to your account.",
+        report_destinations=report_destinations(request.user)))
+
+
+@login_required
 def workspace(request,workspace_id):
     _require_staff(request)
     item=next((entry for entry in WORKSPACES if entry["id"]==workspace_id and entry["id"]!="home"),None)

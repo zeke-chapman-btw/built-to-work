@@ -1,0 +1,6 @@
+{% extends 'internal/base.html' %}
+{% block content %}
+<div class="workspace-grid" aria-label="Available reports">
+{% for report in report_destinations %}<a class="card workspace-card" href="{{ report.url }}"><strong>{{ report.label }}</strong><p>{{ report.description }}</p><span class="card-arrow" aria-hidden="true">↗</span></a>{% empty %}<section class="card empty-state"><h2>No reports available for your account</h2><p>Report access follows your existing staff permissions.</p></section>{% endfor %}
+</div>
+{% endblock %}

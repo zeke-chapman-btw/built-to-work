@@ -25,7 +25,7 @@ WORKSPACE_LINKS = {
         {"label":"Account requests","description":"Review participant account requests.","url_name":"participants:staff-requests","permissions":("participants.view_participantaccountrequest","participants.change_participantaccountrequest")},
     ),
     "operations": (
-        {"label":"Event Reports & Analytics","description":"Review event costs, expenses, incentives and verified performance.","url_name":"event_reports:index","permissions":("event_reports.view_event_reports",)},
+        {"label":"Reports & Analytics","description":"Open available event, workday and reimbursement reporting.","url_name":"internal:reports","permissions":("event_reports.view_event_reports","workdays.manage_workdays")},
         {"label":"My Workday History","description":"Your daily check-ins and recorded workdays.","url_name":"workdays:mine","permissions":()},
         {"label":"Staff Workdays & Mileage","description":"Manage event-day rosters, corrections and individual trips.","url_name":"workdays:index","permissions":("workdays.manage_workdays",)},
         {"label":"Workday & Reimbursement Reports","description":"Review daily compensation and trip reimbursements; export CSV.","url_name":"workdays:reports","permissions":("workdays.manage_workdays",)},
@@ -52,7 +52,7 @@ ACTIVE_PREFIXES = {
     "tasks":("/operations/tasks/","/operations/my-tasks/"),
     "events":("/events/","/staff/"),
     "participants":("/participants/",),
-    "operations":("/reports/","/workdays/events/","/workdays/records/","/workdays/trips/","/workdays/mine/","/workdays/reports/","/operations/","/staff/directory/","/staff/requests/","/events/operations/","/events/offline-preparations/","/stations/","/assessments/","/quizzes/"),
+    "operations":("/internal/reports/","/reports/","/workdays/events/","/workdays/records/","/workdays/trips/","/workdays/mine/","/workdays/reports/","/operations/","/staff/directory/","/staff/requests/","/events/operations/","/events/offline-preparations/","/stations/","/assessments/","/quizzes/"),
     "administration":("/reports/categories/","/workdays/compensation/","/admin/","/participants/staff/registration-forms/","/participants/staff/testing/"),
 }
 
@@ -96,5 +96,5 @@ def visible_settings_link(user,current_path=""):
     return item
 
 def visible_workspace_links(user,workspace_id):
-    from apps.event_reports.services import can_report
-    return [_resolved(item) for item in WORKSPACE_LINKS.get(workspace_id,()) if _can_see(user,item["permissions"]) and (item["url_name"]!="event_reports:index" or can_report(user))]
+    from .reporting import report_destinations
+    return [_resolved(item) for item in WORKSPACE_LINKS.get(workspace_id,()) if _can_see(user,item["permissions"]) and (item["url_name"]!="internal:reports" or report_destinations(user))]

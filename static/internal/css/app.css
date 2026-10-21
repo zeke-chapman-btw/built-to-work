@@ -114,7 +114,7 @@ footer { padding: 14px clamp(18px, 4vw, 58px); border-top: 1px solid var(--line)
 
 /* Shared compact components: all staff modules inherit these tokens and controls. */
 .internal-app .topbar-brand { display:flex; flex:0 0 auto; align-items:center; font:700 21px/1 var(--font-display); letter-spacing:-.02em; color:#fff; white-space:nowrap; }
-.topbar-brand span { color:var(--red); }
+
 .internal-app #main-content { min-width:0; }
 .internal-app :is(input,select,textarea,button,a):focus-visible { outline:3px solid #155eb6; outline-offset:3px; }
 .internal-app .topbar :focus-visible,.internal-app .sidebar :focus-visible { outline-color:var(--yellow); }
@@ -154,3 +154,12 @@ footer { padding: 14px clamp(18px, 4vw, 58px); border-top: 1px solid var(--line)
 .task-overdue { background:#fff0f1; color:#921625; border-radius:6px; padding:3px 7px; font-weight:700; font-size:12px; }
 .task-priority-high { color:#9d1927; font-weight:700; }
 .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0; }
+
+/* One header brand and one shared task action; reserve room at the page end. */
+.internal-app .topbar-brand .brand-logo { width:190px; max-width:100%; max-height:30px; margin:0; }
+.has-task-create #main-content { padding-bottom:calc(104px + env(safe-area-inset-bottom, 0px)); }
+.has-task-create footer { padding-bottom:calc(96px + env(safe-area-inset-bottom, 0px)); }
+.has-task-create #main-content :is(a,button,input,select,textarea) { scroll-margin-bottom:100px; }
+.internal-app a.global-task-create { position:fixed; right:24px; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); z-index:25; min-height:48px; padding:12px 20px; border-radius:28px; box-shadow:0 4px 16px #19191926; }
+@media(max-width:1100px) { .portal-tagline { font-size:14px; } }
+@media(max-width:640px) { .internal-app .topbar-brand { flex:0 1 155px; min-width:0; } .internal-app .topbar-brand .brand-logo { width:155px; } .internal-app a.global-task-create { right:12px; bottom:calc(12px + env(safe-area-inset-bottom, 0px)); padding:10px 18px; } }
