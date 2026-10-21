@@ -184,7 +184,7 @@ def event_detail(request, event_id):
         if not request.user.has_perm("staffing.manage_event_staffing"):
             raise PermissionDenied
         return redirect("staffing:event", event_id=event.pk)
-    if section not in ("overview", "results", "registrations"):
+    if section not in ("overview", "operations", "results", "registrations"):
         section = "overview"
     if request.method == "POST":
         section = "registrations"

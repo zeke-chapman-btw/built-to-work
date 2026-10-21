@@ -51,6 +51,15 @@ def workspace(request,workspace_id):
     if not any(entry["id"]==workspace_id for entry in visible_workspaces(request.user)):
         raise PermissionDenied
     links=visible_workspace_links(request.user,workspace_id)
+    if workspace_id=="operations":
+        from .event_presentation import operations_home
+        from .reporting import report_destinations
+        data=operations_home(request.user)
+        from apps.events.experience_operations import can_view_event_operations
+        if data["featured"] and can_view_event_operations(request.user):
+            links=links+[dict(label="Simulator Scoring",url=reverse("events:event_detail",args=[data["featured"]["event"].pk])+"?section=results",description="View recorded simulator results for the next upcoming event.")]
+        return render(request,"internal/operations_home.html",_staff_context(request,page_title="Operations",workspace_links=links,
+            reporting_available=bool(report_destinations(request.user)),**data))
     return render(request,"internal/workspace.html",_staff_context(request,page_title=item["label"].title(),page_description=item["description"],workspace_id=workspace_id,workspace_links=links))
 
 

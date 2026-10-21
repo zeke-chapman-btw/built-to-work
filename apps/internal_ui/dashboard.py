@@ -4,7 +4,7 @@ from django.urls import reverse
 # Administrators grant/revoke these existing permissions on users or groups.
 # No user-supplied URL is stored or rendered. Settings is available to all staff.
 QUICK_ACTIONS = (
-    {"id": "create-task", "label": "Create Task", "route": "operations:quick-create", "permissions": (), "default": True},
+    {"id": "create-task", "label": "Add Task", "route": "operations:quick-create", "permissions": (), "default": True},
     {"id": "create-event", "label": "Create event", "route": "events:event_create", "permissions": ("events.add_event",), "default": True},
     {"id": "add-participant", "label": "Add Participant", "route": "admin:participants_participant_add", "permissions": ("participants.add_participant",), "default": True},
     {"id": "participant-directory", "label": "Participant directory", "route": "participants:staff-directory", "permissions": ("participants.view_participant",), "default": True},

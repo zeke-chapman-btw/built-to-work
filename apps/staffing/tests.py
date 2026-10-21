@@ -247,7 +247,7 @@ class Staffing9CTests(TestCase):
         self.assertContains(self.client.get(reverse('staffing:staff-event',args=[self.event.pk])),'csrfmiddlewaretoken')
     def test_navigation_discovery_preserves_six_item_shell_and_gear(self):
         self.staff_login(); r=self.client.get('/internal/'); self.assertContains(r,'EVENTS'); self.assertContains(r,'Personal settings'); self.assertContains(self.client.get('/internal/workspaces/events/'),'My staff schedule')
-        self.client.force_login(self.admin,backend='django.contrib.auth.backends.ModelBackend'); r=self.client.get('/internal/workspaces/operations/'); self.assertContains(r,'Staff directory'); self.assertContains(r,'Staff availability requests')
+        self.client.force_login(self.admin,backend='django.contrib.auth.backends.ModelBackend'); self.assertContains(self.client.get('/internal/workspaces/administration/'),'Staff directory'); self.assertContains(self.client.get('/internal/workspaces/events/'),'Staff availability requests')
     def test_staff_data_not_added_to_offline_registration_contract(self):
         from apps.events.downsync import EVENT_FIELDS
         for field in ['signup_deadline','staff_assignments','staff_availability','staff_profiles']: self.assertNotIn(field,EVENT_FIELDS)

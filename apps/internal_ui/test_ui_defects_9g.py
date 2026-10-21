@@ -172,7 +172,7 @@ class NavigationAndHeading9GTests(TestCase):
         for query in ['', 'no-synthetic-match']:
             response = self.client.get(reverse('participants:staff-directory'), {'q': query})
             self.assertEqual(response.status_code, 200)
-            self.assertContains(response, '<h1>Participants</h1>', html=True)
+            self.assertContains(response, '<h1 class="page-title">Participants</h1>', html=True)
             self.assertEqual(sum(tag == 'h1' for tag, attrs in Elements(response.content.decode()).elements), 1)
             self.assertContains(response, 'name="q"')
 

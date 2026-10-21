@@ -73,7 +73,7 @@ def task_edit(request,task_id=None,event_id=None):
             messages.success(request, "Task saved.")
             return redirect(task_destination(request,saved))
     back = reverse("operations:task", args=[obj.pk]) if task_id else reverse("operations:tasks")
-    return form_page(request,form,"Edit task" if task_id else "Create task",back)
+    return form_page(request,form,"Edit task" if task_id else "Add Task",back)
 
 @staff_view
 def task_status(request,task_id):

@@ -8,7 +8,7 @@
 <script src="{% static 'internal/js/notifications.js' %}" defer></script>
 <script src="{% static 'internal/js/task_create.js' %}" defer></script>
 <script src="{% static 'internal/js/shell.js' %}" defer></script>{% block extra_head %}{% endblock %}
-</head><body class="internal-app{% if floating_task_create_url %} has-task-create{% endif %}{% block body_class %}{% endblock %}">
+<link rel="stylesheet" href="{% static 'internal/css/build10a.css' %}"></head><body class="internal-app{% if floating_task_create_url %} has-task-create{% endif %}{% if event %} has-event-context{% endif %}{% block body_class %}{% endblock %}">
 <a class="skip-link" href="#main-content">Skip to main content</a>
 <aside class="sidebar" id="internal-sidebar" aria-label="Main navigation">
   <nav class="workspace-nav" aria-label="Workspaces">
@@ -22,10 +22,10 @@
   <header class="topbar"><button class="menu-toggle" type="button" aria-label="Open navigation" aria-controls="internal-sidebar" aria-expanded="false" data-menu-toggle>☰</button><a class="topbar-brand" href="{% url 'internal:home' %}" aria-label="Built to Work home"><img class="brand-logo" src="{% static 'internal/images/built-to-work-linear.svg' %}" alt="Built to Work"></a><span class="portal-tagline">POWERING THE AMERICAN WORKFORCE</span>{% include 'operations/notification_bell.html' %}<form class="sign-out-form" method="post" action="{% url 'admin:logout' %}">{% csrf_token %}<button class="sign-out" type="submit">Sign out</button></form></header>
   <main id="main-content">
     {% if messages %}<div class="messages" aria-live="polite">{% for message in messages %}<p class="alert">{{ message }}</p>{% endfor %}</div>{% endif %}
-    {% block page_heading %}<header class="page-header"><div><p class="eyebrow">BUILT TO WORK</p><h1>{{ page_title|default:'Dashboard' }}</h1>{% if page_description %}<p class="page-description">{{ page_description }}</p>{% endif %}</div><div class="page-actions">{% block page_actions %}{% endblock %}</div></header>{% endblock %}
+    {% block page_heading %}<header class="page-header"><div><h1 class="{% if event or participant or task or profile or record %}record-title{% else %}page-title{% endif %}">{{ page_title|default:'Dashboard' }}</h1></div><div class="page-actions">{% block page_actions %}{% endblock %}</div></header>{% endblock %}
     {% block workspace_tabs %}{% endblock %}
     {% block content %}{% endblock %}
-    {% if floating_task_create_url %}<a class="button button-primary global-task-create" data-task-create data-global-task-create href="{{ floating_task_create_url }}">+ Create Task</a>{% endif %}
+    {% if floating_task_create_url and not task_action_in_event_header %}<a class="button button-primary global-task-create" data-task-create data-global-task-create href="{{ floating_task_create_url }}">+ Add Task</a>{% endif %}
   </main><footer>Built to Work · Internal workspace</footer>
 </div><button class="scrim" type="button" aria-label="Close navigation" data-scrim hidden></button>
 {% include 'operations/task_dialog.html' %}</body></html>

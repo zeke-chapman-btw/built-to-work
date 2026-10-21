@@ -212,4 +212,4 @@ class TaskFoundation9G2ATests(TestCase):
     def test_invalid_form_feedback_and_single_page_heading(self):
         self.login(self.creator);r=self.client.post('/operations/tasks/create/',{'revision':'new','title':''})
         self.assertEqual(r.status_code,400);self.assertContains(r,'Please review the highlighted fields',status_code=400)
-        self.assertEqual(r.content.count(b'<h1>'),1);self.assertContains(r,'role="alert"',status_code=400)
+        self.assertEqual(r.content.count(b'<h1'),1);self.assertContains(r,'role="alert"',status_code=400)

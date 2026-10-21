@@ -1,7 +1,7 @@
 {% extends "internal/base.html" %}
 {% block title %}Ticket recovery | Built to Work{% endblock %}
-{% block content %}
-<section class="page-stack"><div class="page-header"><div><p class="eyebrow">STAFF</p><h1>Ticket recovery</h1></div></div>
+{% block page_heading %}{% endblock %}{% block content %}
+<section class="page-stack"><div class="page-header"><div><p class="eyebrow">STAFF</p><h1 class="page-title">Ticket recovery</h1></div></div>
 <div class="card"><form method="get"><label>Ticket number, participant name, phone, or email
 <input name="q" value="{{ query }}" maxlength="120"></label>
 <label>Event<select name="event"><option value="">All events</option>{% for event in events %}<option value="{{ event.pk }}" {% if event_id == event.pk|stringformat:"s" %}selected{% endif %}>{{ event.name }}</option>{% endfor %}</select></label>

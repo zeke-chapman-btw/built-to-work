@@ -63,7 +63,7 @@ class HomeDashboardPhaseOneTests(TestCase):
         staff = get_user_model().objects.create_user('limited-layout', password='test-password', is_staff=True)
         self.client.force_login(staff, backend='django.contrib.auth.backends.ModelBackend')
         response = self.client.get(reverse('internal:home'))
-        self.assertEqual([a['label'] for a in response.context['quick_actions']], ['Create Task', 'Personal settings'])
+        self.assertEqual([a['label'] for a in response.context['quick_actions']], ['Add Task', 'Personal settings'])
         self.assertNotContains(response, 'href="'+reverse('events:event_create')+'"')
         self.assertNotContains(response, 'href="'+reverse('participants:staff-directory')+'"')
         staff.user_permissions.add(Permission.objects.get(content_type__app_label='events', codename='view_event'))

@@ -27,12 +27,13 @@ class WorkspaceFinalizationTests(TestCase):
         self.assertEqual(response.context["settings_link"]["url"], reverse("internal:settings"))
         self.assertContains(response, 'aria-label="Personal settings"')
         self.assertContains(response, "data-notification-bell", count=1)  # Native bell disclosure; workspace navigation remains direct.
-        for workspace_id in ("events", "participants", "operations", "customers", "administration"):
+        self.assertContains(response, reverse("events:event_list"))
+        for workspace_id in ("participants", "operations", "customers", "administration"):
             self.assertContains(response, reverse("internal:workspace", kwargs={"workspace_id": workspace_id}))
 
     def test_assessment_workflow_is_under_operations(self):
         links = visible_workspace_links(self.user, "operations")
-        quiz = next(item for item in links if item["label"] == "Quizzes and tests")
+        quiz = next(item for item in links if item["label"] == "Quizzes & Tests")
         self.assertEqual(quiz["url"], reverse("assessments:dashboard"))
         self.assertNotIn("assessments", [item["id"] for item in visible_workspaces(self.user)])
 

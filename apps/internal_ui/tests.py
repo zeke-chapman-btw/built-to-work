@@ -61,7 +61,9 @@ class InternalShellTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, "POWERING THE AMERICAN WORKFORCE")
                 self.assertContains(response, "internal-sidebar")
-                if workspace_id == "customers":
+                if workspace_id == "operations":
+                    self.assertContains(response, "operations-home")
+                elif workspace_id == "customers":
                     self.assertContains(response, "PLANNED")
                 else:
                     self.assertContains(response, "workspace-card")
@@ -78,7 +80,7 @@ class InternalShellTests(TestCase):
         event_list = self.client.get(reverse("events:event_list"))
         self.assertEqual(event_list.status_code, 200)
         self.assertContains(event_list, "internal-sidebar")
-        self.assertContains(event_list, 'href="/internal/workspaces/events/"')
+        self.assertContains(event_list, 'href="/events/"')
 
     def test_unknown_workspace_is_not_exposed(self):
         user = self.make_staff('unknown-staff')

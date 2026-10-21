@@ -1,7 +1,7 @@
 {% extends "internal/base.html" %}{% load static %}{% block extra_head %}<link rel="stylesheet" href="{% static 'internal/css/participant_workflow.css' %}">{% endblock %}
-{% block content %}<div class="content-admin participant-workflow">
+{% block page_heading %}{% endblock %}{% block content %}<div class="content-admin participant-workflow">
 <section class="card">
-  <h1>Participant documents</h1>
+  <h1 class="page-title">Participant documents</h1>
   <p>Search for a participant to review their private supporting documents.</p>
   <form method="get" class="mb-4"><label for="q">Name, email, or phone</label><input id="q" name="q" value="{{ query }}"><button type="submit">Search</button></form>
   <ul>{% for person in participants %}<li><a href="{% url 'participants:staff-participant-documents' person.pk %}">{{ person.first_name }} {{ person.last_name }}</a> — {{ person.contact_email|default:person.contact_phone }}</li>{% empty %}<li>No participants found.</li>{% endfor %}</ul>

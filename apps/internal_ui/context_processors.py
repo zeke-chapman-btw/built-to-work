@@ -9,4 +9,5 @@ def workspace_navigation(request):
     creating_task = bool(match and match.namespace == "operations" and match.url_name in (
         "quick-create", "quick-create-event", "quick-create-participant", "task-add", "event-task-add"))
     return {"navigation": visible_workspaces(user, request.path),
-            "task_creation_enabled": not creating_task, **shell_context(user)}
+            "task_creation_enabled": not creating_task,
+            "task_action_in_event_header": bool(match and (match.namespace,match.url_name) in (("events","event_detail"),("staffing","event"),("operations","event"),("workdays","event"),("event_reports","detail"))), **shell_context(user)}

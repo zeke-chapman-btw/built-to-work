@@ -64,7 +64,7 @@ class FinalRefinementTests(TestCase):
             priority='normal', status='todo', due_date=timezone.localdate()-timedelta(days=1))
         response = self.client.get(reverse('operations:updates'))
         self.assertEqual(reverse('operations:updates'), '/operations/tasks/updates/')
-        self.assertContains(response, '<h1>Notifications</h1>', html=True)
+        self.assertContains(response, '<h1 class="page-title">Notifications</h1>', html=True)
         self.assertContains(response, 'Live task attention')
         self.assertContains(response, '1 overdue')
         self.assertEqual(TaskNotification.objects.count(), 0)
@@ -115,10 +115,10 @@ class FinalRefinementTests(TestCase):
                 response = self.client.get(reverse(route))
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, 'data-global-task-create', count=1)
-                self.assertContains(response, '>+ Create Task</a>', count=1)
+                self.assertContains(response, '>+ Add Task</a>', count=1)
         for workspace in ('operations', 'customers', 'administration'):
             self.assertContains(self.client.get(reverse('internal:workspace', args=[workspace])), 'data-global-task-create', count=1)
-        self.assertNotContains(self.client.get(reverse('operations:tasks')), '+ Add Task')
+        self.assertContains(self.client.get(reverse('operations:tasks')), '+ Add Task', count=1)
 
     def test_excluded_users_cannot_render_global_action_even_with_override(self):
         users = [AnonymousUser(), get_user_model()(is_active=True, is_staff=False), get_user_model()(is_active=False, is_staff=True)]

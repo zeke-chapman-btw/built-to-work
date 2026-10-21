@@ -153,7 +153,7 @@ class EventManagement9BTests(TestCase):
         self.assertEqual(len(response.context['events']),3); self.assertContains(response,'q=SYNTHETIC')
     def test_detail_has_only_meaningful_sections_and_scoped_styles(self):
         event=self.create(); response=self.client.get(reverse('events:event_detail',args=[event.pk]))
-        self.assertContains(response,'event-section'); self.assertContains(response,'event_management.css'); self.assertNotContains(response,'Assign staff'); self.assertContains(response, reverse('event_reports:detail',args=[event.pk]))
+        self.assertContains(response,'event-unified-tabs'); self.assertContains(response,'event_management.css'); self.assertNotContains(response,'Assign staff'); self.assertContains(response, reverse('event_reports:detail',args=[event.pk]))
         self.assertNotContains(response,'Experience Overview')
         self.assertContains(self.client.get(reverse('events:event_detail',args=[event.pk]),{'section':'results'}),'Experience Overview')
     def test_new_metadata_is_not_silently_added_to_offline_wire_contract(self):
