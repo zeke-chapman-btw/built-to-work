@@ -3,7 +3,7 @@ from urllib.parse import urlencode, urlsplit, parse_qsl
 from datetime import timedelta
 import uuid
 from django.db.models import Q, Count, Case, When, Value, IntegerField, F
-from django.urls import reverse
+from django.urls import reverse, resolve, Resolver404
 from django.utils import timezone
 from . import task_access
 from .models import Task
@@ -18,8 +18,17 @@ def return_path(raw=''):
         parts = urlsplit(raw)
     except ValueError:
         return fallback
-    if parts.scheme or parts.netloc or parts.path not in (fallback, reverse('operations:my-tasks')):
+    if parts.scheme or parts.netloc:
         return fallback
+    if parts.path not in (fallback, reverse('operations:my-tasks')):
+        try:
+            match = resolve(parts.path)
+        except Resolver404:
+            return fallback
+        if match.view_name != 'operations:event' or match.kwargs.get('section') != 'tasks':
+            return fallback
+        # Destination access remains enforced by the Event Tasks view.
+        return parts.path
     pairs = [(k,v[:200]) for k,v in parse_qsl(parts.query) if k in FILTER_KEYS]
     return parts.path + ('?' + urlencode(pairs) if pairs else '')
 

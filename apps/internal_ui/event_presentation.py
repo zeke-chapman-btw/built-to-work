@@ -45,8 +45,11 @@ def event_tabs(user, event):
     elif workday_manager(user):
         add("staff", "Staff", "workdays:event", [event.pk])
     from apps.operations.template_services import can_view_setup
-    if event_tools(user, event) or can_view_setup(user):
-        add("operations", "Operations", "events:event_detail", [event.pk], "?section=operations")
+    from apps.operations.execution_services import can_view as can_view_execution
+    if event_tools(user,event) or can_view_setup(user):
+        add("operations","Operations","events:event_detail",[event.pk],"?section=operations")
+    elif can_view_execution(user,event):
+        add("operations","Operations","operations:execution",[event.pk])
     if view_event and can_view_event_operations(user):
         add("results", "Results", "events:event_detail", [event.pk], "?section=results")
     if view_event and user.has_perms(("events.view_eventregistration", "participants.view_participant")):
@@ -55,7 +58,8 @@ def event_tabs(user, event):
         add("expenses", "Expenses", "event_reports:detail", [event.pk], "?section=expenses")
         add("report", "Report", "event_reports:detail", [event.pk], "?section=report")
     for section, kind in (("tasks", "tasks"), ("notes", "event_notes"), ("documents", "event_documents")):
-        if manager(user, kind) or assigned:
+        from apps.operations.services import primary_event_manager
+        if manager(user, kind) or assigned or (kind=="tasks" and primary_event_manager(user,event)):
             add(section, section.title(), "operations:event", [event.pk, section])
     return tabs
 
@@ -66,7 +70,8 @@ def operations_home(user):
     visible = events_for(user)
     upcoming = list(visible.filter(status="upcoming", start_at__gt=now).order_by("start_at", "pk")[:5])
     def present(event):
-        route = "events:event_detail" if user.has_perm("events.view_event") else "staffing:staff-event"
+        from apps.operations.services import primary_event_manager
+        route="events:event_detail" if user.has_perm("events.view_event") else "operations:execution" if primary_event_manager(user,event) else "staffing:staff-event"
         return dict(event=event, url=reverse(route, args=[event.pk]))
     featured = present(upcoming[0]) if upcoming else None
     return dict(featured=featured, other_events=[present(e) for e in upcoming[1:]],

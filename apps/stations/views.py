@@ -3,6 +3,8 @@ import os
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count
+from django.core.paginator import Paginator
+from apps.operations.presentation import list_page
 from django.http import Http404, HttpResponse, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -21,12 +23,14 @@ from .services import (
 @staff_required
 def station_list(request):
     stations = Station.objects.annotate(assignment_count=Count("event_assignments", distinct=True)).prefetch_related("event_assignments__event")
-    return render(request, "stations/station_list.html", {"stations": stations, "page_title": "Stations"})
+    stations,filters=list_page(request,stations,search_fields=("name","code","location","description"),
+        active_field="is_active",status_choices=(("active","Active"),("inactive","Inactive")))
+    return render(request, "stations/station_list.html", {"stations": stations, "page_title": "Stations",**filters})
 
 
 @staff_required
 def station_create(request):
-    form = StationForm(request.POST or None)
+    form = StationForm(request.POST if request.method=="POST" else None)
     if request.method == "POST" and form.is_valid():
         station = form.save()
         messages.success(request, "Station created.")
@@ -37,7 +41,7 @@ def station_create(request):
 @staff_required
 def station_edit(request, station_id):
     station = get_object_or_404(Station, pk=station_id)
-    form = StationForm(request.POST or None, instance=station)
+    form = StationForm(request.POST if request.method=="POST" else None, instance=station)
     if request.method == "POST" and form.is_valid():
         station = form.save()
         if not station.is_active:
@@ -50,13 +54,13 @@ def station_edit(request, station_id):
 @staff_required
 def station_detail(request, station_id):
     station = get_object_or_404(Station, pk=station_id)
-    form = EventStationForm(request.POST or None)
+    form = EventStationForm(request.POST if request.method=="POST" else None)
     if request.method == "POST" and form.is_valid():
         assignment, created = assign_station(event=form.cleaned_data["event"], station=station, actor=request.user)
         messages.success(request, "Station assigned to event." if created else "This station is already assigned to that event.")
         return redirect("stations:detail", station_id=station.pk)
     assignments = station.event_assignments.select_related("event").all()
-    return render(request, "stations/station_detail.html", {"station": station, "assignments": assignments, "assignment_form": form, "page_title": "Stations"})
+    return render(request, "stations/station_detail.html", {"station": station, "assignments": Paginator(assignments,25).get_page(request.GET.get("page")), "assignment_form": form, "page_title": station.name})
 
 
 @staff_required
@@ -74,7 +78,7 @@ def station_assign(request, station_id):
         assignment.save()
         messages.success(request, "Event assignment saved." if created else "Event assignment updated.")
     else:
-        messages.error(request, "Choose a valid event and assignment configuration.")
+        return render(request,"stations/station_detail.html",{"station":station,"assignments":Paginator(station.event_assignments.select_related("event").all(),25).get_page(1),"assignment_form":form,"page_title":station.name},status=400)
     return redirect("stations:detail", station_id=station.pk)
 
 

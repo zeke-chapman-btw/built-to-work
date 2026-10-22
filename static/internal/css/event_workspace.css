@@ -1,0 +1,178 @@
+/* Event workspace patterns. Loaded by the internal shell only; kiosk/public shells are independent. */
+.internal-app:is(.has-event-context,.has-event-resource-context){--event-space:16px}
+.internal-app:is(.has-event-context,.has-event-resource-context) #main-content>.btw-tabs,
+.internal-app:is(.has-event-context,.has-event-resource-context) .staffing-page>.btw-tabs{max-width:var(--btw-event-width,920px);margin-inline:auto}
+.internal-app:is(.has-event-context,.has-event-resource-context) :is(.event-workspace-stack,.workdays-page,.reports-page){display:grid;gap:16px;min-width:0}
+.internal-app:is(.has-event-context,.has-event-resource-context) :is(.event-workspace-stack,.workdays-page,.reports-page)>.card{margin:0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .card{padding:18px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-panel-heading{margin-bottom:16px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-panel-heading h2{margin:0;font:600 15px/1.4 var(--font)}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-panel-heading p{font-size:12px;margin:5px 0 0;color:var(--muted)}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-day-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:10px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-day-tile{padding:12px;border:1px solid var(--line);border-radius:8px;background:#fafbfc}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-day-tile.needs-coverage{border-color:#e5c991;background:#fffcf5}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-day-tile h3{margin:0 0 7px;font-size:12px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-day-tile p{margin:3px 0;font-size:12px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-day-tile p strong{font-size:17px;font-weight:600}
+.internal-app:is(.has-event-context,.has-event-resource-context) :is(.event-assignment-item,.event-feed-row){padding:14px 0;border-bottom:1px solid var(--line);min-width:0}
+.internal-app:is(.has-event-context,.has-event-resource-context) :is(.event-assignment-item,.event-feed-row):last-child{border-bottom:0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .staffing-record{padding:0;border:0;margin:0;box-shadow:none}
+.internal-app:is(.has-event-context,.has-event-resource-context) .staffing-record h3{margin:0 0 6px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .staffing-date-list{display:flex;flex-wrap:wrap;gap:6px;padding:0;list-style:none}
+.internal-app:is(.has-event-context,.has-event-resource-context) .staffing-date-list li{border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:12px;background:#fafafa}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-record-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px 16px;margin-top:10px;font-size:13px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-record-actions>a{display:inline-flex;align-items:center;min-height:36px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .staffing-day-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .staffing-day{min-width:0;background:#fafbfc;border:1px solid var(--line);border-radius:8px;padding:12px;margin:0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .staffing-day legend{max-width:100%;font-size:13px;font-weight:600}
+.internal-app:is(.has-event-context,.has-event-resource-context) .staffing-time-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .staffing-time-grid .field{min-width:0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .staffing-time-grid input{width:100%;min-width:0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-day-selector{display:flex;overflow-x:auto;gap:8px;padding:0 0 8px;max-width:100%;min-width:0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-day-selector a{display:inline-flex;flex:0 0 auto;align-items:center;min-height:38px;padding:7px 12px;border:1px solid var(--line);border-radius:7px;text-decoration:none;color:var(--ink);font-size:12px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-day-selector [aria-current=date]{background:#fff1f3;color:#b20d24;border-color:#d72b40;font-weight:600}
+.internal-app:is(.has-event-context,.has-event-resource-context) :is(.btw-form-card,.event-confirm){width:100%;min-width:0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-form-card{max-width:760px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-form-card form{display:grid;gap:16px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-form-card .field{margin:0;min-width:0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-field label{display:block}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-field-checkbox{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-field-checkbox label{margin:0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-field-checkbox :is(small,div){flex-basis:100%}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-field :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea){width:100%;max-width:100%}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-required{color:#a51025}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-form-errors{padding:12px 16px;background:#fff3f4;border:1px solid #bb3344;border-radius:8px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-form-errors h3{margin:0 0 8px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-form-errors a{color:#94152a}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-form-actions{display:flex;justify-content:flex-end;align-items:center;gap:10px;padding-top:16px;border-top:1px solid var(--line)}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-registration-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.internal-app:is(.has-event-context,.has-event-resource-context) .ticket-image{width:min(240px,100%);height:auto}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-registration-grid form{display:grid;gap:12px;min-width:0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-registration-grid .button{justify-self:start}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-page-context{margin:0 0 16px;font:600 18px/1.4 var(--font)}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-disclosure{min-width:0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-disclosure>summary{font-size:13px;min-height:38px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-disclosure[open]>summary{margin-bottom:8px}
+.internal-app:is(.has-event-context,.has-event-resource-context) :is(.btw-table-wrap,.event-feed-row){overflow-wrap:anywhere}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-table-wrap table{min-width:540px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-expense-amount{font-variant-numeric:tabular-nums;white-space:nowrap}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-cost-caption{padding:12px;background:#fafbfc;border:1px solid var(--line);border-radius:8px;font-size:13px}
+.internal-app:is(.has-event-context,.has-event-resource-context) :is(.btw-form-card,.btw-field,.btw-disclosure,.event-record-actions,.event-day-selector) :focus-visible{outline:3px solid var(--btw-focus-color,#155eb6);outline-offset:3px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-workspace-stack .btw-empty-state{padding:20px 12px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-workspace-stack .btw-empty-state p{font-size:13px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-note-body{white-space:normal;overflow-wrap:anywhere}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-note-composer textarea{min-height:100px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-note-composer form{display:grid;gap:12px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-note-composer .field{margin:0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .ops-template-toolbar{gap:10px;flex-wrap:wrap}
+@media(max-width:640px){
+ .internal-app:is(.has-event-context,.has-event-resource-context) .card{padding:14px}
+ .internal-app:is(.has-event-context,.has-event-resource-context) :is(.staffing-day-grid,.staffing-time-grid,.event-registration-grid){grid-template-columns:minmax(0,1fr)}
+ .internal-app:is(.has-event-context,.has-event-resource-context) .event-day-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .internal-app:is(.has-event-context,.has-event-resource-context) :is(.event-record-actions>a,.event-day-selector a,.btw-disclosure>summary){min-height:44px}
+ .internal-app:is(.has-event-context,.has-event-resource-context) .btw-form-actions{flex-wrap:wrap}
+ .internal-app:is(.has-event-context,.has-event-resource-context) .btw-field :is(input:not([type=checkbox]):not([type=radio]),select,textarea){font-size:16px;min-height:44px}
+}
+@media(prefers-reduced-motion:reduce){.internal-app:is(.has-event-context,.has-event-resource-context) *{scroll-behavior:auto}}
+
+/* Compact record and entry patterns after desktop review. */
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .staffing-record p{margin:5px 0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .staffing-date-list{margin:8px 0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .btw-disclosure>summary{padding:5px 0;min-height:32px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .event-record-actions{margin-top:4px}
+.internal-app:is(.has-event-context,.has-event-resource-context) :is(.workdays-page,.reports-page)>.btw-form-card{margin-inline:auto}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-form-card textarea{height:96px;min-height:80px;resize:vertical}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-entry-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-entry-grid>.btw-field{grid-column:1/-1}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-entry-grid>:is(.field-amount,.field-expense_date,.field-unit_value,.field-quantity){grid-column:auto}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-field-label{display:block;font-size:13px;font-weight:500;margin-bottom:6px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-source-navigation{padding:0;margin:0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-source-navigation>.warning{margin:0 0 10px;padding:7px 12px;font-size:12px}
+@media(max-width:640px){
+ .internal-app:is(.has-event-context,.has-event-resource-context) .event-entry-grid{grid-template-columns:minmax(0,1fr)}
+ .internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .btw-disclosure>summary{min-height:44px}
+}
+
+.internal-app.has-event-resource-context{--btw-event-width:920px}
+.internal-app.has-event-resource-context .events-page{max-width:920px;margin-inline:auto}
+.internal-app.has-event-resource-context .card{border-radius:12px;box-shadow:none}
+.internal-app.has-event-resource-context .card h2{font:600 15px/1.4 var(--font)}
+.internal-app.has-event-resource-context .ops-template-form{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+.internal-app.has-event-resource-context .btw-field :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea){font:400 14px/1.4 var(--font)}
+.internal-app.has-event-resource-context .ops-template-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-registration-grid{margin-bottom:16px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-registration-grid>.card{margin:0;height:100%}
+.internal-app.has-event-resource-context .page-header h1{font:700 24px/1.35 var(--font)}
+.internal-app.has-event-resource-context.has-task-create .main-column{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+.internal-app.has-event-resource-context.has-task-create .main-column>.topbar{flex-shrink:0}
+.internal-app.has-event-resource-context.has-task-create #main-content{flex:1;min-height:0;overflow:auto;padding-bottom:24px;scrollbar-gutter:stable}
+.internal-app.has-event-resource-context.has-task-create .main-column>footer{flex:0 0 64px;min-height:64px;padding:12px 24px;display:flex;align-items:center;background:var(--surface);border-top:1px solid var(--line)}
+.internal-app.has-event-resource-context a.global-task-create{bottom:10px;min-height:44px}
+
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-info-stack>.card{padding:0}
+
+/* Daily role coverage and compact confirmed-staff cards. */
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-day-tiles{display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-day-tile{flex:0 1 180px;min-width:150px;max-width:220px;padding:12px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-day-tile.coverage-complete{border-color:#9bcbb0;background:#f1faf5}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-coverage-role{display:grid;grid-template-columns:1fr auto auto;gap:4px 8px;margin-top:8px;font-size:12px;align-items:center}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-coverage-role strong{font-size:15px;font-variant-numeric:tabular-nums}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-coverage-role .coverage-state{font-size:10px;color:#865619;white-space:nowrap}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-coverage-role.is-filled,.internal-app:is(.has-event-context,.has-event-resource-context) .event-coverage-role.is-filled .coverage-state{color:#22653d}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-day-state{color:#22653d;font-weight:600;border-top:1px solid #c7e2d1;padding-top:7px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-coverage-review{color:#865619;border-top:1px solid var(--line);padding-top:7px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-coverage-help{margin-top:12px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-list{display:grid;gap:10px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item{padding:14px;border:1px solid var(--line);border-radius:10px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;background:var(--surface,#fff)}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item:last-child{border-bottom:1px solid var(--line)}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .event-record-actions{align-self:start;margin-top:0;font-size:12px;gap:6px 12px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .event-record-actions a{min-height:36px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .staffing-record h3{font:600 14px/1.5 var(--font)}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-role-badge{display:inline-flex;padding:3px 8px;border-radius:6px;background:#f0eafa;color:#65448b;font-size:11px;font-weight:600}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-role-badge.is-driver{background:#e8f1fd;color:#275a91}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-role-badge.needs-role-review{background:#fff4df;color:#865619}
+.internal-app:is(.has-event-context,.has-event-resource-context) .staffing-date-list li{padding:3px 7px;border:0;background:#f1f3f5;font-size:11px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-times{padding-left:18px;font-size:12px;line-height:1.8}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-needs-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-needs-day{min-width:0;padding:12px;border:1px solid var(--line);border-radius:8px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-needs-day legend{font-size:13px;font-weight:600;padding:0 4px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-needs-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .btw-disclosure .field+.field{margin-top:14px}
+@media(max-width:640px){
+ .internal-app:is(.has-event-context,.has-event-resource-context) .event-day-tile{flex:1 1 calc(50% - 10px);min-width:0;max-width:none}
+ .internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item{grid-template-columns:minmax(0,1fr)}
+ .internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .event-record-actions a{min-height:44px}
+ .internal-app:is(.has-event-context,.has-event-resource-context) .event-needs-grid{grid-template-columns:minmax(0,1fr)}
+}
+
+/* Keep row controls quiet until requested, without losing correction/history access. */
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .staffing-record>h3{display:inline}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .staffing-record>p:first-of-type{display:inline;margin-left:8px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .staffing-date-list{margin:8px 0 3px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-expense-table table{min-width:440px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-expense-meta{margin:5px 0;font-size:11px;color:var(--muted);line-height:1.5}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-row-actions>summary{white-space:nowrap;font-weight:500}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-row-actions .btw-toolbar{display:grid;gap:8px;justify-items:start;padding:5px 0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-row-actions .btw-toolbar a{display:inline-flex;align-items:center;min-height:36px;font-size:12px}
+@media(max-width:640px){.internal-app:is(.has-event-context,.has-event-resource-context) .event-row-actions .btw-toolbar a{min-height:44px}}
+
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .event-record-actions{gap:4px;flex-wrap:nowrap}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .event-icon-action{width:36px;min-height:36px;justify-content:center;border:1px solid var(--line);border-radius:7px;color:var(--ink)}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .event-icon-action:hover{background:#f2f4f6;border-color:#9aa4b2}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .event-icon-action svg{width:16px;height:16px;flex-shrink:0}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .staffing-record{min-width:0;overflow-wrap:anywhere}
+@media(max-width:640px){
+ .internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item{grid-template-columns:minmax(0,1fr) auto;gap:8px}
+ .internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .event-icon-action{width:44px;min-height:44px}
+ .internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .staffing-record>p:first-of-type{display:block;margin:5px 0}
+}
+
+.internal-app.has-event-context .workdays-page>.btw-tabs-secondary{margin:0}
+.internal-app.has-event-context .workdays-page>.workday-actions{margin:0}
+
+.internal-app.has-event-context .event-roster-table table{min-width:0;width:100%}
+
+/* Constrain direct navigation inside shared resource grids on small screens. */
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-workspace-stack{grid-template-columns:minmax(0,1fr)}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-workspace-stack>.event-navigation{min-width:0;max-width:100%}

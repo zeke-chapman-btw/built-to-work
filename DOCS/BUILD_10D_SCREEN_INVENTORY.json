@@ -1,0 +1,2525 @@
+{
+  "build": "10D",
+  "repository": "zeke-chapman-btw/built-to-work",
+  "branch": "build-10d-operations-execution",
+  "baseline_commit": "0ae49d2391864b0d76bb1e66eca3a514a6ed4c3e",
+  "delivery_commit": "Commit containing this inventory",
+  "evidence_note": "Browser evidence names identify screenshots in the local Build 10D review package, excluded from Git. A related-state/shared-template or source review is identified separately from direct browser evidence. No physical device certification is implied.",
+  "ui_standard": "DOCS/BTW_UI_STANDARD.md",
+  "screens": [
+    {
+      "route": "stations/",
+      "name": "stations:list",
+      "view": "apps.stations.views.station_list",
+      "source": "apps/stations/views.py",
+      "templates": [
+        "stations/station_list.html"
+      ],
+      "purpose": "station list",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "stations-list-mobile",
+        "stations-list-desktop",
+        "station-pagination-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "stations/create/",
+      "name": "stations:create",
+      "view": "apps.stations.views.station_create",
+      "source": "apps/stations/views.py",
+      "templates": [
+        "stations/station_form.html"
+      ],
+      "purpose": "station create",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "station-form-mobile",
+        "station-form-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "stations/<uuid:station_id>/",
+      "name": "stations:detail",
+      "view": "apps.stations.views.station_detail",
+      "source": "apps/stations/views.py",
+      "templates": [
+        "stations/station_detail.html"
+      ],
+      "purpose": "station detail",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "station-detail-mobile",
+        "station-form-mobile",
+        "station-detail-desktop",
+        "station-form-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "stations/<uuid:station_id>/edit/",
+      "name": "stations:edit",
+      "view": "apps.stations.views.station_edit",
+      "source": "apps/stations/views.py",
+      "templates": [
+        "stations/station_form.html"
+      ],
+      "purpose": "station edit",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "station-edit-desktop",
+        "station-edit-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "stations/<uuid:station_id>/assign/",
+      "name": "stations:assign",
+      "view": "apps.stations.views.station_assign",
+      "source": "apps/stations/views.py",
+      "templates": [],
+      "purpose": "station assign",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "POST action; associated bound form/confirmation reviewed, server-side permission and workflow regressions passed.",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "related_confirmation_screen": "stations:detail",
+      "parent_form_evidence": [
+        "station-detail-mobile",
+        "station-form-mobile",
+        "station-detail-desktop",
+        "station-form-desktop"
+      ]
+    },
+    {
+      "route": "stations/assignments/<int:assignment_id>/activate/",
+      "name": "stations:assignment_activate",
+      "view": "apps.stations.views.assignment_activate",
+      "source": "apps/stations/views.py",
+      "templates": [],
+      "purpose": "assignment activate",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "POST action; associated bound form/confirmation reviewed, server-side permission and workflow regressions passed.",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "related_confirmation_screen": "stations:detail",
+      "parent_form_evidence": [
+        "station-detail-mobile",
+        "station-form-mobile",
+        "station-detail-desktop",
+        "station-form-desktop"
+      ]
+    },
+    {
+      "route": "stations/operate/<slug:station_code>/signup/",
+      "name": "stations:kiosk_signup",
+      "view": "apps.stations.views.participant_kiosk_signup",
+      "source": "apps/stations/views.py",
+      "templates": [
+        "stations/kiosk_signup.html"
+      ],
+      "purpose": "participant kiosk signup",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "stations/operate/<slug:station_code>/",
+      "name": "stations:kiosk",
+      "view": "apps.stations.views.participant_kiosk",
+      "source": "apps/stations/views.py",
+      "templates": [
+        "stations/kiosk_home.html"
+      ],
+      "purpose": "participant kiosk",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "stations/service/<slug:station_code>/",
+      "name": "stations:service_menu",
+      "view": "apps.stations.views.service_menu",
+      "source": "apps/stations/views.py",
+      "templates": [
+        "stations/service_menu.html"
+      ],
+      "purpose": "service menu",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "stations/service/<slug:station_code>/start-test/",
+      "name": "stations:service_start_test",
+      "view": "apps.stations.views.service_start_test",
+      "source": "apps/stations/views.py",
+      "templates": [
+        "stations/service_menu.html"
+      ],
+      "purpose": "service start test",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "stations/service/<slug:station_code>/test/<uuid:session_id>/new/",
+      "name": "stations:service_start_new_test",
+      "view": "apps.stations.views.service_start_new_test",
+      "source": "apps/stations/views.py",
+      "templates": [],
+      "purpose": "service start new test",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "stations/service/<slug:station_code>/test/<uuid:session_id>/exit/",
+      "name": "stations:service_exit_test",
+      "view": "apps.stations.views.service_exit_test",
+      "source": "apps/stations/views.py",
+      "templates": [],
+      "purpose": "service exit test",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "stations/service/operate/<slug:station_code>/",
+      "name": "stations:operate",
+      "view": "apps.stations.views.station_operate",
+      "source": "apps/stations/views.py",
+      "templates": [
+        "stations/operator.html",
+        "stations/station_unconfigured.html"
+      ],
+      "purpose": "station operate",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "stations/sessions/<uuid:session_id>/",
+      "name": "stations:session_detail",
+      "view": "apps.stations.views.session_detail",
+      "source": "apps/stations/views.py",
+      "templates": [
+        "stations/operator.html",
+        "stations/station_unconfigured.html"
+      ],
+      "purpose": "session detail",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "events/offline/",
+      "name": "events:offline-preparations",
+      "view": "apps.events.offline_views.offline_preparations",
+      "source": "apps/events/offline_views.py",
+      "templates": [
+        "events/offline_preparations.html"
+      ],
+      "purpose": "offline preparations",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "offline-list-mobile",
+        "offline-list-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "events/offline/<uuid:preparation_id>/",
+      "name": "events:offline-preparation-detail",
+      "view": "apps.events.offline_views.offline_preparation_detail",
+      "source": "apps/events/offline_views.py",
+      "templates": [
+        "events/offline_preparation_detail.html"
+      ],
+      "purpose": "offline preparation detail",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "offline-detail-mobile",
+        "offline-detail-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "events/offline/<uuid:preparation_id>/activate/",
+      "name": "events:offline-activate",
+      "view": "apps.events.offline_views.offline_activate",
+      "source": "apps/events/offline_views.py",
+      "templates": [],
+      "purpose": "offline activate",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "POST action; associated bound form/confirmation reviewed, server-side permission and workflow regressions passed.",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "related_confirmation_screen": "events:offline-preparation-detail",
+      "parent_form_evidence": [
+        "offline-detail-mobile",
+        "offline-detail-desktop"
+      ]
+    },
+    {
+      "route": "events/offline/<uuid:preparation_id>/register/",
+      "name": "events:offline-register",
+      "view": "apps.events.offline_views.offline_register",
+      "source": "apps/events/offline_views.py",
+      "templates": [
+        "events/offline_register.html"
+      ],
+      "purpose": "offline register",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "events/offline/ticket/<uuid:envelope_id>/",
+      "name": "events:offline-ticket-png",
+      "view": "apps.events.offline_views.offline_ticket_png",
+      "source": "apps/events/offline_views.py",
+      "templates": [],
+      "purpose": "offline ticket png",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "events/offline/ticket/<uuid:envelope_id>/print/",
+      "name": "events:offline-ticket-print",
+      "view": "apps.events.offline_views.offline_print",
+      "source": "apps/events/offline_views.py",
+      "templates": [],
+      "purpose": "offline print",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "events/offline/ticket/<uuid:envelope_id>/pdf/",
+      "name": "events:offline-ticket-pdf",
+      "view": "apps.events.offline_views.offline_ticket_pdf",
+      "source": "apps/events/offline_views.py",
+      "templates": [],
+      "purpose": "offline ticket pdf",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "events/operations/",
+      "name": "events:operations-dashboard",
+      "view": "apps.events.operations_views.operations_dashboard",
+      "source": "apps/events/operations_views.py",
+      "templates": [
+        "events/operations_dashboard.html"
+      ],
+      "purpose": "operations dashboard",
+      "destination": "Platform Tools",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "platform-monitoring-mobile",
+        "platform-monitoring-desktop",
+        "monitoring-retry-confirmation-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "template_resolution": "Missing baseline templates implemented in Build 10D"
+    },
+    {
+      "route": "events/operations/deliveries/<uuid:delivery_id>/retry/",
+      "name": "events:retry-ticket-delivery",
+      "view": "apps.events.operations_views.retry_ticket_delivery",
+      "source": "apps/events/operations_views.py",
+      "templates": [],
+      "purpose": "retry ticket delivery",
+      "destination": "Platform Tools",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "POST action; associated bound form/confirmation reviewed, server-side permission and workflow regressions passed.",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "related_confirmation_screen": "events:operations-dashboard",
+      "parent_form_evidence": [
+        "platform-monitoring-mobile",
+        "platform-monitoring-desktop",
+        "monitoring-retry-confirmation-mobile"
+      ]
+    },
+    {
+      "route": "events/operations/matches/",
+      "name": "events:match-review-list",
+      "view": "apps.events.reconciliation_views.match_review_list",
+      "source": "apps/events/reconciliation_views.py",
+      "templates": [
+        "events/match_review_list.html"
+      ],
+      "purpose": "match review list",
+      "destination": "Platform Tools",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "match-list-mobile",
+        "match-list-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "template_resolution": "Missing baseline templates implemented in Build 10D"
+    },
+    {
+      "route": "events/operations/matches/<uuid:review_id>/",
+      "name": "events:match-review-detail",
+      "view": "apps.events.reconciliation_views.match_review_detail",
+      "source": "apps/events/reconciliation_views.py",
+      "templates": [
+        "events/match_review_detail.html"
+      ],
+      "purpose": "match review detail",
+      "destination": "Platform Tools",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "match-detail-mobile",
+        "match-detail-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "template_resolution": "Missing baseline templates implemented in Build 10D"
+    },
+    {
+      "route": "events/operations/matches/<uuid:review_id>/resolve/",
+      "name": "events:match-review-resolve",
+      "view": "apps.events.reconciliation_views.match_review_resolve",
+      "source": "apps/events/reconciliation_views.py",
+      "templates": [
+        "events/match_review_detail.html"
+      ],
+      "purpose": "match review resolve",
+      "destination": "Platform Tools",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "POST action; associated bound form/confirmation reviewed, server-side permission and workflow regressions passed.",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "template_resolution": "Missing baseline templates implemented in Build 10D",
+      "related_confirmation_screen": "events:match-review-detail",
+      "parent_form_evidence": [
+        "match-detail-mobile",
+        "match-detail-desktop"
+      ]
+    },
+    {
+      "route": "events/operations/matches/<uuid:review_id>/reverse/",
+      "name": "events:match-review-reverse",
+      "view": "apps.events.reconciliation_views.match_review_reverse",
+      "source": "apps/events/reconciliation_views.py",
+      "templates": [
+        "events/match_review_detail.html"
+      ],
+      "purpose": "match review reverse",
+      "destination": "Platform Tools",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "POST action; associated bound form/confirmation reviewed, server-side permission and workflow regressions passed.",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "template_resolution": "Missing baseline templates implemented in Build 10D",
+      "related_confirmation_screen": "events:match-review-detail",
+      "parent_form_evidence": [
+        "match-detail-mobile",
+        "match-detail-desktop"
+      ]
+    },
+    {
+      "route": "operations/templates/",
+      "name": "operations:templates",
+      "view": "apps.operations.template_views.template_list",
+      "source": "apps/operations/template_views.py",
+      "templates": [
+        "operations_templates/list.html"
+      ],
+      "purpose": "template list",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "templates-list-desktop",
+        "templates-list-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/templates/create/",
+      "name": "operations:template-create",
+      "view": "apps.operations.template_views.template_edit",
+      "source": "apps/operations/template_views.py",
+      "templates": [
+        "operations_templates/edit.html"
+      ],
+      "purpose": "template edit",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "template-create-desktop",
+        "template-create-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/templates/revisions/<uuid:revision_id>/",
+      "name": "operations:template-detail",
+      "view": "apps.operations.template_views.template_detail",
+      "source": "apps/operations/template_views.py",
+      "templates": [
+        "operations_templates/detail.html"
+      ],
+      "purpose": "template detail",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "template-detail-desktop",
+        "template-detail-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/templates/revisions/<uuid:revision_id>/edit/",
+      "name": "operations:template-edit",
+      "view": "apps.operations.template_views.template_edit",
+      "source": "apps/operations/template_views.py",
+      "templates": [
+        "operations_templates/edit.html"
+      ],
+      "purpose": "template edit",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "template-edit-desktop",
+        "template-edit-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/templates/revisions/<uuid:revision_id>/actions/<str:action>/",
+      "name": "operations:template-action",
+      "view": "apps.operations.template_views.template_action",
+      "source": "apps/operations/template_views.py",
+      "templates": [
+        "operations_templates/action.html"
+      ],
+      "purpose": "template action",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "template-publish-desktop",
+        "template-retire-desktop",
+        "template-duplicate-desktop",
+        "template-revise-desktop",
+        "template-publish-mobile",
+        "template-retire-mobile",
+        "template-duplicate-mobile",
+        "template-revise-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/setup/events/<uuid:event_id>/apply/<uuid:revision_id>/",
+      "name": "operations:template-apply",
+      "view": "apps.operations.template_views.template_apply",
+      "source": "apps/operations/template_views.py",
+      "templates": [
+        "operations_templates/apply.html"
+      ],
+      "purpose": "template apply",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "template-apply-desktop",
+        "template-apply-verified-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/updates/",
+      "name": "operations:updates",
+      "view": "apps.operations.notification_views.updates",
+      "source": "apps/operations/notification_views.py",
+      "templates": [
+        "operations/updates.html"
+      ],
+      "purpose": "updates",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/updates/read-all/",
+      "name": "operations:updates-read-all",
+      "view": "apps.operations.notification_views.read_all",
+      "source": "apps/operations/notification_views.py",
+      "templates": [],
+      "purpose": "read all",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/updates/<uuid:notification_id>/read/",
+      "name": "operations:updates-read",
+      "view": "apps.operations.notification_views.read",
+      "source": "apps/operations/notification_views.py",
+      "templates": [],
+      "purpose": "read",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/my-tasks/",
+      "name": "operations:my-tasks",
+      "view": "apps.operations.views.task_list",
+      "source": "apps/operations/views.py",
+      "templates": [],
+      "purpose": "task list",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/",
+      "name": "operations:tasks",
+      "view": "apps.operations.views.task_list",
+      "source": "apps/operations/views.py",
+      "templates": [],
+      "purpose": "task list",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/quick-create/",
+      "name": "operations:quick-create",
+      "view": "apps.operations.task_workspace_views.quick_task",
+      "source": "apps/operations/task_workspace_views.py",
+      "templates": [],
+      "purpose": "quick task",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/quick-create/event/<uuid:event_id>/",
+      "name": "operations:quick-create-event",
+      "view": "apps.operations.task_workspace_views.quick_task",
+      "source": "apps/operations/task_workspace_views.py",
+      "templates": [],
+      "purpose": "quick task",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/quick-create/participant/<int:participant_id>/",
+      "name": "operations:quick-create-participant",
+      "view": "apps.operations.task_workspace_views.quick_task",
+      "source": "apps/operations/task_workspace_views.py",
+      "templates": [],
+      "purpose": "quick task",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/record-lookup/",
+      "name": "operations:task-record-lookup",
+      "view": "apps.operations.task_workspace_views.record_lookup",
+      "source": "apps/operations/task_workspace_views.py",
+      "templates": [],
+      "purpose": "record lookup",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Source/automated review; related shared form or prior Event Workspace browser evidence applies",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/create/",
+      "name": "operations:task-add",
+      "view": "apps.operations.views.task_edit",
+      "source": "apps/operations/views.py",
+      "templates": [],
+      "purpose": "task edit",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/<uuid:task_id>/",
+      "name": "operations:task",
+      "view": "apps.operations.views.task_detail",
+      "source": "apps/operations/views.py",
+      "templates": [
+        "operations/task.html"
+      ],
+      "purpose": "task detail",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "closeout-task-completed-desktop",
+        "closeout-task-final-mobile",
+        "closeout-task-final-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/<uuid:task_id>/edit/",
+      "name": "operations:task-edit",
+      "view": "apps.operations.views.task_edit",
+      "source": "apps/operations/views.py",
+      "templates": [],
+      "purpose": "task edit",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/<uuid:task_id>/status/",
+      "name": "operations:task-status",
+      "view": "apps.operations.views.task_status",
+      "source": "apps/operations/views.py",
+      "templates": [],
+      "purpose": "task status",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/<uuid:task_id>/links/",
+      "name": "operations:task-links",
+      "view": "apps.operations.views.task_link_add",
+      "source": "apps/operations/views.py",
+      "templates": [
+        "operations/task_links.html"
+      ],
+      "purpose": "task link add",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/<uuid:task_id>/links/<str:kind>/<uuid:link_id>/remove/",
+      "name": "operations:task-link-remove",
+      "view": "apps.operations.views.task_link_remove",
+      "source": "apps/operations/views.py",
+      "templates": [],
+      "purpose": "task link remove",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/<uuid:task_id>/comments/add/",
+      "name": "operations:comment-add",
+      "view": "apps.operations.views.task_comment",
+      "source": "apps/operations/views.py",
+      "templates": [],
+      "purpose": "task comment",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/<uuid:task_id>/comments/<uuid:comment_id>/edit/",
+      "name": "operations:comment-edit",
+      "view": "apps.operations.views.task_comment",
+      "source": "apps/operations/views.py",
+      "templates": [],
+      "purpose": "task comment",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/<uuid:task_id>/archive/",
+      "name": "operations:task-archive",
+      "view": "apps.operations.views.task_archive",
+      "source": "apps/operations/views.py",
+      "templates": [],
+      "purpose": "task archive",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/tasks/<uuid:task_id>/restore/",
+      "name": "operations:task-restore",
+      "view": "apps.operations.views.task_archive",
+      "source": "apps/operations/views.py",
+      "templates": [],
+      "purpose": "task archive",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/events/",
+      "name": "operations:events",
+      "view": "apps.operations.views.events_index",
+      "source": "apps/operations/views.py",
+      "templates": [
+        "operations/events.html"
+      ],
+      "purpose": "events index",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "event-resource-index-mobile",
+        "event-resource-index-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/events/<uuid:event_id>/tasks/create/",
+      "name": "operations:event-task-add",
+      "view": "apps.operations.views.task_edit",
+      "source": "apps/operations/views.py",
+      "templates": [],
+      "purpose": "task edit",
+      "destination": "Tasks",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Existing dedicated Task UI retained; affected domain regressions passed",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain dedicated Task workspace; verify new managed-closeout guard on relevant writes.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/events/<uuid:event_id>/documents/upload/",
+      "name": "operations:upload",
+      "view": "apps.operations.views.document_upload",
+      "source": "apps/operations/views.py",
+      "templates": [],
+      "purpose": "document upload",
+      "destination": "Event Workspace",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Source/automated review; related shared form or prior Event Workspace browser evidence applies",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/events/<uuid:event_id>/documents/demo/",
+      "name": "operations:demo",
+      "view": "apps.operations.views.document_upload",
+      "source": "apps/operations/views.py",
+      "templates": [],
+      "purpose": "document upload",
+      "destination": "Event Workspace",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Source/automated review; related shared form or prior Event Workspace browser evidence applies",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/events/<uuid:event_id>/<str:section>/",
+      "name": "operations:event",
+      "view": "apps.operations.views.event_operations",
+      "source": "apps/operations/views.py",
+      "templates": [
+        "operations/event.html"
+      ],
+      "purpose": "event operations",
+      "destination": "Event Workspace",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Source/automated review; related shared form or prior Event Workspace browser evidence applies",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/notes/<uuid:note_id>/edit/",
+      "name": "operations:note-edit",
+      "view": "apps.operations.views.note_edit",
+      "source": "apps/operations/views.py",
+      "templates": [],
+      "purpose": "note edit",
+      "destination": "Event Workspace",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Source/automated review; related shared form or prior Event Workspace browser evidence applies",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/records/<str:kind>/<uuid:obj_id>/archive/",
+      "name": "operations:archive",
+      "view": "apps.operations.views.archive",
+      "source": "apps/operations/views.py",
+      "templates": [],
+      "purpose": "archive",
+      "destination": "Event Workspace",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Source/automated review; related shared form or prior Event Workspace browser evidence applies",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/documents/<uuid:document_id>/download/",
+      "name": "operations:download",
+      "view": "apps.operations.views.download",
+      "source": "apps/operations/views.py",
+      "templates": [],
+      "purpose": "download",
+      "destination": "Event Workspace",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Source/automated review; related shared form or prior Event Workspace browser evidence applies",
+      "exception": "",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "quizzes/",
+      "name": "assessments:dashboard",
+      "view": "apps.assessments.views.dashboard",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/dashboard.html"
+      ],
+      "purpose": "dashboard",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "quiz-list-mobile",
+        "quiz-list-desktop",
+        "quiz-search-empty-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "quizzes/categories/",
+      "name": "assessments:category_list",
+      "view": "apps.assessments.views.category_list",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/categories.html"
+      ],
+      "purpose": "category list",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "quiz-categories-mobile",
+        "quiz-categories-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "quizzes/categories/new/",
+      "name": "assessments:category_new",
+      "view": "apps.assessments.views.category_edit",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/category_form.html"
+      ],
+      "purpose": "category edit",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "quiz-category-form-final-desktop",
+        "quiz-category-form-final-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "quizzes/categories/<uuid:category_id>/edit/",
+      "name": "assessments:category_edit",
+      "view": "apps.assessments.views.category_edit",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/category_form.html"
+      ],
+      "purpose": "category edit",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "category-edit-desktop",
+        "category-edit-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "quizzes/question-sets/",
+      "name": "assessments:question_set_list",
+      "view": "apps.assessments.views.question_set_list",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/question_sets.html"
+      ],
+      "purpose": "question set list",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "question-sets-mobile",
+        "question-sets-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "quizzes/categories/<uuid:category_id>/question-sets/new/",
+      "name": "assessments:question_set_new",
+      "view": "apps.assessments.views.question_set_new",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/question_set_form.html"
+      ],
+      "purpose": "question set new",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "question-set-form-desktop",
+        "quiz-new-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "quizzes/question-sets/<uuid:set_id>/",
+      "name": "assessments:question_set_detail",
+      "view": "apps.assessments.views.question_set_detail",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/question_set_detail.html"
+      ],
+      "purpose": "question set detail",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "question-set-detail-mobile",
+        "question-set-detail-desktop",
+        "quiz-version-actions-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "quizzes/question-sets/<uuid:set_id>/questions/new/",
+      "name": "assessments:question_create",
+      "view": "apps.assessments.views.question_create",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/question_form.html"
+      ],
+      "purpose": "question create",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "question-add-desktop",
+        "question-add-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "quizzes/question-sets/<uuid:set_id>/questions/<uuid:question_id>/edit/",
+      "name": "assessments:question_edit",
+      "view": "apps.assessments.views.question_edit",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/question_form.html"
+      ],
+      "purpose": "question edit",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "question-form-mobile",
+        "question-form-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "quizzes/questions/<uuid:question_id>/preview/",
+      "name": "assessments:question_preview",
+      "view": "apps.assessments.views.question_preview",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/question.html"
+      ],
+      "purpose": "question preview",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "quizzes/events/<uuid:event_id>/",
+      "name": "assessments:event_configuration",
+      "view": "apps.assessments.views.event_configuration",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/event_configuration.html"
+      ],
+      "purpose": "event configuration",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "event-quizzes-desktop",
+        "event-quizzes-verified-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "quizzes/station/<str:station_code>/<uuid:session_id>/",
+      "name": "assessments:station_start",
+      "view": "apps.assessments.views.station_start",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/instructions.html"
+      ],
+      "purpose": "station start",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "quizzes/station/<str:station_code>/<uuid:session_id>/categories/",
+      "name": "assessments:category_selection",
+      "view": "apps.assessments.views.category_selection",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/category_selection.html",
+        "assessments/not_ready.html"
+      ],
+      "purpose": "category selection",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "quizzes/station/<str:station_code>/<uuid:session_id>/ready/",
+      "name": "assessments:ready",
+      "view": "apps.assessments.views.ready",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/ready.html"
+      ],
+      "purpose": "ready",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "quizzes/station/<str:station_code>/<uuid:session_id>/attempt/start/",
+      "name": "assessments:attempt_start",
+      "view": "apps.assessments.views.start_pending_section",
+      "source": "apps/assessments/views.py",
+      "templates": [],
+      "purpose": "start pending section",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "quizzes/station/<str:station_code>/<uuid:session_id>/attempt/",
+      "name": "assessments:attempt",
+      "view": "apps.assessments.views.attempt_view",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/question.html"
+      ],
+      "purpose": "attempt view",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "quizzes/station/<str:station_code>/<uuid:session_id>/results/",
+      "name": "assessments:results",
+      "view": "apps.assessments.views.results",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/results.html"
+      ],
+      "purpose": "results",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "quizzes/station/<str:station_code>/<uuid:session_id>/game/",
+      "name": "assessments:game_handoff",
+      "view": "apps.assessments.views.game_handoff",
+      "source": "apps/assessments/views.py",
+      "templates": [],
+      "purpose": "game handoff",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "quizzes/station/<str:station_code>/<uuid:session_id>/duck/",
+      "name": "assessments:duck_handoff",
+      "view": "apps.assessments.views.game_handoff",
+      "source": "apps/assessments/views.py",
+      "templates": [],
+      "purpose": "game handoff",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "quizzes/station/<str:station_code>/<uuid:session_id>/finish/",
+      "name": "assessments:finish",
+      "view": "apps.assessments.views.finish",
+      "source": "apps/assessments/views.py",
+      "templates": [],
+      "purpose": "finish",
+      "destination": "Runtime boundary",
+      "pattern": "Preserve operational/kiosk runtime layout and behavior",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Intentional runtime/participant-fidelity exception; all 22 inventoried callback bodies unchanged from baseline.",
+      "exception": "Runtime/participant-fidelity screen; no engine or kiosk design changes",
+      "browser_evidence": [],
+      "desktop_review": false,
+      "mobile_review": false,
+      "changes_required": "Retain participant/operator runtime and preview fidelity.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included.",
+      "callback_body_unchanged": true
+    },
+    {
+      "route": "quizzes/staff/attempts/<uuid:attempt_id>/restart/",
+      "name": "assessments:staff_restart",
+      "view": "apps.assessments.views.staff_restart",
+      "source": "apps/assessments/views.py",
+      "templates": [
+        "assessments/restart.html"
+      ],
+      "purpose": "staff restart",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace card/field/table/action/disclosure patterns",
+      "preserve": "Existing model identities, POST contracts, source validation, permissions and audit behavior",
+      "missing_templates": [],
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "exception": "",
+      "browser_evidence": [
+        "assessment-restart-desktop",
+        "quiz-restart-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/trailers/",
+      "name": "operations:trailers",
+      "view": "apps.operations.equipment_views.trailer_list",
+      "source": "apps/operations/equipment_views.py",
+      "templates": [
+        "operations/trailers.html"
+      ],
+      "purpose": "trailers",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace wrapper, bound fields, cards, disclosures, progress and actions",
+      "preserve": "Existing event/staff/task identities and lifecycle; scoped permissions; explicit audit; no new delivery",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "trailers-list-mobile",
+        "trailers-list-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/trailers/<uuid:trailer_id>/edit/",
+      "name": "operations:trailer-edit",
+      "view": "apps.operations.equipment_views.trailer_edit",
+      "source": "apps/operations/equipment_views.py",
+      "templates": [
+        "operations/execution_form.html"
+      ],
+      "purpose": "trailer edit",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace wrapper, bound fields, cards, disclosures, progress and actions",
+      "preserve": "Existing event/staff/task identities and lifecycle; scoped permissions; explicit audit; no new delivery",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "trailer-form-mobile",
+        "trailer-form-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/execution/",
+      "name": "operations:execution-index",
+      "view": "apps.operations.execution_views.execution_index",
+      "source": "apps/operations/execution_views.py",
+      "templates": [
+        "operations/execution_index.html"
+      ],
+      "purpose": "execution index",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace wrapper, bound fields, cards, disclosures, progress and actions",
+      "preserve": "Existing event/staff/task identities and lifecycle; scoped permissions; explicit audit; no new delivery",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "execution-index-mobile",
+        "execution-index-final-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/execution/events/<uuid:event_id>/",
+      "name": "operations:execution",
+      "view": "apps.operations.execution_views.board",
+      "source": "apps/operations/execution_views.py",
+      "templates": [
+        "operations/execution.html"
+      ],
+      "purpose": "execution",
+      "destination": "Event Workspace",
+      "pattern": "Approved Event Workspace wrapper, bound fields, cards, disclosures, progress and actions",
+      "preserve": "Existing event/staff/task identities and lifecycle; scoped permissions; explicit audit; no new delivery",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "execution-uninitialized-desktop",
+        "execution-initialized-desktop",
+        "execution-final-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/execution/events/<uuid:event_id>/health/",
+      "name": "operations:health",
+      "view": "apps.operations.execution_views.board",
+      "source": "apps/operations/execution_views.py",
+      "templates": [
+        "operations/health.html"
+      ],
+      "purpose": "health",
+      "destination": "Event Workspace",
+      "pattern": "Approved Event Workspace wrapper, bound fields, cards, disclosures, progress and actions",
+      "preserve": "Existing event/staff/task identities and lifecycle; scoped permissions; explicit audit; no new delivery",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "health-populated-desktop",
+        "health-na-result-desktop",
+        "health-mobile-final",
+        "health-item-created-mobile",
+        "closeout-checklist-completed-desktop",
+        "health-final-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/execution/events/<uuid:event_id>/closeout/",
+      "name": "operations:closeout",
+      "view": "apps.operations.execution_views.board",
+      "source": "apps/operations/execution_views.py",
+      "templates": [
+        "operations/closeout.html"
+      ],
+      "purpose": "closeout",
+      "destination": "Event Workspace",
+      "pattern": "Approved Event Workspace wrapper, bound fields, cards, disclosures, progress and actions",
+      "preserve": "Existing event/staff/task identities and lifecycle; scoped permissions; explicit audit; no new delivery",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "closeout-open-desktop",
+        "closeout-closed-desktop",
+        "closeout-closed-mobile-verified",
+        "closeout-reopened-mobile",
+        "closeout-closed-again-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/execution/events/<uuid:event_id>/manager/",
+      "name": "operations:execution-manager",
+      "view": "apps.operations.execution_views.manager_edit",
+      "source": "apps/operations/execution_views.py",
+      "templates": [
+        "operations/execution_form.html"
+      ],
+      "purpose": "execution manager",
+      "destination": "Event Workspace",
+      "pattern": "Approved Event Workspace wrapper, bound fields, cards, disclosures, progress and actions",
+      "preserve": "Existing event/staff/task identities and lifecycle; scoped permissions; explicit audit; no new delivery",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "manager-form-desktop",
+        "manager-form-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/execution/events/<uuid:event_id>/actions/<str:action>/",
+      "name": "operations:execution-action",
+      "view": "apps.operations.execution_views.action",
+      "source": "apps/operations/execution_views.py",
+      "templates": [
+        "operations/execution_form.html"
+      ],
+      "purpose": "execution action",
+      "destination": "Event Workspace",
+      "pattern": "Approved Event Workspace wrapper, bound fields, cards, disclosures, progress and actions",
+      "preserve": "Existing event/staff/task identities and lifecycle; scoped permissions; explicit audit; no new delivery",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "event-end-confirmation-desktop",
+        "formal-closeout-confirmation-desktop",
+        "closeout-reopen-form-mobile",
+        "reopen-reason-validation-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/execution/events/<uuid:event_id>/categories/add/",
+      "name": "operations:checklist-category-add",
+      "view": "apps.operations.execution_views.category_edit",
+      "source": "apps/operations/execution_views.py",
+      "templates": [
+        "operations/execution_form.html"
+      ],
+      "purpose": "checklist category add",
+      "destination": "Event Workspace",
+      "pattern": "Approved Event Workspace wrapper, bound fields, cards, disclosures, progress and actions",
+      "preserve": "Existing event/staff/task identities and lifecycle; scoped permissions; explicit audit; no new delivery",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "event-category-form-mobile",
+        "event-category-form-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/execution/events/<uuid:event_id>/categories/<uuid:category_id>/edit/",
+      "name": "operations:checklist-category-edit",
+      "view": "apps.operations.execution_views.category_edit",
+      "source": "apps/operations/execution_views.py",
+      "templates": [
+        "operations/execution_form.html"
+      ],
+      "purpose": "checklist category edit",
+      "destination": "Event Workspace",
+      "pattern": "Approved Event Workspace wrapper, bound fields, cards, disclosures, progress and actions",
+      "preserve": "Existing event/staff/task identities and lifecycle; scoped permissions; explicit audit; no new delivery",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "checklist-category-edit-desktop",
+        "checklist-category-edit-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/execution/events/<uuid:event_id>/items/add/",
+      "name": "operations:checklist-item-add",
+      "view": "apps.operations.execution_views.item_edit",
+      "source": "apps/operations/execution_views.py",
+      "templates": [
+        "operations/execution_form.html"
+      ],
+      "purpose": "checklist item add",
+      "destination": "Event Workspace",
+      "pattern": "Approved Event Workspace wrapper, bound fields, cards, disclosures, progress and actions",
+      "preserve": "Existing event/staff/task identities and lifecycle; scoped permissions; explicit audit; no new delivery",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "checklist-item-form-mobile",
+        "checklist-item-form-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/execution/events/<uuid:event_id>/items/<uuid:item_id>/edit/",
+      "name": "operations:checklist-item-edit",
+      "view": "apps.operations.execution_views.item_edit",
+      "source": "apps/operations/execution_views.py",
+      "templates": [
+        "operations/execution_form.html"
+      ],
+      "purpose": "checklist item edit",
+      "destination": "Event Workspace",
+      "pattern": "Approved Event Workspace wrapper, bound fields, cards, disclosures, progress and actions",
+      "preserve": "Existing event/staff/task identities and lifecycle; scoped permissions; explicit audit; no new delivery",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "checklist-item-edit-desktop",
+        "checklist-item-edit-mobile",
+        "locked-checklist-notice-mobile",
+        "locked-checklist-notice-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/execution/events/<uuid:event_id>/items/<uuid:item_id>/<str:action>/",
+      "name": "operations:checklist-item-action",
+      "view": "apps.operations.execution_views.item_action",
+      "source": "apps/operations/execution_views.py",
+      "templates": [
+        "operations/execution_form.html",
+        "operations/checklist_history.html",
+        "operations/execution_notice.html"
+      ],
+      "purpose": "checklist item action",
+      "destination": "Event Workspace",
+      "pattern": "Approved Event Workspace wrapper, bound fields, cards, disclosures, progress and actions",
+      "preserve": "Existing event/staff/task identities and lifecycle; scoped permissions; explicit audit; no new delivery",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "checklist-validation-desktop",
+        "checklist-history-desktop",
+        "checklist-item-edit-desktop",
+        "checklist-archive-desktop",
+        "checklist-item-edit-mobile",
+        "checklist-archive-mobile",
+        "checklist-history-mobile",
+        "locked-checklist-notice-mobile",
+        "locked-checklist-notice-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/checklists/master/",
+      "name": "operations:master-checklist",
+      "view": "apps.operations.execution_views.master_list",
+      "source": "apps/operations/execution_views.py",
+      "templates": [
+        "operations/master_checklist.html"
+      ],
+      "purpose": "master checklist",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace wrapper, bound fields, cards, disclosures, progress and actions",
+      "preserve": "Existing event/staff/task identities and lifecycle; scoped permissions; explicit audit; no new delivery",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "master-checklist-mobile",
+        "master-checklist-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/checklists/master/<str:kind>/add/",
+      "name": "operations:master-add",
+      "view": "apps.operations.execution_views.master_edit",
+      "source": "apps/operations/execution_views.py",
+      "templates": [
+        "operations/execution_form.html"
+      ],
+      "purpose": "master add",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace wrapper, bound fields, cards, disclosures, progress and actions",
+      "preserve": "Existing event/staff/task identities and lifecycle; scoped permissions; explicit audit; no new delivery",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "master-category-form-mobile",
+        "master-item-form-mobile",
+        "master-category-form-desktop",
+        "master-item-form-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "operations/checklists/master/<str:kind>/<uuid:object_id>/edit/",
+      "name": "operations:master-edit",
+      "view": "apps.operations.execution_views.master_edit",
+      "source": "apps/operations/execution_views.py",
+      "templates": [
+        "operations/execution_form.html"
+      ],
+      "purpose": "master edit",
+      "destination": "Operations",
+      "pattern": "Approved Event Workspace wrapper, bound fields, cards, disclosures, progress and actions",
+      "preserve": "Existing event/staff/task identities and lifecycle; scoped permissions; explicit audit; no new delivery",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "master-category-edit-desktop",
+        "master-item-edit-desktop",
+        "master-category-edit-mobile",
+        "master-item-edit-mobile"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "internal/workspaces/operations/",
+      "name": "internal:workspace:operations",
+      "view": "apps.internal_ui.views.workspace",
+      "source": "apps/internal_ui/views.py",
+      "templates": [
+        "internal/operations_home.html"
+      ],
+      "purpose": "Operations landing directory",
+      "destination": "Operations",
+      "pattern": "Approved shared internal shell and Event Workspace cards/actions",
+      "preserve": "Existing endpoint permissions and URLs; main shell identity",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "operations-mobile",
+        "operations-final-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    },
+    {
+      "route": "internal/workspaces/platform-tools/",
+      "name": "internal:workspace:platform-tools",
+      "view": "apps.internal_ui.views.workspace",
+      "source": "apps/internal_ui/views.py",
+      "templates": [
+        "internal/platform_tools.html"
+      ],
+      "purpose": "Platform Tools landing directory",
+      "destination": "Platform Tools",
+      "pattern": "Approved shared internal shell and Event Workspace cards/actions",
+      "preserve": "Existing endpoint permissions and URLs; main shell identity",
+      "missing_templates": [],
+      "exception": "",
+      "browser_evidence": [
+        "platform-tools-mobile",
+        "platform-tools-desktop"
+      ],
+      "desktop_review": true,
+      "mobile_review": true,
+      "changes_required": "Apply or retain approved shared cards, fields/errors, menus, lists and responsive containers; preserve endpoint contracts.",
+      "ui_status": "Implemented or retained approved pattern; direct browser evidence recorded.",
+      "automated_evidence": "Final Django suite: 1042 run, 1037 passed, 5 PostgreSQL-only skips. Changed/new templates compile; related role and workflow regressions included."
+    }
+  ],
+  "shared_states": [
+    "Bound validation summary and field errors",
+    "Manager assignment and reassignment",
+    "N/A reason and preserved history",
+    "End, close, reopen and formal closeout again",
+    "Locked direct-edit rejection",
+    "Filtered empty lists",
+    "Version, assignment and archive disclosures"
+  ],
+  "intentional_exceptions": [
+    "Participant/kiosk/game/operator runtime and actual kiosk question preview retain their established appearance and behavior.",
+    "Existing restricted game/registration-form/backup administration retains Django Admin; links and permissions preserved.",
+    "Server-rendered pages use normal navigation; no speculative asynchronous loading layer.",
+    "Task list/quick-create/link/comment workspaces remain in Tasks; changed detail uses Event Workspace fields/cards."
+  ],
+  "known_legacy_template": {
+    "path": "templates/events/offline_ticket.html",
+    "status": "Unchanged from baseline, unused by tracked application/config/template code, existing URL-tag syntax error; current ticket views return PNG/PDF directly."
+  },
+  "browser_review": {
+    "total_observations": 141,
+    "final_valid_observations": 129,
+    "superseded_observations": [
+      {
+        "name": "execution-index-desktop",
+        "reason": "Superseded label/navigation sample; later final evidence recorded."
+      },
+      {
+        "name": "health-mobile",
+        "reason": "Mobile overflow corrected and rechecked with shared grid constraints."
+      },
+      {
+        "name": "health-mobile-corrected",
+        "reason": "Mobile overflow corrected and rechecked with shared grid constraints."
+      },
+      {
+        "name": "closeout-closed-mobile",
+        "reason": "Superseded label/navigation sample; later final evidence recorded."
+      },
+      {
+        "name": "quiz-category-form-mobile",
+        "reason": "Superseded label/navigation sample; later final evidence recorded."
+      },
+      {
+        "name": "quiz-category-form-desktop",
+        "reason": "Superseded label/navigation sample; later final evidence recorded."
+      },
+      {
+        "name": "template-apply-mobile",
+        "reason": "Mobile overflow corrected and rechecked with shared grid constraints."
+      },
+      {
+        "name": "event-quizzes-mobile",
+        "reason": "Mobile overflow corrected and rechecked with shared grid constraints."
+      },
+      {
+        "name": "template-apply-final-mobile",
+        "reason": "Mobile overflow corrected and rechecked with shared grid constraints."
+      },
+      {
+        "name": "event-quizzes-final-mobile",
+        "reason": "Mobile overflow corrected and rechecked with shared grid constraints."
+      },
+      {
+        "name": "event-quizzes-final-mobile-v6",
+        "reason": "Mobile overflow corrected and rechecked with shared grid constraints."
+      },
+      {
+        "name": "template-apply-final-mobile-v6",
+        "reason": "Mobile overflow corrected and rechecked with shared grid constraints."
+      }
+    ],
+    "prior_event_workspace_observations": [
+      {
+        "name": "staff-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "workdays-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "expenses-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "assignment-form-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "assignment-times-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "notes-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "results-tablet",
+        "viewport": 768
+      },
+      {
+        "name": "tasks-tablet",
+        "viewport": 768
+      },
+      {
+        "name": "task-modal-tablet",
+        "viewport": 768
+      },
+      {
+        "name": "registration-detail-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "operations-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "documents-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "operations-templates-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "staff-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "expenses-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "expense-form-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "event-info-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "template-form-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "registration-settings-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "staff-final-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "staff-needs-final-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "staff-cards-final-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "staff-final-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "staff-cards-final-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "assignment-final-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "expenses-final-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "expenses-final-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "expense-actions-final-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "expense-edit-final-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "polish-info-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "polish-operations-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "polish-results-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "polish-notes-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "polish-documents-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "polish-tasks-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "polish-workdays-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "polish-registrations-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "polish-report-desktop",
+        "viewport": 1486
+      },
+      {
+        "name": "polish-workdays-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "polish-operations-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "polish-results-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "polish-registrations-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "staff-neutral-final-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "polish-notes-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "polish-documents-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "polish-tasks-mobile",
+        "viewport": 390
+      },
+      {
+        "name": "polish-report-mobile",
+        "viewport": 390
+      }
+    ],
+    "limits": "Authenticated browser uses a synthetic superuser. Role-specific controls are separately covered by server-render/permission tests. Hardware, PostgreSQL concurrency and live Render were not exercised."
+  }
+}

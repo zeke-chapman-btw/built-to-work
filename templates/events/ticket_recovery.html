@@ -6,7 +6,7 @@
 <input name="q" value="{{ query }}" maxlength="120"></label>
 <label>Event<select name="event"><option value="">All events</option>{% for event in events %}<option value="{{ event.pk }}" {% if event_id == event.pk|stringformat:"s" %}selected{% endif %}>{{ event.name }}</option>{% endfor %}</select></label>
 <button class="button button-primary" type="submit">Search tickets</button></form></div>
-{% if tickets %}<div class="card"><table><thead><tr><th>Ticket</th><th>Participant</th><th>Event</th><th>Actions</th></tr></thead><tbody>
+{% if tickets %}<div class="card"><div class="btw-table-wrap"><table class="btw-table"><thead><tr><th>Ticket</th><th>Participant</th><th>Event</th><th>Actions</th></tr></thead><tbody>
 {% for ticket in tickets %}<tr><td>{{ ticket.ticket_number }}</td><td>{{ ticket.registration.participant.first_name }} {{ ticket.registration.participant.last_name }}</td><td>{{ ticket.registration.event.name }}</td><td><a href="{% url 'events:ticket_present' token=ticket.token %}">Redisplay</a> <form method="post" action="{% url 'events:ticket_reprint' ticket_id=ticket.pk %}" style="display:inline">{% csrf_token %}<button type="submit">Reprint original</button></form></td></tr>{% endfor %}
-</tbody></table></div>{% endif %}</section>
+</tbody></table></div></div>{% elif query %}<section class="card"><h2>No matching tickets</h2><p>Check the search terms or select another event.</p></section>{% else %}<p>Search for an existing ticket to redisplay or reprint it. Ticket validity and registration permissions still apply.</p>{% endif %}</section>
 {% endblock %}

@@ -1,5 +1,5 @@
 """Small presentation-only components; callers retain domain authorization."""
-from django import template
+from django import template, forms
 register = template.Library()
 
 @register.inclusion_tag("internal/ui/panel_heading.html")
@@ -109,3 +109,23 @@ ICON_PATHS = {
 @register.inclusion_tag("internal/ui/icon.html")
 def ui_icon(name):
     return {"icon_paths": ICON_PATHS.get(name, ICON_PATHS["overview"])}
+
+
+@register.inclusion_tag("internal/ui/field.html")
+def ui_field(field, field_id=""):
+    """Render a bound field without changing its POST name or validation."""
+    field_id = field_id or field.id_for_label or field.auto_id or field.html_name
+    is_group = isinstance(field.field.widget, (forms.CheckboxSelectMultiple, forms.RadioSelect))
+    described_by = field.field.widget.attrs.get("aria-describedby", "").split()
+    if field.help_text:
+        described_by.append(f"{field_id}_help")
+    if field.errors:
+        described_by.append(f"{field_id}_errors")
+    attrs = {"id": field_id}
+    if is_group:
+        attrs.update({"aria-labelledby": f"{field_id}_label", "role": "group"})
+    if described_by:
+        attrs["aria-describedby"] = " ".join(dict.fromkeys(described_by))
+    if field.errors:
+        attrs["aria-invalid"] = "true"
+    return {"field": field, "field_id": field_id, "is_group": is_group, "widget": field.as_widget(attrs=attrs)}

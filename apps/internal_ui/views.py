@@ -51,6 +51,9 @@ def workspace(request,workspace_id):
     if not any(entry["id"]==workspace_id for entry in visible_workspaces(request.user)):
         raise PermissionDenied
     links=visible_workspace_links(request.user,workspace_id)
+    if workspace_id=="platform-tools":
+        return render(request,"internal/platform_tools.html",_staff_context(request,
+            page_title="Platform Tools",workspace_links=links))
     if workspace_id=="operations":
         from .event_presentation import operations_home
         from .reporting import report_destinations
@@ -58,6 +61,11 @@ def workspace(request,workspace_id):
         from apps.events.experience_operations import can_view_event_operations
         if data["featured"] and can_view_event_operations(request.user):
             links=links+[dict(label="Simulator Scoring",url=reverse("events:event_detail",args=[data["featured"]["event"].pk])+"?section=results",description="View recorded simulator results for the next upcoming event.")]
+        from apps.operations.task_access import events_for
+        from django.db.models import Q
+        from django.utils import timezone
+        execution_events=list(events_for(request.user).filter(Q(status="upcoming",start_at__lte=timezone.now())|Q(status="completed",execution__closed_at__isnull=True)).order_by("start_at")[:10])
+        data["execution_events"]=execution_events
         return render(request,"internal/operations_home.html",_staff_context(request,page_title="Operations",workspace_links=links,
             reporting_available=bool(report_destinations(request.user)),**data))
     return render(request,"internal/workspace.html",_staff_context(request,page_title=item["label"].title(),page_description=item["description"],workspace_id=workspace_id,workspace_links=links))

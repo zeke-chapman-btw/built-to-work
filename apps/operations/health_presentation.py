@@ -1,16 +1,15 @@
-"""Read-only discovery foundation. No readiness policy, checks or approvals are inferred."""
-from .template_services import can_view_setup
-from .template_models import EventOperationsApplication
+"""Read-only event checklist summary. GET never initializes or changes event records."""
+from django.urls import reverse
+from .execution_models import EventExecution
+from .execution_services import can_view,administrator,progress
+PLANNING_PHASES=("Pre-event preparation","Arrival and setup","Live event operations","Closeout and pack-up")
 
-# Historical phase names only; no required checks, active phase or transitions are assigned.
-PLANNING_PHASES = (
-    "Pre-event preparation", "Arrival and setup", "Live event operations", "Closeout and pack-up",
-)
-
-def health_context(user, event):
-    if not can_view_setup(user):
-        return {}
-    application = EventOperationsApplication.objects.select_related("revision").filter(event=event).first()
-    return {"health_foundation_visible": True, "health_planning_phases": PLANNING_PHASES,
-            "health_event_status": event.get_status_display(), "health_event_changed_at": event.updated_at,
-            "health_application": application}
+def health_context(user,event):
+    if not can_view(user,event):return {}
+    execution=EventExecution.objects.filter(event=event).first()
+    return dict(health_foundation_visible=True,health_execution=execution,
+        health_indicators=progress(execution) if execution else [],
+        health_manager_url=reverse("operations:execution-manager",args=[event.pk]) if administrator(user) else "",
+        health_execution_url=reverse("operations:execution",args=[event.pk]),
+        health_monitor_url=reverse("operations:health",args=[event.pk]),
+        health_closeout_url=reverse("operations:closeout",args=[event.pk]))

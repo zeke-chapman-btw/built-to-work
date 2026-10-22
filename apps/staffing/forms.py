@@ -4,7 +4,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db.models import Q
-from .models import StaffProfile
+from .models import StaffProfile, StaffAssignment
 from .calendar import event_days, day_window, local_instant
 
 
@@ -30,19 +30,51 @@ class AccountLinkForm(forms.Form):
         self.initial.update(user=profile.user_id, revision=profile.updated_at.isoformat())
 
 
+def legacy_coverage_role(value):
+    """Only exact known responsibilities can classify an older submission."""
+    return {"staff": "staff", "event staff": "staff", "staff lead": "staff_lead",
+            "lead": "staff_lead", "driver": "driver", "combined": "combined",
+            "driver + staff": "combined"}.get(value.strip().casefold(), "")
+
+
+def coverage_role_field():
+    return forms.ChoiceField(required=False, choices=[("", "Needs role review"), *StaffAssignment.CoverageRole.choices],
+        label="Coverage role", help_text="Staff Lead counts as Staff. Combined counts as Driver only. This does not set pay or mileage.")
+
+
 class PlanForm(forms.Form):
     revision = forms.CharField(widget=forms.HiddenInput)
     required_staff = forms.IntegerField(min_value=0, max_value=1000, label="Default staff needed per day")
+    required_drivers = forms.IntegerField(min_value=0, max_value=1000, required=False, label="Default drivers needed per day")
     is_published = forms.BooleanField(required=False, label="Publish this staffing opportunity", help_text="Visible to active linked staff only while the event is Upcoming. Draft events remain hidden.")
     signup_deadline = forms.CharField(required=False, label="Staff sign-up deadline (event local time)", widget=forms.DateTimeInput(attrs={"type": "datetime-local"}), help_text="Leave blank for no deadline. Managers may approve and assign after the deadline.")
     def __init__(self, *args, event, plan, **kwargs):
         super().__init__(*args, **kwargs)
         self.event = event
-        self.initial.update(revision=plan.updated_at.isoformat() if plan.updated_at else "new", required_staff=plan.required_staff, is_published=plan.is_published, signup_deadline=plan.signup_deadline.astimezone(ZoneInfo(event.timezone_name)).strftime("%Y-%m-%dT%H:%M") if plan.signup_deadline else "")
-        needs={n.date:n.required_staff for n in plan.daily_needs.all()} if not plan._state.adding else {}
+        self.initial.update(revision=plan.updated_at.isoformat() if plan.updated_at else "new", required_staff=plan.required_staff, required_drivers=plan.required_drivers, is_published=plan.is_published, signup_deadline=plan.signup_deadline.astimezone(ZoneInfo(event.timezone_name)).strftime("%Y-%m-%dT%H:%M") if plan.signup_deadline else "")
+        needs={n.date:n for n in plan.daily_needs.all()} if not plan._state.adding else {}
+        self.day_rows=[]
         for day in event_days(event):
             key="need_"+day.isoformat()
-            self.fields[key]=forms.IntegerField(min_value=0,max_value=1000,label=f"{day:%a, %b %d, %Y} — staff needed",initial=needs.get(day,plan.required_staff))
+            self.fields[key]=forms.IntegerField(min_value=0,max_value=1000,label="Staff",initial=needs[day].required_staff if day in needs else plan.required_staff)
+            driver_key="drivers_"+day.isoformat()
+            self.fields[driver_key]=forms.IntegerField(min_value=0,max_value=1000,required=False,label="Driver",initial=needs[day].required_drivers if day in needs else plan.required_drivers)
+            self.day_rows.append({"date":day,"staff":self[key],"drivers":self[driver_key]})
+        if self.is_bound:
+            # Older clients must not erase newly configured driver needs.
+            self.data=self.data.copy()
+            for key in ["required_drivers", *("drivers_"+d.isoformat() for d in event_days(event))]:
+                if key not in self.data:
+                    self.data[key]=self.initial.get(key,self.fields[key].initial) or 0
+    @property
+    def settings_fields(self):
+        return [self[n] for n in ("required_staff","required_drivers","is_published","signup_deadline")]
+    def clean(self):
+        data=super().clean()
+        for key in ["required_drivers", *("drivers_"+d.isoformat() for d in event_days(self.event))]:
+            if key not in self.errors and data.get(key) is None:
+                data[key]=0
+        return data
     def clean_signup_deadline(self):
         raw=self.cleaned_data.get("signup_deadline")
         if not raw: return None
@@ -65,11 +97,14 @@ class AvailabilityForm(forms.Form):
 class AssignmentForm(forms.Form):
     revision = forms.CharField(widget=forms.HiddenInput)
     staff = forms.ModelChoiceField(queryset=StaffProfile.objects.none(),label="Assigned employee")
-    role = forms.CharField(required=False,max_length=80,label="Role or responsibility")
+    coverage_role = coverage_role_field()
+    role = forms.CharField(required=False,max_length=80,label="Additional responsibility (optional)")
     reason = forms.CharField(max_length=500,widget=forms.Textarea(attrs={"rows":2}),label="Assignment change reason")
     def __init__(self,*args,event,assignment=None,**kwargs):
         super().__init__(*args,**kwargs)
         self.event=event
+        self.assignment=assignment
+        self.initial["coverage_role"]=assignment.coverage_role if assignment else "staff"
         self.fields["staff"].queryset=StaffProfile.objects.filter(is_active=True)
         self.initial.update(revision=assignment.updated_at.isoformat() if assignment else "new",staff=assignment.staff_id if assignment else None,role=assignment.role if assignment else "")
         existing={d.date:d for d in assignment.days.all()} if assignment else {}
@@ -88,9 +123,11 @@ class AssignmentForm(forms.Form):
             self.day_rows.append({"date":day,"selected":self["day_"+key],"arrival":self["arrival_"+key],"start":self["start_"+key],"end":self["end_"+key]})
     @property
     def main_fields(self):
-        return [self[n] for n in ("staff","role","reason")]
+        return [self[n] for n in ("staff","coverage_role","role","reason")]
     def clean(self):
         data=super().clean(); rows=[]
+        if "coverage_role" not in self.data:
+            data["coverage_role"]=self.assignment.coverage_role if self.assignment else legacy_coverage_role(data.get("role",""))
         for day in event_days(self.event):
             key=day.isoformat()
             if data.get("day_"+key):
@@ -105,3 +142,9 @@ class DecisionForm(forms.Form):
     revision = forms.CharField(widget=forms.HiddenInput)
     reason = forms.CharField(required=False,max_length=500,widget=forms.Textarea(attrs={"rows":2}))
     confirm = forms.BooleanField(label="I confirm this action.")
+
+    def __init__(self,*args,approve=False,**kwargs):
+        super().__init__(*args,**kwargs)
+        if approve:
+            self.fields["coverage_role"]=coverage_role_field()
+            self.initial["coverage_role"]="staff"

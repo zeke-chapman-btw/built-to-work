@@ -8,6 +8,9 @@ from django.urls import reverse
 from apps.core.models import AuditLog
 from .models import Event
 from .forms import EventForm
+from apps.staffing.models import StaffProfile
+from apps.operations import execution_services
+from apps.operations.execution_models import EventExecution
 
 class EventManagement9BTests(TestCase):
     @classmethod
@@ -30,7 +33,15 @@ class EventManagement9BTests(TestCase):
         event.refresh_from_db(); data={k: ("" if v is None else v) for k,v in EventForm(instance=event).initial.items()}; data.update(action='save',revision=event.updated_at.isoformat()); data.update(changes); return data
     def transition(self,event,action,**changes):
         event.refresh_from_db(); data=dict(revision=event.updated_at.isoformat(),confirm='on',reason='SYNTHETIC verification'); data.update(changes)
+        if action=='complete':
+            profile,_=StaffProfile.objects.get_or_create(user=self.owner,defaults={'first_name':'SYNTHETIC','last_name':'Manager'})
+            data['primary_manager']=str(profile.pk)
         return self.client.post(reverse('events:event_action',args=[event.pk,action]),data)
+    def closeout(self,event):
+        execution=EventExecution.objects.get(event=event)
+        saved,form=execution_services.event_action(actor=self.owner,event_id=event.pk,action='close',
+            data={'revision':execution.updated_at.isoformat(),'confirm':'on','reason':'SYNTHETIC closeout'})
+        self.assertIsNotNone(saved,form.errors)
     def test_create_form_renders_grouped_fields_without_existing_instance(self):
         response=self.client.get(reverse('events:event_create'))
         self.assertContains(response,'Save Draft'); self.assertContains(response,'Contact and logistics'); self.assertContains(response,'Publish to Staff')
@@ -49,6 +60,7 @@ class EventManagement9BTests(TestCase):
     def test_lifecycle_complete_then_archive_preserves_identity(self):
         event=self.create(action='publish'); identity=event.pk
         self.assertEqual(self.transition(event,'complete').status_code,302)
+        self.closeout(event)
         self.assertEqual(self.transition(event,'archive').status_code,302)
         event.refresh_from_db(); self.assertEqual(event.pk,identity); self.assertEqual(event.status,'archived')
     def test_cancel_draft_and_archive_requires_reason(self):
@@ -165,7 +177,7 @@ class EventManagement9BTests(TestCase):
         probe=integration.EventIntegration8EDTests(); session=probe.session(); attempt=probe.quiz(session); run=probe.game_run(session)
         capture,_=integration.ingest_capture(**probe.payload(captured_at=run.completed_at+timedelta(seconds=1)))
         event=probe.event; registration=session.registration; ticket=registration.tickets.get(is_current=True)
-        self.assertEqual(self.transition(event,'complete').status_code,302); self.assertEqual(self.transition(event,'archive').status_code,302)
+        self.assertEqual(self.transition(event,'complete').status_code,302); self.closeout(event); self.assertEqual(self.transition(event,'archive').status_code,302)
         session.refresh_from_db(); attempt.refresh_from_db(); run.refresh_from_db(); capture.refresh_from_db(); ticket.refresh_from_db()
         self.assertIsNotNone(session.completed_at); self.assertEqual(attempt.status,'complete'); self.assertEqual(run.status,'completed'); self.assertTrue(capture.leaderboard_eligible); self.assertTrue(ticket.is_current)
         self.assertEqual(session.registration_id,registration.pk); self.assertEqual(capture.event_id,event.pk)

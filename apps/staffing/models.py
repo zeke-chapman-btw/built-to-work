@@ -30,6 +30,7 @@ class StaffProfile(UUIDModel, TimestampedModel):
 class StaffingPlan(UUIDModel, TimestampedModel):
     event = models.OneToOneField("events.Event", on_delete=models.PROTECT, related_name="staffing_plan")
     required_staff = models.PositiveSmallIntegerField(default=0)
+    required_drivers = models.PositiveSmallIntegerField(default=0)
     is_published = models.BooleanField(default=False)
     signup_deadline = models.DateTimeField(null=True, blank=True)
 
@@ -41,6 +42,7 @@ class DailyStaffingNeed(UUIDModel):
     plan = models.ForeignKey(StaffingPlan, on_delete=models.PROTECT, related_name="daily_needs")
     date = models.DateField()
     required_staff = models.PositiveSmallIntegerField(default=0)
+    required_drivers = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         ordering = ("date",)
@@ -67,6 +69,11 @@ class AvailabilityRequest(UUIDModel, TimestampedModel):
 
 
 class StaffAssignment(UUIDModel, TimestampedModel):
+    class CoverageRole(models.TextChoices):
+        STAFF = "staff", "Staff"
+        STAFF_LEAD = "staff_lead", "Staff Lead"
+        DRIVER = "driver", "Driver"
+        COMBINED = "combined", "Combined (Driver + Staff)"
     class Status(models.TextChoices):
         CONFIRMED = "confirmed", "Confirmed"
         REPLACED = "replaced", "Replaced by revision"
@@ -75,6 +82,7 @@ class StaffAssignment(UUIDModel, TimestampedModel):
     staff = models.ForeignKey(StaffProfile, on_delete=models.PROTECT, related_name="assignments")
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.CONFIRMED)
     role = models.CharField(max_length=80, blank=True)
+    coverage_role = models.CharField(max_length=16, choices=CoverageRole.choices, blank=True, default="")
     source_request = models.ForeignKey(AvailabilityRequest, null=True, blank=True, on_delete=models.PROTECT, related_name="assignments")
     supersedes = models.OneToOneField("self", null=True, blank=True, on_delete=models.PROTECT, related_name="replacement")
     changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="staff_assignment_changes")

@@ -1,5 +1,6 @@
 """One chronological, permission-filtered timeline backed by existing AuditLog."""
 import uuid
+from django.db.models import Q
 from apps.core.models import AuditLog
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
@@ -19,8 +20,7 @@ ACTIONS = {"created":"Task created", "updated":"Task details updated", "reassign
 
 def entries_for(user, task):
     require_task_access(user, task)
-    return AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(Task), object_id=str(task.pk),
-        action__startswith="operations.task.").select_related("actor").order_by("timestamp", "pk")
+    return AuditLog.objects.filter(Q(action__startswith="operations.task.")|Q(action__startswith="event.execution.task."),content_type=ContentType.objects.get_for_model(Task), object_id=str(task.pk)).select_related("actor").order_by("timestamp", "pk")
 
 
 def valid_uuid(raw):
@@ -73,7 +73,7 @@ def present_history(user, entries):
         old,new=entry.old_data or {},entry.new_data or {}
         changes=[(label,value(key,old.get(key)),value(key,new.get(key))) for key,label in FIELDS.items()
                  if (old.get(key) or None)!=(new.get(key) or None) and not (key=="event_id" and ("linked_event_ids" in old or "linked_event_ids" in new))]
-        action=entry.action.removeprefix("operations.task.")
+        action=entry.action.removeprefix("operations.task.").removeprefix("event.execution.task.")
         comment=comments.get(str(new.get("comment_id")))
         edit_url=None
         if comment and str(comment.task_id)==entry.object_id and not comment.task.archived_at and (comment.author_id==user.pk or task_admin(user)):

@@ -168,6 +168,13 @@ def event_action(request, event_id, action):
             messages.success(request, TRANSITIONS[action][0] + " completed.")
             return redirect("events:event_detail", event_id=event.pk)
         event.refresh_from_db()
+    if action=="complete":
+        from django import forms
+        from apps.operations.execution_forms import eligible_people
+        from apps.operations.execution_models import EventExecution
+        execution=EventExecution.objects.filter(event=event).first()
+        if not execution or not execution.primary_manager_id:
+            form.fields["primary_manager"]=forms.ModelChoiceField(queryset=eligible_people(),label="Primary Event Manager",help_text="The closeout task will be assigned to this person.")
     return render(request, "events/event_action.html", {"event": event, "form": form, "action_id": action,
         "action_label": TRANSITIONS[action][0], "page_title": TRANSITIONS[action][0]}, status=400 if form.is_bound else 200)
 

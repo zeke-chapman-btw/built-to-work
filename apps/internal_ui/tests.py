@@ -28,7 +28,7 @@ class InternalShellTests(TestCase):
     def test_workspace_registry_is_ordered_and_has_named_destinations(self):
         self.assertEqual(
             [item["id"] for item in WORKSPACES],
-            ["home", "events", "participants", "tasks", "operations", "customers", "administration"],
+            ["home", "events", "participants", "tasks", "operations", "platform-tools", "customers", "administration"],
         )
         self.assertTrue(all(item.get("url_name") for item in WORKSPACES))
 
@@ -55,7 +55,7 @@ class InternalShellTests(TestCase):
     def test_named_workspace_pages_render_shared_shell_and_real_links(self):
         user = self.make_staff("workspace-owner", superuser=True)
         self.client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
-        for workspace_id in ("events", "participants", "operations", "customers", "administration"):
+        for workspace_id in ("events", "participants", "operations", "platform-tools", "customers", "administration"):
             with self.subTest(workspace=workspace_id):
                 response = self.client.get(reverse("internal:workspace", kwargs={"workspace_id": workspace_id}))
                 self.assertEqual(response.status_code, 200)
@@ -63,6 +63,8 @@ class InternalShellTests(TestCase):
                 self.assertContains(response, "internal-sidebar")
                 if workspace_id == "operations":
                     self.assertContains(response, "operations-home")
+                elif workspace_id == "platform-tools":
+                    self.assertContains(response, "ops-tool-grid")
                 elif workspace_id == "customers":
                     self.assertContains(response, "PLANNED")
                 else:

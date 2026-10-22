@@ -9,7 +9,7 @@ from .services import audit_action
 
 TRANSITIONS = {
     "publish": ("Publish to Staff", {"draft"}, "upcoming"),
-    "complete": ("Complete Event", {"upcoming"}, "completed"),
+    "complete": ("Mark Ended", {"upcoming"}, "completed"),
     "cancel": ("Cancel Event", {"draft", "upcoming"}, "cancelled"),
     "archive": ("Archive Event", {"draft", "completed", "cancelled"}, "archived"),
     "finalize_details": ("Finalize details", {"draft", "upcoming"}, None),
@@ -82,6 +82,9 @@ def save_event(*, data, actor, event_id=None):
         event.staff_published_at = timezone.now()
         event.staff_published_by = actor
     event.save()
+    if not event_id:
+        from apps.operations.execution_services import ensure_execution
+        ensure_execution(event=event,actor=actor)
     audit_action(actor=actor, action="event.updated" if event_id else "event.created", instance=event, old_data=before, new_data=event_snapshot(event))
     if action == "publish":
         audit_action(actor=actor, action="event.published", instance=event, old_data={"status": "draft"}, new_data={"status": "upcoming"}, reason="Published to staff; public registration settings retained.")
@@ -89,7 +92,11 @@ def save_event(*, data, actor, event_id=None):
 
 @transaction.atomic
 def transition_event(*, event_id, action, actor, data):
-    require_event_permission(actor, "events.change_event")
+    if action=="complete":
+        from apps.operations.execution_services import can_end_event
+        if not can_end_event(actor,event_id):raise PermissionDenied
+    else:
+        require_event_permission(actor, "events.change_event")
     event = Event.objects.select_for_update().get(pk=event_id)
     form = EventActionForm(data)
     if not form.is_valid():
@@ -100,8 +107,17 @@ def transition_event(*, event_id, action, actor, data):
         form.add_error(None, "This event has changed. Reload it before confirming this action.")
     if action in ("cancel", "archive") and not form.cleaned_data["reason"].strip():
         form.add_error("reason", "Enter a reason to preserve the event history.")
+    if action=="archive":
+        from apps.operations.execution_models import EventExecution
+        if EventExecution.objects.filter(event=event,actual_ended_at__isnull=False,closed_at__isnull=True).exists():
+            form.add_error(None,"Complete formal event closeout before archiving; its closeout task must remain resolvable.")
     if form.errors:
         return None, form
+    if action=="complete":
+        from apps.operations.execution_services import prepare_end
+        try:prepare_end(event=event,actor=actor,data=data)
+        except ValidationError as exc:
+            form.add_error(None,exc);return None,form
     before = event_snapshot(event)
     target = TRANSITIONS[action][2]
     if target:
@@ -117,5 +133,8 @@ def transition_event(*, event_id, action, actor, data):
         event.details_finalized_by = None
     event.full_clean()
     event.save()
+    if action=="complete":
+        from apps.operations.execution_services import record_ended
+        record_ended(event=event,actor=actor,reason=form.cleaned_data.get('reason',''))
     audit_action(actor=actor, action="event." + action, instance=event, old_data=before, new_data=event_snapshot(event), reason=form.cleaned_data["reason"].strip())
     return event, form

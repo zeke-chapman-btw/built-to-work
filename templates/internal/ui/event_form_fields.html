@@ -1,0 +1,1 @@
+{% load ui_patterns %}{% include 'internal/ui/form_errors.html' %}{% for field in form %}{% if field.is_hidden %}{{ field }}{% else %}{% ui_field field %}{% endif %}{% endfor %}

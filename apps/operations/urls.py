@@ -1,7 +1,23 @@
 from django.urls import path
-from . import views, task_workspace_views, notification_views, template_views
+from . import views, task_workspace_views, notification_views, template_views, execution_views, equipment_views
 app_name="operations"
 urlpatterns=[
+ path("trailers/",equipment_views.trailer_list,name="trailers"),
+ path("trailers/<uuid:trailer_id>/edit/",equipment_views.trailer_edit,name="trailer-edit"),
+ path("execution/",execution_views.execution_index,name="execution-index"),
+ path("execution/events/<uuid:event_id>/",execution_views.board,name="execution"),
+ path("execution/events/<uuid:event_id>/health/",execution_views.board,{"section":"health"},name="health"),
+ path("execution/events/<uuid:event_id>/closeout/",execution_views.board,{"section":"closeout"},name="closeout"),
+ path("execution/events/<uuid:event_id>/manager/",execution_views.manager_edit,name="execution-manager"),
+ path("execution/events/<uuid:event_id>/actions/<str:action>/",execution_views.action,name="execution-action"),
+ path("execution/events/<uuid:event_id>/categories/add/",execution_views.category_edit,name="checklist-category-add"),
+ path("execution/events/<uuid:event_id>/categories/<uuid:category_id>/edit/",execution_views.category_edit,name="checklist-category-edit"),
+ path("execution/events/<uuid:event_id>/items/add/",execution_views.item_edit,name="checklist-item-add"),
+ path("execution/events/<uuid:event_id>/items/<uuid:item_id>/edit/",execution_views.item_edit,name="checklist-item-edit"),
+ path("execution/events/<uuid:event_id>/items/<uuid:item_id>/<str:action>/",execution_views.item_action,name="checklist-item-action"),
+ path("checklists/master/",execution_views.master_list,name="master-checklist"),
+ path("checklists/master/<str:kind>/add/",execution_views.master_edit,name="master-add"),
+ path("checklists/master/<str:kind>/<uuid:object_id>/edit/",execution_views.master_edit,name="master-edit"),
  path("templates/",template_views.template_list,name="templates"),
  path("templates/create/",template_views.template_edit,name="template-create"),
  path("templates/revisions/<uuid:revision_id>/",template_views.template_detail,name="template-detail"),

@@ -211,20 +211,21 @@ class Build10CTests(TestCase):
     def test_station_action_is_still_post_only(self):
         self.login();self.assertEqual(self.client.get(reverse('events:station_assign',args=[self.event.pk])).status_code,405)
 
-    def test_health_foundation_requires_explicit_setup_permission(self):
-        self.grant('events.view_event');self.assertEqual(health_context(self.staff,self.event),{})
+    def test_simple_health_is_readable_to_event_viewers_without_setup_write_grants(self):
+        self.grant('events.view_event');self.assertTrue(health_context(self.staff,self.event)['health_foundation_visible'])
         self.grant('operations.view_event_operations_setup')
         self.assertTrue(health_context(self.staff,self.event)['health_foundation_visible'])
         self.assertEqual(health_context(AnonymousUser(),self.event),{})
 
-    def test_assignment_does_not_grant_monitor_access(self):
-        self.assertEqual(health_context(self.staff,self.event),{})
+    def test_assignment_grants_own_checklist_read_but_not_global_event_management(self):
+        self.assertTrue(health_context(self.staff,self.event)['health_foundation_visible'])
+        self.assertEqual(self.client.get(reverse('operations:master-checklist')).status_code,302)
         self.login(self.staff);self.assertEqual(self.client.get(self.url('operations')).status_code,403)
 
     def test_monitor_is_pending_and_never_claims_verified_readiness(self):
         self.login();response=self.client.get(self.url('operations'))
-        self.assertContains(response,'Policy pending');self.assertContains(response,'read-only foundation')
-        self.assertContains(response,'No readiness status or score is calculated')
+        self.assertContains(response,'Event Health Monitor');self.assertContains(response,'does not have a checklist snapshot yet')
+        self.assertContains(response,'Progress records staff checklist completion')
         self.assertNotContains(response,'Ready with Exceptions');self.assertNotContains(response,'Approve exception')
         self.assertEqual(len(PLANNING_PHASES),4)
 

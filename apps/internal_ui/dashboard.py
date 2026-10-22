@@ -11,7 +11,7 @@ QUICK_ACTIONS = (
     {"id": "events", "label": "Events", "route": "events:event_list", "permissions": ("events.view_event",), "default": True},
     {"id": "qualifications", "label": "Qualifications", "route": "participants:staff-qualifications", "permissions": ("participants.view_participantqualification",), "default": True},
     {"id": "documents", "label": "Documents", "route": "participants:staff-document-directory", "permissions": ("participants.view_participantdocument",), "default": True},
-    {"id": "operations", "label": "Operations dashboard", "route": "events:operations-dashboard", "permissions": ("events.view_syncoutboxitem",), "default": True},
+    {"id": "operations", "label": "Platform monitoring", "route": "events:operations-dashboard", "permissions": ("events.view_syncoutboxitem",), "default": True},
     {"id": "quizzes", "label": "Quizzes and tests", "route": "assessments:dashboard", "permissions": ("assessments.view_assessmentcategory", "assessments.add_assessmentcategory"), "default": False},
     {"id": "settings", "label": "Personal settings", "route": "internal:settings", "permissions": (), "default": True},
     {"id": "stations", "label": "Stations", "route": "stations:list", "permissions": ("stations.view_station",), "default": False},

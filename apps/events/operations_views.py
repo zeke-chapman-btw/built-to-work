@@ -72,6 +72,7 @@ def operations_dashboard(request):
                        "end": item.end_number, "next": item.next_number,
                        "available": max(0, int(item.end_number) - int(item.next_number) + 1)})
     return render(request, "events/operations_dashboard.html", {
+        "page_title": "Platform monitoring",
         "central_configured": bool(getattr(settings, "BTW_CENTRAL_SYNC_URL", "")),
         "pending_sync": pending, "failed_sync": failed_sync, "latest_sync": latest_sync,
         "open_reviews": open_reviews, "latest_backup": latest_backup,

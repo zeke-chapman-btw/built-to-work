@@ -92,12 +92,12 @@ def save_plan(*,actor,event_id,data):
     revision(plan,data.get("revision")); before=snapshot(plan) if not plan._state.adding else None
     form=PlanForm(data,event=event,plan=plan)
     if not form.is_valid(): return None,form
-    for name in ("required_staff","is_published","signup_deadline"): setattr(plan,name,form.cleaned_data[name])
+    for name in ("required_staff","required_drivers","is_published","signup_deadline"): setattr(plan,name,form.cleaned_data[name])
     plan.full_clean(); plan.save()
-    old_needs=list(plan.daily_needs.values("date","required_staff"))
-    for day in event_days(event): DailyStaffingNeed.objects.update_or_create(plan=plan,date=day,defaults={"required_staff":form.cleaned_data["need_"+day.isoformat()]})
+    old_needs=list(plan.daily_needs.values("date","required_staff","required_drivers"))
+    for day in event_days(event): DailyStaffingNeed.objects.update_or_create(plan=plan,date=day,defaults={"required_staff":form.cleaned_data["need_"+day.isoformat()],"required_drivers":form.cleaned_data["drivers_"+day.isoformat()]})
     audit(actor,"plan.updated",plan,before)
-    audit_action(actor=actor,action="staffing.daily_needs.updated",instance=plan,old_data={"days":[dict(date=n["date"].isoformat(),required_staff=n["required_staff"]) for n in old_needs]},new_data={"days":[dict(date=d.isoformat(),required_staff=form.cleaned_data["need_"+d.isoformat()]) for d in event_days(event)]})
+    audit_action(actor=actor,action="staffing.daily_needs.updated",instance=plan,old_data={"days":[dict(date=n["date"].isoformat(),required_staff=n["required_staff"],required_drivers=n["required_drivers"]) for n in old_needs]},new_data={"days":[dict(date=d.isoformat(),required_staff=form.cleaned_data["need_"+d.isoformat()],required_drivers=form.cleaned_data["drivers_"+d.isoformat()]) for d in event_days(event)]})
     return plan,form
 
 
@@ -134,12 +134,12 @@ def validate_assignment(*,event,staff,days,exclude=None):
             raise ValidationError("This employee has a conflicting confirmed assignment. Review working and arrival times.")
 
 
-def _create_assignment(*,actor,event,staff,days,role="",source=None,old=None,reason=""):
+def _create_assignment(*,actor,event,staff,days,role="",coverage_role="",source=None,old=None,reason=""):
     validate_assignment(event=event,staff=staff,days=days,exclude=old.pk if old else None)
     before=snapshot(old) if old else None
     if old:
         old.status="replaced"; old.changed_by=actor; old.change_reason=reason; old.save()
-    assignment=StaffAssignment.objects.create(event=event,staff=staff,role=role,source_request=source,supersedes=old,changed_by=actor,change_reason=reason)
+    assignment=StaffAssignment.objects.create(event=event,staff=staff,role=role,coverage_role=coverage_role,source_request=source,supersedes=old,changed_by=actor,change_reason=reason)
     AssignmentDay.objects.bulk_create([AssignmentDay(assignment=assignment,**row) for row in days])
     audit(actor,"assignment.revised" if old else "assignment.confirmed",assignment,before,reason)
     return assignment
@@ -158,7 +158,7 @@ def save_assignment(*,actor,event_id,data,assignment_id=None):
     staff=form.cleaned_data["staff"]
     list(StaffProfile.objects.select_for_update().filter(pk__in=[staff.pk]+([old.staff_id] if old else [])).order_by("pk"))
     staff.refresh_from_db()
-    assignment=_create_assignment(actor=actor,event=event,staff=staff,days=form.cleaned_data["days"],role=form.cleaned_data["role"],source=old.source_request if old else None,old=old,reason=form.cleaned_data["reason"])
+    assignment=_create_assignment(actor=actor,event=event,staff=staff,days=form.cleaned_data["days"],role=form.cleaned_data["role"],coverage_role=form.cleaned_data["coverage_role"],source=old.source_request if old else None,old=old,reason=form.cleaned_data["reason"])
     return assignment,form
 
 
@@ -171,7 +171,7 @@ def decide_request(*,actor,request_id,decision,data):
     record=AvailabilityRequest.objects.select_for_update().get(pk=request_id)
     staff=StaffProfile.objects.select_for_update().get(pk=record.staff_id)
     if staff.user_id==actor.pk: raise PermissionDenied("Managers cannot approve or decline their own availability requests.")
-    form=DecisionForm(data)
+    form=DecisionForm(data,approve=decision=="approve")
     if not form.is_valid(): return None,form
     revision(record,form.cleaned_data["revision"])
     if record.status!="pending": raise ValidationError("This request has already been decided.")
@@ -180,7 +180,7 @@ def decide_request(*,actor,request_id,decision,data):
     if decision=="approve":
         if event.status!="upcoming": raise ValidationError("Publish the event before confirming staff assignments.")
         days=[day_window(event,date.fromisoformat(d)) for d in record.requested_dates]
-        _create_assignment(actor=actor,event=event,staff=staff,days=days,source=record,reason=form.cleaned_data["reason"])
+        _create_assignment(actor=actor,event=event,staff=staff,days=days,coverage_role=form.cleaned_data.get("coverage_role",""),source=record,reason=form.cleaned_data["reason"])
     record.status="approved" if decision=="approve" else "declined"
     record.decided_by=actor; record.decided_at=timezone.now(); record.decision_reason=form.cleaned_data["reason"]; record.save()
     audit(actor,"request."+record.status,record,before,record.decision_reason)
@@ -205,18 +205,38 @@ def remove_assignment(*,actor,assignment_id,data):
 
 
 def coverage(event):
+    """One confirmed person per day and one coverage category; requests never fill needs."""
     plan=StaffingPlan.objects.filter(event=event).first()
-    needs={n.date:n.required_staff for n in plan.daily_needs.all()} if plan else {}
-    assignments=StaffAssignment.objects.filter(event=event,status="confirmed")
+    needs={n.date:n for n in plan.daily_needs.all()} if plan else {}
     requests=list(AvailabilityRequest.objects.filter(event=event,status="pending"))
-    counts=dict(AssignmentDay.objects.filter(assignment__in=assignments).values("date").annotate(n=Count("assignment__staff_id",distinct=True)).values_list("date","n"))
+    counts={}
+    rows=AssignmentDay.objects.filter(assignment__event=event,assignment__status="confirmed").values(
+        "date","assignment__coverage_role").annotate(n=Count("assignment__staff_id",distinct=True))
+    for row in rows:
+        buckets=counts.setdefault(row["date"],dict(staff=0,driver=0,unclassified=0))
+        role=row["assignment__coverage_role"]
+        bucket="driver" if role in ("driver","combined") else "staff" if role in ("staff","staff_lead") else "unclassified"
+        buckets[bucket]+=row["n"]
     result=[]
     for day in event_days(event):
-        required=needs.get(day,plan.required_staff if plan else 0)
-        confirmed=counts.get(day,0)
+        need=needs.get(day)
+        staff_needed=need.required_staff if need else plan.required_staff if plan else 0
+        drivers_needed=need.required_drivers if need else plan.required_drivers if plan else 0
+        actual=counts.get(day,dict(staff=0,driver=0,unclassified=0))
+        roles=[]
+        for bucket,label,required in (("staff","Staff",staff_needed),("driver","Driver",drivers_needed)):
+            if required:
+                confirmed=actual[bucket]
+                roles.append(dict(key=bucket,label=label,required=required,confirmed=confirmed,
+                    remaining=max(0,required-confirmed),fulfilled=confirmed>=required))
         pending=sum(day.isoformat() in r.requested_dates for r in requests)
-        result.append(dict(date=day,required=required,confirmed=confirmed,pending=pending,unfilled=max(0,required-confirmed)))
-    return dict(days=result,required=sum(r["required"] for r in result),confirmed=sum(r["confirmed"] for r in result),pending=len(requests),unfilled=sum(r["unfilled"] for r in result))
+        result.append(dict(date=day,roles=roles,required=staff_needed+drivers_needed,
+            confirmed=sum(actual.values()),pending=pending,unclassified=actual["unclassified"],
+            unfilled=sum(r["remaining"] for r in roles),
+            fulfilled=bool(roles) and all(r["fulfilled"] for r in roles)))
+    return dict(days=result,required=sum(r["required"] for r in result),
+        confirmed=sum(r["confirmed"] for r in result),pending=len(requests),
+        unfilled=sum(r["unfilled"] for r in result))
 
 
 def validate_event_schedule(event, before):

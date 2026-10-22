@@ -101,6 +101,9 @@ def event_staffing(request,event_id):
     try: summary=services.coverage(event)
     except ValidationError as exc: summary=None; context["calendar_error"]=" ".join(exc.messages)
     context.update(plan=plan,summary=summary,assignments=Paginator(event.staff_assignments.select_related("staff","changed_by","source_request").prefetch_related("days").order_by("status","-created_at"),20).get_page(request.GET.get("page")),availability=event.staff_availability.select_related("staff","decided_by")[:100],can_manage=event.status in ("draft","upcoming"))
+    # Present current and retained records separately without changing pagination.
+    context["confirmed_assignments"] = [a for a in context["assignments"] if a.status == "confirmed"]
+    context["assignment_history"] = [a for a in context["assignments"] if a.status != "confirmed"]
     with timezone.override(ZoneInfo(event.timezone_name)):
         return render(request,"staffing/event_manage.html",context)
 
@@ -149,7 +152,7 @@ def request_decision(request,request_id,decision):
     services.require_manager(request.user)
     if decision not in ("approve","decline"): raise Http404
     record=get_object_or_404(AvailabilityRequest.objects.select_related("staff","event"),pk=request_id)
-    form=DecisionForm(initial={"revision":record.updated_at.isoformat()})
+    form=DecisionForm(initial={"revision":record.updated_at.isoformat()},approve=decision=="approve")
     if request.method=="POST":
         try:
             saved,form=services.decide_request(actor=request.user,request_id=record.pk,decision=decision,data=request.POST)
@@ -157,9 +160,9 @@ def request_decision(request,request_id,decision):
                 messages.success(request,"Request approved and assignment confirmed." if decision=="approve" else "Request declined. No assignment was created.")
                 return redirect("staffing:event",event_id=record.event_id)
         except ValidationError as exc:
-            form=DecisionForm(request.POST); form.is_valid(); form.add_error(None,exc)
+            form=DecisionForm(request.POST,approve=decision=="approve"); form.is_valid(); form.add_error(None,exc)
     from django.urls import reverse
-    return display_form(request,form,title="Approve availability" if decision=="approve" else "Decline availability",submit="Approve and confirm assignment" if decision=="approve" else "Decline request",back=reverse("staffing:event",args=[record.event_id]),record=record)
+    return display_form(request,form,title="Approve availability" if decision=="approve" else "Decline availability",submit="Approve and confirm assignment" if decision=="approve" else "Decline request",back=reverse("staffing:event",args=[record.event_id]),record=record,event=record.event)
 
 
 @staff_view
@@ -176,7 +179,7 @@ def assignment_remove(request,assignment_id):
         except ValidationError as exc:
             form=DecisionForm(request.POST); form.is_valid(); form.add_error(None,exc)
     from django.urls import reverse
-    return display_form(request,form,title="Remove assignment",submit="Remove confirmed assignment",back=reverse("staffing:event",args=[old.event_id]),old_assignment=old)
+    return display_form(request,form,title="Remove assignment",submit="Remove confirmed assignment",back=reverse("staffing:event",args=[old.event_id]),old_assignment=old,event=old.event)
 
 
 @staff_view

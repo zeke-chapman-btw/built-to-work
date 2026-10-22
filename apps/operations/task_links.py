@@ -45,6 +45,10 @@ def display_links(user, task):
         seen.add(pk)
         event = visible_events.get(pk)
         url = reverse("events:event_detail", args=[pk]) if event and user.has_perm("events.view_event") else (reverse("staffing:staff-event", args=[pk]) if event else None)
+        if event and not user.has_perm("events.view_event"):
+            from .execution_models import EventExecution
+            if EventExecution.objects.filter(event=event,primary_manager__user=user,primary_manager__is_active=True).exists():
+                url=reverse("operations:execution",args=[pk])
         events.append({"label":event.name if event else "Restricted event", "url":url,
                        "primary":link is None, "kind":"event" if link else "primary", "link_id":link.pk if link else task.pk})
     links = list(task.participant_links.order_by("created_at", "pk"))

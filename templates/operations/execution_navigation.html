@@ -1,0 +1,6 @@
+<nav class="event-day-selector ops-execution-navigation" aria-label="Event operations workflows">
+{% if can_view_setup_link %}<a href="{% url 'events:event_detail' event.pk %}?section=operations">Setup</a>{% endif %}
+<a href="{% url 'operations:execution' event.pk %}"{% if execution_section == 'execution' %} aria-current="page"{% endif %}>Execution</a>
+<a href="{% url 'operations:health' event.pk %}"{% if execution_section == 'health' %} aria-current="page"{% endif %}>Health Monitor</a>
+<a href="{% url 'operations:closeout' event.pk %}"{% if execution_section == 'closeout' %} aria-current="page"{% endif %}>Closeout</a>
+</nav>

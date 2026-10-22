@@ -1,0 +1,1 @@
+{% if form.errors %}<div class="btw-form-errors" role="alert"><h3>Please review these fields</h3>{{ form.non_field_errors }}<ul>{% for field in form %}{% if field.errors %}<li>{% if not field.is_hidden %}<a href="#{{ field.id_for_label }}">{{ field.label }}</a>: {% endif %}{{ field.errors|striptags }}</li>{% endif %}{% endfor %}</ul></div>{% endif %}

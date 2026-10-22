@@ -43,8 +43,10 @@ def events_for(user):
     require_task_staff(user)
     if user.has_perm("events.view_event"):
         return Event.objects.all()
-    return Event.objects.filter(staff_assignments__staff__user=user, staff_assignments__staff__is_active=True,
-                                staff_assignments__status="confirmed").exclude(status__in=("draft", "archived", "cancelled")).distinct()
+    assigned=Q(staff_assignments__staff__user=user,staff_assignments__staff__is_active=True,
+               staff_assignments__status="confirmed") & ~Q(status__in=("draft","archived","cancelled"))
+    managed=Q(execution__primary_manager__user=user,execution__primary_manager__is_active=True)
+    return Event.objects.filter(assigned|managed).distinct()
 
 
 def present_tasks(user, rows):

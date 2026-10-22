@@ -12,6 +12,7 @@ from django.views.decorators.http import require_GET, require_POST
 from apps.events.models import Event
 from apps.events.services import audit_action
 from apps.stations.models import EventStation, ExperienceActivity, ExperienceSession, Station
+from apps.operations.presentation import list_page
 from .forms import CategoryForm, EventCategoryForm, PublishQuestionSetForm, QuestionForm, QuestionSetForm
 from .models import (AssessmentCategory, AssessmentResponse, AssessmentSection,
                      EventAssessmentCategory, Question, QuestionSet, QuestionSetItem, QuizAttempt)
@@ -36,6 +37,12 @@ def _require_admin(request):
 
 
 def _authoring(request, template, context):
+    titles={"dashboard.html":"Quizzes & Tests","categories.html":"Assessment categories",
+        "category_form.html":"Edit category" if context.get("category") and not context["category"]._state.adding else "Add category",
+        "question_sets.html":"Question sets","question_set_detail.html":str(context.get("question_set","Question set")),
+        "question_form.html":"Edit question" if context.get("item") else "Add question",
+        "question_set_form.html":"New Draft question set","restart.html":"Void and restart assessment"}
+    context.setdefault("page_title",titles.get(template,"Event Quizzes & Tests"))
     return render(request, "assessments/" + template, context)
 
 
@@ -43,8 +50,9 @@ def _authoring(request, template, context):
 def dashboard(request):
     categories = AssessmentCategory.objects.all()
     sets = QuestionSet.objects.select_related("category").order_by("category__name", "-version")
+    sets,filters=list_page(request,sets,search_fields=("name","category__name"),status_field="status",status_choices=QuestionSet.Status.choices)
     return _authoring(request, "dashboard.html", {"configs": categories, "question_sets": sets,
-        "can_edit": request.user.is_superuser})
+        "can_edit": request.user.is_superuser,**filters})
 
 
 @staff_required
@@ -60,21 +68,21 @@ def category_list(request):
             return redirect("assessments:category_list")
     else:
         form = CategoryForm()
-    categories = list(AssessmentCategory.objects.all())
+    categories,filters=list_page(request,AssessmentCategory.objects.all(),search_fields=("name","description"),active_field="is_active",status_choices=(("active","Active"),("inactive","Inactive")))
     for category in categories:
         category.published_question_count = Question.objects.filter(category=category, is_active=True,
             set_memberships__is_active=True, set_memberships__question_set__status=QuestionSet.Status.PUBLISHED).distinct().count()
         category.draft_question_count = Question.objects.filter(category=category, is_active=True,
             set_memberships__is_active=True, set_memberships__question_set__status=QuestionSet.Status.DRAFT).distinct().count()
     return _authoring(request, "categories.html", {"categories": categories, "form": form,
-        "can_edit": request.user.is_superuser})
+        "can_edit": request.user.is_superuser,**filters})
 
 
 @staff_required
 def category_edit(request, category_id=None):
     _require_admin(request)
     category = get_object_or_404(AssessmentCategory, pk=category_id) if category_id else AssessmentCategory()
-    form = CategoryForm(request.POST or None, instance=category)
+    form = CategoryForm(request.POST if request.method=="POST" else None, instance=category)
     if request.method == "POST" and form.is_valid():
         old = {"name": category.name, "active": category.is_active, "display_order": category.display_order}
         form.save()
@@ -101,8 +109,9 @@ def question_set_list(request):
     else:
         form = QuestionSetForm()
     sets = QuestionSet.objects.select_related("category").order_by("category__name", "-version")
+    sets,filters=list_page(request,sets,search_fields=("name","category__name"),status_field="status",status_choices=QuestionSet.Status.choices)
     return _authoring(request, "question_sets.html", {"form": form, "question_sets": sets,
-        "can_edit": request.user.is_superuser})
+        "can_edit": request.user.is_superuser,**filters})
 
 
 @staff_required
@@ -152,12 +161,14 @@ def question_set_detail(request, set_id):
     used_ids = {row.get("source_question_id") for snapshot in
         AssessmentSection.objects.filter(question_set=question_set).values_list("questions_snapshot", flat=True)
         for row in (snapshot or []) if isinstance(row, dict)}
-    items = list(question_set.items.select_related("question").order_by("question__difficulty", "question__created_at"))
+    items,filters=list_page(request,question_set.items.select_related("question").order_by("question__difficulty","question__created_at"),
+        search_fields=("question__text",),name_field="question__text",newest_field="-question__created_at",
+        active_field="question__is_active",status_choices=(("active","Active"),("inactive","Inactive")))
     for item in items:
         item.historically_used = str(item.question_id) in used_ids
     return _authoring(request, "question_set_detail.html", {"question_set": question_set,
         "report": report, "publish_form": publish_form, "can_edit": request.user.is_superuser,
-        "items": items})
+        "items": items,**filters})
 
 
 @staff_required
@@ -166,7 +177,7 @@ def question_create(request, set_id):
     question_set = get_object_or_404(QuestionSet.objects.select_related("category"), pk=set_id)
     if question_set.status != QuestionSet.Status.DRAFT:
         raise PermissionDenied
-    form = QuestionForm(request.POST or None, request.FILES or None, category=question_set.category)
+    form = QuestionForm(request.POST if request.method=="POST" else None, request.FILES or None, category=question_set.category)
     if request.method == "POST" and form.is_valid():
         with transaction.atomic():
             question = form.save()
@@ -186,7 +197,7 @@ def question_edit(request, set_id, question_id):
     item = get_object_or_404(QuestionSetItem, question_set=question_set, question_id=question_id)
     if question_set.status != QuestionSet.Status.DRAFT:
         raise PermissionDenied
-    form = QuestionForm(request.POST or None, request.FILES or None, instance=item.question,
+    form = QuestionForm(request.POST if request.method=="POST" else None, request.FILES or None, instance=item.question,
         category=question_set.category)
     if request.method == "POST" and form.is_valid():
         old = {"text": item.question.text, "difficulty": item.question.difficulty,
@@ -214,7 +225,7 @@ def event_configuration(request, event_id):
             raise PermissionDenied("A locked Event requires an explicit Admin override and reason.")
     config_id = request.GET.get("edit")
     instance = get_object_or_404(EventAssessmentCategory, pk=config_id, event=event) if config_id else None
-    form = EventCategoryForm(request.POST or None, instance=instance, event=event)
+    form = EventCategoryForm(request.POST if request.method=="POST" else None, instance=instance, event=event)
     if request.method == "POST" and form.is_valid():
         old = None if instance is None else {"set_id": str(instance.question_set_id),
             "pool_mode": instance.pool_mode, "enabled": instance.enabled}

@@ -6,7 +6,8 @@ WORKSPACES = (
     {"id":"events","label":"EVENTS","icon":"calendar","url_name":"events:event_list","description":"Events, registrations, and ticket workflows.","permissions":("events.view_event","events.add_event","events.view_eventregistration","staffing.manage_event_staffing")},
     {"id":"participants","label":"PARTICIPANTS","icon":"people","url_name":"internal:workspace","url_kwargs":{"workspace_id":"participants"},"description":"Existing participant records and review workflows.","permissions":("participants.view_participant","participants.view_participantqualification","participants.view_participantdocument","participants.view_qualificationapprovals","participants.view_historicalimportbatch","participants.view_participantaccountrequest")},
     {"id":"tasks","label":"TASKS","icon":"tasks","url_name":"operations:tasks","description":"Your tasks, assignments and shared activity.","permissions":()},
-    {"id":"operations","label":"OPERATIONS","icon":"operations","url_name":"internal:workspace","url_kwargs":{"workspace_id":"operations"},"description":"Stations, trailer operations, synchronization, and assessments.","permissions":("events.view_event","stations.view_station","events.view_trailer","events.view_syncoperation","events.view_ticketdelivery","events.view_matchreview","events.view_operationalincident","assessments.view_assessmentcategory","assessments.add_assessmentcategory","staffing.view_staffprofile","staffing.manage_event_staffing","operations.view_operationstemplate","operations.manage_tasks","operations.manage_event_notes","operations.manage_event_documents","workdays.manage_workdays","event_reports.view_event_reports")},
+    {"id":"operations","label":"OPERATIONS","icon":"operations","url_name":"internal:workspace","url_kwargs":{"workspace_id":"operations"},"description":"Stations, trailer operations, synchronization, and assessments.","permissions":("events.view_event","stations.view_station","events.view_trailer","events.view_syncoperation","events.view_ticketdelivery","events.view_matchreview","events.view_operationalincident","assessments.view_assessmentcategory","assessments.add_assessmentcategory","staffing.view_staffprofile","staffing.manage_event_staffing","operations.view_operationstemplate","operations.manage_tasks","operations.manage_event_notes","operations.manage_event_documents","workdays.manage_workdays","event_reports.view_event_reports","operations.manage_event_execution","operations.manage_master_checklist")},
+    {"id":"platform-tools","label":"PLATFORM TOOLS","icon":"operations","url_name":"internal:workspace","url_kwargs":{"workspace_id":"platform-tools"},"description":"Existing platform monitoring, reconciliation and recovery tools.","permissions":("events.view_syncoutboxitem","events.view_participantmatchreview","events.view_backuprecord")},
     {"id":"customers","label":"CUSTOMERS","icon":"customers","url_name":"internal:workspace","url_kwargs":{"workspace_id":"customers"},"description":"Customer management is planned; no customer records or tools are available yet.","permissions":(),"planned":True},
     {"id":"administration","label":"ADMIN","icon":"settings","url_name":"internal:workspace","url_kwargs":{"workspace_id":"administration"},"description":"Authorized BTW configuration and staff administration.","permissions":("staffing.view_staffprofile","workdays.manage_workdays","auth.view_user","auth.change_user","participants.change_registrationform","participants.view_testparticipant","participants.change_testparticipant","workdays.manage_compensation","event_reports.manage_expense_categories")},
 )
@@ -54,14 +55,13 @@ WORKSPACE_LINKS = {'events': ({'label': 'My staff schedule',
                    'url_name': 'participants:staff-requests',
                    'permissions': ('participants.view_participantaccountrequest',
                                    'participants.change_participantaccountrequest')}),
- 'operations': ({'label': 'Operations Templates',
+ 'operations': ({'label':'Event Execution','description':'Event responsibilities, simple checklist progress and closeout.','url_name':'operations:execution-index','permissions':()},
+                {'label':'Master event checklist','description':'Administrator-controlled defaults for future event checklists.','url_name':'operations:master-checklist','permissions':('operations.manage_master_checklist',)},
+                {'label':'Trailers','description':'Existing trailer display settings; credentials remain in restricted administration.','url_name':'operations:trailers','permissions':('events.view_trailerinstance',)},
+                {'label': 'Operations Templates',
                  'description': 'Reusable published revisions and controlled event setup.',
                  'url_name': 'operations:templates',
                  'permissions': ('operations.view_operationstemplate',)},
-                {'label': 'Operational monitoring',
-                 'description': 'Review synchronization, deliveries, and operational incidents.',
-                 'url_name': 'events:operations-dashboard',
-                 'permissions': ('events.view_syncoutboxitem',)},
                 {'label': 'Offline event preparation',
                  'description': 'Prepare events for authorized trailer use.',
                  'url_name': 'events:offline-preparations',
@@ -84,6 +84,9 @@ WORKSPACE_LINKS = {'events': ({'label': 'My staff schedule',
                  'description': 'Manage registration questions and published form versions.',
                  'url_name': 'participants:registration-forms',
                  'permissions': ('participants.change_registrationform',)}),
+ 'platform-tools': ({'label':'Platform monitoring','description':'Existing synchronization, delivery and incident monitoring. Permanent administration home to be reviewed.','url_name':'events:operations-dashboard','permissions':('events.view_syncoutboxitem',)},
+                    {'label':'Participant match review','description':'Existing reversible offline identity review. Intended future home: participant reconciliation.','url_name':'events:match-review-list','permissions':('events.view_participantmatchreview',)},
+                    {'label':'Backup records','description':'Existing read-only backup records in restricted administration.','url_name':'admin:events_backuprecord_changelist','permissions':('events.view_backuprecord',)}),
  'administration': ({'label': 'Staff directory',
                      'description': 'Manage staff profiles and assignment history.',
                      'url_name': 'staffing:directory',
@@ -115,6 +118,7 @@ WORKSPACE_LINKS = {'events': ({'label': 'My staff schedule',
                                      'participants.change_testparticipant')})}
 
 ACTIVE_PREFIXES = {
+    "platform-tools":("/events/operations/",),
     "tasks":("/operations/tasks/","/operations/my-tasks/"),
     "events":("/events/","/staff/"),
     "participants":("/participants/",),
@@ -165,6 +169,10 @@ def visible_workspaces(user,current_path=""):
             entry["active"]=False
         if current_path.startswith(("/reports/events/","/workdays/events/")) and item["id"] in ("events","operations"):
             entry["active"]=item["id"]=="events"
+        if current_path.startswith("/events/operations/") and item["id"] in ("operations","platform-tools"):
+            entry["active"]=item["id"]=="platform-tools"
+        if current_path.startswith("/operations/execution/events/") and item["id"] in ("events","operations"):
+            entry["active"]=item["id"]=="events"
         visible.append(entry)
         if current_path.startswith("/operations/setup/events/") and item["id"] in ("events","operations"):
             entry["active"]=item["id"]=="events"
@@ -185,6 +193,7 @@ def visible_workspace_links(user,workspace_id):
 def _destination_allowed(user, item):
     """Match complete existing endpoint policies, without granting permissions."""
     route=item["url_name"]
+    if route=="operations:trailers":return user.is_superuser
     if route in ("workdays:index","workdays:reports"):
         from apps.workdays.services import manager
         return manager(user)

@@ -58,7 +58,10 @@ class OfflineRegistrationForm(forms.Form):
 @staff_permission_required('events.view_offlineeventpreparation')
 def offline_preparations(request):
     preparations = OfflineEventPreparation.objects.select_related("event", "trailer").order_by("event__start_at")
-    return render(request, "events/offline_preparations.html", {"preparations": preparations})
+    from apps.operations.presentation import list_page
+    preparations,filters=list_page(request,preparations,search_fields=("event__name","trailer__display_name","trailer__identity"),
+        name_field="event__name",newest_field="-created_at",status_field="status",status_choices=OfflineEventPreparation.Status.choices)
+    return render(request,"events/offline_preparations.html",dict(page_title="Offline event preparation",preparations=preparations,**filters))
 
 
 @staff_permission_required('events.view_offlineeventpreparation')
@@ -68,7 +71,7 @@ def offline_preparation_detail(request, preparation_id):
     from .models import CentralEventDownload, EventRegistration
     download = CentralEventDownload.objects.filter(event_id=preparation.event_id, trailer_identity=preparation.trailer.identity).first()
     local_online_count = EventRegistration.objects.filter(event=preparation.event, source__in=("online", "public"), status="active").count()
-    return render(request, "events/offline_preparation_detail.html", {"preparation": preparation, "readiness": readiness, "download": download, "local_online_count": local_online_count})
+    return render(request, "events/offline_preparation_detail.html", {"page_title":"Offline event preparation","preparation": preparation, "readiness": readiness, "download": download, "local_online_count": local_online_count})
 
 
 @staff_permission_required('events.change_offlineeventpreparation')

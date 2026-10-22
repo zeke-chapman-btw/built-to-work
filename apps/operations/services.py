@@ -29,7 +29,7 @@ def assigned_event(user,event):
     return bool(p and event.status not in ("draft","archived","cancelled") and StaffAssignment.objects.filter(event=event,staff=p,status="confirmed").exists())
 def event_access(user,event,kind):
     require_staff(user)
-    if not (manager(user,kind) or assigned_event(user,event)):raise PermissionDenied
+    if not (manager(user,kind) or assigned_event(user,event) or (kind=="tasks" and primary_event_manager(user,event))):raise PermissionDenied
 
 def mutable(event):
     if event and event.status=="archived":raise ValidationError("Archived event operations are read-only. History is retained.")
@@ -60,6 +60,8 @@ def save_task(*, actor, data, task_id=None, event_id=None, creation_id=None):
     list(Event.objects.select_for_update().filter(pk__in=sorted(set(ids))).order_by("pk"))
     obj = Task.objects.select_for_update().get(pk=task_id) if task_id else (Task(pk=creation_id) if creation_id else Task())
     if task_id:
+        from .execution_services import guard_managed_task
+        guard_managed_task(obj)
         task_access.require_task_access(actor, obj)
     revision(obj, data.get("revision"))
     before = snap(obj) if task_id else None
@@ -96,6 +98,8 @@ def save_task(*, actor, data, task_id=None, event_id=None, creation_id=None):
 def task_status(*, actor, task_id, data):
     task_access.require_task_staff(actor)
     obj = Task.objects.select_for_update().get(pk=task_id)
+    from .execution_services import guard_managed_task
+    guard_managed_task(obj)
     task_access.require_task_access(actor, obj)
     form = StatusForm(data)
     if not form.is_valid():
@@ -119,6 +123,8 @@ def task_status(*, actor, task_id, data):
 def task_archive(*, actor, task_id, data, restore=False):
     task_access.require_task_staff(actor)
     obj = Task.objects.select_for_update().get(pk=task_id)
+    from .execution_services import guard_managed_task
+    guard_managed_task(obj)
     task_access.require_task_access(actor, obj)
     form = TaskRevisionForm(data)
     if not form.is_valid():
@@ -188,3 +194,9 @@ def archive(*,actor,obj_id,kind,data):
     if obj.archived_at:raise ValidationError("This record is already archived.")
     before=snap(obj);obj.archived_at=timezone.now();obj.save();audit(actor,"note.archived" if cls==EventNote else "document.archived",obj,before,form.cleaned_data["reason"])
     return obj,form
+
+
+def primary_event_manager(user,event):
+    from .execution_models import EventExecution
+    return bool(user.is_authenticated and user.is_active and user.is_staff and
+        EventExecution.objects.filter(event=event,primary_manager__user=user,primary_manager__is_active=True).exists())

@@ -66,7 +66,7 @@ class Build10ATests(TestCase):
         self.assertIsNone(operations_home(self.staff)['featured'])
     def test_restricted_tabs_and_tools_are_absent(self):
         self.grant('events.view_event')
-        self.assertEqual([x['id'] for x in event_tabs(self.staff,self.next)],['overview'])
+        self.assertEqual([x['id'] for x in event_tabs(self.staff,self.next)],['overview','operations'])
         self.assertEqual(event_tools(self.staff,self.next),[])
         self.login()
         for section in ['results','registrations']:
@@ -77,7 +77,7 @@ class Build10ATests(TestCase):
         response=self.client.get(reverse('events:event_detail',args=[self.next.pk])+'?section=operations')
         self.assertContains(response,'Public registration settings')
         self.assertNotContains(response,'Station assignments')
-        self.assertContains(response,'Policy-dependent Health Monitor verification is pending')
+        self.assertContains(response,'Health Monitor')
         self.assertNotContains(response,'Ready with Exceptions')
         self.assertEqual(response.context['section'],'operations')
     def test_event_visibility_is_required_for_operations_section(self):
@@ -85,7 +85,8 @@ class Build10ATests(TestCase):
     def test_assigned_staff_do_not_gain_health_or_management_tools(self):
         StaffAssignment.objects.create(event=self.next,staff=self.profile)
         self.assertEqual(event_tools(self.staff,self.next),[])
-        self.assertNotIn('operations',[x['id'] for x in event_tabs(self.staff,self.next)])
+        self.assertIn('operations',[x['id'] for x in event_tabs(self.staff,self.next)])
+        self.assertEqual(next(x['url'] for x in event_tabs(self.staff,self.next) if x['id']=='operations'),reverse('operations:execution',args=[self.next.pk]))
     def test_complete_manager_tabs_reuse_existing_routes(self):
         tabs={x['id']:x for x in event_tabs(self.admin,self.next)}
         self.assertEqual(tabs['staff']['url'],reverse('staffing:event',args=[self.next.pk]))
@@ -114,7 +115,8 @@ class Build10ATests(TestCase):
         links=visible_workspace_links(self.staff,'operations')
         self.assertNotIn('events:operations-dashboard',[x['url_name'] for x in links])
         self.grant('events.view_syncoutboxitem')
-        self.assertIn('events:operations-dashboard',[x['url_name'] for x in visible_workspace_links(self.staff,'operations')])
+        self.assertNotIn('events:operations-dashboard',[x['url_name'] for x in visible_workspace_links(self.staff,'operations')])
+        self.assertIn('events:operations-dashboard',[x['url_name'] for x in visible_workspace_links(self.staff,'platform-tools')])
     def test_workday_navigation_requires_complete_manager_predicate(self):
         self.grant('workdays.manage_workdays')
         self.assertNotIn('workdays:index',[x['url_name'] for x in visible_workspace_links(self.staff,'administration')])

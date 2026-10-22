@@ -100,3 +100,5 @@ class EventDocument(UUIDModel, TimestampedModel):
         permissions=[("manage_event_documents","Can manage event operational documents")]
 
 from .template_models import OperationsTemplate, OperationsTemplateRevision, OperationsTemplateResource, EventOperationsApplication
+
+from .execution_models import (ChecklistMaster,MasterChecklistCategory,MasterChecklistItem,EventExecution,EventChecklistCategory,EventChecklistItem)

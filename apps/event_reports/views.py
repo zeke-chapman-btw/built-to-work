@@ -117,7 +117,7 @@ def action(request,record_id,kind,action):
     if action=='history':
         readonly(request)
         logs=AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(obj),object_id=str(obj.pk)).select_related('actor').order_by('-timestamp')
-        return page(request,'history',page_title='Financial correction history',record=obj,logs=Paginator(logs,40).get_page(request.GET.get('page')))
+        return page(request,'history',page_title='Financial correction history',event=obj.event,record=obj,logs=Paginator(logs,40).get_page(request.GET.get('page')))
     svc.require_manage(request.user);svc.mutable(obj.event)
     form=RevisionForm(initial={'revision':obj.updated_at.isoformat()})
     if request.method=='POST':

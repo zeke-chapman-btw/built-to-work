@@ -50,6 +50,9 @@ class EventAdmin(admin.ModelAdmin):
             if not change:
                 obj.created_by = request.user
             super().save_model(request, obj, form, change)
+            if not change:
+                from apps.operations.execution_services import ensure_execution
+                ensure_execution(event=obj,actor=request.user)
             audit_action(actor=request.user, action="event.updated" if change else "event.created", instance=obj, old_data=before, new_data=event_snapshot(obj), reason="Edited in Django administration; lifecycle actions remain in Events.")
 
 

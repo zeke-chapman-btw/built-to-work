@@ -20,6 +20,8 @@ def add_links(*, actor, task_id, data, event_query="", participant_query="", inc
     require_task_staff(actor)
     initial = Task.objects.get(pk=task_id)
     require_task_access(actor, initial)
+    from .execution_services import guard_managed_task
+    guard_managed_task(initial)
     form = TaskLinksForm(data, actor=actor, event_query=event_query, participant_query=participant_query, include_selected=include_selected)
     if not form.is_valid():
         return None, form
@@ -53,6 +55,8 @@ def remove_link(*, actor, task_id, kind, link_id, data):
     require_task_staff(actor)
     task = Task.objects.select_for_update().get(pk=task_id)
     require_task_access(actor, task)
+    from .execution_services import guard_managed_task
+    guard_managed_task(task)
     form = TaskRevisionForm(data)
     if not form.is_valid():
         return None, form

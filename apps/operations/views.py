@@ -35,14 +35,14 @@ def staff_view(fn):
 
 def task_destination(request,task):
     return workspace.detail_url(task,request.POST.get('return_to',request.GET.get('return_to','')))
-def form_page(request,form,title,back):
+def form_page(request,form,title,back,event=None,section='overview'):
     is_task=isinstance(form,(TaskForm,StatusForm,TaskRevisionForm,TaskCommentForm))
     template='operations/task_form.html' if is_task else 'operations/form.html'
     task_return_to=workspace.return_path(request.POST.get('return_to',request.GET.get('return_to','')))
     if is_task:
         if back==reverse('operations:tasks'):back=task_return_to
         elif back.startswith(reverse('operations:tasks')):back+='?'+urlencode({'return_to':task_return_to})
-    return render(request,template,dict(form=form,page_title=title,back=back,task_return_to=task_return_to),status=400 if form.is_bound else 200)
+    return render(request,template,dict(form=form,page_title=title,back=back,task_return_to=task_return_to,event=event,section=section),status=400 if form.is_bound else 200)
 @staff_view
 def task_list(request,mine=False):
     if request.method != 'GET':raise PermissionDenied
@@ -56,8 +56,12 @@ def task_detail(request,task_id):
     task_access.present_tasks(request.user, [obj])
     history = Paginator(task_history.entries_for(request.user, obj), 20).get_page(request.GET.get("history_page"))
     rows = task_history.present_history(request.user, history.object_list)
+    from .execution_models import EventExecution
+    from .execution_services import can_view
+    closeout=EventExecution.objects.select_related("event").filter(closeout_task=obj).first()
+    closeout_url=reverse("operations:closeout",args=[closeout.event_id]) if closeout and can_view(request.user,closeout.event) else ""
     return render(request, "operations/task.html", dict(page_title=obj.title, task=obj, managing=True,
-        can_change=True, history=history, history_rows=rows, today=timezone.localdate(),
+        can_change=not bool(closeout), managed_closeout=bool(closeout), closeout_url=closeout_url, history=history, history_rows=rows, today=timezone.localdate(),
         linked_records=task_links.display_links(request.user,obj),
         comment_form=TaskCommentForm(initial={"revision":obj.updated_at.isoformat()}),
         task_back_url=workspace.return_path(request.GET.get("return_to",""))))
@@ -73,7 +77,7 @@ def task_edit(request,task_id=None,event_id=None):
             messages.success(request, "Task saved.")
             return redirect(task_destination(request,saved))
     back = reverse("operations:task", args=[obj.pk]) if task_id else reverse("operations:tasks")
-    return form_page(request,form,"Edit task" if task_id else "Add Task",back)
+    return form_page(request,form,"Edit task" if task_id else "Add Task",back,event=event,section="tasks")
 
 @staff_view
 def task_status(request,task_id):
@@ -160,10 +164,14 @@ def event_operations(request,event_id,section="tasks"):
         if section!="notes":raise PermissionDenied
         saved,form=svc.save_note(actor=request.user,event_id=event.pk,data=request.POST)
         if saved:messages.success(request,"Event note added.");return redirect("operations:event",event_id=event.pk,section="notes")
-    tabs=[(name,reverse("operations:event",args=[event.pk,name])) for name,k in KINDS.items() if svc.manager(request.user,k) or svc.assigned_event(request.user,event)]
+    tabs=[(name,reverse("operations:event",args=[event.pk,name])) for name,k in KINDS.items() if svc.manager(request.user,k) or svc.assigned_event(request.user,event) or (name=="tasks" and svc.primary_event_manager(request.user,event))]
     back=reverse("events:event_detail",args=[event.pk]) if request.user.has_perm("events.view_event") else reverse("staffing:staff-event",args=[event.pk])
+    if not request.user.has_perm("events.view_event") and svc.primary_event_manager(request.user,event):
+        back=reverse("operations:execution",args=[event.pk])
     task_page = Paginator(task_links.event_tasks(svc.tasks_for(request.user),event).filter(archived_at__isnull=True),20).get_page(request.GET.get("page"))
     task_page.object_list = task_access.present_tasks(request.user,task_page.object_list)
+    for task in task_page.object_list:
+        task.detail_url = workspace.detail_url(task, reverse("operations:event", args=[event.pk, "tasks"]))
     return render(request,"operations/event.html",dict(page_title=event.name,event=event,section=section,tabs=tabs,back=back,managing=managing,can_write=event.status!="archived",tasks=task_page,notes=Paginator(notes,30).get_page(request.GET.get("page")),documents=Paginator(docs,20).get_page(request.GET.get("page")),form=form,uploads_available=storage.uploads_available(),demo_available=settings.DEBUG or getattr(settings,"BTW_PREVIEW_GATE_ENABLED",False)),status=400 if form.is_bound else 200)
 @staff_view
 def events_index(request):
@@ -188,7 +196,7 @@ def note_edit(request,note_id):
     if request.method=="POST":
         saved,form=svc.save_note(actor=request.user,event_id=obj.event_id,note_id=obj.pk,data=request.POST)
         if saved:messages.success(request,"Note corrected; prior content remains in the audit history.");return redirect("operations:event",event_id=obj.event_id,section="notes")
-    return form_page(request,form,"Edit event note",reverse("operations:event",args=[obj.event_id,"notes"]))
+    return form_page(request,form,"Edit event note",reverse("operations:event",args=[obj.event_id,"notes"]),event=obj.event,section="notes")
 @staff_view
 def document_upload(request,event_id,demo=False):
     svc.require_manager(request.user,"event_documents");event=get_object_or_404(Event,pk=event_id);svc.mutable(event)
@@ -197,7 +205,7 @@ def document_upload(request,event_id,demo=False):
     if request.method=="POST":
         saved,form=svc.create_document(actor=request.user,event_id=event.pk,data=request.POST,upload=request.FILES.get("file"),demo=demo)
         if saved:messages.success(request,"Synthetic preview document created." if demo else "Private operational document uploaded.");return redirect("operations:event",event_id=event.pk,section="documents")
-    return form_page(request,form,"Create synthetic preview document" if demo else "Upload operational document",reverse("operations:event",args=[event.pk,"documents"]))
+    return form_page(request,form,"Create synthetic preview document" if demo else "Upload operational document",reverse("operations:event",args=[event.pk,"documents"]),event=event,section="documents")
 @staff_view
 def archive(request,obj_id,kind):
     if kind not in ("event_notes","event_documents"):raise Http404
@@ -207,7 +215,7 @@ def archive(request,obj_id,kind):
     if request.method=="POST":
         saved,form=svc.archive(actor=request.user,obj_id=obj.pk,kind=kind,data=request.POST)
         if saved:messages.success(request,"Archived. History and audit records are retained.");return redirect("operations:event",event_id=obj.event_id,section="notes" if kind=="event_notes" else "documents")
-    return form_page(request,form,"Archive operational record",reverse("operations:event",args=[obj.event_id,"notes" if kind=="event_notes" else "documents"]))
+    return form_page(request,form,"Archive operational record",reverse("operations:event",args=[obj.event_id,"notes" if kind=="event_notes" else "documents"]),event=obj.event,section="notes" if kind=="event_notes" else "documents")
 @staff_view
 def download(request,document_id):
     if request.method!="GET":raise PermissionDenied

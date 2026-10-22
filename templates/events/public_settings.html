@@ -1,14 +1,12 @@
-{% extends "internal/base.html" %}
+{% extends "internal/base.html" %}{% load event_ui %}
 {% block title %}Public registration | {{ event.name }}{% endblock %}
-{% block page_heading %}{% endblock %}{% block content %}
+{% block page_heading %}{% event_header event %}{% endblock %}{% block content %}
 <section class="events-page btw-event-settings">
-<p><a href="{% url 'events:event_detail' event.id %}">← {{ event.name }}</a></p>
-<h1 class="record-title">Public registration</h1>
+{% event_navigation event "operations" %}<h2>Public registration settings</h2>
 <p>Share a registration link for this event. The trailer registration route remains separate.</p>
-<div class="card"><h2>Link and availability</h2>
-<form method="post">{% csrf_token %}{{ form.non_field_errors }}
-{% for field in form %}<p>{{ field.label_tag }}<br>{{ field }} {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{{ field.errors }}</p>{% endfor %}
-<button class="button button-primary" type="submit">Save public registration settings</button></form>
+<div class="card btw-form-card"><h2>Link and availability</h2>
+<form method="post">{% csrf_token %}{% include 'internal/ui/event_form_fields.html' %}
+<div class="btw-form-actions"><a class="button secondary" href="{% url 'events:event_detail' event.pk %}?section=operations">Cancel</a><button class="button button-primary" type="submit">Save public registration settings</button></div></form>
 {% if public_url %}<p><strong>Shareable URL:</strong> <a href="{{ public_url }}" target="_blank" rel="noopener">{{ public_url }}</a></p>
 <p><button class="button" type="button" onclick="navigator.clipboard.writeText(document.getElementById('public-url').value)">Copy URL</button>
 <a class="button" href="{{ public_url }}?preview=1" target="_blank" rel="noopener">Preview form</a>
