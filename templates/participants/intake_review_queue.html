@@ -1,0 +1,6 @@
+{% extends "participants/intake_internal_base.html" %}{% block content %}
+<section class="card"><p>Resolve intake identity conflicts without deleting or combining established records.</p>
+<nav class="tab-nav" aria-label="Review status"><a href="?status=open">Open</a><a href="?status=later">Review later</a><a href="?status=resolved">Associated</a><a href="?status=rejected">Kept separate</a></nav>
+<div class="table-scroll"><table><thead><tr><th>Participant</th><th>Event</th><th>Conflicts</th><th>Received</th><th></th></tr></thead><tbody>
+{% for row in reviews %}<tr><td>{{ row.source_participant }}</td><td>{{ row.source_submission.event|default:"General intake" }}</td><td>{{ row.conflict_reasons|join:", " }}</td><td>{{ row.created_at }}</td><td><a href="{% url 'participants:intake-review-detail' row.id %}">Review intake</a></td></tr>{% empty %}<tr><td colspan="5">No intakes in this queue.</td></tr>{% endfor %}</tbody></table></div>
+<p>Page {{ reviews.number }} of {{ reviews.paginator.num_pages }}</p>{% if reviews.has_previous %}<a href="?status={{ status }}&page={{ reviews.previous_page_number }}">Previous</a>{% endif %} {% if reviews.has_next %}<a href="?status={{ status }}&page={{ reviews.next_page_number }}">Next</a>{% endif %}</section>{% endblock %}

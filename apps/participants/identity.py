@@ -153,3 +153,14 @@ def canonical_records(queryset, field="participant_id"):
 def member_ids(population):
     return canonical_records(Participant.objects.filter(kind=Participant.Kind.PERSON), "pk").filter(
         _canonical_person__in=population.values("pk")).values("pk")
+
+
+@contextmanager
+def fresh_identity_context():
+    """Rebuild the read projection after an authorized identity-link write."""
+    token = _identity_read_context.set(None)
+    try:
+        with identity_context():
+            yield
+    finally:
+        _identity_read_context.reset(token)

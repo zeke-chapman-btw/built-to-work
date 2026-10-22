@@ -50,6 +50,11 @@ class StaffParticipantCreateForm(forms.ModelForm):
 
 
 class WorkExperienceForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.source == "staff":
+            self.fields["employer"].required = True
+            self.fields["role"].required = True
     revision = forms.CharField(required=False, widget=forms.HiddenInput)
     audit_reason = forms.CharField(max_length=500, label="Reason / source for this change")
     class Meta:
@@ -122,7 +127,7 @@ class DiscoveryForm(forms.Form):
     availability = forms.CharField(required=False, max_length=120, label="Availability text")
     preferred_location = forms.CharField(required=False, max_length=120, label="Preferred work geography")
     work_type = forms.ChoiceField(required=False, choices=[("", "Any work arrangement")] + list(ParticipantCareerProfile._meta.get_field("preferred_work_type").choices[1:]))
-    travel = forms.ChoiceField(required=False, choices=[("", "Any travel preference"), ("yes", "Willing to travel"), ("no", "Not willing to travel"), ("unknown", "Travel preference unknown")])
+    travel = forms.ChoiceField(required=False, choices=[("", "Any travel preference"), ("yes", "Willing to travel"), ("no", "Not willing to travel"), ("maybe", "May be willing to travel"), ("unknown", "Travel preference unknown")])
     channel = forms.ChoiceField(required=False, choices=[("", "Any original acquisition")] + list(ParticipantAcquisition.Channel.choices))
     acquired_from = forms.DateField(required=False, widget=DATE, label="Acquired from")
     acquired_to = forms.DateField(required=False, widget=DATE, label="Acquired through")

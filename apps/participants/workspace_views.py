@@ -191,6 +191,8 @@ def profile(request, participant_id):
     ctx["related_tasks"] = TaskParticipantLink.objects.filter(participant_id__in=member_ids, task__in=tasks_for(request.user)).select_related("task", "task__assigned_staff").order_by("-created_at")[:25]
     if section == "activity":
         ctx["timeline"] = factual_timeline(request.user, person, member_ids, ctx)
+    from .intake_workspace import workspace_intake_context
+    ctx.update(workspace_intake_context(request.user, person, member_ids, ctx["career"]))
     return render(request, "participants/staff_profile.html", ctx)
 
 

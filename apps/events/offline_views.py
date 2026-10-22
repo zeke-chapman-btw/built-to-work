@@ -71,7 +71,14 @@ def offline_preparation_detail(request, preparation_id):
     from .models import CentralEventDownload, EventRegistration
     download = CentralEventDownload.objects.filter(event_id=preparation.event_id, trailer_identity=preparation.trailer.identity).first()
     local_online_count = EventRegistration.objects.filter(event=preparation.event, source__in=("online", "public"), status="active").count()
-    return render(request, "events/offline_preparation_detail.html", {"page_title":"Offline event preparation","preparation": preparation, "readiness": readiness, "download": download, "local_online_count": local_online_count})
+    from apps.participants.models import TrailerIntakeActivation
+    from .models import SyncOutboxItem
+    activation = TrailerIntakeActivation.objects.select_related("active_version__form").filter(
+        trailer=preparation.trailer, event=preparation.event).first()
+    intake_sync = SyncOutboxItem.objects.filter(preparation=preparation, operation_type="intake.completed").order_by("-created_at")[:10]
+    return render(request, "events/offline_preparation_detail.html", {"page_title":"Offline event preparation",
+        "preparation": preparation, "readiness": readiness, "download": download,
+        "local_online_count": local_online_count, "intake_activation": activation, "intake_sync": intake_sync})
 
 
 @staff_permission_required('events.change_offlineeventpreparation')
@@ -90,6 +97,11 @@ def offline_activate(request, preparation_id):
 @staff_permission_required('events.view_offlineeventpreparation', 'events.add_eventregistration')
 def offline_register(request, preparation_id):
     preparation = get_object_or_404(OfflineEventPreparation.objects.select_related("event", "consent_document"), pk=preparation_id)
+    from apps.participants.intake_views import assigned
+    trailer = getattr(preparation, "trailer", None)
+    smart = assigned("trailer", event=preparation.event, trailer=trailer) if trailer is not None else None
+    if smart:
+        return redirect("participants:intake-start", assignment_id=smart.pk)
     form = OfflineRegistrationForm(request.POST or None, preparation=preparation)
     if request.method == "POST" and form.is_valid():
         answers = {question.key: form.cleaned_data.get(question.key) for question in form.question_definitions}

@@ -77,9 +77,7 @@ def event_configuration(preparation):
         raise ValidationError("Approved consent PDF is required for offline preparation")
     used_docs = ConsentDocumentVersion.objects.filter(acceptances__submission__event=event).distinct()
     documents = [doc] + [item for item in used_docs if item.pk != doc.pk]
-    form_version = RegistrationFormVersion.objects.filter(status="published").select_related("form").order_by("-version").first()
-    if not form_version:
-        raise ValidationError("Published registration form is required")
+    form_version = RegistrationFormVersion.objects.filter(status="published", form__is_smart_intake=False).select_related("form").order_by("-version").first()
     return {
         "event_id": str(event.pk), "preparation_id": str(preparation.pk),
         "event": {"id": str(event.pk), **_fields(event, EVENT_FIELDS), **{key: stamp(getattr(event, key)) for key in EVENT_DATES}},
@@ -92,9 +90,9 @@ def event_configuration(preparation):
                        "position": q.position} for q in event.registration_questions.order_by("pk")],
         "consent": _document_payload(doc),
         "consent_versions": [_document_payload(item) for item in documents],
-        "form": _form_payload(form_version),
+        "form": _form_payload(form_version) if form_version else None,
         "form_versions": [_form_payload(item) for item in RegistrationFormVersion.objects.filter(
-            submissions__event=event).select_related("form").distinct() if item.pk != form_version.pk],
+            submissions__event=event, form__is_smart_intake=False).select_related("form").distinct() if not form_version or item.pk != form_version.pk],
         "ranges": [{"kind": r.kind, "start_number": r.start_number, "end_number": r.end_number,
                     "next_number": r.next_number, "is_exhausted": r.is_exhausted}
                    for r in preparation.ticket_ranges.order_by("kind")],
@@ -144,7 +142,7 @@ def registration_record(reg):
     acceptance = submission.consent_acceptances.select_related("document").order_by("-accepted_at").first()
     if acceptance is None:
         raise ValidationError("Pre-registration lacks consent evidence")
-    return {
+    record = {
         "participant": {"identity_uuid": str(participant.identity_uuid), **_fields(participant, PARTICIPANT_FIELDS),
                         "date_of_birth": participant.date_of_birth.isoformat() if participant.date_of_birth else None,
                         "created_at": stamp(participant.created_at), "updated_at": stamp(participant.updated_at)},
@@ -167,6 +165,16 @@ def registration_record(reg):
                     "metadata": acceptance.metadata},
         "changed_at": stamp(registration_changed_at(reg)),
     }
+    if submission.intake_operation_id:
+        # Automatic pre-registration downloads carry references and answers only.
+        # New form definitions require explicit local Admin installation.
+        record["submission"].update(
+            intake_operation_id=str(submission.intake_operation_id),
+            form_stable_id=str(submission.form_version.stable_id),
+            contract_hash=submission.form_version.content_hash,
+            intake_metadata=submission.intake_metadata,
+            answer_snapshot={"answers": submission.answers})
+    return record
 
 
 def _same(obj, values):
@@ -252,6 +260,8 @@ def apply_configuration(download, config):
     if doc.content_hash != current["content_hash"] or doc.body != current["body"]:
         raise ValidationError("Current consent version does not match its transferred document")
     for f in [config["form"], *config.get("form_versions", [])]:
+        if f is None:
+            continue
         form, _ = RegistrationForm.objects.get_or_create(slug=f["slug"], defaults={"name": f["name"]})
         form_version = RegistrationFormVersion.objects.filter(form=form, version=f["version"]).first()
         if form_version:
@@ -298,6 +308,17 @@ def apply_configuration(download, config):
 
 
 def apply_registration(download, row):
+    smart = row.get("submission", {}).get("intake_operation_id")
+    approved_intake = None
+    if smart:
+        from apps.participants.intake_lifecycle import verify_published
+        reference = row["submission"]
+        approved_intake = RegistrationFormVersion.objects.select_related("form").filter(
+            stable_id=reference.get("form_stable_id"), form__slug=reference.get("form_slug"),
+            version=reference.get("form_version")).first()
+        if approved_intake is None or approved_intake.content_hash != reference.get("contract_hash"):
+            raise ValidationError("A local Admin must explicitly install this exact approved intake version before importing its pre-registration.")
+        verify_published(approved_intake, allow_retired=True)
     data = row["registration"]
     if data["event_id"] != str(download.event_id) or data["source"] not in ("online", "public"):
         raise ValidationError("Downloaded registration has wrong event or source")
@@ -310,6 +331,8 @@ def apply_registration(download, row):
         participant = Participant.objects.create(identity_uuid=identity, **pfields)
         Participant.objects.filter(pk=participant.pk).update(created_at=when(person["created_at"]), updated_at=when(person["updated_at"]))
     elif not _same(participant, pfields):
+        if smart:
+            raise ValidationError("Local participant facts differ from the central intake copy; staff review is required before updating them.")
         if participant.updated_at > when(person["updated_at"]):
             raise ValidationError("Local participant record is newer; staff review required")
         for key, value in pfields.items():
@@ -403,18 +426,25 @@ def apply_registration(download, row):
                 old.superseded_by = replacement
                 old.save(update_fields=("superseded_by",))
     sub = row["submission"]
-    form_version = RegistrationFormVersion.objects.filter(form__slug=sub["form_slug"], version=sub["form_version"], status="published").first()
+    form_version = approved_intake or RegistrationFormVersion.objects.filter(form__slug=sub["form_slug"], version=sub["form_version"], status="published").first()
     if not form_version:
         raise ValidationError("Submission references unknown published form version")
     source_key = "central-" + hashlib.sha256(f"{download.event_id}:{reg.pk}:{sub['source_id']}".encode()).hexdigest()[:56]
+    if smart:
+        source_key = "intake:" + str(uuid.UUID(smart))
     submission = RegistrationSubmission.objects.filter(idempotency_key=source_key).first()
+    if smart and submission and (submission.form_version_id != form_version.pk or submission.answers != sub["answers"]):
+        raise ValidationError("The portable intake operation conflicts with retained local evidence.")
     if submission and (submission.participant_id != participant.pk or submission.event_id != download.event_id):
         raise ValidationError("Submission identity collision")
+    submission_created = submission is None
     if not submission:
         submission = RegistrationSubmission.objects.create(form_version=form_version, participant=participant,
             event_id=download.event_id, status=sub["status"], answers=sub["answers"],
-            answer_snapshot=sub["answer_snapshot"], age_classification=sub["age_classification"],
-            submitted_at=when(sub["submitted_at"]), source=sub["source"], idempotency_key=source_key)
+            answer_snapshot={"contract": form_version.snapshot, "answers": sub["answers"]} if smart else sub["answer_snapshot"],
+            age_classification=sub["age_classification"],
+            submitted_at=when(sub["submitted_at"]), source=sub["source"], idempotency_key=source_key,
+            **({"intake_operation_id": uuid.UUID(smart), "intake_metadata": sub["intake_metadata"]} if smart else {}))
         RegistrationSubmission.objects.filter(pk=submission.pk).update(created_at=when(sub["created_at"]), updated_at=when(sub["updated_at"]))
     consent = row["consent"]
     doc = ConsentDocumentVersion.objects.filter(key=consent["key"], version=consent["version"],
@@ -428,6 +458,9 @@ def apply_registration(download, row):
         ConsentAcceptance.objects.filter(pk=acceptance.pk).update(
         accepted_at=when(consent["accepted_at"]), created_at=when(consent["created_at"]),
         updated_at=when(consent["updated_at"]))
+    if smart and submission_created:
+        from apps.participants.intake_projection import project_intake
+        project_intake(submission=submission, is_new=False)
     return reg
 
 

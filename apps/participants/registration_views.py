@@ -63,6 +63,10 @@ def registration_start(request, event_id=None):
     if event_id:
         from apps.events.models import Event
         event = get_object_or_404(Event, pk=event_id)
+    from .intake_views import assigned
+    smart = assigned("event" if event else "online", event=event)
+    if smart:
+        return redirect("participants:intake-start", assignment_id=smart.pk)
     if request.method == "POST":
         return redirect("participants:registration-form" + (("?event=" + str(event.pk)) if event else ""))
     return render(request, "participants/registration_start.html", {"event": event})
@@ -81,6 +85,16 @@ def _registration_complete(request, submission):
 
 
 def registration_form(request, *, fixed_event=None, public=False):
+    # Explicit 11B assignments opt in without changing legacy, unassigned forms.
+    from .intake_views import assigned
+    smart_event = fixed_event
+    raw_event = request.GET.get("event") or request.POST.get("event")
+    if smart_event is None and raw_event:
+        from apps.events.models import Event
+        smart_event = get_object_or_404(Event, pk=raw_event)
+    smart = assigned("event" if smart_event else "online", event=smart_event)
+    if smart:
+        return redirect("participants:intake-start", assignment_id=smart.pk)
     # The rendered form carries a request key; resubmitting that form is idempotent.
     # Legacy/API POSTs without a key remain independent submissions.
     submitted_key = request.POST.get("registration_request_key", "") if request.method == "POST" else ""

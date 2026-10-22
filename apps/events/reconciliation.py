@@ -32,9 +32,11 @@ def resolve_match(*, review_id, action, reason, actor):
         raise ValidationError("Reason must be 500 characters or fewer.")
     if action not in (ParticipantMatchDecision.Action.SAME, ParticipantMatchDecision.Action.SEPARATE):
         raise ValidationError("Choose same person or keep separate.")
-    review = ParticipantMatchReview.objects.select_for_update().select_related(
+    review = ParticipantMatchReview.objects.select_for_update(of=("self",)).select_related(
         "envelope__preparation__event", "candidate_participant"
     ).get(pk=review_id)
+    if review.envelope_id is None:
+        raise ValidationError("Use the Participant Review Queue for a smart-intake case; legacy offline decisions do not apply.")
     if review.status != ParticipantMatchReview.Status.OPEN:
         previous = review.decisions.order_by("-created_at", "-pk").first()
         if previous and previous.action == action:
@@ -95,9 +97,11 @@ def reverse_match(*, review_id, reason, actor):
         raise ValidationError("A reason is required.")
     if len(reason) > 500:
         raise ValidationError("Reason must be 500 characters or fewer.")
-    review = ParticipantMatchReview.objects.select_for_update().select_related(
+    review = ParticipantMatchReview.objects.select_for_update(of=("self",)).select_related(
         "candidate_participant"
     ).get(pk=review_id)
+    if review.envelope_id is None:
+        raise ValidationError("Use the Participant Review Queue for a smart-intake case; legacy offline decisions do not apply.")
     link = ParticipantIdentityLink.objects.select_for_update().filter(review=review).first()
     if not link:
         raise ValidationError("This case has no same-person link to reverse.")

@@ -124,7 +124,7 @@ def create_offline_registration(*, preparation, actor, data):
     document = preparation.consent_document
     if not document or not document.is_approved:
         raise ValidationError("An approved consent document is required.")
-    form_version = RegistrationFormVersion.objects.filter(status=RegistrationFormVersion.Status.PUBLISHED).order_by("-version").first()
+    form_version = RegistrationFormVersion.objects.filter(status=RegistrationFormVersion.Status.PUBLISHED, form__is_smart_intake=False).order_by("-version").first()
     if not form_version:
         raise ValidationError("No published registration form is available.")
     answers = data.get("answers") or {}

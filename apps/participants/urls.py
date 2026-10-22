@@ -1,8 +1,23 @@
 from . import verification_views, staff_directory_views, participant_review_views, workspace_views
 from django.urls import path
 from . import views, testing_views, registration_views, historical_views, qualification_views, document_views
+from . import intake_views, intake_config_views, intake_trailer_views
 app_name = "participants"
 urlpatterns = [
+    path("staff/intake-trailer/<uuid:preparation_id>/", intake_trailer_views.manage, name="intake-trailer-manage"),
+    path("intake/start/<uuid:assignment_id>/", intake_views.start, name="intake-start"),
+    path("intake/session/<uuid:session_id>/", intake_views.wizard, name="intake-session"),
+    path("staff/intake-review/", intake_views.review_queue, name="intake-review-queue"),
+    path("staff/intake-review/<uuid:review_id>/", intake_views.review_detail, name="intake-review-detail"),
+    path("staff/intake-forms/", intake_config_views.index, name="intake-config-index"),
+    path("staff/intake-forms/<int:form_id>/", intake_config_views.detail, name="intake-config-detail"),
+    path("staff/intake-forms/<int:form_id>/questions/add/", intake_config_views.edit, name="intake-config-question-add"),
+    path("staff/intake-forms/<int:form_id>/questions/<str:key>/", intake_config_views.edit, name="intake-config-question"),
+    path("staff/intake-forms/<int:form_id>/experience/<str:key>/", intake_config_views.edit, {"child": True}, name="intake-config-child"),
+    path("staff/intake-forms/<int:form_id>/order/<str:key>/", intake_config_views.reorder, name="intake-config-reorder"),
+    path("staff/intake-forms/<int:form_id>/skills/", intake_config_views.edit, {"mode": "skills"}, name="intake-config-skills"),
+    path("staff/intake-forms/<int:form_id>/mappings/", intake_config_views.edit, {"mode": "mappings"}, name="intake-config-mappings"),
+    path("staff/intake-forms/versions/<int:version_id>/preview/", intake_config_views.preview, name="intake-config-preview"),
     path("staff/intelligence/", workspace_views.analytics, name="intelligence"),
     path("staff/saved-views/", workspace_views.saved_views, name="saved-views"),
     path("staff/saved-views/<int:view_id>/archive/", workspace_views.saved_view_archive, name="saved-view-archive"),

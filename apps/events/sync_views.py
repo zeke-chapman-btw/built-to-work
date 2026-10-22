@@ -57,16 +57,27 @@ def sync_ingest(request):
             preparation = None
         if preparation is None:
             return JsonResponse({"detail": "Trailer/event scope mismatch"}, status=403)
-    participant_identity = payload.get("participant_identity")
+    participant_identity = payload.get("source_identity") if payload.get("schema") == "btw-intake-sync-11b-v1" else payload.get("participant_identity")
     try:
         participant_identity = uuid.UUID(str(participant_identity)) if participant_identity else None
     except ValueError:
         return JsonResponse({"detail": "Invalid participant identity"}, status=400)
+    smart_intake = payload.get("schema") == "btw-intake-sync-11b-v1"
+    if smart_intake and authenticate_trailer(trailer_identity, token) is None:
+        return JsonResponse({"detail": "Per-trailer credentials are required for intake synchronization"}, status=401)
     with transaction.atomic():
+        if smart_intake:
+            import hashlib
+            from apps.participants.models import IntakeContactLock
+            lock_key = hashlib.sha256(("intake-receipt:" + operation_key).encode()).hexdigest()
+            IntakeContactLock.objects.get_or_create(key=lock_key)
+            IntakeContactLock.objects.select_for_update().get(key=lock_key)
         existing = CentralSyncReceipt.objects.select_for_update().filter(operation_key=operation_key).first()
         if existing:
             if existing.trailer_identity != trailer_identity or str(existing.event_id) != str(event_id):
                 return JsonResponse({"detail": "operation key belongs to another trailer or event"}, status=409)
+            if smart_intake and existing.payload.get("payload") != payload:
+                return JsonResponse({"detail": "Operation key conflicts with retained intake evidence"}, status=409)
             return JsonResponse({"status": existing.status, "operation_key": operation_key, "duplicate": True}, status=200)
         status = CentralSyncReceipt.Status.ACCEPTED
         last_error = ""
@@ -74,9 +85,22 @@ def sync_ingest(request):
         participant = Participant.objects.filter(
             identity_uuid=participant_identity, archived_at__isnull=True
         ).first() if participant_identity else None
-        _, import_error = import_registration_if_safe(
-            event=event, payload=payload, participant=participant, preparation=preparation
-        )
+        if smart_intake:
+            from apps.participants.intake_sync import import_intake
+            from django.core.exceptions import ValidationError
+            from django.db import IntegrityError
+            try:
+                with transaction.atomic():
+                    import_intake(event=event, preparation=preparation, payload=payload)
+                import_error = ""
+            except (ValidationError, IntegrityError, KeyError, TypeError, ValueError):
+                # Retain the complete authenticated envelope for authorized review.
+                # Do not expose private answers or exception details in the API.
+                import_error = "Smart intake retained for integrity or identity review; no conflicting records were overwritten."
+        else:
+            _, import_error = import_registration_if_safe(
+                event=event, payload=payload, participant=participant, preparation=preparation
+            )
         if import_error:
             status = CentralSyncReceipt.Status.REVIEW
             last_error = import_error

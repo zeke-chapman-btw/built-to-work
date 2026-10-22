@@ -456,16 +456,30 @@ class TicketDelivery(models.Model):
 class ParticipantMatchReview(models.Model):
     class Status(models.TextChoices):
         OPEN = "open", "Open"
+        LATER = "later", "Review later"
         RESOLVED = "resolved", "Resolved"
         REJECTED = "rejected", "Rejected"
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    envelope = models.ForeignKey(OfflineRegistrationEnvelope, on_delete=models.PROTECT, related_name="match_reviews")
+    envelope = models.ForeignKey(OfflineRegistrationEnvelope, null=True, blank=True, on_delete=models.PROTECT, related_name="match_reviews")
+    source_submission = models.OneToOneField("participants.RegistrationSubmission", null=True, blank=True, on_delete=models.PROTECT, related_name="identity_review")
+    source_participant = models.ForeignKey(Participant, null=True, blank=True, on_delete=models.PROTECT, related_name="intake_identity_reviews")
+    candidates = models.JSONField(default=list, blank=True)
+    conflict_reasons = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
     candidate_participant = models.ForeignKey(Participant, on_delete=models.PROTECT, null=True, blank=True)
     evidence = models.JSONField(default=dict)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN)
     reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
     resolution_note = models.CharField(max_length=240, blank=True)
+
+
+    class Meta:
+        constraints = [models.CheckConstraint(
+            condition=(Q(envelope__isnull=False, source_submission__isnull=True)
+                       | Q(envelope__isnull=True, source_submission__isnull=False, source_participant__isnull=False)),
+            name="participant_review_exact_source")]
 
 
 class ParticipantIdentityLink(models.Model):
@@ -485,9 +499,12 @@ class ParticipantMatchDecision(models.Model):
         SAME = "same", "Same person"
         SEPARATE = "separate", "Keep separate"
         REVERSE = "reverse", "Reverse link"
+        ASSOCIATE_UPDATE = "associate_update", "Associate & Update"
+        LINK_ONLY = "link_only", "Link Only"
+        LATER = "review_later", "Review Later"
 
     review = models.ForeignKey(ParticipantMatchReview, on_delete=models.PROTECT, related_name="decisions")
-    action = models.CharField(max_length=10, choices=Action.choices)
+    action = models.CharField(max_length=24, choices=Action.choices)
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     reason = models.CharField(max_length=500)
     source_identity = models.UUIDField()

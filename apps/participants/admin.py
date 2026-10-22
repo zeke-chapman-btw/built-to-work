@@ -1,9 +1,13 @@
+from .intake_admin_guards import IntakeConfigAdminBoundary, SubmissionPrivacyBoundary, full_dob_allowed
 from django.contrib import admin
 from .consent_admin import ConsentAdminWorkflowMixin
 from .models import Participant, ParticipantAccount, ParticipantAccountRequest, ParticipantEmailChange, RegistrationForm, RegistrationFormVersion, RegistrationQuestion, RegistrationSubmission, ConsentDocumentVersion, ConsentAcceptance
 
 @admin.register(Participant)
 class ParticipantAdmin(admin.ModelAdmin):
+    def get_exclude(self, request, obj=None):
+        fields = tuple(super().get_exclude(request, obj) or ())
+        return fields if full_dob_allowed(request.user) else fields + ("date_of_birth",)
     list_display = ("last_name", "first_name", "kind", "contact_email", "contact_phone", "created_at")
     list_filter = ("kind",)
     search_fields = ("first_name", "last_name", "contact_email", "contact_phone", "identity_uuid")
@@ -31,24 +35,25 @@ from django.contrib import admin
 from .models import RegistrationForm, RegistrationFormVersion, RegistrationQuestion, RegistrationSubmission, ConsentDocumentVersion, ConsentAcceptance
 
 @admin.register(RegistrationForm)
-class RegistrationFormAdmin(admin.ModelAdmin):
+class RegistrationFormAdmin(IntakeConfigAdminBoundary, admin.ModelAdmin):
+    intake_form_lookup = "is_smart_intake"
     list_display = ("name", "slug", "is_active", "updated_at")
     search_fields = ("name", "slug")
 
 @admin.register(RegistrationFormVersion)
-class RegistrationFormVersionAdmin(admin.ModelAdmin):
+class RegistrationFormVersionAdmin(IntakeConfigAdminBoundary, admin.ModelAdmin):
     list_display = ("form", "version", "status", "published_at")
     list_filter = ("status",)
     readonly_fields = ("snapshot",)
 
 @admin.register(RegistrationQuestion)
-class RegistrationQuestionAdmin(admin.ModelAdmin):
+class RegistrationQuestionAdmin(IntakeConfigAdminBoundary, admin.ModelAdmin):
     list_display = ("label", "canonical_key", "field_type", "is_active", "position")
     list_filter = ("field_type", "is_active", "is_protected")
     search_fields = ("label", "canonical_key")
 
 @admin.register(RegistrationSubmission)
-class RegistrationSubmissionAdmin(admin.ModelAdmin):
+class RegistrationSubmissionAdmin(SubmissionPrivacyBoundary, admin.ModelAdmin):
     list_display = ("id", "participant", "event", "status", "submitted_at")
     list_filter = ("status",)
     readonly_fields = ("answers", "answer_snapshot")

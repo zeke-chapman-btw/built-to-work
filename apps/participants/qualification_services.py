@@ -17,6 +17,10 @@ def process_registration_submission(submission):
     The mapping and original answer are snapshotted on each derived record. This
     function is safe to retry; it never updates a previously-created record.
     """
+    if getattr(submission, "intake_operation_id", None):
+        # Build 11B explicitly projects the pinned contract only after identity
+        # resolution; this signal must not apply today's mutable draft mappings.
+        return []
     if submission.status != "submitted" or not submission.participant_id:
         return []
     form_version = submission.form_version
@@ -79,6 +83,56 @@ def process_registration_submission(submission):
                     "is_active": True,
                 },
             )
+            if created:
+                created_records.append(record)
+    return created_records
+
+
+@transaction.atomic
+def process_frozen_intake_submission(submission):
+    """Reuse qualification records for explicit frozen self-reports only.
+
+    Keep claims on the original source participant. Reviewed alias projection
+    supplies canonical visibility without breaking submission ownership.
+    """
+    from django.core.exceptions import ValidationError
+    from .models import QualificationCatalogEntry, RegistrationQuestion
+    from .intake_lifecycle import verify_published
+    if not submission.intake_operation_id or submission.status != "submitted":
+        raise ValidationError("A retained Build 11B intake submission is required.")
+    version = verify_published(submission.form_version, allow_retired=True)
+    contract = version.snapshot
+    answers = submission.answers
+    questions = {q.canonical_key: q for q in RegistrationQuestion.objects.filter(form_id=version.form_id)}
+    created_records = []
+    for mapping in contract["qualification_mappings"]:
+        key, expected = mapping["question"], mapping["value"]
+        if key == "skills":
+            contexts = [(row["entry_id"], row.get("skills") or [], row)
+                        for row in answers.get("experiences") or []]
+        else:
+            value = answers.get(key)
+            contexts = [("", value if isinstance(value, list) else [value], {})]
+        for entry_id, values, entry in contexts:
+            if expected not in values:
+                continue
+            source_key = f"experiences.{entry_id}.skills" if entry_id else key
+            digest_payload = {"operation": str(submission.intake_operation_id),
+                              "version": str(version.stable_id), "mapping": mapping,
+                              "question": source_key, "answer": expected}
+            digest = hashlib.sha256(json.dumps(digest_payload, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
+            catalog = QualificationCatalogEntry.objects.get(stable_id=mapping["catalog_uuid"])
+            record, created = ParticipantQualification.objects.get_or_create(
+                source_submission=submission, source_question_key=source_key,
+                source_answer_hash=digest,
+                defaults={"participant_id": submission.participant_id, "catalog_entry": catalog,
+                          "source": ParticipantQualification.Source.REGISTRATION, "is_self_reported": True,
+                          "source_question": questions.get("experiences" if entry_id else key),
+                          "source_answer_snapshot": {"question_key": source_key, "answer": expected,
+                              "entry": entry, "form_version_uuid": str(version.stable_id),
+                              "operation_uuid": str(submission.intake_operation_id)},
+                          "mapping_snapshot": mapping, "is_active": True})
+            record.full_clean()
             if created:
                 created_records.append(record)
     return created_records

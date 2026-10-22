@@ -7,4 +7,4 @@ class ParticipantsConfig(AppConfig):
     verbose_name = "Participants"
 
     def ready(self):
-        from . import qualification_signals
+        from . import qualification_signals, intake_signals

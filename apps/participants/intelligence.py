@@ -2,7 +2,7 @@
 from django.db.models import Count, Avg, Max, Value, TextField
 from django.db.models.functions import Lower, Trim, Coalesce, TruncMonth
 from django.urls import reverse
-from .discovery import discover, query_string, segment_criteria, assessment_queryset, effective_people
+from .discovery import discover, query_string, segment_criteria, assessment_queryset, effective_people, current_interest_expression
 from .identity import member_ids, canonical_records
 from .workspace_access import can_analytics, ASSESSMENT_PERMISSIONS
 from apps.event_reports.activity import activity_sources
@@ -50,7 +50,7 @@ def build_intelligence(user, population, criteria):
         [("seeking", "Seeking work"), ("open", "Open to opportunities"), ("not_seeking", "Not seeking work"), ("unknown", "Not recorded")]], "Explicit current profile preference; no inference from assessment scores."))
     charts.append(_chart("Reported overall experience", "experience", [segment("experience", b, label) for b, label in
         [("under_1", "Under 1 year"), ("1_4", "1–4.9 years"), ("5_9", "5–9.9 years"), ("10_plus", "10+ years"), ("unknown", "Unknown")]], "Reported overall years, not a sum of overlapping jobs or a guess from age."))
-    interests = list(base("interest").annotate(key=Lower(Trim(Coalesce("career_profile__career_interests", Value(""), output_field=TextField())))).values("key").annotate(n=Count("pk", distinct=True)).order_by("-n", "key")[:12])
+    interests = list(base("interest").annotate(key=Lower(Trim(current_interest_expression()))).values("key").annotate(n=Count("pk", distinct=True)).order_by("-n", "key")[:12])
     rows = [segment("interest", row["key"] or "__not_recorded__", row["key"] or "Not recorded") for row in interests if len(row["key"]) <= 240][:8]
     charts.append(_chart("Reported trade and career interests", "interest", rows,
         "Top eight recorded response groups, as entered. A response may contain multiple interests. Long responses remain searchable in the directory."))

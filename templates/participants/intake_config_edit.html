@@ -1,0 +1,5 @@
+{% extends "participants/intake_internal_base.html" %}{% block content %}<p><a href="{% url 'participants:intake-config-detail' intake_form.pk %}">← {{ intake_form.name }}</a></p>
+<section class="card"><h2>Draft configuration</h2>{% if is_protected %}<p>The server preserves approved mandatory and common-entry requirements. Wording and compatible choices may be edited within those safeguards.</p>{% endif %}
+{% if mode == 'mappings' %}<p>Only explicitly selected practiced skills, licenses and certifications can create self-reported qualifications. Interests never create verified credentials. Published catalog labels and mapping IDs are frozen.</p>{% endif %}
+{% if mode == 'skills' %}<p>Select practiced skills applicable to each trade. Manage the available trade and skill choices in the common experience question's child fields.</p>{% endif %}
+<form method="post">{% csrf_token %}<input type="hidden" name="revision" value="{{ revision }}">{{ form.as_p }}<button class="button button-primary" type="submit">Save draft configuration</button></form></section>{% endblock %}

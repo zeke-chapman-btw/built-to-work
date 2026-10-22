@@ -1,0 +1,4 @@
+{% extends "participants/registration_base.html" %}{% block content %}
+<main class="reg-main"><p class="eyebrow">BUILT TO WORK</p><h1 class="hero">Thank you</h1>
+<section class="card"><h2>Your intake has been received</h2><p>BTW will review your information as needed. If you requested an event ticket, follow the event's delivery or staff assistance instructions.</p>
+<p>Completing an intake does not sign you in or grant access to an existing profile.</p>{% if registration %}<p><a class="button" href="{% url 'events:registration_detail' registration.event_id registration.pk %}">Open registration and ticket</a></p>{% endif %}{% if intake_review %}<p><a class="button secondary" href="{% url 'participants:intake-review-detail' intake_review.pk %}">Review this pending intake</a></p>{% endif %}</section></main>{% endblock %}

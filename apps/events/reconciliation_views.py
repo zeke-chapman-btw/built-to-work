@@ -18,7 +18,7 @@ def _can_view(user):
     return user.is_authenticated and user.is_active and user.is_staff and user.has_perm("events.view_participantmatchreview")
 
 def review_object(review_id):
-    return get_object_or_404(ParticipantMatchReview.objects.select_related("envelope__preparation__event","candidate_participant"),pk=review_id)
+    return get_object_or_404(ParticipantMatchReview.objects.filter(envelope__isnull=False).select_related("envelope__preparation__event","candidate_participant"),pk=review_id)
 
 def detail(request,review,decision_form=None,reverse_form=None,status=200):
     return render(request,"events/match_review_detail.html",dict(page_title="Participant match review",review=review,
@@ -32,7 +32,7 @@ def detail(request,review,decision_form=None,reverse_form=None,status=200):
 @login_required(login_url="/admin/login/")
 def match_review_list(request):
     if not _can_view(request.user):raise PermissionDenied
-    reviews,filters=list_page(request,ParticipantMatchReview.objects.select_related("envelope__preparation__event","candidate_participant").order_by("status","-envelope__created_at","pk"),
+    reviews,filters=list_page(request,ParticipantMatchReview.objects.filter(envelope__isnull=False).select_related("envelope__preparation__event","candidate_participant").order_by("status","-envelope__created_at","pk"),
         search_fields=("envelope__preparation__event__name","candidate_participant__first_name","candidate_participant__last_name"),
         name_field="candidate_participant__first_name",newest_field="-envelope__created_at",
         status_field="status",status_choices=ParticipantMatchReview.Status.choices)

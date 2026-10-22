@@ -28,7 +28,8 @@ WORKSPACE_LINKS = {'events': ({'label': 'My staff schedule',
              'description': 'Authorized event notes and operational attachments.',
              'url_name': 'operations:events',
              'permissions': ()}),
- 'participants': ({'label': 'Directory',
+ 'participants': ({'label':'Participant Review Queue','description':'Review intake identity conflicts and eligible profile updates.','url_name':'participants:intake-review-queue','permissions':('events.view_participantmatchreview',)},
+                  {'label': 'Directory',
                    'description': 'Search participants and open their unified profile.',
                    'url_name': 'participants:staff-directory',
                    'permissions': ('participants.view_participant',)},
@@ -55,7 +56,8 @@ WORKSPACE_LINKS = {'events': ({'label': 'My staff schedule',
                    'url_name': 'participants:staff-requests',
                    'permissions': ('participants.view_participantaccountrequest',
                                    'participants.change_participantaccountrequest')}),
- 'operations': ({'label':'Event Execution','description':'Event responsibilities, simple checklist progress and closeout.','url_name':'operations:execution-index','permissions':()},
+ 'operations': ({'label':'Smart Intake Forms','description':'Admin-only independent intake forms, versions and assignments.','url_name':'participants:intake-config-index','permissions':()},
+                {'label':'Event Execution','description':'Event responsibilities, simple checklist progress and closeout.','url_name':'operations:execution-index','permissions':()},
                 {'label':'Master event checklist','description':'Administrator-controlled defaults for future event checklists.','url_name':'operations:master-checklist','permissions':('operations.manage_master_checklist',)},
                 {'label':'Trailers','description':'Existing trailer display settings; credentials remain in restricted administration.','url_name':'operations:trailers','permissions':('events.view_trailerinstance',)},
                 {'label': 'Operations Templates',
@@ -173,6 +175,8 @@ def visible_workspaces(user,current_path=""):
             entry["active"]=item["id"]=="platform-tools"
         if current_path.startswith("/operations/execution/events/") and item["id"] in ("events","operations"):
             entry["active"]=item["id"]=="events"
+        if current_path.startswith(("/participants/staff/intake-forms/","/participants/staff/intake-trailer/")):
+            entry["active"]=item["id"]=="operations"
         visible.append(entry)
         if current_path.startswith("/operations/setup/events/") and item["id"] in ("events","operations"):
             entry["active"]=item["id"]=="events"
@@ -199,6 +203,8 @@ def _destination_allowed(user, item):
         return manager(user)
     if route=="staffing:queue":
         return user.has_perms(("staffing.manage_event_staffing","events.view_event"))
+    if route=="participants:intake-config-index":return user.is_superuser
+    if route=="participants:intake-review-queue":return user.has_perms(("participants.view_participant","events.view_participantmatchreview"))
     if route=="participants:registration-forms":
         return user.is_superuser
     return True

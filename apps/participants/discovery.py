@@ -4,7 +4,8 @@ import json
 from urllib.parse import urlencode
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Q, F, Count, Exists, OuterRef, Case, When, Value, IntegerField, Prefetch, TextField
-from django.db.models.functions import Coalesce, Lower, Trim
+from django.db.models.functions import Coalesce, Lower, Trim, NullIf
+from django.db.models.fields.json import KeyTextTransform
 from .models import Participant, ParticipantCareerProfile
 from .workspace_models import ParticipantAcquisition, ParticipantWorkExperience
 from .workspace_forms import DiscoveryForm
@@ -38,6 +39,9 @@ def query_string(criteria, **updates):
     result = dict(criteria)
     result.update(updates)
     return urlencode([(k, v) for k, v in result.items() if v is not None and v != ""])
+
+
+from .intake_discovery import current_interest_expression, filter_travel
 
 
 def with_coverage(qs):
@@ -119,7 +123,7 @@ def apply_facet(qs, dimension, bucket, user):
         qs = qs.filter(career_profile__years_of_experience__gte=lower)
         return qs.filter(career_profile__years_of_experience__lt=upper) if upper else qs
     if dimension == "interest":
-        return qs.annotate(_interest=Lower(Trim(Coalesce("career_profile__career_interests", Value(""), output_field=TextField())))).filter(_interest="" if bucket == "__not_recorded__" else bucket.casefold())
+        return qs.annotate(_interest=Lower(Trim(current_interest_expression()))).filter(_interest="" if bucket == "__not_recorded__" else bucket.casefold())
     if dimension == "qualification":
         if not user.has_perm("participants.view_participantqualification"):
             raise PermissionDenied
@@ -196,8 +200,9 @@ def discover(user, params, *, strict=False):
             qs = qs.annotate(_phone=phone)
             lookup |= Q(_phone__contains=digits)
         qs = qs.filter(lookup)
+    qs = qs.annotate(_current_interest=current_interest_expression())
     for key, lookup in (("city", "city__icontains"), ("state", "state__icontains"),
-                        ("trade_interest", "career_profile__career_interests__icontains"),
+                        ("trade_interest", "_current_interest__icontains"),
                         ("employment", "career_profile__employment_interest"),
                         ("availability", "career_profile__work_availability__icontains"),
                         ("preferred_location", "career_profile__preferred_locations__icontains"),
@@ -209,7 +214,7 @@ def discover(user, params, *, strict=False):
     if d.get("experience_data"):
         qs = qs.filter(career_profile__years_of_experience__isnull=d["experience_data"] == "unknown")
     if d.get("travel"):
-        qs = qs.filter(career_profile__willing_to_travel={"yes": True, "no": False, "unknown": None}[d["travel"]])
+        qs = filter_travel(qs, d["travel"])
     if d.get("channel"):
         qs = apply_facet(qs, "channel", d["channel"], user)
     if d.get("acquired_from"):

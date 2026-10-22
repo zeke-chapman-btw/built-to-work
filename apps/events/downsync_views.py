@@ -41,6 +41,13 @@ def event_download(request):
     ).first()
     if not preparation:
         return JsonResponse({"detail": "Trailer is not authorized for this event"}, status=403)
+    if request.GET.get("intake") == "1":
+        from apps.participants.intake_trailer_views import cloud_response
+        try:
+            stable_id = uuid.UUID(request.GET["intake_version"]) if request.GET.get("intake_version") else None
+        except ValueError:
+            return JsonResponse({"detail": "Invalid intake version"}, status=400)
+        return cloud_response(preparation, stable_id)
     cursor = request.GET.get("cursor", "")
     try:
         if cursor:

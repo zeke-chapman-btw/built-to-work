@@ -52,27 +52,32 @@ class ParticipantAcquisition(TimestampedModel):
 
 class ParticipantWorkExperience(TimestampedModel, ArchivableModel):
     participant = models.ForeignKey("participants.Participant", on_delete=models.PROTECT, related_name="work_experiences")
-    employer = models.CharField(max_length=200)
-    role = models.CharField(max_length=200)
+    employer = models.CharField(max_length=200, blank=True)
+    role = models.CharField(max_length=200, blank=True)
     location = models.CharField(max_length=200, blank=True)
     started_on = models.DateField(null=True, blank=True)
     ended_on = models.DateField(null=True, blank=True)
     is_current = models.BooleanField(default=False)
     description = models.TextField(max_length=3000, blank=True)
     source = models.CharField(max_length=24, default="staff", editable=False)
+    source_submission = models.ForeignKey("participants.RegistrationSubmission", null=True, blank=True, on_delete=models.PROTECT, related_name="employment_entries")
+    source_entry_id = models.UUIDField(null=True, blank=True)
+    reported_duration = models.CharField(max_length=100, blank=True)
     source_reference = models.CharField(max_length=240, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT, related_name="participant_work_created")
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.PROTECT, related_name="participant_work_updated")
 
     class Meta:
         ordering = ("-is_current", "-started_on", "-pk")
-        constraints = [
+        constraints = [models.UniqueConstraint(fields=("source_submission", "source_entry_id"), name="intake_employment_source_unique"),
             models.CheckConstraint(condition=Q(ended_on__isnull=True) | Q(started_on__isnull=True) | Q(ended_on__gte=F("started_on")), name="participant_work_dates_ordered"),
             models.CheckConstraint(condition=Q(is_current=False) | Q(ended_on__isnull=True), name="participant_current_work_no_end"),
         ]
 
     def clean(self):
         super().clean()
+        if self.source == "staff" and (not self.employer.strip() or not self.role.strip()):
+            raise ValidationError("Staff-entered employment needs an employer and role.")
         if self.started_on and self.ended_on and self.ended_on < self.started_on:
             raise ValidationError({"ended_on": "The end date cannot precede the start date."})
         if self.is_current and self.ended_on:

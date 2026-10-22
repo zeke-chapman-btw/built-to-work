@@ -33,7 +33,7 @@ class Participant(TimestampedModel, ArchivableModel):
     age_classification = models.CharField(max_length=16, blank=True)
 
     class Meta:
-        permissions = [("view_participant_analytics", "Can view participant intelligence"), ("view_participant_activity", "Can view staff participant change history")]
+        permissions = [("view_participant_analytics", "Can view participant intelligence"), ("view_participant_activity", "Can view staff participant change history"), ("view_participant_dob", "Can view full participant birth dates")]
         constraints = [models.UniqueConstraint(fields=("kind",), condition=Q(kind="system_test"), name="participants_one_system_test_identity")]
         ordering = ["last_name", "first_name", "id"]
     def save(self, *args, **kwargs):
@@ -51,6 +51,7 @@ class ParticipantCareerProfile(TimestampedModel):
     willing_to_travel = models.BooleanField(null=True, blank=True)
     education_training = models.TextField(blank=True)
     skills_interests = models.TextField(blank=True)
+    intake_data = models.JSONField(default=dict, blank=True)
     years_of_experience = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(80)])
     employment_interest = models.CharField(max_length=16, blank=True, choices=[("", "Not recorded"), ("seeking", "Seeking work"), ("open", "Open to opportunities"), ("not_seeking", "Not seeking work")])
     preferred_locations = models.CharField(max_length=500, blank=True)
@@ -139,6 +140,15 @@ class RegistrationForm(TimestampedModel):
     name = models.CharField(max_length=160, default="BTW Standard Intake")
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
+    is_smart_intake = models.BooleanField(default=False, editable=False)
+    def save(self, *args, **kwargs):
+        from .intake_model_guards import guard_form
+        guard_form(self)
+        return super().save(*args, **kwargs)
+    def delete(self, *args, **kwargs):
+        if self.is_smart_intake:
+            raise ValidationError("Retire intake forms instead of deleting their history.")
+        return super().delete(*args, **kwargs)
     def __str__(self): return self.name
 
 class RegistrationFormVersion(TimestampedModel):
@@ -150,6 +160,17 @@ class RegistrationFormVersion(TimestampedModel):
     version = models.PositiveIntegerField()
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.DRAFT)
     snapshot = models.JSONField(default=dict)
+    stable_id = models.UUIDField(null=True, blank=True, unique=True, editable=False)
+    content_hash = models.CharField(max_length=64, blank=True, editable=False)
+    def save(self, *args, **kwargs):
+        from .intake_model_guards import guard_version
+        guard_version(self)
+        return super().save(*args, **kwargs)
+    def delete(self, *args, **kwargs):
+        from .intake_model_guards import smart
+        if smart(self.snapshot):
+            raise ValidationError("Retain intake version history instead of deleting it.")
+        return super().delete(*args, **kwargs)
     published_at = models.DateTimeField(null=True, blank=True)
     effective_at = models.DateTimeField(null=True, blank=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="registration_form_versions")
@@ -167,6 +188,10 @@ class RegistrationQuestion(TimestampedModel):
         DROPDOWN = "dropdown", "Dropdown"
         DATE = "date", "Date"
         NUMBER = "number", "Number"
+        EMAIL = "email", "Email"
+        PHONE = "phone", "Phone"
+        CONSENT = "consent", "Consent"
+        REPEAT = "repeat_group", "Common experience group"
     form = models.ForeignKey(RegistrationForm, on_delete=models.PROTECT, related_name="questions")
     canonical_key = models.SlugField(max_length=100)
     label = models.CharField(max_length=240)
@@ -174,6 +199,16 @@ class RegistrationQuestion(TimestampedModel):
     field_type = models.CharField(max_length=24, choices=FieldType.choices, default=FieldType.SHORT_TEXT)
     options = models.JSONField(default=list, blank=True)
     visibility_rule = models.JSONField(default=dict, blank=True)
+    configuration = models.JSONField(default=dict, blank=True)
+    def save(self, *args, **kwargs):
+        from .intake_model_guards import _contract_write
+        if not _contract_write.get() and self.form_id and self.form.is_smart_intake:
+            raise ValidationError("Use the Admin intake lifecycle to edit a draft.")
+        return super().save(*args, **kwargs)
+    def delete(self, *args, **kwargs):
+        if self.form.is_smart_intake:
+            raise ValidationError("Deactivate future questions without deleting history.")
+        return super().delete(*args, **kwargs)
     is_required = models.BooleanField(default=False)
     is_protected = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -196,6 +231,12 @@ class RegistrationSubmission(TimestampedModel):
     age_classification = models.CharField(max_length=16, blank=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
     source = models.CharField(max_length=32, default="public")
+    intake_operation_id = models.UUIDField(null=True, blank=True, unique=True, editable=False)
+    intake_metadata = models.JSONField(default=dict, blank=True)
+    def save(self, *args, **kwargs):
+        from .intake_model_guards import guard_submission
+        guard_submission(self)
+        return super().save(*args, **kwargs)
     idempotency_key = models.CharField(max_length=64, unique=True, null=True, blank=True)
 
 class ConsentDocumentVersion(TimestampedModel):
@@ -323,3 +364,5 @@ from .verification_models import ParticipantVerificationRecord
 from .participant_review_models import ParticipantReviewRecord
 
 from .workspace_models import ParticipantAcquisition, ParticipantWorkExperience, ParticipantNote, SavedParticipantView
+
+from .intake_models import IntakeFormAssignment, TrailerIntakeActivation, IntakeSession, IntakeContactLock, IntakeFieldState, ParticipantHandsOnExperience
