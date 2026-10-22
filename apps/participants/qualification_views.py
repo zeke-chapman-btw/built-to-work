@@ -2,7 +2,8 @@ from django import forms
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Prefetch
+from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from uuid import UUID
 
@@ -12,6 +13,7 @@ from apps.participants.qualification_models import ParticipantQualification, Qua
 
 
 class ParticipantQualificationForm(forms.ModelForm):
+    confirm_verified_change = forms.BooleanField(required=False, label="I understand that changing a verified qualification requires a new review")
     audit_reason = forms.CharField(max_length=500, label="Reason for this change")
 
     class Meta:
@@ -68,10 +70,10 @@ def qualification_directory(request):
     if query:
         criteria = Q(first_name__icontains=query) | Q(last_name__icontains=query) | Q(preferred_name__icontains=query) | Q(contact_email__icontains=query) | Q(contact_phone__icontains=query)
         try:
-            criteria |= Q(pk=UUID(query))
+            criteria |= Q(identity_uuid=UUID(query))
         except (ValueError, TypeError):
             pass
-        participants = Participant.objects.filter(criteria).order_by("last_name", "first_name")[:50]
+        participants = Participant.objects.filter(criteria, kind="person").order_by("last_name", "first_name")[:50]
     return render(request, "participants/staff_qualifications.html", {"query": query, "participants": participants, "mode": "directory", "page_title": "Participant qualifications"})
 
 
@@ -82,12 +84,14 @@ def participant_qualifications(request, participant_id, qualification_id=None):
         raise PermissionDenied
     participant = get_object_or_404(Participant, pk=participant_id)
     records = participant.qualifications.select_related("catalog_entry", "source_submission", "source_question").prefetch_related("document_links__document").order_by("-created_at")
+    from .verification_models import ParticipantVerificationRecord
+    records = records.prefetch_related(Prefetch("verification_records", queryset=ParticipantVerificationRecord.objects.select_related("reviewer", "evidence_document", "document").order_by("-created_at", "-pk"), to_attr="_workspace_verifications"))
     is_edit = qualification_id is not None
     qualification = None
     if is_edit:
         if not request.user.has_perm("participants.change_participantqualification"):
             raise PermissionDenied
-        qualification = get_object_or_404(records.select_for_update() if request.method == "POST" else records, pk=qualification_id)
+        qualification = get_object_or_404(records.select_for_update(of=("self",)) if request.method == "POST" else records, pk=qualification_id)
     elif request.method == "POST" and not request.user.has_perm("participants.add_participantqualification"):
         raise PermissionDenied
 
@@ -96,7 +100,15 @@ def participant_qualifications(request, participant_id, qualification_id=None):
     form = ParticipantQualificationForm(request.POST if request.method == "POST" else None, instance=form_instance)
     can_add = request.user.has_perm("participants.add_participantqualification")
     can_change = request.user.has_perm("participants.change_participantqualification")
-    if request.method == "POST" and form.is_valid():
+    from .verification_services import qualification_verification_summary
+    was_verified = bool(qualification and qualification_verification_summary(qualification)["status"] == "verified")
+    if not was_verified:
+        form.fields.pop("confirm_verified_change", None)
+    valid = form.is_valid() if request.method == "POST" else False
+    if valid and was_verified and not form.cleaned_data.get("confirm_verified_change"):
+        form.add_error("confirm_verified_change", "Confirm that the existing verification will require a new review after a material change.")
+        valid = False
+    if request.method == "POST" and valid:
         with transaction.atomic():
             saved = form.save(commit=False)
             saved.participant = participant
@@ -116,5 +128,6 @@ def participant_qualifications(request, participant_id, qualification_id=None):
             )
         return redirect("participants:staff-participant-qualifications", participant_id=participant.pk)
 
-    context = {"participant": participant, "records": records, "form": form, "is_edit": is_edit, "qualification": qualification, "can_add": can_add, "can_change": can_change, "mode": "participant", "page_title": "Participant qualifications"}
+    page = Paginator(records, 25).get_page(request.GET.get("page"))
+    context = {"participant": participant, "records": page, "page_obj": page, "form": form, "is_edit": is_edit, "qualification": qualification, "can_add": can_add, "can_change": can_change, "mode": "participant", "page_title": "Participant qualifications"}
     return render(request, "participants/staff_qualifications.html", context, status=400 if request.method == "POST" and form.errors else 200)

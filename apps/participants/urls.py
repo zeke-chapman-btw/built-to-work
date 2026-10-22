@@ -1,8 +1,23 @@
-from . import verification_views, staff_directory_views, participant_review_views
+from . import verification_views, staff_directory_views, participant_review_views, workspace_views
 from django.urls import path
 from . import views, testing_views, registration_views, historical_views, qualification_views, document_views
 app_name = "participants"
 urlpatterns = [
+    path("staff/intelligence/", workspace_views.analytics, name="intelligence"),
+    path("staff/saved-views/", workspace_views.saved_views, name="saved-views"),
+    path("staff/saved-views/<int:view_id>/archive/", workspace_views.saved_view_archive, name="saved-view-archive"),
+    path("staff/saved-views/<int:view_id>/restore/", workspace_views.saved_view_archive, {"restore": True}, name="saved-view-restore"),
+    path("staff/directory/add/", workspace_views.add_person, name="staff-add"),
+    path("staff/directory/<int:participant_id>/edit/", workspace_views.edit_profile, name="staff-edit"),
+    path("staff/directory/<int:participant_id>/acquisition/", workspace_views.acquisition_edit, name="acquisition-edit"),
+    path("staff/directory/<int:participant_id>/work/add/", workspace_views.work_edit, name="work-add"),
+    path("staff/directory/<int:participant_id>/work/<int:object_id>/edit/", workspace_views.work_edit, name="work-edit"),
+    path("staff/directory/<int:participant_id>/notes/add/", workspace_views.note_edit, name="note-add"),
+    path("staff/directory/<int:participant_id>/notes/<int:object_id>/edit/", workspace_views.note_edit, name="note-edit"),
+    path("staff/directory/<int:participant_id>/notes/<int:object_id>/history/", workspace_views.note_history, name="note-history"),
+    path("staff/directory/<int:participant_id>/records/<str:kind>/<int:object_id>/archive/", workspace_views.record_archive, name="record-archive"),
+    path("staff/directory/<int:participant_id>/records/<str:kind>/<int:object_id>/restore/", workspace_views.record_archive, {"restore": True}, name="record-restore"),
+    path("staff/directory/<int:participant_id>/register/", workspace_views.register_person, name="register-person"),
     path("staff/directory/<int:participant_id>/review/", participant_review_views.participant_review, name="staff-participant-review"),
     path("staff/directory/", staff_directory_views.staff_directory, name="staff-directory"),
     path("staff/directory/<str:participant_id>/", staff_directory_views.staff_profile, name="staff-profile"),

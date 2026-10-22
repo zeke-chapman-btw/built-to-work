@@ -31,8 +31,11 @@ def _summary(kind, target):
 def qualification_approvals(request):
     if not can_view_qualification_approvals(request.user):
         return HttpResponseForbidden("You are not authorized to view qualification approvals.")
+    from django.db.models import Prefetch
+    from django.core.paginator import Paginator
+    reviews = ParticipantVerificationRecord.objects.select_related('reviewer', 'evidence_document', 'document').order_by('-created_at', '-pk')
     pending = []
-    for qualification in ParticipantQualification.objects.filter(is_active=True).select_related("participant", "catalog_entry").order_by("participant__last_name", "participant__first_name"):
+    for qualification in ParticipantQualification.objects.filter(is_active=True).select_related("participant", "catalog_entry").order_by("participant__last_name", "participant__first_name").prefetch_related(Prefetch("verification_records", queryset=reviews, to_attr="_workspace_verifications")):
         summary = qualification_verification_summary(qualification)
         if summary["status"] in ("unverified", "pending", "self_reported", "expired"):
             pending.append({"kind": "qualification", "target": qualification, "summary": summary})
@@ -40,7 +43,8 @@ def qualification_approvals(request):
         summary = document_verification_summary(document)
         if summary["status"] in ("pending", "expired"):
             pending.append({"kind": "document", "target": document, "summary": summary})
-    return render(request, "participants/qualification_approvals.html", {"pending_items": pending, "can_decide": can_review_qualification_approvals(request.user), "page_title": "Approvals", "page_description": "Review participant qualifications and supporting documents."})
+    page = Paginator(pending, 25).get_page(request.GET.get("page"))
+    return render(request, "participants/qualification_approvals.html", {"pending_items": page, "page_obj": page, "can_decide": can_review_qualification_approvals(request.user), "page_title": "Approvals", "page_description": "Review participant qualifications and supporting documents."})
 
 
 @require_http_methods(["GET", "POST"])

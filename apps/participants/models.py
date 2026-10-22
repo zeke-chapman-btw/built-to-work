@@ -2,6 +2,7 @@ import uuid
 from django.conf import settings
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db.models import Q
 from django.db.models.functions import Lower
 from apps.core.models import ArchivableModel, TimestampedModel
@@ -32,6 +33,7 @@ class Participant(TimestampedModel, ArchivableModel):
     age_classification = models.CharField(max_length=16, blank=True)
 
     class Meta:
+        permissions = [("view_participant_analytics", "Can view participant intelligence"), ("view_participant_activity", "Can view staff participant change history")]
         constraints = [models.UniqueConstraint(fields=("kind",), condition=Q(kind="system_test"), name="participants_one_system_test_identity")]
         ordering = ["last_name", "first_name", "id"]
     def save(self, *args, **kwargs):
@@ -49,6 +51,10 @@ class ParticipantCareerProfile(TimestampedModel):
     willing_to_travel = models.BooleanField(null=True, blank=True)
     education_training = models.TextField(blank=True)
     skills_interests = models.TextField(blank=True)
+    years_of_experience = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(80)])
+    employment_interest = models.CharField(max_length=16, blank=True, choices=[("", "Not recorded"), ("seeking", "Seeking work"), ("open", "Open to opportunities"), ("not_seeking", "Not seeking work")])
+    preferred_locations = models.CharField(max_length=500, blank=True)
+    preferred_work_type = models.CharField(max_length=16, blank=True, choices=[("", "Not recorded"), ("full_time", "Full time"), ("part_time", "Part time"), ("contract", "Contract"), ("any", "Any arrangement")])
 
 
 class TestParticipantRun(models.Model):
@@ -315,3 +321,5 @@ from .participant_document_models import ParticipantDocumentCategory, Participan
 from .verification_models import ParticipantVerificationRecord
 
 from .participant_review_models import ParticipantReviewRecord
+
+from .workspace_models import ParticipantAcquisition, ParticipantWorkExperience, ParticipantNote, SavedParticipantView

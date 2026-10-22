@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q
+from django.core.paginator import Paginator
+from urllib.parse import urlencode
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_POST
@@ -40,15 +42,16 @@ def _safe_upload_name(upload, content_type):
 @login_required
 def document_directory(request):
     _require_staff(request.user, *VIEW_PERMS)
-    query = request.GET.get('q', '').strip()
-    participants = Participant.objects.all().order_by('last_name', 'first_name')
+    query = request.GET.get('q', '').strip()[:150]
+    participants = Participant.objects.filter(kind='person').order_by('last_name', 'first_name', 'pk')
     if query:
         participants = participants.filter(
             Q(first_name__icontains=query) | Q(last_name__icontains=query)
             | Q(contact_email__icontains=query) | Q(contact_phone__icontains=query)
         )
+    page = Paginator(participants, 25).get_page(request.GET.get('page'))
     return render(request, 'participants/staff_document_directory.html', {
-        'participants': participants[:100], 'query': query,
+        'participants': page, 'query': query, 'page_obj': page, 'query_without_page': urlencode({'q': query}), 'page_title': 'Participant documents',
     })
 
 
@@ -59,6 +62,9 @@ def participant_documents(request, participant_id):
     docs = participant.documents.select_related(
         'category', 'uploaded_by', 'replaces'
     ).prefetch_related('qualification_links__qualification__catalog_entry', 'audit_events__actor')
+    from .verification_models import ParticipantVerificationRecord
+    from django.db.models import Prefetch
+    docs = docs.prefetch_related(Prefetch('verification_records', queryset=ParticipantVerificationRecord.objects.select_related('reviewer', 'evidence_document', 'document').order_by('-created_at', '-pk'), to_attr='_workspace_verifications'))
     form = ParticipantDocumentForm(participant=participant)
     if request.method == 'POST':
         _require_staff(request.user, *MANAGE_PERMS)
@@ -87,8 +93,9 @@ def participant_documents(request, participant_id):
             messages.success(request, 'Document uploaded securely.')
             return redirect('participants:staff-participant-documents', participant_id=participant.pk)
     qualifications = participant.qualifications.select_related('catalog_entry').all() if request.user.has_perm('participants.view_participantqualification') else ParticipantQualification.objects.none()
+    page = Paginator(docs, 25).get_page(request.GET.get('page'))
     return render(request, 'participants/staff_documents.html', {
-        'participant': participant, 'documents': docs, 'qualifications': qualifications, 'form': form,
+        'participant': participant, 'documents': page, 'page_obj': page, 'qualifications': qualifications, 'form': form,
         'page_title': 'Participant documents',
         'can_view_audit': request.user.has_perm('participants.view_participant_document_audit') or request.user.has_perm('participants.view_participantdocumentaudit'),
         'can_manage': all(request.user.has_perm(p) for p in MANAGE_PERMS),
@@ -131,7 +138,7 @@ def document_edit(request, document_uuid):
     else:
         form = ParticipantDocumentForm(instance=document, participant=document.participant)
         form.fields.pop('file', None)
-    return render(request, 'participants/staff_document_edit.html', {'document': document, 'form': form})
+    return render(request, 'participants/staff_document_edit.html', {'document': document, 'participant': document.participant, 'form': form, 'page_title': 'Edit document details'})
 
 
 @login_required
@@ -193,7 +200,7 @@ def document_replace(request, document_uuid):
             raise
         messages.success(request, 'Replacement saved; the prior file remains in history.')
         return redirect('participants:staff-participant-documents', participant_id=previous.participant_id)
-    return render(request, 'participants/staff_document_replace.html', {'previous': previous, 'form': form})
+    return render(request, 'participants/staff_document_replace.html', {'previous': previous, 'participant': previous.participant, 'form': form, 'page_title': 'Replace document'})
 
 
 @login_required
@@ -283,5 +290,5 @@ def document_categories(request):
         messages.success(request, 'Document category saved.')
         return redirect('participants:staff-document-categories')
     return render(request, 'participants/staff_document_categories.html', {
-        'categories': ParticipantDocumentCategory.objects.all(), 'form': form, 'editing': category,
+        'categories': ParticipantDocumentCategory.objects.all(), 'form': form, 'editing': category, 'page_title': 'Document categories',
     })

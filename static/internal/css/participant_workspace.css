@@ -1,0 +1,48 @@
+/* Scoped Build 10C/10D component composition; no kiosk/public shell overrides. */
+.has-participant-workspace .people-navigation{display:flex;gap:.5rem;flex-wrap:wrap;padding:.6rem 0;border-bottom:1px solid var(--border-color,#dce0e4)}
+.has-participant-workspace .people-navigation a{padding:.55rem .75rem;border-radius:.45rem;text-decoration:none}
+.has-participant-workspace .people-navigation a[aria-current=page]{background:#fce8eb;color:#b30f22;font-weight:700}
+.has-participant-workspace .people-identity,.has-participant-workspace .people-record{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap}
+.has-participant-workspace .people-record{padding:1rem 0;border-bottom:1px solid #e4e6e9}
+.has-participant-workspace .people-record:last-child{border-bottom:0}
+.has-participant-workspace .people-form{max-width:760px;width:100%;margin-inline:auto}
+.has-participant-workspace .people-form form{display:grid;gap:1rem}
+.has-participant-workspace .field{min-width:0}
+.has-participant-workspace .field label{display:block;font-weight:600;margin-bottom:.4rem}
+.has-participant-workspace .field input:not([type=checkbox]),.has-participant-workspace .field select,.has-participant-workspace .field textarea{width:100%;max-width:100%;box-sizing:border-box;min-height:44px}
+.has-participant-workspace .field input[type=checkbox]{width:20px;height:20px}
+.has-participant-workspace .people-search{display:flex;align-items:end;gap:.75rem;flex-wrap:wrap}
+.has-participant-workspace .people-search .field:first-child{flex:1 1 260px}
+.has-participant-workspace .people-filter-grid,.has-participant-workspace .people-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.has-participant-workspace .people-filter-grid{padding-block:1rem}
+.has-participant-workspace .people-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:1rem}
+.has-participant-workspace .people-metric{font-size:2rem;line-height:1.2}
+.has-participant-workspace .people-metrics h2{font-size:1rem;margin-block:.5rem}
+.has-participant-workspace .people-bars{list-style:none;margin:0;padding:0}
+.has-participant-workspace .people-bars li{margin-block:.75rem}
+.has-participant-workspace .people-bars a{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.35rem .75rem;text-decoration:none;color:inherit;border-radius:.3rem;padding:.3rem}
+.has-participant-workspace .people-bars a:hover{background:#f7f7f9}
+.has-participant-workspace .people-bar{grid-column:1/-1;height:8px;background:#f0f1f4;border-radius:8px;overflow:hidden}
+.has-participant-workspace .people-bar i{display:block;height:100%;min-width:0;background:#d91a32;border-radius:8px}
+.has-participant-workspace .people-details{display:grid;grid-template-columns:minmax(120px,1fr) 3fr;gap:.7rem 1.25rem}
+.has-participant-workspace .people-details dt{font-weight:600}
+.has-participant-workspace .people-details dd{margin:0;overflow-wrap:anywhere}
+.has-participant-workspace .people-table-scroll{overflow:auto;width:100%;max-width:100%;margin-block:1rem}
+.has-participant-workspace table{width:100%;border-collapse:collapse;text-align:left;font-size:.9rem}
+.has-participant-workspace td,.has-participant-workspace th{padding:.85rem .65rem;border-bottom:1px solid #e3e6eb;vertical-align:top}
+.has-participant-workspace thead{background:#f8f9fb}
+.has-participant-workspace td small,.has-participant-workspace th small{display:block;margin-top:.35rem;color:#626975}
+.has-participant-workspace .people-tabs{display:flex;gap:.3rem;overflow-x:auto;white-space:nowrap;max-width:100%;border-bottom:1px solid #ddd}
+.has-participant-workspace .people-tabs a{padding:.8rem .65rem;text-decoration:none}
+.has-participant-workspace .people-tabs a[aria-current=page]{border-bottom:2px solid #df1730;color:#bd1025;font-weight:700}
+.has-participant-workspace .people-overview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+.has-participant-workspace .people-workspace form .errorlist{color:#a70d20}
+.has-participant-workspace .record,.has-participant-workspace .review-history{padding:1rem 0;border-bottom:1px solid #e4e6e9}
+.has-participant-workspace .actions{display:flex;flex-wrap:wrap;gap:.7rem;margin-block:1rem}
+.has-participant-workspace summary{cursor:pointer;min-height:44px;align-content:center}
+.has-participant-workspace a:focus-visible,.has-participant-workspace summary:focus-visible{outline:3px solid #d91a32;outline-offset:3px}
+@media(max-width:767px){.has-participant-workspace .people-filter-grid,.has-participant-workspace .people-chart-grid,.has-participant-workspace .people-overview{grid-template-columns:1fr}.has-participant-workspace .people-search{align-items:stretch}.has-participant-workspace .people-search>*{flex:1 1 100%}.has-participant-workspace .people-details{grid-template-columns:1fr;gap:.25rem}.has-participant-workspace .people-details dd{margin-bottom:.75rem}.has-participant-workspace .people-tabs a{min-height:44px}.has-participant-workspace .people-record{display:block}.has-participant-workspace table{min-width:600px}}
+
+.has-participant-workspace .people-identity{align-items:center}
+.has-participant-workspace .people-identity .event-kicker{display:block;margin-bottom:.3rem}
+.has-participant-workspace .people-back-link{padding:.7rem 0;min-height:44px;align-content:center}

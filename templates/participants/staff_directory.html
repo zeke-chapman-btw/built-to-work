@@ -1,27 +1,3 @@
-{% extends "internal/base.html" %}
-{% block title %}Participants | Built to Work{% endblock %}
-{% block page_heading %}<header class="page-header"><div><h1 class="page-title">Participants</h1></div></header>{% endblock %}
-{% block content %}
-<section class="card workspace-card participant-directory">
-  <p>Search the canonical participant records available to your staff role.</p>
-  <form method="get" role="search" class="participant-search">
-    <label for="participant-search">Name, email, or phone</label>
-    <div class="form-row"><input id="participant-search" type="search" name="q" value="{{ search_query }}" maxlength="150" autocomplete="off"><button class="button button-primary" type="submit">Search</button></div>
-  </form>
-  {% if search_query %}<p role="status">{{ total_participants }} matching participant{{ total_participants|pluralize }}.</p>{% endif %}
-  {% if page_obj.object_list %}
-  <div class="table-responsive"><table class="workspace-table"><thead><tr><th scope="col">Participant</th><th scope="col">Email</th><th scope="col">Phone</th><th scope="col">Registrations</th></tr></thead><tbody>
-    {% for participant in page_obj %}<tr>
-      <th scope="row"><a href="{% url 'participants:staff-profile' participant.pk %}">{{ participant.preferred_name|default:participant.first_name }} {{ participant.last_name }}</a></th>
-      <td>{{ participant.contact_email|default:"—" }}</td><td>{{ participant.contact_phone|default:"—" }}</td><td>{{ participant.registration_count }}</td>
-    </tr>{% endfor %}
-  </tbody></table></div>
-  <nav class="pagination" aria-label="Participant pages">
-    {% if page_obj.has_previous %}<a href="?q={{ search_query|urlencode }}&amp;page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
-    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-    {% if page_obj.has_next %}<a href="?q={{ search_query|urlencode }}&amp;page={{ page_obj.next_page_number }}">Next</a>{% endif %}
-  </nav>
-  {% elif has_search %}<p>No participants matched that search. Try a name, email address, or phone number.</p>
-  {% else %}<p>No participant records are available.</p>{% endif %}
-</section>
-{% endblock %}
+{% extends 'participants/workspace_base.html' %}{% block design_actions %}{% if can_add_person %}<a class="button button-primary" href="{% url 'participants:staff-add' %}">Add participant</a>{% endif %}{% endblock %}{% block people_content %}
+{% include 'participants/workspace_filters.html' %}<section class="card"><header class="btw-panel-heading"><div><h2>Talent pool</h2><p>{{ total_participants }} matching participant{{ total_participants|pluralize }}</p></div><a href="{% url 'participants:saved-views' %}?{{ query_without_page }}">Save current view</a></header>{% if saved_views %}<details><summary>My saved views</summary><div class="event-record-actions">{% for view in saved_views %}<a href="?saved={{ view.pk }}">{{ view.name }}</a>{% endfor %}</div></details>{% endif %}
+<div class="people-table-scroll" role="region" aria-label="Participant results" tabindex="0"><table><thead><tr><th scope="col">Participant</th><th scope="col">Contact</th><th scope="col">Location</th><th scope="col">Original acquisition</th><th scope="col">Career interest</th><th scope="col">Coverage</th>{% if can_view_registrations %}<th scope="col">Registrations</th>{% endif %}</tr></thead><tbody>{% for person in page_obj %}<tr><th scope="row"><a href="{% url 'participants:staff-profile' person.pk %}">{{ person }}</a>{% if person.preferred_name %}<small>{{ person.preferred_name }}</small>{% endif %}{% if person.archived_at %}<span class="badge">Archived</span>{% endif %}</th><td>{{ person.contact_email|default:"Email not recorded" }}<small>{{ person.contact_phone|default:"Phone not recorded" }}</small></td><td>{{ person.city|default:"—" }} {{ person.state }}</td><td>{{ person.acquisition.get_channel_display|default:"Unknown / unverified" }}<small>{{ person.acquisition.acquired_at|date:"M j, Y"|default:"Date unknown" }}</small></td><td>{{ person.career_profile.career_interests|truncatechars:80|default:"Not recorded" }}</td><td>{{ person.profile_groups }}/6 groups</td>{% if can_view_registrations %}<td>{{ person.registration_count }}</td>{% endif %}</tr>{% empty %}<tr><td colspan="7"><h3>No matching participants</h3><p>Adjust the filters or clear them to explore the talent pool.</p></td></tr>{% endfor %}</tbody></table></div>{% include 'participants/workspace_pagination.html' %}</section>{% endblock %}

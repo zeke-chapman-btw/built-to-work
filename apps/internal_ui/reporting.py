@@ -15,4 +15,6 @@ def report_destinations(user):
     if manager(user):
         destinations.append({"label": "Workday & Reimbursement Reports", "url": reverse("workdays:reports"),
             "description": "Recorded workdays, daily compensation, mileage and reimbursement exports."})
+    if user.has_perms(("participants.view_participant", "participants.view_participant_analytics")):
+        destinations.append({"label": "Participant Intelligence", "url": reverse("participants:intelligence"), "description": "Participant discovery, acquisition and accepted evidence."})
     return destinations

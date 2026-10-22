@@ -1,5 +1,6 @@
 """Read-only costs and precisely defined participant-event metrics."""
 from decimal import Decimal
+from .activity import activity_sources
 from django.db import transaction
 from django.db.models import F,Q,Count,Avg,Max
 from apps.events.models import EventRegistration,Attendance,SyncOutboxItem
@@ -55,13 +56,11 @@ def costs(event):
     return {'staff':staff,'staff_cost':staff_cost,'manual':operating,'incentives':distributed,'excluded':excluded,'recorded':recorded,'total':None if warnings else recorded,'complete':not warnings,'warnings':warnings,'components':components,'review':review,'fingerprint':current,'pending_days':pending_days,'pending_trips':pending_trips,'missing_days':missing,'approved_days':days.filter(is_active=True,approval='approved').count(),'active_days':days.filter(is_active=True).count()}
 
 def performance(event):
-    regs=EventRegistration.objects.filter(event=event,status='active',participant__kind='person')
-    sessions=ExperienceSession.objects.filter(event=event,mode='official',registration__event=event,registration__status='active',registration__participant_id=F('participant_id'),participant__kind='person')
-    quizzes=QuizAttempt.objects.filter(experience_session__in=sessions,is_official=True,voided_at__isnull=True,participant_id=F('experience_session__participant_id')).exclude(status='void')
-    finished=quizzes.filter(status='complete',completed_at__isnull=False)
-    kiosk_started=set(quizzes.values_list('participant_id',flat=True))
-    kiosk_completed=set(finished.values_list('participant_id',flat=True))
-    captures=SimulatorCapture.objects.filter(event=event,experience_session__in=sessions,registration_id=F('experience_session__registration_id'),participant_id=F('experience_session__participant_id'),is_official=True,mode='official',voided_at__isnull=True,status__in=('matched','resolved'))
+    sources=activity_sources(event)
+    regs=sources["registrations"];sessions=sources["sessions"];quizzes=sources["quizzes"]
+    finished=sources["finished_quizzes"];captures=sources["captures"]
+    kiosk_started=set(quizzes.values_list("participant_id",flat=True))
+    kiosk_completed=set(finished.values_list("participant_id",flat=True))
     simulator_completed=set(captures.values_list('participant_id',flat=True))
     # A trusted capture also proves a start, even if a source was imported without a scan.
     simulator_started=set(ExperienceActivity.objects.filter(session__in=sessions,activity='simulator',started_at__isnull=False).values_list('session__participant_id',flat=True))|simulator_completed

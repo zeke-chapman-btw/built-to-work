@@ -63,7 +63,7 @@ def find_or_create_participant(*, first_name, last_name, email="", phone="", ide
 
 
 PROFILE_FIELDS = {"first_name", "last_name", "preferred_name", "contact_email", "contact_phone", "city", "state", "postal_code"}
-CAREER_FIELDS = {"employment_status", "career_interests", "work_availability", "willing_to_travel", "education_training", "skills_interests"}
+CAREER_FIELDS = {"employment_status", "career_interests", "work_availability", "willing_to_travel", "education_training", "skills_interests", "years_of_experience", "employment_interest", "preferred_locations", "preferred_work_type"}
 
 
 @transaction.atomic
@@ -89,3 +89,67 @@ def update_participant_profile(*, participant, updates):
         career.full_clean()
         career.save()
     return person
+
+from contextlib import contextmanager
+from contextvars import ContextVar
+_identity_read_context = ContextVar('participant_reviewed_identity_read_context', default=None)
+
+
+@contextmanager
+def identity_context():
+    token = _identity_read_context.set(resolved_identity_map())
+    try:
+        yield
+    finally:
+        _identity_read_context.reset(token)
+
+
+def resolved_identity_map():
+    """Read existing active, reviewed alias links without merging stored identities.
+
+    Ambiguous sources and cycles stay separate and require existing staff review.
+    No contact hint or proposed match is treated as a resolved identity link.
+    """
+    cached = _identity_read_context.get()
+    if cached is not None:
+        return cached
+    from apps.events.models import ParticipantIdentityLink
+    candidates = {}
+    for source, candidate in ParticipantIdentityLink.objects.filter(is_active=True, review__status="resolved", source_participant__kind="person", candidate_participant__kind="person").values_list("source_participant_id", "candidate_participant_id"):
+        candidates.setdefault(source, set()).add(candidate)
+    edges = {source: next(iter(targets)) for source, targets in candidates.items() if len(targets) == 1}
+    result = {}
+    for source in edges:
+        seen, current = set(), source
+        while current in edges and current not in seen:
+            seen.add(current)
+            current = edges[current]
+        if current not in seen and current not in {p for p, values in candidates.items() if len(values) != 1}:
+            if current != source:
+                result[source] = current
+    return result
+
+
+def canonical_id(participant_id):
+    return resolved_identity_map().get(participant_id, participant_id)
+
+
+def identity_members(participant_id):
+    mapping = resolved_identity_map()
+    root = mapping.get(participant_id, participant_id)
+    return {root} | {source for source, target in mapping.items() if target == root}
+
+
+def canonical_records(queryset, field="participant_id"):
+    from django.db.models import Case, When, Value, F, BigIntegerField
+    mapping = resolved_identity_map()
+    if not mapping:
+        return queryset.annotate(_canonical_person=F(field))
+    return queryset.annotate(_canonical_person=Case(
+        *[When(**{field: source}, then=Value(target)) for source, target in mapping.items()],
+        default=F(field), output_field=BigIntegerField()))
+
+
+def member_ids(population):
+    return canonical_records(Participant.objects.filter(kind=Participant.Kind.PERSON), "pk").filter(
+        _canonical_person__in=population.values("pk")).values("pk")

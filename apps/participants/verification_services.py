@@ -23,6 +23,10 @@ def qualification_snapshot(qualification):
     }
 
 def latest_verification(*, qualification=None, document=None):
+    target = qualification if qualification is not None else document
+    if target is not None and hasattr(target, "_workspace_verifications"):
+        rows = target._workspace_verifications
+        return rows[0] if rows else None
     records = ParticipantVerificationRecord.objects.select_related("reviewer", "evidence_document", "document")
     if qualification is not None:
         return records.filter(qualification=qualification).order_by("-created_at", "-pk").first()

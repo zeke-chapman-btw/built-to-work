@@ -137,7 +137,9 @@ class ParticipantIntegration8ECTests(TestCase):
         self.assertIn('attachment',download['Content-Disposition'])
         self.assertIn('no-store',download['Cache-Control'])
         self.assertIn('sandbox',download['Content-Security-Policy'])
-        download.close()
+        # Consume Django test-client streaming content so its closing wrapper
+        # preserves the TestCase connection on PostgreSQL as well as SQLite.
+        self.assertTrue(b"".join(download.streaming_content).startswith(b"%PDF-"))
         foreign = ParticipantQualification.objects.create(participant=self.other,custom_name='Other fictional record')
         self.assertEqual(self.client.post(link,{'qualification_id':foreign.pk,'reason':'test'}).status_code,404)
         self.assertEqual(self.client.post(link,{'qualification_id':'bad','reason':'test'}).status_code,404)

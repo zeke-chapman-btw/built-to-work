@@ -1,0 +1,12 @@
+{% extends 'operations/design_base.html' %}{% load static %}
+{% block body_class %}{{ block.super }} has-participant-workspace{% endblock %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/participant_workspace.css' %}?v=build11">{% endblock %}
+{% block page_heading %}<header class="page-header"><div><h1 class="page-title">{{ page_title|default:"Participants" }}</h1>{% if page_description %}<p>{{ page_description }}</p>{% endif %}</div>{% block design_actions %}{% endblock %}</header>{% endblock %}
+{% block design_navigation %}<nav class="event-record-actions people-navigation" aria-label="Participant workspace">
+{% if perms.participants.view_participant %}<a href="{% url 'participants:staff-directory' %}" {% if active_participant_tab == 'directory' %}aria-current="page"{% endif %}>Directory</a><a href="{% url 'participants:saved-views' %}">Saved views</a>{% endif %}
+{% if perms.participants.view_participant and perms.participants.view_participant_analytics %}<a href="{% url 'participants:intelligence' %}" {% if active_participant_tab == 'analytics' %}aria-current="page"{% endif %}>Intelligence</a>{% endif %}
+{% if perms.participants.view_participant and perms.participants.view_participantqualification %}<a href="{% url 'participants:staff-qualifications' %}">Qualifications</a>{% endif %}
+{% if perms.participants.view_participant and perms.participants.view_participantdocument %}<a href="{% url 'participants:staff-document-directory' %}">Documents</a>{% endif %}
+{% if user.is_superuser or perms.participants.view_qualificationapprovals or perms.participants.review_qualificationapprovals %}<a href="{% url 'participants:staff-qualification-approvals' %}">Verification</a>{% endif %}
+</nav>{% if participant and not section %}<div class="people-identity"><div><span class="event-kicker">Participant</span><strong>{{ participant }}</strong><p>{{ participant.city|default:"Location not recorded" }}{% if participant.state %}, {{ participant.state }}{% endif %}</p></div><a class="people-back-link" href="{% url 'participants:staff-profile' participant.pk %}">Profile →</a></div>{% endif %}{% endblock %}
+{% block design_content %}{% block people_content %}{% endblock %}{% endblock %}
