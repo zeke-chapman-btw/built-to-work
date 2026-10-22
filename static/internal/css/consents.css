@@ -1,0 +1,6 @@
+/* Operations consent management only. Uses the shared Operations section menu. */
+.consent-page-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.consent-page-actions .button{min-height:42px}
+.consents-workspace form textarea{max-width:100%}
+.consents-workspace .consent-document-list{margin-bottom:0}
+@media(max-width:600px){.consent-page-actions{width:100%}.consent-page-actions .button{flex:1 1 auto;text-align:center}}

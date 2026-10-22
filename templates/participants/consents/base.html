@@ -1,0 +1,6 @@
+{% extends "operations/design_base.html" %}{% load static %}
+{% block body_class %}{{ block.super }} intake-workspace{% endblock %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/intake_workspace.css' %}"><link rel="stylesheet" href="{% static 'internal/css/consents.css' %}">{% endblock %}
+{% block design_actions %}{% url 'participants:consent-index' as consents_index %}{% url 'participants:consent-upload' as consents_upload %}{% url 'participants:consent-acceptances' as consents_acceptances %}
+<div class="consent-page-actions">{% if request.path != consents_index %}<a class="button secondary" href="{{ consents_index }}">All consents</a>{% endif %}{% if perms.participants.view_consentacceptance and request.path != consents_acceptances %}<a class="button secondary" href="{{ consents_acceptances }}">Acceptance history</a>{% endif %}{% if request.user.is_superuser and request.path != consents_upload %}<a class="button button-primary" href="{{ consents_upload }}">Upload consent PDF</a>{% endif %}</div>{% endblock %}
+{% block design_content %}<div class="consents-workspace">{% block consent_content %}{% endblock %}</div>{% endblock %}

@@ -16,7 +16,7 @@ from .intake_lifecycle import (require_admin, create_form, duplicate_form, save_
                                retire, assign, revision)
 from .intake_config_forms import (QuestionConfigForm, SkillRelationsForm, QualificationMappingsForm, AssignmentForm)
 from .intake_contracts import validate_contract, PROTECTED
-from .intake_wizard import IntakeStepForm, STEP_NAMES
+from .intake_wizard import IntakeStepForm, STEP_NAMES, UI_STEP_NAMES, contract_step_for
 from .workspace_views import context
 
 
@@ -61,7 +61,7 @@ def index(request):
     from apps.events.models import CentralEventDownload
     staged = CentralEventDownload.objects.exclude(config={}).order_by("-updated_at")[:50]
     return render(request, "participants/intake_config_index.html", context(request,
-        page_title="Smart Intake Forms", forms=RegistrationForm.objects.filter(is_smart_intake=True).prefetch_related(
+        page_title="Form Builder", forms=RegistrationForm.objects.filter(is_smart_intake=True).prefetch_related(
             "versions").order_by("name"), staged_downloads=staged, error=error))
 
 
@@ -186,7 +186,7 @@ def preview(request, version_id):
         step = int(request.GET.get("step", 1))
     except ValueError:
         step = 1
-    if step not in STEP_NAMES:
+    if step not in UI_STEP_NAMES:
         step = 1
     persona = request.GET.get("persona", "alex")
     examples = {
@@ -211,10 +211,11 @@ def preview(request, version_id):
             "duration": "6_12_months" if persona == "alex" else "over_10_years",
             "skills": ["mig"], "proficiency": "beginner" if persona == "alex" else "advanced"}]
     form = IntakeStepForm(request.POST if request.method == "POST" else None,
-                          contract=version.snapshot, step=step, answers=answers)
+                          contract=version.snapshot, step=contract_step_for(step), answers=answers,
+                          consent_only=(step == 2) if step <= 2 else None)
     # Preview has no canonical or session writes. Conditions are handled by the same browser module.
     return render(request, "participants/intake_config_preview.html", context(request,
         page_title="Draft preview — " + version.form.name, version=version, form=form,
         questions=form.display_questions(), experience_rows=form.display_rows(),
         experience_question=form.experience_question, contract=version.snapshot,
-        step=step, step_name=STEP_NAMES[step], prior_answers=answers, persona=persona))
+        step=step, step_name=UI_STEP_NAMES[step], prior_answers=answers, persona=persona))

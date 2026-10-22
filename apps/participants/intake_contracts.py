@@ -386,6 +386,15 @@ def _answer(q, value, *, occurred_on):
 
 
 def validate_answers(contract, answers, *, occurred_on, through_step=4):
+    return _validate_answers(contract, answers, occurred_on=occurred_on, through_step=through_step)
+
+
+def validate_personal_answers(contract, answers, *, occurred_on):
+    """Validate only personal information; never manufacture consent acceptance."""
+    return _validate_answers(contract, answers, occurred_on=occurred_on, through_step=1, defer_consent=True)
+
+
+def _validate_answers(contract, answers, *, occurred_on, through_step, defer_consent=False):
     validate_contract(contract)
     if not isinstance(answers, dict):
         _fail("Answers must be an object.")
@@ -396,7 +405,7 @@ def validate_answers(contract, answers, *, occurred_on, through_step=4):
         _fail("Unsupported answer keys.")
     clean, states, errors = {}, {}, {}
     for q in contract["questions"]:
-        if q["step"] > through_step:
+        if q["step"] > through_step or (defer_consent and q["type"] == "consent"):
             continue
         key = q["key"]
         if not visible(q.get("rule"), clean, occurred_on=occurred_on):

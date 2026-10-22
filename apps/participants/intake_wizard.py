@@ -1,4 +1,4 @@
-"""One typed, pinned four-step intake for the supported channels."""
+"""Five participant pages over the existing pinned intake contract."""
 import hashlib
 import secrets
 import uuid
@@ -10,13 +10,28 @@ from django.core.exceptions import ValidationError, PermissionDenied
 from django.db import transaction
 from django.utils import timezone
 
-from .intake_contracts import validate_answers, visible
+from .intake_contracts import validate_answers, validate_personal_answers, visible
 from .intake_lifecycle import verify_published
 from .intake_submission import _legal, _event_extras, _staff_channel
 from .models import IntakeSession
 
 STEP_NAMES = {1: "Personal information", 2: "Education and employment",
               3: "Trade interests and experience", 4: "Career preferences"}
+
+
+UI_STEP_NAMES = {1: "Personal information", 2: "Consent", 3: "Education and employment",
+                 4: "Trade interests and experience", 5: "Career preferences"}
+
+
+def current_ui_step(session):
+    # Existing accepted sessions retain their pinned answers and document.
+    if session.current_step == 1:
+        return 2 if session.context.get("personal_information_saved") else 1
+    return session.current_step + 1
+
+
+def contract_step_for(ui_step):
+    return max(1, ui_step - 1)
 
 
 def browser_key(request):
@@ -61,7 +76,7 @@ def _field(q):
 
 
 class IntakeStepForm(forms.Form):
-    def __init__(self, *args, contract, step, answers=None, event=None, context=None, **kwargs):
+    def __init__(self, *args, contract, step, answers=None, event=None, context=None, consent_only=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.contract, self.step = contract, step
         self.questions, self.rows = [], []
@@ -69,6 +84,8 @@ class IntakeStepForm(forms.Form):
         self.experience_question = None
         for q in contract["questions"]:
             if q["step"] != step:
+                continue
+            if consent_only is not None and (q["type"] == "consent") != consent_only:
                 continue
             if q["type"] == "repeat_group":
                 self.experience_question = q
@@ -171,5 +188,29 @@ def save_step(*, session, step, values, expected_revision, extras=None):
     session.answers = result["answers"]
     session.current_step = min(step + 1, 4)
     session.context = dict(session.context, completed_through=step)
+    session.save(update_fields=["answers", "current_step", "context", "consent_accepted_at", "updated_at"])
+    return session
+
+
+@transaction.atomic
+def save_personal_information(*, session, values, expected_revision):
+    """Save a private draft, reset later answers, and require the separate consent page."""
+    session = IntakeSession.objects.select_for_update(of=("self",)).select_related(
+        "form_version__form").get(pk=session.pk)
+    if session.state != "open" or session_revision(session) != expected_revision:
+        raise ValidationError("This intake changed. Reload before continuing.")
+    version = verify_published(session.form_version, allow_retired=True)
+    if session.contract_hash != version.content_hash:
+        raise ValidationError("The pinned intake contract does not match.")
+    allowed = {q["key"] for q in version.snapshot["questions"] if q["step"] == 1 and q["type"] != "consent"}
+    if set(values) - allowed:
+        raise ValidationError("Only personal information may be saved on this page.")
+    occurred_on = timezone.localtime(timezone.now(), ZoneInfo(session.context["timezone"])).date()
+    result = validate_personal_answers(version.snapshot, values, occurred_on=occurred_on)
+    session.answers = result["answers"]
+    session.current_step = 1
+    session.consent_accepted_at = None
+    session.context = dict(session.context, completed_through=0, personal_information_saved=True)
+    session.context.pop("extras", None)
     session.save(update_fields=["answers", "current_step", "context", "consent_accepted_at", "updated_at"])
     return session

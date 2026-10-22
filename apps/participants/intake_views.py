@@ -18,7 +18,8 @@ from apps.events.models import Event, OfflineEventPreparation, ParticipantMatchR
 from .models import IntakeFormAssignment, IntakeSession, Participant
 from .intake_submission import start_session, complete_session
 from .intake_wizard import (browser_key, session_for, session_revision, IntakeStepForm,
-                            save_step, STEP_NAMES)
+                            save_step, UI_STEP_NAMES, current_ui_step, contract_step_for,
+                            save_personal_information)
 from .intake_review import require_review, decide, review_revision, retry_registration
 from .intake_admin_guards import full_dob_allowed
 from .workspace_views import context
@@ -84,19 +85,30 @@ def wizard(request, session_id):
                 result["registration"] = EventRegistration.objects.filter(pk=registration_id, event=session.event).first()
         return render(request, "participants/intake_complete.html", result)
     try:
-        step = int(request.GET.get("step", session.current_step))
+        step = int(request.GET.get("step", current_ui_step(session)))
     except ValueError:
         raise Http404
-    if step not in STEP_NAMES or step > session.current_step:
+    if step not in UI_STEP_NAMES or step > current_ui_step(session):
         raise Http404
+    contract_step = contract_step_for(step)
     form = IntakeStepForm(request.POST if request.method == "POST" else None,
-        contract=session.form_version.snapshot, step=step, answers=session.answers,
+        contract=session.form_version.snapshot, step=contract_step, answers=session.answers,
+        consent_only=(step == 2) if step <= 2 else None,
         event=session.event, context=session.context)
     if request.method == "POST" and form.is_valid():
         try:
-            session = save_step(session=session, step=step, values=form.payload(),
-                extras=form.extras(), expected_revision=request.POST.get("revision", ""))
-            if step == 4:
+            if step == 1:
+                session = save_personal_information(session=session, values=form.payload(),
+                    expected_revision=request.POST.get("revision", ""))
+            else:
+                values = form.payload()
+                if step == 2:
+                    personal_keys = {q["key"] for q in session.form_version.snapshot["questions"]
+                                     if q["step"] == 1 and q["type"] != "consent"}
+                    values = {**{key: value for key, value in session.answers.items() if key in personal_keys}, **values}
+                session = save_step(session=session, step=contract_step, values=values,
+                    extras=form.extras(), expected_revision=request.POST.get("revision", ""))
+            if step == 5:
                 complete_session(session_id=session.pk, actor=request.user)
                 return redirect("participants:intake-session", session_id=session.pk)
         except ValidationError as exc:
@@ -105,7 +117,7 @@ def wizard(request, session_id):
             return redirect("participants:intake-session", session_id=session.pk)
     return render(request, "participants/intake_step.html", {
         "session": session, "event": session.event, "form": form, "step": step,
-        "step_name": STEP_NAMES[step], "progress": step * 25,
+        "step_name": UI_STEP_NAMES[step], "progress": step * 20,
         "questions": form.display_questions(), "experience_rows": form.display_rows(),
         "experience_question": form.experience_question,
         "event_fields": [form[name] for name in form.event_fields],

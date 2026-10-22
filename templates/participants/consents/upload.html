@@ -1,0 +1,2 @@
+{% extends "participants/consents/base.html" %}{% block consent_content %}
+<section class="card"><h2>Upload consent PDF</h2><p>Upload an unencrypted, text-based PDF. Review the complete extracted text and participant preview before explicitly publishing the version.</p><form method="post" enctype="multipart/form-data">{% csrf_token %}{{ form.as_p }}<button class="button button-primary" type="submit">Create draft</button></form></section>{% endblock %}

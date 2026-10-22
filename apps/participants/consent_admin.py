@@ -58,11 +58,30 @@ class ConsentAdminWorkflowMixin:
 
     def _url(self, name, document=None):
         kwargs = {'document_id': document.pk} if document else None
-        return reverse('admin:participants_consentdocumentversion_' + name, kwargs=kwargs)
+        return reverse("participants:consent-" + name, kwargs=kwargs)
 
     def workflow_link(self, document):
         return format_html('<a href="{}">Review / preview</a>', self._url('review', document))
     workflow_link.short_description = 'Workflow'
+
+    def _render(self, request, template, values):
+        from .workspace_views import context
+        name = template.rsplit("/", 1)[-1]
+        return render(request, "participants/consents/" + name,
+                      context(request, page_title="Consents",
+                              page_description="Manage consent documents, publication and recorded acceptances.", **values))
+
+    def get_model_perms(self, request):
+        # Operations is the canonical home. Old URLs remain compatible.
+        return {}
+
+    def changelist_view(self, request, extra_context=None):
+        self._require_admin(request)
+        return redirect("participants:consent-index")
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        self._require_admin(request)
+        return redirect("participants:consent-review", document_id=object_id)
 
     def get_urls(self):
         custom = [
@@ -88,7 +107,7 @@ class ConsentAdminWorkflowMixin:
                          new_data={'version': document.version, 'content_hash': document.content_hash})
             messages.success(request, 'PDF stored as a draft. Review its text before publishing.')
             return redirect(self._url('review', document))
-        return render(request, 'admin/participants/consentdocumentversion/upload.html',
+        return self._render(request, 'admin/participants/consentdocumentversion/upload.html',
                       {'form': form, 'title': 'Upload consent PDF', 'opts': self.model._meta})
 
     def review_view(self, request, document_id):
@@ -120,7 +139,7 @@ class ConsentAdminWorkflowMixin:
                 messages.success(request, 'Displayed text verified against the PDF. You may now publish.')
                 return redirect(self._url('review', document))
             return HttpResponseBadRequest('Unknown action.')
-        return render(request, 'admin/participants/consentdocumentversion/review.html',
+        return self._render(request, 'admin/participants/consentdocumentversion/review.html',
                       {'document': document, 'title': 'Review consent document', 'opts': self.model._meta,
                        'pdf_url': self._url('pdf', document), 'preview_url': self._url('preview', document),
                        'publish_url': self._url('publish', document)})
@@ -129,7 +148,7 @@ class ConsentAdminWorkflowMixin:
         self._require_admin(request)
         document = get_object_or_404(ConsentDocumentVersion, pk=document_id)
         request.session[f'consent_preview_{document.pk}'] = hashlib.sha256(document.body.encode('utf-8')).hexdigest()
-        return render(request, 'admin/participants/consentdocumentversion/preview.html',
+        return self._render(request, 'admin/participants/consentdocumentversion/preview.html',
                       {'document': document, 'review_url': self._url('review', document)})
 
     def pdf_view(self, request, document_id):

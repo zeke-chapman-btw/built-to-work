@@ -1,20 +1,19 @@
-{% extends "participants/registration_base.html" %}{% load static %}{% block content %}
-<main class="reg-main"><p class="eyebrow">STEP {{ step }} OF 4</p><h1>{{ step_name }}</h1>
-{% if event %}<p class="muted">{{ event.name }}</p>{% endif %}<p class="muted">{{ session.form_version.form.name }} · Version {{ session.form_version.version }}</p>
-<div class="progress" role="progressbar" aria-valuenow="{{ step }}" aria-valuemin="1" aria-valuemax="4" aria-label="Intake progress"><span style="width:{{ progress }}%"></span></div>
+{% extends "participants/intake_base.html" %}{% load static %}{% block content %}
+<main class="reg-main{% if step == 2 %} intake-consent-page{% endif %}"><header class="intake-step-heading"><h1>{{ step_name }}</h1><p class="intake-step-count">Step {{ step }} of 5</p></header>
+<div class="progress" role="progressbar" aria-valuenow="{{ step }}" aria-valuemin="1" aria-valuemax="5" aria-label="Intake progress"><span style="width:{{ progress }}%"></span></div>
 {% if form.errors %}<section class="errors" role="alert" tabindex="-1" id="intake-errors"><h2>Please check your answers</h2>{{ form.non_field_errors }}{% for field in form %}{% if field.errors %}<p><a href="#{{ field.id_for_label }}">{{ field.label }}</a>: {{ field.errors|striptags }}</p>{% endif %}{% endfor %}</section>{% endif %}
 <form method="post" data-intake-form novalidate>{% csrf_token %}<input type="hidden" name="revision" value="{{ revision }}">
 <section class="card">{% for q in questions %}<div class="field" data-question="{{ q.key }}">
-{% if q.type == 'consent' %}<section class="consent-copy"><h2>{{ session.consent_document.title }}</h2><p>Version {{ session.consent_document.version }}</p><div>{{ session.consent_document.body|linebreaks }}</div></section>{% endif %}
+{% if q.type == 'consent' %}<section class="consent-copy"><h2>{{ session.consent_document.title }}</h2><div>{{ session.consent_document.body|linebreaks }}</div></section><label class="consent-agreement" for="{{ q.bound.id_for_label }}">{{ q.bound }}<span>{{ q.label }}{% if q.required %} <span aria-label="required">*</span>{% endif %}</span></label>{% else %}
 <label for="{{ q.bound.id_for_label }}">{{ q.label }}{% if q.required %} <span aria-label="required">*</span>{% elif "(optional)" not in q.label %} <span class="muted">(optional)</span>{% endif %}</label>
-{{ q.bound }}{% if q.help_text %}<p class="muted">{{ q.help_text }}</p>{% endif %}{{ q.bound.errors }}</div>{% endfor %}
+{{ q.bound }}{% endif %}{% if q.help_text %}<p class="muted">{{ q.help_text }}</p>{% endif %}{{ q.bound.errors }}</div>{% endfor %}
 {% if experience_question %}<section data-question="experiences"><h2>{{ experience_question.label }}</h2><p>Complete at least one entry when you have hands-on experience. Add more only if you want to.</p>
 <div data-experience-list>{% for row in experience_rows %}<fieldset class="experience-entry" data-experience-entry><legend>Experience entry</legend><input type="hidden" name="experience_ids" value="{{ row.entry_id }}">{% for q in row.children %}<div class="field" data-experience-field="{{ q.key }}"><label for="{{ q.bound.id_for_label }}">{{ q.label }}{% if q.required %} *{% elif "(optional)" not in q.label %} (optional){% endif %}</label>{{ q.bound }}{{ q.bound.errors }}</div>{% endfor %}<button type="button" class="button secondary" data-remove-experience>Remove entry</button></fieldset>{% endfor %}</div>
 <button type="button" class="button secondary" data-add-experience>Add another experience</button></section>{% endif %}
 {% if event_fields %}<section><h2>Event registration</h2><p>Ticket delivery choices are separate from BTW general updates.</p>{% for field in event_fields %}<div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% endfor %}</section>{% endif %}
-</section><div class="actions">{% if step > 1 %}<a class="button secondary" href="?step={{ previous_step }}">Back</a>{% endif %}<button class="button" type="submit">{% if step == 4 %}Submit intake{% else %}Save and continue{% endif %}</button></div>
-<p class="muted">Changing an earlier step requires completing the following steps again. This intake keeps the form version you started with.</p></form>
+</section><div class="actions">{% if step > 1 %}<a class="button secondary" href="?step={{ previous_step }}">Back</a>{% endif %}<button class="button" type="submit">{% if step == 5 %}Submit intake{% else %}Save and continue{% endif %}</button></div>
+</form>
 {{ contract|json_script:"intake-contract" }}{{ prior_answers|json_script:"intake-prior-answers" }}
 <script src="{% static 'participants/intake.js' %}" defer></script>
-<style>.field input[type=checkbox]{width:auto;margin-right:.5rem}.field ul{list-style:none;padding:0}.field ul label{font-weight:400}.experience-entry{border:1px solid #ddd;border-radius:12px;padding:18px;margin:18px 0}.consent-copy{background:#f7f7f7;padding:18px;margin-bottom:18px;max-height:22rem;overflow:auto}.field [hidden],section[hidden]{display:none!important}</style>
+
 </main>{% endblock %}

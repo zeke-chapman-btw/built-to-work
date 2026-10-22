@@ -1,7 +1,8 @@
-{% extends "participants/registration_base.html" %}{% block content %}
-<main class="reg-main"><p class="eyebrow">BUILT TO WORK</p><h1 class="hero">Tell us about you</h1>
-<p>Four short steps to share your background, hands-on experience and career interests. Allow about ten minutes.</p>
-{% if event %}<p class="card"><strong>{{ event.name }}</strong><br>Your registration and attendance are recorded separately.</p>{% endif %}
-<p>Have your email and phone number ready. You must be at least 14. No account sign-in or credential uploads are required.</p>
+{% extends "participants/intake_base.html" %}{% block content %}
+<main class="reg-main intake-welcome"><h1>Tell us about you</h1>
+<p>Share your background and interests in five steps.</p>
+<p class="muted">About 10 minutes · Ages 14 and up</p>
+<p>Have your email and phone number ready.</p>
+{% if event %}<p class="intake-event-context">Registering for {{ event.name }}</p>{% endif %}
 {% if error %}<p class="errors" role="alert">{{ error }}</p>{% endif %}
 <form method="post">{% csrf_token %}<button class="button" type="submit">Start intake</button></form></main>{% endblock %}

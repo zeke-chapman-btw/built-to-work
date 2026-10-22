@@ -1,9 +1,17 @@
 from . import verification_views, staff_directory_views, participant_review_views, workspace_views
 from django.urls import path
 from . import views, testing_views, registration_views, historical_views, qualification_views, document_views
-from . import intake_views, intake_config_views, intake_trailer_views
+from . import intake_views, intake_config_views, intake_trailer_views, consent_views
 app_name = "participants"
 urlpatterns = [
+    path("staff/consents/", consent_views.index, name="consent-index"),
+    path("staff/consents/upload/", consent_views.workflow, {"action": "upload"}, name="consent-upload"),
+    path("staff/consents/acceptances/", consent_views.acceptances, name="consent-acceptances"),
+    path("staff/consents/<int:document_id>/", consent_views.workflow, {"action": "review"}, name="consent-review"),
+    path("staff/consents/<int:document_id>/preview/", consent_views.workflow, {"action": "preview"}, name="consent-preview"),
+    path("staff/consents/<int:document_id>/original-pdf/", consent_views.workflow, {"action": "pdf"}, name="consent-pdf"),
+    path("staff/consents/<int:document_id>/publish/", consent_views.workflow, {"action": "publish"}, name="consent-publish"),
+    path("staff/consents/<int:document_id>/history/", consent_views.history, name="consent-history"),
     path("staff/intake-trailer/<uuid:preparation_id>/", intake_trailer_views.manage, name="intake-trailer-manage"),
     path("intake/start/<uuid:assignment_id>/", intake_views.start, name="intake-start"),
     path("intake/session/<uuid:session_id>/", intake_views.wizard, name="intake-session"),

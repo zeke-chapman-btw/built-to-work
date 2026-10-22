@@ -20,16 +20,17 @@ class IntakeUI11BTests(TestCase):
     def step(self, session, url, number, changes=None):
         answers = self.answers(**(changes or {}))
         values = {q["key"]: answers[q["key"]] for q in self.version.snapshot["questions"]
-                  if q["step"] == number and q["key"] in answers}
+                  if q["step"] == max(1, number - 1) and q["key"] in answers
+                  and (number > 2 or (q["type"] == "consent") == (number == 2))}
         session.refresh_from_db()
         from .intake_wizard import session_revision
         values["revision"] = session_revision(session)
         response = self.client.post(url + "?step=" + str(number), values)
         return response
 
-    def test_anonymous_four_step_completion_is_private_and_idempotent(self):
+    def test_anonymous_five_step_completion_is_private_and_idempotent(self):
         session, url = self.begin()
-        for number in (1, 2, 3, 4):
+        for number in (1, 2, 3, 4, 5):
             response = self.step(session, url, number)
             self.assertEqual(response.status_code, 302, response.content.decode()[:2000])
         completed = self.client.get(url)
@@ -64,7 +65,7 @@ class IntakeUI11BTests(TestCase):
                              contract=self.version.snapshot, expected_revision=revision(self.version))
         updated = publish(actor=self.admin, version_id=updated.pk, expected_revision=revision(updated))
         assign(actor=self.admin, version_id=updated.pk, channel="online")
-        for number in (1, 2, 3, 4):
+        for number in (1, 2, 3, 4, 5):
             self.assertEqual(self.step(session, url, number).status_code, 302)
         self.assertEqual(RegistrationSubmission.objects.get().form_version_id, self.version.pk)
         later, _ = self.begin()
@@ -91,7 +92,7 @@ class IntakeUI11BTests(TestCase):
                     reverse("participants:intake-config-skills", args=[self.version.form_id]),
                     reverse("participants:intake-config-mappings", args=[self.version.form_id])]:
             self.assertEqual(self.client.get(url).status_code, 200, url)
-        for step in range(1, 5):
+        for step in range(1, 6):
             response = self.client.get(reverse("participants:intake-config-preview", args=[self.version.pk]), {"step": step})
             self.assertEqual(response.status_code, 200)
         self.assertFalse(Participant.objects.exists())

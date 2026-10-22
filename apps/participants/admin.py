@@ -63,6 +63,32 @@ class ConsentDocumentVersionAdmin(ConsentAdminWorkflowMixin, admin.ModelAdmin):
     pass
 @admin.register(ConsentAcceptance)
 class ConsentAcceptanceAdmin(admin.ModelAdmin):
+    def get_model_perms(self, request):
+        return {}
+
+    def changelist_view(self, request, extra_context=None):
+        from django.shortcuts import redirect
+        if not self.has_view_permission(request):
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied
+        return redirect("participants:consent-acceptances")
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        from django.shortcuts import redirect
+        from django.core.exceptions import PermissionDenied
+        if not self.has_view_permission(request):
+            raise PermissionDenied
+        return redirect("participants:consent-acceptances")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
     list_display = ("participant", "document", "accepted_at")
     readonly_fields = ("accepted_at",)
 

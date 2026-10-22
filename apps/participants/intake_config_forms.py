@@ -27,7 +27,8 @@ class QuestionConfigForm(forms.Form):
     label = forms.CharField(max_length=240)
     help_text = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 2}), max_length=2000)
     type = forms.ChoiceField(choices=[(kind, kind.replace("_", " ").title()) for kind in sorted(KINDS - {"repeat_group"})])
-    step = forms.TypedChoiceField(coerce=int, choices=[(n, "Step " + str(n)) for n in range(1, 5)])
+    step = forms.TypedChoiceField(coerce=int, choices=[(1, "Step 1 — Personal information"), (2, "Step 3 — Education and employment"),
+        (3, "Step 4 — Trade interests and experience"), (4, "Step 5 — Career preferences")])
     required = forms.BooleanField(required=False)
     destination = forms.ChoiceField(label="Profile field mapping")
     options = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 6}),
@@ -64,6 +65,8 @@ class QuestionConfigForm(forms.Form):
             for item in q["options"]:
                 choices[item["value"]] = item["label"]
         self.fields["condition_values"].choices = list(choices.items())
+        if self.question and self.question["type"] == "consent":
+            self.fields["step"].choices = [(1, "Step 2 — Consent")]
         if self.question:
             self.initial.update({k: self.question.get(k) for k in ("label", "help_text", "type", "step",
                                 "required", "destination", "max_selections", "min_selections")})
