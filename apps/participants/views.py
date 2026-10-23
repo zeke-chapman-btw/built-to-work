@@ -150,14 +150,14 @@ def password_reset_confirm(request, token):
 
 @login_required(login_url="admin:login")
 def staff_requests(request):
-    if not request.user.is_staff: raise Http404
+    if not (request.user.is_staff and request.user.has_perms(['participants.view_participant', 'participants.manage_portal_invitations'])): raise Http404
     items = ParticipantAccountRequest.objects.filter(status=ParticipantAccountRequest.Status.PENDING_REVIEW).order_by("created_at")
     return people_render(request, "internal/staff_requests.html", {"requests": items})
 
 @login_required(login_url="admin:login")
 @transaction.atomic
 def staff_resolve_request(request, request_id):
-    if not request.user.is_staff: raise Http404
+    if not (request.user.is_staff and request.user.has_perms(['participants.view_participant', 'participants.manage_portal_invitations'])): raise Http404
     obj = get_object_or_404(ParticipantAccountRequest.objects.select_for_update(), pk=request_id, status=ParticipantAccountRequest.Status.PENDING_REVIEW, verified_at__isnull=False)
     if request.method == "POST":
         if request.POST.get("decision") == "reject":
@@ -167,7 +167,11 @@ def staff_resolve_request(request, request_id):
         form = StaffRequestResolutionForm(request.POST)
         if form.is_valid():
             participant = form.cleaned_data["participant"]
-            create_pending_account(participant, obj.login_email, obj.verified_at, actor=request.user, request=request)
+            try:
+                create_pending_account(participant, obj.login_email, obj.verified_at, actor=request.user, request=request)
+            except ValueError as exc:
+                form.add_error(None, str(exc))
+                return people_render(request, 'internal/staff_request_resolve.html', {'title': 'Review account request', 'form': form, 'request_obj': obj})
             obj.matched_participant = participant; obj.status = ParticipantAccountRequest.Status.LINKED; obj.resolved_by = request.user; obj.resolved_at = timezone.now(); obj.save(update_fields=["matched_participant", "status", "resolved_by", "resolved_at", "updated_at"])
             audit(request.user, "participant_account_request_resolved", obj, new_data={"participant_id": str(participant.pk), "status": obj.status})
             return redirect("participants:staff-requests")

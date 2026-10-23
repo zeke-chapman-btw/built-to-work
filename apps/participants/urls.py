@@ -2,8 +2,21 @@ from . import verification_views, staff_directory_views, participant_review_view
 from django.urls import path
 from . import views, testing_views, registration_views, historical_views, qualification_views, document_views
 from . import intake_views, intake_config_views, intake_trailer_views, consent_views
+from . import portal_views, portal_auth
 app_name = "participants"
 urlpatterns = [
+    path('portal/', portal_views.profile, name='portal-home'),
+    path('portal/activate/<str:token>/', portal_views.activate_account, name='portal-activate'),
+    path('portal/invitation/', portal_views.recover_invitation, name='portal-recover'),
+    path('portal/events/', portal_views.events, name='portal-events'),
+    path('portal/events/<uuid:event_id>/', portal_views.event_detail, name='portal-event'),
+    path('portal/activity/', portal_views.activity, name='portal-activity'),
+    path('portal/account/', portal_views.account, name='portal-account'),
+    path('portal/documents/add/', portal_views.document_upload, name='portal-document-add'),
+    path('portal/documents/<uuid:document_uuid>/', portal_views.document_download, name='portal-document-download'),
+    path('portal/documents/<uuid:document_uuid>/archive/', portal_views.document_archive, name='portal-document-archive'),
+    path('portal/tickets/<uuid:ticket_id>.png', portal_views.ticket, name='portal-ticket'),
+    path('staff/portal-invitations/', portal_views.staff_invitations, name='portal-invitations'),
     path("staff/consents/", consent_views.index, name="consent-index"),
     path("staff/consents/upload/", consent_views.workflow, {"action": "upload"}, name="consent-upload"),
     path("staff/consents/acceptances/", consent_views.acceptances, name="consent-acceptances"),
@@ -54,16 +67,16 @@ urlpatterns = [
     path("staff/registration-forms/publish/", registration_views.form_publish, name="registration-form-publish"),
 
     path("staff/testing/", testing_views.test_participant_admin, name="testing"),
-    path("request-account/", views.account_request, name="account-request"),
+    path("request-account/", portal_views.recover_invitation, name="account-request"),
     path("verify/<str:token>/", views.verify_request, name="verify-request"),
-    path("set-password/<str:token>/", views.set_password, name="set-password"),
-    path("login/", views.participant_login, name="login"),
-    path("logout/", views.participant_logout, name="logout"),
-    path("profile/", views.profile, name="profile"),
-    path("profile/email/", views.request_email_change, name="request-email-change"),
-    path("profile/email/verify/<str:token>/", views.verify_email_change, name="verify-email-change"),
-    path("password-reset/", views.password_reset_request, name="password-reset"),
-    path("password-reset/confirm/<str:token>/", views.password_reset_confirm, name="password-reset-confirm"),
+    path("set-password/<str:token>/", portal_auth.legacy_setup, name="set-password"),
+    path("login/", portal_auth.sign_in, name="login"),
+    path("logout/", portal_auth.sign_out, name="logout"),
+    path("profile/", portal_views.profile, name="profile"),
+    path("profile/email/", portal_auth.email_change, name="request-email-change"),
+    path("profile/email/verify/<str:token>/", portal_auth.email_confirm, name="verify-email-change"),
+    path("password-reset/", portal_auth.reset_request, name="password-reset"),
+    path("password-reset/confirm/<str:token>/", portal_auth.reset_confirm, name="password-reset-confirm"),
     path("staff/account-requests/", views.staff_requests, name="staff-requests"),
     path("staff/account-requests/<uuid:request_id>/", views.staff_resolve_request, name="staff-resolve-request"),
     path("staff/historical/", historical_views.historical_index, name="historical-index"),

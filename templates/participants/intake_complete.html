@@ -1,6 +1,8 @@
 {% extends "participants/intake_base.html" %}{% block content %}
 <main class="reg-main intake-complete"><h1>Your intake has been received</h1>
 <p>Thank you for sharing your information with Built to Work.</p>
+<p>Your participant portal connects to this same BTW profile. Eligible intakes with permission for BTW updates receive an activation invitation. Shared contact details or identity conflicts need staff review first.</p>
+<p><a class="button secondary" href="{% url 'participants:login' %}">Participant portal</a> <a href="{% url 'participants:portal-recover' %}">Need an activation link?</a></p>
 {% if event %}<p>If you requested an event ticket, follow the event's delivery or staff assistance instructions.</p>{% endif %}
 {% if registration %}<p><a class="button" href="{% url 'events:registration_detail' registration.event_id registration.pk %}">Open registration and ticket</a></p>{% endif %}
 {% if intake_review %}<p><a class="button secondary" href="{% url 'participants:intake-review-detail' intake_review.pk %}">Review this pending intake</a></p>{% endif %}</main>{% endblock %}

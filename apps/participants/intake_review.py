@@ -125,6 +125,9 @@ def decide(*, actor, review_id, action, reason, expected_revision, target_id=Non
         candidate_identity=target.identity_uuid if target else None)
     if action != "review_later":
         finish_review_registration(review=review, participant=target or source.participant, actor=actor)
+        from .portal_accounts import queue_invitation
+        with fresh_identity_context():
+            queue_invitation(target or source.participant, actor=actor)
     record_audit(actor=actor, action="intake.review." + action, instance=review,
         source="participant_review", reason=reason,
         new_data={"source_id": review.source_participant_id,

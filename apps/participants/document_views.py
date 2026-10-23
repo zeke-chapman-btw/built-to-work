@@ -119,6 +119,7 @@ def document_edit(request, document_uuid):
                 'category': locked.category_id, 'description': locked.description,
                 'issue_date': str(locked.issue_date or ''),
                 'expiration_date': str(locked.expiration_date or ''),
+                'participant_visible': locked.participant_visible,
             }
             form = ParticipantDocumentForm(request.POST, instance=locked, participant=locked.participant)
             form.fields.pop('file', None)
@@ -131,6 +132,7 @@ def document_edit(request, document_uuid):
                     'category': updated.category_id, 'description': updated.description,
                     'issue_date': str(updated.issue_date or ''),
                     'expiration_date': str(updated.expiration_date or ''),
+                    'participant_visible': updated.participant_visible,
                 }
                 _audit(updated, request.user, 'metadata_changed', reason, {'before': before, 'after': after})
                 messages.success(request, 'Document details updated.')

@@ -6,6 +6,7 @@ from django.core import mail
 from django.contrib.auth import SESSION_KEY, get_user_model
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.participants.models import Participant, ParticipantAccount
 from apps.participants.tokens import SET_PASSWORD_SALT, make_token
@@ -62,7 +63,8 @@ class ParticipantReset9GTests(TestCase):
         self.person = Participant.objects.create(first_name='Synthetic', last_name='Reset9G')
         self.user = get_user_model().objects.create_user(username='synthetic-reset-9g', password='original-test-password')
         self.account = ParticipantAccount.objects.create(participant=self.person, user=self.user,
-            login_email='synthetic-reset@example.test', status=ParticipantAccount.Status.ACTIVE)
+            login_email='synthetic-reset@example.test', status=ParticipantAccount.Status.ACTIVE,
+            email_verified_at=timezone.now())
         self.url = reverse('participants:password-reset')
 
     def test_get_renders_labeled_email_and_submit_and_sign_in_navigation(self):

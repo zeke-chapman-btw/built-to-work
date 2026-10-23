@@ -187,6 +187,9 @@ def import_intake(*, event, preparation, payload):
         source="authenticated_trailer", new_data={"trailer_identity": preparation.trailer.identity,
             "operation": str(operation), "identity_review": resolution.review_required,
             "source_actor_uuid": payload.get("source_actor_uuid")})
+    if not resolution.review_required:
+        from .portal_accounts import queue_invitation
+        queue_invitation(resolution.participant)
     return submission, resolution.review_required
 
 

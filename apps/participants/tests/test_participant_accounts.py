@@ -23,32 +23,20 @@ class ParticipantIdentityTests(TestCase):
         person = self.participant()
         self.assertEqual(list(find_participant_matches("RAE@example.com", "")), [person])
 
-    def test_ambiguous_request_requires_staff_review(self):
+    def test_legacy_request_cannot_claim_ambiguous_contacts(self):
         self.participant()
         self.participant(first_name="Ray", contact_email="other@example.com")
         self.client.post(reverse("participants:account-request"), {"first_name":"Rae", "last_name":"Example", "contact_email":"new@example.com", "contact_phone":"5551234567", "login_email":"new@example.com"})
-        obj = ParticipantAccountRequest.objects.get()
-        token = re.search(r"/verify/([^/]+)", mail.outbox[0].body).group(1)
-        self.client.get(reverse("participants:verify-request", kwargs={"token":token}))
-        obj.refresh_from_db()
-        self.assertEqual(obj.status, obj.Status.PENDING_REVIEW)
-        self.assertEqual(obj.match_count, 2)
+        # Build 12 is intake-first. The legacy URL now offers invitation recovery,
+        # never a new contact-only account claim.
+        self.assertEqual(ParticipantAccountRequest.objects.count(), 0)
         self.assertEqual(ParticipantAccount.objects.count(), 0)
 
-    def test_verified_unique_contact_email_creates_pending_account_and_password_activates(self):
+    def test_unique_contact_without_completed_intake_cannot_create_account(self):
         person = self.participant()
         self.client.post(reverse("participants:account-request"), {"first_name":"Rae", "last_name":"Example", "contact_email":"RAE@example.com", "contact_phone":"5551234567", "login_email":"rae@example.com"})
-        obj = ParticipantAccountRequest.objects.get()
-        token = re.search(r"/verify/([^/]+)", mail.outbox[0].body).group(1)
-        self.client.get(reverse("participants:verify-request", kwargs={"token":token}))
-        account = ParticipantAccount.objects.get(participant=person)
-        self.assertEqual(account.status, account.Status.PENDING)
-        password_token = re.search(r"/set-password/([^/]+)", mail.outbox[-1].body).group(1)
-        response = self.client.post(reverse("participants:set-password", kwargs={"token":password_token}), {"password1":"Long-random-passphrase-284!", "password2":"Long-random-passphrase-284!"})
-        self.assertEqual(response.url.split("?")[0], reverse("participants:login"))
-        account.refresh_from_db()
-        self.assertEqual(account.status, account.Status.ACTIVE)
-        self.assertTrue(account.user.check_password("Long-random-passphrase-284!"))
+        self.assertEqual(ParticipantAccount.objects.count(), 0)
+        self.assertEqual(Participant.objects.count(), 1)
 
     def test_unverified_active_account_cannot_access_profile(self):
         person = self.participant()
@@ -87,11 +75,11 @@ class ParticipantIdentityTests(TestCase):
         self.assertEqual(ParticipantAccount.objects.get(user=profile_response.wsgi_request.user).participant_id, person.pk)
         self.assertContains(profile_response, "rae@example.com")
 
-        response = self.client.post(reverse("participants:profile"), {"first_name":"Updated", "last_name":"Example", "preferred_name":"", "contact_email":"rae@example.com", "contact_phone":"5551234567"})
+        response = self.client.post(reverse("participants:profile"), {"first_name":"Updated", "last_name":"Example", "preferred_name":"", "contact_email":"rae@example.com", "contact_phone":"5551234567", "revision":profile_response.context['form']['revision'].value()})
         self.assertRedirects(response, reverse("participants:profile"))
         person.refresh_from_db()
         self.assertEqual(person.first_name, "Updated")
-        self.assertTrue(AuditLog.objects.filter(action="participant_profile_updated").exists())
+        self.assertTrue(AuditLog.objects.filter(action="portal.profile_updated").exists())
 
     def test_staff_user_alone_cannot_use_participant_login(self):
         User.objects.create_user(username="internal", email="rae@example.com", password="Long-random-passphrase-284!", is_active=True)
@@ -99,13 +87,13 @@ class ParticipantIdentityTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotIn("_auth_user_id", self.client.session)
 
-    def test_staff_must_choose_participant_when_resolving_verified_request(self):
+    def test_staff_without_invitation_permission_cannot_claim_participant(self):
         person = self.participant()
         obj = ParticipantAccountRequest.objects.create(first_name="Rae", last_name="Example", contact_email="rae@example.com", contact_phone="5551234567", login_email="new-login@example.com", status=ParticipantAccountRequest.Status.PENDING_REVIEW, verified_at=timezone.now(), match_count=2)
         staff = User.objects.create_user(username="staff", password="staff-secret", is_staff=True, is_active=True)
         self.client.force_login(staff, backend="django.contrib.auth.backends.ModelBackend")
         response = self.client.post(reverse("participants:staff-resolve-request", kwargs={"request_id":obj.pk}), {"participant":person.pk})
-        self.assertRedirects(response, reverse("participants:staff-requests"))
+        self.assertEqual(response.status_code, 404)
         obj.refresh_from_db()
-        self.assertEqual(obj.status, obj.Status.LINKED)
-        self.assertEqual(ParticipantAccount.objects.get(participant=person).login_email, "new-login@example.com")
+        self.assertEqual(obj.status, obj.Status.PENDING_REVIEW)
+        self.assertFalse(ParticipantAccount.objects.exists())

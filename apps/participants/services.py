@@ -42,9 +42,14 @@ def begin_account_request(request_obj, request=None):
 @transaction.atomic
 def create_pending_account(participant, email, verified_at, actor=None, request=None):
     email = normalize_email(email)
+    from .portal_accounts import eligible, _email_lock
+    participant = Participant.objects.select_for_update().get(pk=participant.pk)
+    _email_lock(email)
+    if not verified_at or not eligible(participant, invitation=True) or participant.contact_email != email:
+        raise ValueError('Complete intake and resolve identity/communication permission before account setup.')
     if participant.kind != Participant.Kind.PERSON:
         raise ValueError("System test identities cannot have participant accounts.")
-    if ParticipantAccount.objects.filter(status=ParticipantAccount.Status.ACTIVE, login_email__iexact=email).exists():
+    if ParticipantAccount.objects.filter(login_email__iexact=email).exclude(status='disabled').exists():
         raise ValueError("An active participant account already uses that email.")
     if ParticipantAccount.objects.filter(participant=participant).exists():
         raise ValueError("This participant already has an account.")

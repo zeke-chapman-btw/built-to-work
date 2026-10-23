@@ -129,6 +129,7 @@ SIMULATOR_TEST_IDENTIFIER = os.environ.get("SIMULATOR_TEST_IDENTIFIER", "0000000
 # Trailer communications use deployment-provided providers. No real sends occur
 # until the sender and transport settings are configured.
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+PARTICIPANT_PORTAL_BASE_URL = os.environ.get('PARTICIPANT_PORTAL_BASE_URL', os.environ.get('RENDER_EXTERNAL_URL', ''))
 EMAIL_HOST = os.environ.get("EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "25"))
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")

@@ -242,6 +242,9 @@ def complete_session(*, session_id, actor=None):
         retain_pending_intake(session=session, submission=submission, actor=actor)
     session.submission, session.state = submission, "submitted"
     session.save(update_fields=["submission", "state", "updated_at"])
+    if session.channel != 'trailer' and not resolution.review_required:
+        from .portal_accounts import queue_invitation
+        queue_invitation(participant)
     record_audit(actor=actor if getattr(actor, "is_authenticated", False) else None,
         action="intake.completed", instance=submission, source="smart_intake",
         new_data={"review_required": resolution.review_required, "channel": session.channel})

@@ -40,7 +40,7 @@ class ParticipantDocument(TimestampedModel):
 
     class UploadSource(models.TextChoices):
         STAFF = "staff", "Staff"
-        PARTICIPANT = "participant", "Participant (future)"
+        PARTICIPANT = "participant", "Participant"
         IMPORT = "import", "Import"
 
     uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
@@ -54,6 +54,7 @@ class ParticipantDocument(TimestampedModel):
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="participant_documents_uploaded")
     upload_source = models.CharField(max_length=16, choices=UploadSource.choices, default=UploadSource.STAFF)
     description = models.CharField(max_length=500, blank=True)
+    participant_visible = models.BooleanField(default=False, help_text='Allow this participant to download the file in My Profile. Internal staff notes and verification evidence remain private.')
     issue_date = models.DateField(null=True, blank=True)
     expiration_date = models.DateField(null=True, blank=True)
     state = models.CharField(max_length=12, choices=State.choices, default=State.ACTIVE)

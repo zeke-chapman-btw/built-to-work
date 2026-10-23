@@ -31,7 +31,7 @@ class ParticipantDocumentForm(forms.ModelForm):
     audit_reason = forms.CharField(max_length=500, label='Reason', help_text='Required for the audit history.')
     class Meta:
         model = ParticipantDocument
-        fields = ('category', 'description', 'issue_date', 'expiration_date')
+        fields = ('category', 'description', 'issue_date', 'expiration_date', 'participant_visible')
         widgets = {'issue_date': forms.DateInput(attrs={'type': 'date'}), 'expiration_date': forms.DateInput(attrs={'type': 'date'})}
     def __init__(self, *args, participant=None, **kwargs):
         super().__init__(*args, **kwargs)
