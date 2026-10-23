@@ -81,10 +81,13 @@ def profile(request):
         qualification.portal_status = qualification_verification_summary(qualification)['label']
     from .portal_profile_services import profile_sections
     sections = profile_sections(request.user, person, qualifications)
+    from .portal_assessments import profile_assessment_results, profile_identity
+    assessment_context = profile_assessment_results(request.user, request.GET.get('assessment_page', 1))
+    identity_context = profile_identity(person, sections['work_entries'], intake_context['current_interests'])
     return render(request, 'participants/portal/profile.html', {'account': account, 'form': form,
         'career_form': career_form, 'documents': documents, 'qualifications': qualifications, 'section': 'profile',
         'intake_rows': intake_context['intake_profile_rows'], 'hands_on_entries': intake_context['hands_on_entries'],
-        'career': career, 'current_interests': intake_context['current_interests'], 'current_travel': intake_context['current_travel'], **sections})
+        'career': career, 'current_interests': intake_context['current_interests'], 'current_travel': intake_context['current_travel'], **sections, **assessment_context, **identity_context})
 
 
 @participant_view
@@ -101,8 +104,10 @@ def document_upload(request):
         else:
             messages.success(request, 'File uploaded. Authorized BTW staff can review it.')
             return redirect('participants:profile')
-    return render(request, 'participants/portal/form.html', {'title': 'Add a supporting document', 'form': form,
-        'multipart': True, 'section': 'profile', 'submit_label': 'Upload document'})
+    return render(request, 'participants/portal/profile_editor.html', {'title': 'Add a supporting document', 'form': form,
+        'multipart': True, 'section': 'profile', 'submit_label': 'Upload document',
+        'intro': 'Upload a resume, certificate, license or another supporting file.',
+        'cancel_url': '/participants/profile/#documents'})
 
 
 @participant_view
