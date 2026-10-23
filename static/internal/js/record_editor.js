@@ -124,13 +124,20 @@
           const state = {...history.state}; delete state.btwRecordEditor; history.replaceState(state,'',target.href); location.reload();
         } else location.replace(target.href);
       } catch {
+        if(form.hasAttribute('data-cautious-save')){
+          form.setAttribute('data-save-blocked','');setBusy(false);
+          feedback('We could not confirm the save. Your entries are retained. Check the current records before trying again.',true);
+          const target=sameOrigin(form.querySelector('[name=return_to]')?.value);
+          if(target){const link=document.createElement('a');link.href=target.href;link.target='_blank';link.rel='noopener';link.textContent='Open current records';content.querySelector('[data-editor-status]').append(' ',link);}
+          return;
+        }
         setBusy(false); feedback(form.dataset.safeRetry === 'true' ? 'We could not confirm the save. Your entries are retained. Retry this same form to safely check or finish the request.' : 'We could not confirm the save. Your entries are retained. Check the event in another tab before trying again so you do not create a duplicate record.',true);
       }
     });
     window.visualViewport?.addEventListener('resize', fitViewport); window.addEventListener('resize',fitViewport);
   }
   // Full-page fallback still receives validation focus and native saving feedback.
-  document.querySelectorAll('.btw-editor-fallback [data-editor-form]').forEach(form => {
+  document.querySelectorAll('.btw-editor-fallback [data-editor-form]:not([data-section-form])').forEach(form => {
     const errors = form.querySelector('[data-editor-recovery],.btw-form-errors'); if (errors) { errors.tabIndex = -1; errors.focus(); }
     const button = form.querySelector('button[type=submit]'), label = button.textContent, blocked = button.disabled;
     form.addEventListener('submit', event => { if (button.disabled) { event.preventDefault(); return; } button.disabled = true; button.textContent = form.dataset.saveLabel || 'Saving…'; });

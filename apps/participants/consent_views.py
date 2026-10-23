@@ -1,5 +1,6 @@
 """Canonical Operations consent workspace; reuse the audited publication workflow."""
 from functools import wraps
+from django.urls import reverse
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
@@ -64,7 +65,15 @@ def workflow(request, action, document_id=None):
     if request.method not in allowed:
         return HttpResponseNotAllowed(allowed)
     view = getattr(OperationsConsentWorkflow(), action + "_view")
-    return view(request, document_id) if document_id is not None else view(request)
+    response = view(request, document_id) if document_id is not None else view(request)
+    if response.status_code == 400 and action in {"review", "publish"}:
+        document = get_object_or_404(ConsentDocumentVersion,pk=document_id)
+        if action == "review" and request.POST.get("action") == "save":
+            document.body = request.POST.get("body",document.body)
+        return render(request,"participants/consents/review.html",context(request,page_title="Review consent document",document=document,
+            consent_error=response.content.decode("utf-8",errors="replace"),pdf_url=reverse("participants:consent-pdf",args=[document.pk]),
+            preview_url=reverse("participants:consent-preview",args=[document.pk]),publish_url=reverse("participants:consent-publish",args=[document.pk])),status=400)
+    return response
 
 
 @consent_page

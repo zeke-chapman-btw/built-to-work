@@ -11,6 +11,7 @@ from django.views.decorators.http import require_http_methods
 from apps.events.models import TrailerInstance
 from apps.events.services import audit_action
 from .presentation import list_page
+from apps.internal_ui.section_editors import operations_return, operations_editor, operations_saved
 
 
 def snapshot(obj):
@@ -27,6 +28,7 @@ class TrailerForm(forms.ModelForm):
     class Meta:
         model=TrailerInstance
         fields=("identity","display_name","is_active")
+        labels={"identity":"Trailer ID","display_name":"Name","is_active":"Active"}
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
         self.fields["identity"].disabled=True
@@ -61,6 +63,5 @@ def trailer_edit(request,trailer_id):
             audit_action(actor=request.user,action="operations.trailer.updated",instance=saved,
                 old_data=before,new_data=snapshot(saved),reason=form.cleaned_data["reason"])
             messages.success(request,"Trailer display settings saved. Credentials and trailer identity were preserved.")
-            return redirect("operations:trailers")
-    return render(request,"operations/execution_form.html",{"page_title":"Edit trailer display settings","form":form,
-        "back_url":reverse("operations:trailers")},status=400 if form.is_bound else 200)
+            return operations_saved(request,operations_return(request,reverse("operations:trailers")))
+    return operations_editor(request,form,title="Edit trailer",back=operations_return(request,reverse("operations:trailers")))

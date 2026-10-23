@@ -59,7 +59,7 @@ class ManagementUI10DTests(TestCase):
     def test_empty_authoring_post_is_bound_and_does_not_create_category(self):
         before=AssessmentCategory.objects.count()
         r=self.client.post(reverse("assessments:category_new"),{})
-        self.assertEqual(r.status_code,200);self.assertTrue(r.context["form"].is_bound);self.assertTrue(r.context["form"].errors)
+        self.assertEqual(r.status_code,400);self.assertTrue(r.context["form"].is_bound);self.assertTrue(r.context["form"].errors)
         self.assertEqual(AssessmentCategory.objects.count(),before)
     def test_ordinary_staff_reads_existing_quiz_and_station_but_cannot_edit_quiz(self):
         self.client.force_login(self.reader,backend="django.contrib.auth.backends.ModelBackend")

@@ -19,6 +19,8 @@ class TemplateDraftForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields["question_sets"].queryset = QuestionSet.objects.filter(status="published", category__is_active=True).select_related("category")
         self.fields["stations"].queryset = Station.objects.filter(is_active=True)
+        self.fields["stations"].widget = forms.CheckboxSelectMultiple(choices=self.fields["stations"].choices)
+        self.fields["question_sets"].widget = forms.CheckboxSelectMultiple(choices=self.fields["question_sets"].choices)
         self.fields["game"].queryset = GameDefinition.objects.filter(active=True, implementation_key="duck_hunt")
     def clean(self):
         data = super().clean()

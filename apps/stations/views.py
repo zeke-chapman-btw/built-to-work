@@ -6,6 +6,8 @@ from django.db.models import Count
 from django.core.paginator import Paginator
 from apps.operations.presentation import list_page
 from django.http import Http404, HttpResponse, HttpResponseNotAllowed
+from django.urls import reverse
+from apps.internal_ui.section_editors import operations_return, operations_editor, operations_saved
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -22,7 +24,7 @@ from .services import (
 
 @staff_required
 def station_list(request):
-    stations = Station.objects.annotate(assignment_count=Count("event_assignments", distinct=True)).prefetch_related("event_assignments__event")
+    stations = Station.objects.annotate(assignment_count=Count("event_assignments", distinct=True)).prefetch_related("event_assignments__event").order_by("name", "pk")
     stations,filters=list_page(request,stations,search_fields=("name","code","location","description"),
         active_field="is_active",status_choices=(("active","Active"),("inactive","Inactive")))
     return render(request, "stations/station_list.html", {"stations": stations, "page_title": "Stations",**filters})
@@ -34,8 +36,8 @@ def station_create(request):
     if request.method == "POST" and form.is_valid():
         station = form.save()
         messages.success(request, "Station created.")
-        return redirect("stations:detail", station_id=station.pk)
-    return render(request, "stations/station_form.html", {"form": form, "page_title": "Create station"})
+        return operations_saved(request,operations_return(request,reverse("stations:detail",args=[station.pk]),station=station))
+    return operations_editor(request,form,title="Add station",save_label="Add station",back=operations_return(request,reverse("stations:list")))
 
 
 @staff_required
@@ -47,8 +49,8 @@ def station_edit(request, station_id):
         if not station.is_active:
             EventStation.objects.filter(station=station, is_active_context=True).update(is_active_context=False, updated_at=timezone.now())
         messages.success(request, "Station updated.")
-        return redirect("stations:detail", station_id=station.pk)
-    return render(request, "stations/station_form.html", {"form": form, "station": station, "page_title": "Edit station"})
+        return operations_saved(request,operations_return(request,reverse("stations:detail",args=[station.pk]),station=station))
+    return operations_editor(request,form,title="Edit station",back=operations_return(request,reverse("stations:detail",args=[station.pk]),station=station))
 
 
 @staff_required
@@ -58,9 +60,9 @@ def station_detail(request, station_id):
     if request.method == "POST" and form.is_valid():
         assignment, created = assign_station(event=form.cleaned_data["event"], station=station, actor=request.user)
         messages.success(request, "Station assigned to event." if created else "This station is already assigned to that event.")
-        return redirect("stations:detail", station_id=station.pk)
+        return operations_saved(request,operations_return(request,reverse("stations:detail",args=[station.pk]),station=station))
     assignments = station.event_assignments.select_related("event").all()
-    return render(request, "stations/station_detail.html", {"station": station, "assignments": Paginator(assignments,25).get_page(request.GET.get("page")), "assignment_form": form, "page_title": station.name})
+    return render(request, "stations/station_detail.html", {"station": station, "assignments": Paginator(assignments,25).get_page(request.GET.get("page")), "assignment_form": form, "page_title": station.name,"back_url":operations_return(request,reverse("stations:list"),station=station)})
 
 
 @staff_required
@@ -78,8 +80,8 @@ def station_assign(request, station_id):
         assignment.save()
         messages.success(request, "Event assignment saved." if created else "Event assignment updated.")
     else:
-        return render(request,"stations/station_detail.html",{"station":station,"assignments":Paginator(station.event_assignments.select_related("event").all(),25).get_page(1),"assignment_form":form,"page_title":station.name},status=400)
-    return redirect("stations:detail", station_id=station.pk)
+        return render(request,"stations/station_detail.html",{"station":station,"assignments":Paginator(station.event_assignments.select_related("event").all(),25).get_page(1),"assignment_form":form,"page_title":station.name,"back_url":operations_return(request,reverse("stations:list"),station=station)},status=400)
+    return operations_saved(request,operations_return(request,reverse("stations:detail",args=[station.pk]),station=station))
 
 
 @staff_permission_required('stations.change_eventstation')
@@ -92,7 +94,7 @@ def assignment_activate(request, assignment_id):
         messages.success(request, f"{assignment.event.name} is now the active context for {assignment.station.name}.")
     except ValidationError as exc:
         messages.error(request, " ".join(exc.messages))
-    return redirect("stations:detail", station_id=assignment.station_id)
+    return operations_saved(request,operations_return(request,reverse("stations:detail",args=[assignment.station_id]),station=assignment.station))
 
 
 def _participant_label(session):
