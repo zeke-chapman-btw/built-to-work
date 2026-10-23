@@ -8,11 +8,11 @@
 <script src="{% static 'internal/js/notifications.js' %}" defer></script>
 <script src="{% static 'internal/js/task_create.js' %}" defer></script>
 <script src="{% static 'internal/js/shell.js' %}" defer></script>{% block extra_head %}{% endblock %}
-<link rel="stylesheet" href="{% static 'internal/css/build10a.css' %}"><link rel="stylesheet" href="{% static 'internal/css/btw_ui.css' %}?v=10c-events-4">{% if event %}<link rel="stylesheet" href="{% static 'internal/css/event_workspace.css' %}?v=event-workspace-6">{% endif %}<link rel="stylesheet" href="{% static 'internal/css/operations_workspace.css' %}?v=10d"><script src="{% static 'internal/js/ui_patterns.js' %}" defer></script></head><body class="internal-app{% if floating_task_create_url %} has-task-create{% endif %}{% if event %} has-event-context{% endif %}{% block body_class %}{% endblock %}">
+<link rel="stylesheet" href="{% static 'internal/css/build10a.css' %}"><link rel="stylesheet" href="{% static 'internal/css/btw_ui.css' %}?v=10c-events-4">{% if event %}<link rel="stylesheet" href="{% static 'internal/css/event_workspace.css' %}?v=event-workspace-6">{% endif %}<link rel="stylesheet" href="{% static 'internal/css/operations_workspace.css' %}?v=10d"><script src="{% static 'internal/js/ui_patterns.js' %}" defer></script><link rel="stylesheet" href="{% static 'internal/css/workspace_ui.css' %}?v=corrective-p1"></head><body class="internal-app{% if floating_task_create_url %} has-task-create{% endif %}{% if event %} has-event-context{% endif %}{% block body_class %}{% endblock %}">
 <a class="skip-link" href="#main-content">Skip to main content</a>
 <aside class="sidebar" id="internal-sidebar" aria-label="Main navigation">
   <nav class="workspace-nav" aria-label="Workspaces">
-    {% for item in navigation %}<a class="nav-item{% if item.active %} active{% endif %}" href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>
+    {% for item in primary_navigation %}<a class="nav-item{% if item.active %} active{% endif %}" href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>
       <span>{{ item.label }}</span>
     </a>{% endfor %}
   </nav>
@@ -23,6 +23,7 @@
   <main id="main-content">
     {% if messages %}<div class="messages" aria-live="polite">{% for message in messages %}<p class="alert">{{ message }}</p>{% endfor %}</div>{% endif %}
     {% block page_heading %}<header class="page-header"><div><h1 class="{% if event or participant or task or profile or record %}record-title{% else %}page-title{% endif %}">{{ page_title|default:'Dashboard' }}</h1></div><div class="page-actions">{% block page_actions %}{% endblock %}</div></header>{% endblock %}
+    {% if legacy_workspace_context %}<nav class="legacy-workspace-context" aria-label="Administrative workspace"><a href="{{ legacy_workspace_context.url }}" aria-current="page">{{ legacy_workspace_context.label|title }}</a></nav>{% endif %}
     {% block workspace_tabs %}{% endblock %}
     {% block content %}{% endblock %}
     {% if floating_task_create_url and not task_action_in_event_header %}<a class="button button-primary global-task-create" data-task-create data-global-task-create href="{{ floating_task_create_url }}">+ Add Task</a>{% endif %}

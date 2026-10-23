@@ -205,7 +205,7 @@ class Build10CTests(TestCase):
     def test_results_keep_score_units_and_separate_configuration_from_health(self):
         self.login();response=self.client.get(self.url('results'))
         self.assertContains(response,'raw game points');self.assertContains(response,'TOTAL SCORE (%)')
-        self.assertContains(response,'Configuration references');self.assertNotContains(response,'<h2>Event Readiness</h2>')
+        self.assertNotContains(response,'Configuration references');self.assertContains(self.client.get(reverse('events:event_detail',args=[self.event.pk]), {'section':'operations'}),'Configuration references');self.assertNotContains(response,'<h2>Event Readiness</h2>')
         self.assertContains(response,'id="event-stations"')
 
     def test_station_action_is_still_post_only(self):

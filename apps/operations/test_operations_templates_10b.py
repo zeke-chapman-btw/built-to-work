@@ -227,7 +227,7 @@ class OperationsTemplates10BTests(TestCase):
         rev.refresh_from_db();self.assertEqual(rev.status,'published')
     def test_station_navigation_uses_get_form_not_post_action(self):
         tools=event_tools(self.admin,self.event);link=next(x['url'] for x in tools if x['label']=='Station assignments')
-        self.assertIn('?section=results#event-stations',link)
+        self.assertIn('?section=operations#event-stations',link)
         response=self.client.get(link);self.assertContains(response,'id="event-stations"');self.assertContains(response,'Assign station')
         self.assertEqual(self.client.get(reverse('events:station_assign',args=[self.event.pk])).status_code,405)
     def test_station_link_not_granted_to_event_view_change_only(self):

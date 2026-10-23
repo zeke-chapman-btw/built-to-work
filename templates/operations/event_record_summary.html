@@ -1,0 +1,1 @@
+{% load event_ui tz %}<p class="p2-record-meta">{% timezone event.timezone_name %}{{ event.start_at|date:'M j, Y · g:i A' }} – {{ event.end_at|date:'M j, Y · g:i A' }} · {{ event|event_timezone }}{% endtimezone %}</p><small>{{ event.location_name|default:'Location not recorded' }}</small>

@@ -46,7 +46,7 @@ def profile_sections(context):
     request=context['request'];person=context['participant'];active=context.get('section','overview')
     items=[('overview','Overview',True),('career','Skills & experience',True),('qualifications','Qualifications',context.get('can_view_qualifications')),('documents','Documents',context.get('can_view_documents')),('assessments','Assessments',any(context.get(k) for k in ['can_view_quiz_results','can_view_game_results','can_view_historical_scores','can_view_simulator_results'])),('events','Events',context.get('can_view_registrations')),('notes','Internal notes',context.get('can_view_notes')),('acquisition','Details & history',True),('activity','Activity',context.get('can_view_activity')),('tasks','Tasks',True)]
     rows=[dict(key=key,label=label,url=profile_link(request,person,key),active=key==active) for key,label,allowed in items if allowed]
-    secondary={'acquisition','activity','tasks'}
+    secondary={'assessments','events','notes','acquisition','activity','tasks'}
     return dict(items=rows,primary_items=[x for x in rows if x['key'] not in secondary],more_items=[x for x in rows if x['key'] in secondary],more_active=next((x['label'] for x in rows if x['active'] and x['key'] in secondary),''),active_label=next((x['label'] for x in rows if x['active']),'Overview'))
 
 @register.simple_tag(takes_context=True)

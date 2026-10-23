@@ -29,7 +29,7 @@ class WorkspaceFinalizationTests(TestCase):
         self.assertContains(response, "data-notification-bell", count=1)  # Native bell disclosure; workspace navigation remains direct.
         self.assertContains(response, reverse("events:event_list"))
         for workspace_id in ("participants", "operations", "platform-tools", "customers", "administration"):
-            self.assertContains(response, reverse("internal:workspace", kwargs={"workspace_id": workspace_id}))
+            self.assertEqual(self.client.get(reverse("internal:workspace", kwargs={"workspace_id": workspace_id})).status_code, 200)
 
     def test_assessment_workflow_is_under_operations(self):
         links = visible_workspace_links(self.user, "operations")

@@ -132,7 +132,7 @@ def _resolved(item):
     result["url"]=reverse(item["url_name"],kwargs=item.get("url_kwargs",{}))
     return result
 
-def visible_workspaces(user,current_path=""):
+def visible_legacy_workspaces(user,current_path=""):
     if not getattr(user,"is_active",False) or not getattr(user,"is_staff",False):
         return []
     visible=[]
@@ -206,3 +206,55 @@ def _destination_allowed(user, item):
     if route=="participants:registration-forms":
         return user.is_superuser
     return True
+
+
+def staff_destinations(user, current_path=""):
+    """Seven staff destinations; legacy workspace policies still guard each tool."""
+    legacy = {entry["id"]: entry for entry in visible_legacy_workspaces(user, current_path)}
+    if not legacy:
+        return []
+    labels = {"home": "Home", "events": "Events", "participants": "Participants",
+              "operations": "Operations", "tasks": "Tasks"}
+    entries = []
+    for key in ("home", "events", "participants", "operations", "tasks"):
+        if key in legacy:
+            entries.append(dict(legacy[key], label=labels[key]))
+    entries.extend([
+        dict(id="reports", label="Reports & Analytics", icon="reports", url=reverse("internal:reports"), active=False),
+        dict(id="settings", label="Settings & Administration", icon="settings", url=reverse("internal:settings"), active=False),
+    ])
+    active = next((entry["id"] for entry in entries if entry["active"]), None)
+    if any(legacy.get(key, {}).get("active") for key in ("administration", "platform-tools", "customers")):
+        active = "settings"
+    if current_path.startswith(("/internal/reports/", "/reports/", "/workdays/reports/")):
+        active = "events" if current_path.startswith("/reports/events/") else "settings" if current_path.startswith("/reports/categories/") else "reports"
+    if current_path.startswith(("/internal/settings/", "/workdays/mine/", "/internal/quick-actions/")):
+        active = "settings"
+    for entry in entries:
+        entry["active"] = entry["id"] == active
+    return entries
+
+
+def settings_groups(user):
+    """Rehome existing destinations without widening their access policies."""
+    allowed = {entry["id"] for entry in visible_legacy_workspaces(user)}
+    groups = []
+    for key, label in (("administration", "Administration"), ("platform-tools", "Platform tools")):
+        if key in allowed:
+            links = visible_workspace_links(user, key)
+            if links:
+                groups.append(dict(label=label, links=links))
+    # Retain the existing planned destination, without adding customer features.
+    if "customers" in allowed:
+        groups.append(dict(label="Other destinations", links=[dict(label="Customers", description="Planned workspace", url=reverse("internal:workspace", kwargs={"workspace_id": "customers"}))]))
+    return groups
+
+
+# Existing integrations and their context keep the established registry contract.
+# Only the shared shell opts in to the seven primary destinations.
+visible_workspaces = visible_legacy_workspaces
+
+
+def legacy_workspace_context(user, current_path=""):
+    return next((entry for entry in visible_legacy_workspaces(user, current_path)
+                 if entry["active"] and entry["id"] in ("administration", "platform-tools", "customers")), None)

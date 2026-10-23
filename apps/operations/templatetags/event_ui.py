@@ -50,3 +50,25 @@ def staff_navigation(context, event, active="workdays"):
 def event_timezone(event, instant=None):
     from apps.events.timezone_choices import event_timezone_label
     return event_timezone_label(event, instant)
+
+
+@register.simple_tag
+def event_editor_sections(form):
+    """Progressive disclosure uses the original bound fields and error state."""
+    result = []
+    for key, title, names, optional in (
+        ("basics", "Basic information", ("name", "event_type", "event_type_other", "description"), False),
+        ("schedule", "Event dates", ("start_at", "end_at", "timezone_name"), False),
+        ("location", "Location", ("location_name", "address_line_1", "address_line_2", "city", "state", "postal_code", "country"), False),
+        ("travel-dates", "Setup and travel dates", ("setup_date", "staff_arrival_time", "return_date"), True),
+        ("staff-defaults", "Staff assignment defaults", ("daily_start_time", "daily_end_time"), True),
+        ("contact-logistics", "Contact and logistics", ("contact_name", "contact_email", "contact_phone", "housing_information", "logistics_instructions"), True),
+        ("registration", "Participant registration settings", ("registration_opens_at", "registration_closes_at", "registration_deadline_at", "registration_capacity", "group_mode", "group_label"), True),
+    ):
+        fields = [form[name] for name in names if not form[name].is_hidden]
+        if not fields:
+            continue
+        result.append(dict(id="event-" + key, title=title, fields=fields,
+            optional=optional and not any(field.field.required for field in fields),
+            open=any(field.errors for field in fields) or any(field.value() not in (None, "", False, 0, "disabled", "Group") for field in fields)))
+    return result

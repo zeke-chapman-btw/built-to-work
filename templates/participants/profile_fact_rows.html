@@ -1,0 +1,1 @@
+{% for row in facts %}<dt>{{ row.label }}</dt><dd>{{ row.value }}<small class="p2-source">{% if row.source %}Intake · self-reported{% else %}Current profile{% endif %}{% if row.protected %} · Protected value{% endif %}</small></dd>{% endfor %}

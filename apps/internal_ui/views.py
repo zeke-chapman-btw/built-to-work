@@ -10,12 +10,14 @@ from django.http import Http404
 from django.shortcuts import render
 from django.urls import reverse
 
-from .navigation import WORKSPACES, visible_settings_link, visible_workspace_links, visible_workspaces
+from .navigation import WORKSPACES, staff_destinations, legacy_workspace_context, settings_groups, visible_legacy_workspaces, visible_settings_link, visible_workspace_links, visible_workspaces
 
 
 def _staff_context(request, **extra):
     return {
         "navigation": visible_workspaces(request.user, request.path),
+        "primary_navigation": staff_destinations(request.user, request.path),
+        "legacy_workspace_context": legacy_workspace_context(request.user, request.path),
         "settings_link": visible_settings_link(request.user, request.path),
         **extra,
     }
@@ -48,7 +50,7 @@ def workspace(request,workspace_id):
     item=next((entry for entry in WORKSPACES if entry["id"]==workspace_id and entry["id"]!="home"),None)
     if item is None:
         raise Http404
-    if not any(entry["id"]==workspace_id for entry in visible_workspaces(request.user)):
+    if not any(entry["id"]==workspace_id for entry in visible_legacy_workspaces(request.user)):
         raise PermissionDenied
     links=visible_workspace_links(request.user,workspace_id)
     if workspace_id=="participants" and request.user.has_perm("participants.view_participant"):
@@ -77,7 +79,7 @@ def workspace(request,workspace_id):
 @login_required
 def settings(request):
     _require_staff(request)
-    return render(request,"internal/settings.html",_staff_context(request,page_title="Settings",page_description="Manage your own staff account settings.",password_change_url=reverse("admin:password_change")))
+    return render(request,"internal/settings.html",_staff_context(request,page_title="Settings & Administration",page_description="Your account and authorized administration tools.",settings_groups=settings_groups(request.user),password_change_url=reverse("admin:password_change")))
 
 @login_required
 @require_http_methods(["GET", "POST"])
