@@ -1,5 +1,6 @@
 import csv
 from functools import wraps
+from urllib.parse import urlencode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.contenttypes.models import ContentType
@@ -7,7 +8,7 @@ from django.core.exceptions import PermissionDenied,ValidationError
 from django.core.paginator import Paginator
 from django.db import IntegrityError
 from django.db.models import Count,Sum
-from django.http import Http404,HttpResponse
+from django.http import Http404,HttpResponse,JsonResponse
 from django.shortcuts import get_object_or_404,redirect,render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
@@ -19,6 +20,7 @@ from apps.workdays.models import Workday,MileageTrip
 from apps.workdays.reports import safe
 from . import services as svc,reporting
 from .models import ExpenseCategory,ManualExpense,IncentiveLine,CostReview
+from .expense_context import expense_list_url, expense_return_url
 from .forms import ExpenseForm,IncentiveForm,CategoryForm,ReviewForm,RevisionForm,EventFilter,ExpenseFilter
 
 def portal(fn):
@@ -93,11 +95,12 @@ def detail(request,event_id):
     if report_section not in ("expenses", "report"):
         report_section = "all"  # Existing URLs, anchors, filters and exports retain their combined view.
     title = "Expenses" if report_section == "expenses" else "Event Report" if report_section == "report" else "Event Cost & Performance"
-    return page(request,'detail',page_title=title,report_section=report_section,event=event,report=report,expense_filter=form,expenses=Paginator(expenses,30).get_page(request.GET.get('page')),incentives=Paginator(lines,30).get_page(request.GET.get('incentive_page')),review_form=review_form,notes=notes,notes_access=notes_access,definitions=reporting.METRIC_DEFINITIONS,category_totals=category_totals,metric_rows=metric_rows,status=200 if valid else 400)
+    return page(request,'detail',expense_return_base=expense_list_url(event,request.GET).split('#')[0],page_title=title,report_section=report_section,event=event,report=report,expense_filter=form,expenses=Paginator(expenses,30).get_page(request.GET.get('page')),incentives=Paginator(lines,30).get_page(request.GET.get('incentive_page')),review_form=review_form,notes=notes,notes_access=notes_access,definitions=reporting.METRIC_DEFINITIONS,category_totals=category_totals,metric_rows=metric_rows,status=200 if valid else 400)
 
 @portal
 def entry(request,event_id=None,record_id=None,kind='expense'):
     svc.require_manage(request.user)
+    if kind=='expense':return expense_entry(request,event_id,record_id)
     cls,form_cls=(ManualExpense,ExpenseForm) if kind=='expense' else (IncentiveLine,IncentiveForm)
     obj=get_object_or_404(cls,pk=record_id) if record_id else None
     event=get_object_or_404(Event,pk=obj.event_id if obj else event_id);svc.mutable(event)
@@ -107,6 +110,48 @@ def entry(request,event_id=None,record_id=None,kind='expense'):
         saved,form=svc.save_entry(actor=request.user,event_id=event.pk,data=request.POST,kind=kind,record_id=record_id)
         if saved:messages.success(request,'Expense saved.' if kind=='expense' else 'Distributed incentive line saved.');return redirect('event_reports:detail',event_id=event.pk)
     return page(request,'form',page_title=('Correct ' if obj else 'Add ')+('event expense' if kind=='expense' else 'distributed incentive'),form=form,event=event,back=reverse('event_reports:detail',args=[event.pk]),status=400 if form.is_bound else 200)
+
+
+def expense_entry(request,event_id,record_id):
+    """Keep expense-only presentation recovery outside the shared financial service."""
+    obj=get_object_or_404(ManualExpense,pk=record_id) if record_id else None
+    event=get_object_or_404(Event,pk=obj.event_id if obj else event_id)
+    svc.mutable(event)
+    if obj and not obj.is_active and request.method=='GET':
+        raise ValidationError('Voided records are read-only.')
+    back=expense_return_url(request,event)
+    form=ExpenseForm(instance=obj,initial={'expense_date':event.local_start_at.date()} if obj is None else None)
+    save_conflict=False
+    latest_record=None
+    status=200
+    if request.method=='POST':
+        try:
+            saved,form=svc.save_entry(actor=request.user,event_id=event.pk,data=request.POST,kind='expense',record_id=record_id)
+        except (ValidationError,IntegrityError) as exc:
+            # The service transaction has rolled back. Keep the original submitted
+            # revision and values; never refresh a stale token automatically.
+            form=ExpenseForm(request.POST,instance=obj)
+            form.is_valid()
+            notice=' '.join(exc.messages) if isinstance(exc,ValidationError) else 'The record changed or this submission was already saved.'
+            form.add_error(None,notice)
+            save_conflict=True
+            latest_record=ManualExpense.objects.filter(pk=record_id,event=event).first() if record_id else ManualExpense.objects.filter(event=event,request_key=form.cleaned_data.get('request_key')).first()
+            status=409
+        else:
+            if saved:
+                messages.success(request,'Expense changes saved.' if record_id else 'Expense added.',extra_tags=('expense-updated' if record_id else 'expense-created')+' expense-'+str(saved.pk))
+                if request.headers.get('X-BTW-Editor')=='1':
+                    response=JsonResponse({'url':back});response['X-BTW-Editor']='1';response['Cache-Control']='private, no-store';return response
+                return redirect(back)
+            status=400
+    form.fields['reason'].label='Reason for change' if record_id else 'Reason for this expense'
+    form['reason'].label=form.fields['reason'].label
+    modal=request.headers.get('X-BTW-Editor')=='1'
+    response=page(request,'expense_editor_panel' if modal else 'expense_form',editor_context=event.name,editor_action=request.path,page_title='Edit expense' if record_id else 'Add expense',form=form,event=event,back=back,
+        save_label='Save changes' if record_id else 'Add expense',save_conflict=save_conflict,latest_record=latest_record,
+        reload_url=(reverse('event_reports:expense-edit',args=[latest_record.pk]) if latest_record and not record_id else request.path)+'?'+urlencode({'return_to':back}),status=status)
+    if modal:response['X-BTW-Editor']='1'
+    return response
 
 @portal
 def action(request,record_id,kind,action):

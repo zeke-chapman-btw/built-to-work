@@ -95,8 +95,10 @@ class Reporting9FTests(TestCase):
     def test_nonfinite_amount_rejected(self):
         for amount in ['NaN','Infinity','1.001']:
             obj,form=svc.save_entry(actor=self.manager,event_id=self.event.pk,kind='expense',data=self.expense_data(amount=amount));self.assertIsNone(obj)
-    def test_reason_required(self):
-        obj,form=svc.save_entry(actor=self.manager,event_id=self.event.pk,kind='expense',data=self.expense_data(reason='   '));self.assertIsNone(obj)
+    def test_correction_reason_required(self):
+        obj=self.expense()
+        saved,form=svc.save_entry(actor=self.manager,event_id=self.event.pk,kind='expense',record_id=obj.pk,data=self.expense_data(reason='   ',revision=obj.updated_at.isoformat(),request_key=str(obj.request_key)))
+        self.assertIsNone(saved);self.assertIn('reason',form.errors)
     def test_duplicate_submission_rejected(self):
         data=self.expense_data();svc.save_entry(actor=self.manager,event_id=self.event.pk,kind='expense',data=data)
         with self.assertRaises(ValidationError):svc.save_entry(actor=self.manager,event_id=self.event.pk,kind='expense',data=data)
