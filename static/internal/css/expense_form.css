@@ -1,0 +1,2 @@
+/* Expense-only adoption of the shared record UI. */
+.internal-app #main-content:has([data-expense-workspace]) .event-page-context,.internal-app #main-content:has(.btw-editor-fallback) .event-page-context { display:none; }

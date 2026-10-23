@@ -1,0 +1,3 @@
+{% extends 'event_reports/base.html' %}{% load static %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}"><link rel="stylesheet" href="{% static 'internal/css/expense_form.css' %}"><script src="{% static 'internal/js/record_editor.js' %}" defer></script>{% endblock %}
+{% block report_content %}<div class="btw-ui btw-editor-fallback"><p><a href="{{ back }}">← Back to Expenses</a></p>{% include 'event_reports/expense_editor_panel.html' %}</div>{% endblock %}

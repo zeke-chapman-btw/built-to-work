@@ -28,13 +28,30 @@ class ExpenseForm(EntryForm):
     class Meta:
         model=ManualExpense
         fields=['category','description','amount','expense_date','treatment','reference','notes','reason']
-        widgets={'expense_date':forms.DateInput(attrs={'type':'date'}),'notes':forms.Textarea(attrs={'rows':3}),'reason':forms.Textarea(attrs={'rows':3})}
-        help_texts={'treatment':'Record incentive purchases as excluded purchases. Staff pay, per diem and mileage come only from approved Workdays; use an excluded reference if needed.'}
+        widgets={'expense_date':forms.DateInput(attrs={'type':'date'}),'notes':forms.Textarea(attrs={'rows':2}),'reason':forms.Textarea(attrs={'rows':2})}
+        labels={'amount':'Amount (USD)','expense_date':'Expense date','treatment':'Accounting treatment','notes':'Notes (optional)'}
+        help_texts={'treatment':''}
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
         q=Q(is_active=True)
         if self.instance.category_id:q|=Q(pk=self.instance.category_id)
         self.fields['category'].queryset=ExpenseCategory.objects.filter(q)
+        labels={'cost':'Operating expense — included','incentive_purchase':'Incentive purchase — excluded','staff_reference':'Staff reference — excluded'}
+        self.fields['treatment'].widget.choices=[(value,labels.get(value,label)) for value,label in self.fields['treatment'].choices]
+        if self.instance._state.adding:
+            self.fields['reason'].required=False
+            self.fields['reason'].widget=forms.HiddenInput()
+    def clean_reason(self):
+        # New expenses need no staff explanation. Retain the existing nonblank
+        # audit column with a truthful creation label, separate from optional notes.
+        value=self.cleaned_data.get('reason','').strip()
+        if self.instance._state.adding and not value:return 'Expense created.'
+        return super().clean_reason()
+    def clean_reference(self):
+        # Reference is no longer an entry field. Keep existing stored values
+        # when the browser omits it; existing explicit service submissions still work.
+        return self.cleaned_data['reference'] if 'reference' in self.data else self.instance.reference
+
     def clean(self):
         d=super().clean()
         category=d.get('category')
