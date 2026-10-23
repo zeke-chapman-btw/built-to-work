@@ -29,8 +29,10 @@ def participant_view(view):
     @login_required(login_url='participants:login')
     @wraps(view)
     def secured(request, *args, **kwargs):
-        request.portal_account = own_account(request.user)
-        response = view(request, *args, **kwargs)
+        from .portal_preview import participant_context
+        with participant_context(request):
+            request.portal_account = own_account(request.user)
+            response = view(request, *args, **kwargs)
         # Keep same-origin form provenance for Django CSRF checks while
         # preventing private portal paths from leaking to other origins.
         response['Referrer-Policy'] = 'same-origin'
@@ -49,6 +51,9 @@ def profile(request):
     intake_context = workspace_intake_context(request.user, person, identity_members(person.pk), career)
     form = PortalProfileForm(request.POST if request.method == 'POST' else None,
                              instance=person, initial={'revision': revision})
+    if getattr(request, 'portal_preview', None):
+        for field in ('first_name', 'last_name', 'contact_email', 'contact_phone'):
+            form.fields[field].disabled = True
     career_initial = {'career_interests': career.career_interests or intake_context['current_interests']}
     if career.willing_to_travel is None and intake_context['current_travel'] in ['Yes', 'No']:
         career_initial['willing_to_travel'] = intake_context['current_travel'] == 'Yes'
@@ -81,6 +86,8 @@ def profile(request):
 @require_http_methods(['GET', 'POST'])
 def document_upload(request):
     form = PortalDocumentForm(request.POST if request.method == 'POST' else None, request.FILES or None)
+    if getattr(request, 'portal_preview', None):
+        form.fields['file'].help_text = 'Upload a synthetic test file only. PDF, PNG or JPEG, up to 20 MB.'
     if request.method == 'POST' and form.is_valid():
         try:
             upload_document(request.user, form)
@@ -123,6 +130,8 @@ def document_download(request, document_uuid):
 @never_cache
 @require_http_methods(['GET', 'POST'])
 def activate_account(request, token):
+    from .portal_preview import block_account_changes
+    block_account_changes(request)
     invitation = read_invitation(token)
     if not invitation:
         return render(request, 'participants/portal/message.html', {'title': 'Let’s get you a fresh link',
@@ -150,6 +159,8 @@ def activate_account(request, token):
 @never_cache
 @require_http_methods(['GET', 'POST'])
 def recover_invitation(request):
+    from .portal_preview import block_account_changes
+    block_account_changes(request)
     form = PasswordResetRequestForm(request.POST if request.method == 'POST' else None)
     if request.method == 'POST' and form.is_valid():
         email = form.cleaned_data['email'].strip().lower()
@@ -262,6 +273,8 @@ def ticket(request, ticket_id):
     owned = QrTicket.objects.filter(registration__participant_id__in=identity_members(request.portal_account.participant_id),
         registration__status='active', is_current=True, revoked_at__isnull=True, expires_at__gte=timezone.now())
     qr = get_object_or_404(owned.select_related('registration__participant', 'registration__event'), pk=ticket_id)
+    if getattr(request, 'portal_preview', None) and request.GET.get('image') != '1':
+        return render(request, 'participants/portal/preview_ticket.html', {'section':'activity'})
     from apps.events.ticket_renderer import ticket_png_bytes
     response = HttpResponse(ticket_png_bytes(qr), content_type='image/png')
     response['Content-Disposition'] = 'inline; filename="built-to-work-ticket.png"'

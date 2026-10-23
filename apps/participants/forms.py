@@ -34,8 +34,8 @@ class PasswordResetRequestForm(forms.Form):
 
 
 class SetPasswordForm(forms.Form):
-    password1 = forms.CharField(widget=forms.PasswordInput)
-    password2 = forms.CharField(widget=forms.PasswordInput)
+    password1 = forms.CharField(label='Create Password', widget=forms.PasswordInput(attrs={'autocomplete':'new-password'}))
+    password2 = forms.CharField(label='Confirm Password', widget=forms.PasswordInput(attrs={'autocomplete':'new-password'}))
     def clean(self):
         data = super().clean()
         if data.get("password1") and data.get("password2") and data["password1"] != data["password2"]:

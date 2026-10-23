@@ -1,0 +1,9 @@
+/* Scoped to Portal Preview cards; retain the existing internal shell. */
+.portal-preview-options{display:grid;gap:18px}
+.portal-preview-card{padding:24px;margin:0;border-radius:12px}
+.portal-preview-card h2{margin:0 0 12px}
+.portal-preview-card p{line-height:1.6}
+.portal-preview-card form{margin-top:16px}
+.portal-preview-card .badge{display:inline-block;margin-bottom:8px}
+.portal-preview-settings-card{margin-top:20px}
+@media(max-width:640px){.portal-preview-card{padding:20px}.portal-preview-options{gap:14px}}

@@ -41,6 +41,10 @@ def _mail(subject, email, url):
 @never_cache
 @require_http_methods(['GET', 'POST'])
 def sign_in(request):
+    from .portal_preview import SESSION_KEY, participant_context
+    if request.session.get(SESSION_KEY):
+        with participant_context(request):
+            return redirect('participants:profile')
     if active_account(request.user):
         return redirect('participants:profile')
     form = ParticipantLoginForm(request.POST if request.method == 'POST' else None)
@@ -60,6 +64,9 @@ def sign_in(request):
 @never_cache
 @require_POST
 def sign_out(request):
+    from .portal_preview import SESSION_KEY, exit
+    if request.session.get(SESSION_KEY):
+        return exit(request)
     logout(request)
     return redirect('participants:login')
 
@@ -67,6 +74,8 @@ def sign_out(request):
 @never_cache
 @require_http_methods(['GET', 'POST'])
 def reset_request(request):
+    from .portal_preview import block_account_changes
+    block_account_changes(request)
     form = PasswordResetRequestForm(request.POST if request.method == 'POST' else None)
     if request.method == 'POST' and form.is_valid():
         email = form.cleaned_data['email'].lower()
@@ -96,6 +105,8 @@ def _reset_account(token, lock=False):
 @never_cache
 @require_http_methods(['GET', 'POST'])
 def reset_confirm(request, token):
+    from .portal_preview import block_account_changes
+    block_account_changes(request)
     if not _reset_account(token):
         return _message(request, 'Let’s get a fresh link', 'This recovery link is invalid, expired or already used. Request a new password reset.', 400)
     form = SetPasswordForm(request.POST if request.method == 'POST' else None)
@@ -115,6 +126,8 @@ def reset_confirm(request, token):
 @participant_view
 @require_http_methods(['GET', 'POST'])
 def email_change(request):
+    from .portal_preview import block_account_changes
+    block_account_changes(request)
     class ConfirmEmailForm(EmailChangeForm):
         password = forms.CharField(widget=forms.PasswordInput, label='Current password')
     form = ConfirmEmailForm(request.POST if request.method == 'POST' else None)
@@ -141,6 +154,8 @@ def email_change(request):
 @participant_view
 @require_http_methods(['GET', 'POST'])
 def email_confirm(request, token):
+    from .portal_preview import block_account_changes
+    block_account_changes(request)
     try:
         payload = signing.loads(token, salt='portal.email-change.v2', max_age=86400)
     except (signing.BadSignature, TypeError):
@@ -167,6 +182,8 @@ def email_confirm(request, token):
 @never_cache
 @require_http_methods(['GET', 'POST'])
 def legacy_setup(request, token):
+    from .portal_preview import block_account_changes
+    block_account_changes(request)
     """Retain issued legacy links only when they pass the same intake eligibility boundary."""
     key = read_token(token, SET_PASSWORD_SALT)
     account = ParticipantAccount.objects.select_related('participant', 'user').filter(pk=key, status='pending').first() if key else None

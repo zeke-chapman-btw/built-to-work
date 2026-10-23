@@ -35,6 +35,9 @@ def intake_for(person):
 
 
 def identity_clear(person):
+    from .models import PortalPreviewFixture
+    if PortalPreviewFixture.objects.filter(participant=person).exists():
+        return False
     if person.kind != 'person' or person.archived_at or canonical_id(person.pk) != person.pk:
         return False
     members = identity_members(person.pk)

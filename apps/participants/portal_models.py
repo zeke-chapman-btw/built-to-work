@@ -54,3 +54,14 @@ class PortalAccessAttempt(models.Model):
     key = models.CharField(max_length=64, primary_key=True)
     started_at = models.DateTimeField()
     count = models.PositiveIntegerField(default=0)
+
+
+class PortalPreviewFixture(TimestampedModel):
+    """Explicitly designated, reusable synthetic records; never an impersonation target."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    administrator = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        related_name='participant_portal_preview')
+    participant = models.OneToOneField('participants.Participant', on_delete=models.PROTECT,
+        related_name='admin_preview_fixture')
+    event = models.OneToOneField('events.Event', on_delete=models.PROTECT,
+        related_name='admin_preview_fixture')

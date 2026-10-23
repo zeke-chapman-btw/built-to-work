@@ -31,12 +31,17 @@ def ticket_png_bytes(ticket) -> bytes:
     from PIL import Image, ImageDraw, ImageFont
 
     number = ticket.ticket_number
-    if not number or len(number) != 10 or not number.isdigit():
+    from apps.participants.models import PortalPreviewFixture
+    synthetic_preview = PortalPreviewFixture.objects.filter(event_id=ticket.registration.event_id).exists()
+    if not synthetic_preview and (not number or len(number) != 10 or not number.isdigit()):
         raise ValueError('A ten-digit ticket number is required for a downloadable ticket.')
     root = Path(settings.BASE_DIR)
     canvas = Image.new('RGB', (1100, 700), 'white')
     draw = ImageDraw.Draw(canvas)
     draw.rounded_rectangle((8, 8, 1092, 692), radius=28, outline='#d7d7d7', width=3)
+    if synthetic_preview:
+        # The existing white BTW asset needs a dark panel on preview tickets.
+        draw.rounded_rectangle((10, 10, 1090, 174), radius=24, fill='#111111')
     logo_path = root / 'static' / 'internal' / 'images' / 'built-to-work-linear.svg'
     logo = Image.open(BytesIO(cairosvg.svg2png(url=str(logo_path), output_width=580))).convert('RGBA')
     canvas.paste(logo, (65, 40), logo)
@@ -47,9 +52,10 @@ def ticket_png_bytes(ticket) -> bytes:
     medium = ImageFont.truetype(bold, 31)
     body = ImageFont.truetype(regular, 28)
     small = ImageFont.truetype(regular, 23)
-    draw.text((65, 192), 'EVENT TICKET', font=medium, fill='#cf202f')
+    draw.text((65, 192), 'SYNTHETIC PREVIEW' if synthetic_preview else 'EVENT TICKET', font=medium, fill='#cf202f')
     qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M, border=4, box_size=12)
-    qr.add_data(f'tel:{number}')
+    # Preview downloads from every route carry a non-admission QR payload.
+    qr.add_data('btw-admin-preview:' + str(ticket.pk) if synthetic_preview else f'tel:{number}')
     qr.make(fit=True)
     qr_image = qr.make_image(fill_color='black', back_color='white').convert('RGB')
     qr_image = qr_image.resize((405, 405), Image.Resampling.NEAREST)
@@ -70,8 +76,8 @@ def ticket_png_bytes(ticket) -> bytes:
     if event.group_mode != 'disabled' and ticket.registration.group_id:
         draw.text((500, 420), fit(f'{event.group_label}: {ticket.registration.group.name}', small), font=small, fill='#333333')
     draw.text((500, 465), 'TICKET NUMBER', font=small, fill='#555555')
-    draw.text((500, 505), number, font=ImageFont.truetype(bold, 51), fill='#111111')
-    draw.text((500, 595), 'Present this ticket at the BTW kiosk.', font=small, fill='#333333')
+    draw.text((500, 505), 'PREVIEW ONLY' if synthetic_preview else number, font=ImageFont.truetype(bold, 51), fill='#111111')
+    draw.text((500, 595), 'Not valid for event admission.' if synthetic_preview else 'Present this ticket at the BTW kiosk.', font=small, fill='#333333')
     output = BytesIO()
     canvas.save(output, format='PNG', optimize=True)
     return output.getvalue()

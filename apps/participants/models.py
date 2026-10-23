@@ -367,4 +367,4 @@ from .workspace_models import ParticipantAcquisition, ParticipantWorkExperience,
 
 from .intake_models import IntakeFormAssignment, TrailerIntakeActivation, IntakeSession, IntakeContactLock, IntakeFieldState, ParticipantHandsOnExperience
 
-from .portal_models import PortalInvitation, PortalDelivery, ParticipantEventInterest, PortalAccessAttempt
+from .portal_models import PortalInvitation, PortalDelivery, ParticipantEventInterest, PortalAccessAttempt, PortalPreviewFixture

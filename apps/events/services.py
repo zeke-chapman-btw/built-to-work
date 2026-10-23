@@ -57,6 +57,8 @@ def _capacity_error(event, group):
 
 def register_participant(*, event, participant, actor, source=EventRegistration.Source.STAFF,
                          group=None, custom_answers=None, override_reason=""):
+    from apps.participants.portal_preview import guard_registration
+    guard_registration(event, participant, actor)
     if getattr(participant, "archived_at", None):
         raise ValidationError("An archived participant cannot be registered.")
     if participant.kind != "person":
@@ -154,12 +156,16 @@ def issue_ticket(*, registration, actor=None):
     """Idempotently return the registration's current ticket, issuing it once if absent."""
     with transaction.atomic():
         registration = EventRegistration.objects.select_for_update().select_related("event").get(pk=registration.pk)
+        from apps.participants.portal_preview import guard_registration
+        preview = guard_registration(registration.event, registration.participant, actor)
         if registration.participant.kind != "person":
             raise ValidationError("The BTW test identity cannot receive an official ticket.")
         current = QrTicket.objects.filter(registration=registration, is_current=True).first()
         if current:
             return current
-        ticket = QrTicket.objects.create(registration=registration, ticket_number=allocate_ticket_number(), issued_by=actor, expires_at=_ticket_expiry(registration))
+        # Synthetic preview uses the existing nullable ticket number. It must
+        # never consume an operational cloud/trailer allocation block.
+        ticket = QrTicket.objects.create(registration=registration, ticket_number=None if preview else allocate_ticket_number(), issued_by=actor, expires_at=_ticket_expiry(registration))
         audit_action(actor=actor, action="event.ticket.issued", instance=ticket, new_data={"registration_id": str(registration.pk), "expires_at": ticket.expires_at.isoformat()})
         return ticket
 

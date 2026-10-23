@@ -15,6 +15,10 @@ from .portal_accounts import active_account, intake_for
 
 
 def own_account(user):
+    from .portal_preview import preview_account
+    preview = preview_account(user)
+    if preview:
+        return preview
     account = active_account(user)
     if account is None:
         raise PermissionDenied('Use your active participant account to access the portal.')
@@ -28,6 +32,8 @@ def profile_revision(person, career):
 @transaction.atomic
 def save_profile(user, updates, revision):
     account = own_account(user)
+    from .portal_preview import guard_profile_updates
+    guard_profile_updates(user, updates)
     person = Participant.objects.select_for_update().get(pk=account.participant_id)
     career = ParticipantCareerProfile.objects.select_for_update().filter(participant=person).first() or ParticipantCareerProfile(participant=person)
     if profile_revision(person, career) != revision:
@@ -93,8 +99,13 @@ def archive_document(user, document_id):
 
 
 def public_events():
+    from .portal_preview import current_fixture
+    from .models import PortalPreviewFixture
+    fixture = current_fixture()
+    if fixture:
+        return Event.objects.filter(pk=fixture.event_id, status='upcoming', end_at__gte=timezone.now()).select_related('public_consent_document')
     # Slug publication is the existing explicit public visibility boundary. Never expose staff descriptions.
-    return Event.objects.filter(status='upcoming', end_at__gte=timezone.now(),
+    return Event.objects.exclude(pk__in=PortalPreviewFixture.objects.values('event_id')).filter(status='upcoming', end_at__gte=timezone.now(),
         public_registration_status__in=['open', 'paused', 'closed'],
         public_slugs__is_current=True).distinct().select_related('public_consent_document').order_by('start_at')
 

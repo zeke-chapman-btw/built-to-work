@@ -87,7 +87,8 @@ WORKSPACE_LINKS = {'events': ({'label': 'My staff schedule',
  'platform-tools': ({'label':'Platform monitoring','description':'Existing synchronization, delivery and incident monitoring. Permanent administration home to be reviewed.','url_name':'events:operations-dashboard','permissions':('events.view_syncoutboxitem',)},
                     {'label':'Participant match review','description':'Existing reversible offline identity review. Intended future home: participant reconciliation.','url_name':'events:match-review-list','permissions':('events.view_participantmatchreview',)},
                     {'label':'Backup records','description':'Existing read-only backup records in restricted administration.','url_name':'admin:events_backuprecord_changelist','permissions':('events.view_backuprecord',)}),
- 'administration': ({'label': 'Staff directory',
+ 'administration': ({'label':'Portal Preview','description':'Review portal experiences using your administrator account and isolated synthetic data.','url_name':'internal:portal-preview','permissions':()},
+                   {'label': 'Staff directory',
                      'description': 'Manage staff profiles and assignment history.',
                      'url_name': 'staffing:directory',
                      'permissions': ('staffing.view_staffprofile',)},
@@ -181,7 +182,7 @@ def visible_settings_link(user,current_path=""):
     if not getattr(user,"is_active",False) or not getattr(user,"is_staff",False):
         return None
     item=_resolved({"label":"SETTINGS","icon":"settings","url_name":"internal:settings"})
-    item["active"]=current_path==item["url"] or current_path.startswith("/workdays/mine/")
+    item["active"]=current_path.startswith("/internal/settings/") or current_path.startswith("/workdays/mine/")
     return item
 
 def visible_workspace_links(user,workspace_id):
@@ -192,6 +193,7 @@ def visible_workspace_links(user,workspace_id):
 def _destination_allowed(user, item):
     """Match complete existing endpoint policies, without granting permissions."""
     route=item["url_name"]
+    if route=="internal:portal-preview":return user.is_superuser
     if route=="operations:trailers":return user.is_superuser
     if route in ("workdays:index","workdays:reports"):
         from apps.workdays.services import manager
