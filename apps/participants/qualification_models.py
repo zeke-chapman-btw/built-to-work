@@ -58,6 +58,7 @@ class QualificationCatalogEntry(TimestampedModel):
 
 class ParticipantQualification(TimestampedModel):
     class Source(models.TextChoices):
+        PARTICIPANT = "participant", "Participant reported"
         REGISTRATION = "registration", "Registration response"
         STAFF = "staff", "Staff recorded"
         HISTORICAL = "historical", "Historical import"
@@ -66,6 +67,9 @@ class ParticipantQualification(TimestampedModel):
     participant = models.ForeignKey("participants.Participant", on_delete=models.PROTECT, related_name="qualifications")
     catalog_entry = models.ForeignKey(QualificationCatalogEntry, null=True, blank=True, on_delete=models.PROTECT, related_name="participant_records")
     custom_name = models.CharField(max_length=200, blank=True)
+    reported_kind = models.CharField(max_length=12, blank=True, default="", choices=[("", "Existing record"), ("skill", "Skill or trade"), ("training", "Education or training"), ("credential", "License or certification")])
+    reported_provider = models.CharField(max_length=200, blank=True, default="")
+    portal_request_key = models.UUIDField(null=True, blank=True, unique=True, editable=False)
     issue_date = models.DateField(null=True, blank=True)
     expiration_date = models.DateField(null=True, blank=True)
     experience_details = models.TextField(blank=True)

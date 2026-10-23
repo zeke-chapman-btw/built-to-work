@@ -72,14 +72,19 @@ def profile(request):
     for document in documents:
         document.can_manage = document_manageable(document, request.user)
     from .models import ParticipantQualification
-    qualifications = ParticipantQualification.objects.filter(participant_id__in=identity_members(account.participant_id), is_active=True).select_related('catalog_entry')
+    qualifications = ParticipantQualification.objects.filter(participant_id__in=identity_members(account.participant_id), is_active=True).select_related('catalog_entry').prefetch_related(
+        'verification_records__evidence_document', 'verification_records__document', 'verification_records__reviewer', 'document_links')
     # Reuse evidence-aware status, exposing none of its internal reasons or reviewer data.
     from .verification_services import qualification_verification_summary
     for qualification in qualifications:
+        qualification._workspace_verifications = list(qualification.verification_records.all())
         qualification.portal_status = qualification_verification_summary(qualification)['label']
+    from .portal_profile_services import profile_sections
+    sections = profile_sections(request.user, person, qualifications)
     return render(request, 'participants/portal/profile.html', {'account': account, 'form': form,
         'career_form': career_form, 'documents': documents, 'qualifications': qualifications, 'section': 'profile',
-        'intake_rows': intake_context['intake_profile_rows'], 'hands_on_entries': intake_context['hands_on_entries']})
+        'intake_rows': intake_context['intake_profile_rows'], 'hands_on_entries': intake_context['hands_on_entries'],
+        'career': career, 'current_interests': intake_context['current_interests'], 'current_travel': intake_context['current_travel'], **sections})
 
 
 @participant_view
@@ -188,6 +193,12 @@ def events(request):
         event.my_registration = current_registration(request.portal_account.participant, event)
         event.interested = ParticipantEventInterest.objects.filter(participant=request.portal_account.participant, event=event).exists()
     return render(request, 'participants/portal/events.html', {'events': items, 'section': 'events'})
+
+
+@participant_view
+@require_GET
+def jobs(request):
+    return render(request, 'participants/portal/jobs.html', {'section': 'jobs'})
 
 
 class EventForm(forms.Form):

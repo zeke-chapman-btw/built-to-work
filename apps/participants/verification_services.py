@@ -5,7 +5,7 @@ from .verification_models import ParticipantVerificationRecord
 
 
 def qualification_snapshot(qualification):
-    return {
+    result = {
         "catalog_entry_id": qualification.catalog_entry_id,
         "custom_name": qualification.custom_name,
         "experience_details": qualification.experience_details,
@@ -21,6 +21,11 @@ def qualification_snapshot(qualification):
         "source_answer_snapshot": qualification.source_answer_snapshot,
         "mapping_snapshot": qualification.mapping_snapshot,
     }
+    # Legacy decisions retain their exact snapshot format. New participant
+    # additions bind their section/provider to any later staff verification.
+    if qualification.reported_kind or qualification.reported_provider:
+        result.update(reported_kind=qualification.reported_kind, reported_provider=qualification.reported_provider)
+    return result
 
 def latest_verification(*, qualification=None, document=None):
     target = qualification if qualification is not None else document

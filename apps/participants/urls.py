@@ -3,12 +3,18 @@ from django.urls import path
 from . import views, testing_views, registration_views, historical_views, qualification_views, document_views
 from . import intake_views, intake_config_views, intake_trailer_views, consent_views
 from . import portal_views, portal_auth
+from . import portal_profile_views
 app_name = "participants"
 urlpatterns = [
     path('portal/', portal_views.profile, name='portal-home'),
     path('portal/activate/<str:token>/', portal_views.activate_account, name='portal-activate'),
     path('portal/invitation/', portal_views.recover_invitation, name='portal-recover'),
     path('portal/events/', portal_views.events, name='portal-events'),
+    path('portal/jobs/', portal_views.jobs, name='portal-jobs'),
+    path('portal/profile/edit/<str:section>/', portal_profile_views.edit_section, name='portal-profile-edit'),
+    path('portal/profile/<str:section>/add/', portal_profile_views.entry, name='portal-entry-add'),
+    path('portal/profile/<str:section>/<int:object_id>/edit/', portal_profile_views.entry, name='portal-entry-edit'),
+    path('portal/profile/<str:section>/<int:object_id>/archive/', portal_profile_views.archive, name='portal-entry-archive'),
     path('portal/events/<uuid:event_id>/', portal_views.event_detail, name='portal-event'),
     path('portal/activity/', portal_views.activity, name='portal-activity'),
     path('portal/account/', portal_views.account, name='portal-account'),
