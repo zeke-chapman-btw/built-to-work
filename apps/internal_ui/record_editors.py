@@ -8,14 +8,14 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 
-def local_return(value, *, fallback, allowed):
-    if not isinstance(value, str) or len(value) > 2048 or any(ord(c) < 32 for c in value) or "\\" in value:
+def local_return(value, *, fallback, allowed, max_length=2048, max_fields=30):
+    if not isinstance(value, str) or len(value) > max_length or any(ord(c) < 32 for c in value) or "\\" in value:
         return fallback
     try:
         u = urlsplit(value)
         if u.scheme or u.netloc or not u.path.startswith('/') or u.path.startswith('//') or u.path not in allowed:
             return fallback
-        pairs = parse_qsl(u.query, keep_blank_values=True, max_num_fields=30)
+        pairs = parse_qsl(u.query, keep_blank_values=True, max_num_fields=max_fields)
     except ValueError:
         return fallback
     if any(key not in allowed[u.path] for key, val in pairs) or u.fragment:

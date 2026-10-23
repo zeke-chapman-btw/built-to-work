@@ -1,1 +1,1 @@
-{% load static %}{% include 'internal/ui/record_editor_dialog.html' %}<script src="{% static 'internal/js/record_editor.js' %}?v=uxb-1" defer></script>
+{% load static %}{% include 'internal/ui/record_editor_dialog.html' %}<script src="{% static 'internal/js/record_editor.js' %}?v={% if event %}uxb-1{% else %}uxcd-1{% endif %}" defer></script>

@@ -51,6 +51,9 @@ def workspace(request,workspace_id):
     if not any(entry["id"]==workspace_id for entry in visible_workspaces(request.user)):
         raise PermissionDenied
     links=visible_workspace_links(request.user,workspace_id)
+    if workspace_id=="participants" and request.user.has_perm("participants.view_participant"):
+        from apps.participants.workspace_views import directory
+        return directory(request)
     if workspace_id=="platform-tools":
         return render(request,"internal/platform_tools.html",_staff_context(request,
             page_title="Platform Tools",workspace_links=links))

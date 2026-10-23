@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from apps.internal_ui.people_editors import people_render as render, people_saved
 from django.views.decorators.http import require_http_methods
 from apps.core.audit import record_audit
 from .models import Participant
@@ -47,12 +48,12 @@ def participant_review(request, participant_id):
                     if existing.participant_id != participant.pk or existing.reviewer_id != request.user.pk or existing.status != form.cleaned_data["status"] or existing.internal_notes != form.cleaned_data["internal_notes"]:
                         raise PermissionDenied
                     messages.success(request, "This internal review was already recorded.")
-                    return redirect("participants:staff-participant-review", participant_id=participant.pk)
+                    return people_saved(request,"participants:staff-participant-review", participant_id=participant.pk)
                 if form.cleaned_data["previous_record"] != (prior.pk if prior else None):
                     form.add_error(None, "Another reviewer updated this participant. Reload before recording your decision.")
                 else:
                     record = ParticipantReviewRecord.objects.create(participant=participant, status=form.cleaned_data["status"], internal_notes=form.cleaned_data["internal_notes"], reviewer=request.user, supersedes=prior, request_key=form.cleaned_data["request_key"])
                     record_audit(actor=request.user, action="participant.internal_review.recorded", instance=participant, source="staff_interface", old_data={"status": prior.status if prior else None}, new_data={"status": record.status, "review_record_id": record.pk}, reason="Internal participant review recorded")
                     messages.success(request, "Internal participant review recorded.")
-                    return redirect("participants:staff-profile", participant_id=participant.pk)
+                    return people_saved(request,"participants:staff-profile", participant_id=participant.pk)
     return render(request, "participants/staff_participant_review.html", {"participant": participant, "history": history, "latest": latest, "form": form, "can_decide": can_review_participants(request.user), "page_title": "Internal participant review"}, status=400 if form.is_bound and form.errors else 200)

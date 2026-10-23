@@ -73,7 +73,7 @@ class ParticipantIntegration8ECTests(TestCase):
         response = self.client.get(self.profile_url)
         self.assertContains(response, qualification.custom_name)
         self.assertContains(response, 'Self-reported')
-        self.assertContains(response, 'Manage qualifications')
+        self.assertContains(self.client.get(self.profile_url, {'section': 'qualifications'}), 'Manage qualifications')
         edit = reverse('participants:staff-participant-qualification-edit', args=[self.person.pk, qualification.pk])
         self.assertRedirects(self.client.post(edit, {'custom_name':qualification.custom_name,'experience_details':'Updated fictional experience','years_of_experience':'3.0','issue_date':'2025-01-01','expiration_date':'2031-01-01','is_self_reported':'on','audit_reason':'SYNTHETIC edit'}), self.qual_url)
         qualification.refresh_from_db()
@@ -121,7 +121,7 @@ class ParticipantIntegration8ECTests(TestCase):
         self.assertRedirects(self.upload(),self.docs_url)
         document = self.person.documents.get()
         self.assertContains(self.client.get(self.docs_url), 'SYNTHETIC-test-license.pdf')
-        self.assertContains(self.client.get(self.profile_url), 'Download securely')
+        self.assertContains(self.client.get(self.profile_url, {'section': 'documents'}), 'Download securely')
         self.assertEqual(Path(document.file.path).stat().st_mode & 0o777,0o600)
         with self.assertRaises(ValueError): document.file.url
         self.assertNotIn(document.original_filename,document.file.name)

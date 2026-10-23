@@ -1,3 +1,4 @@
+from apps.internal_ui.people_editors import people_render, people_review_saved
 """Private intake sessions and staff review UI. Never expose matched people publicly."""
 import secrets
 from datetime import date
@@ -145,7 +146,7 @@ def review_queue(request):
     state_filter = (Q(status="open") | Q(status__in=["resolved", "rejected"], evidence__registration_status="held")) if status == "open" else Q(status=status)
     rows = ParticipantMatchReview.objects.filter(state_filter, source_submission__isnull=False).select_related(
         "source_participant", "source_submission__event").order_by("created_at", "pk")
-    return render(request, "participants/intake_review_queue.html", context(request,
+    return people_render(request, "participants/intake_review_queue.html", context(request,
         page_title="Participant Review Queue", reviews=Paginator(rows, 25).get_page(request.GET.get("page")),
         status=status))
 
@@ -198,7 +199,7 @@ def review_detail(request, review_id):
             review.refresh_from_db()
         else:
             messages.success(request, "Review decision saved. Established records and IDs were retained.")
-            return redirect("participants:intake-review-detail", review_id=review.pk)
+            return people_review_saved(request,review.pk)
     candidates = list(Participant.objects.filter(pk__in=review.candidates, kind="person"))
     search = request.GET.get("q", "").strip()[:100]
     matches = []
@@ -206,7 +207,7 @@ def review_detail(request, review_id):
         matches = list(Participant.objects.filter(kind="person", archived_at__isnull=True).filter(
             Q(first_name__icontains=search) | Q(last_name__icontains=search) |
             Q(contact_email__icontains=search) | Q(contact_phone__icontains=search)).order_by("last_name")[:25])
-    return render(request, "participants/intake_review_detail.html", context(request,
+    return people_render(request, "participants/intake_review_detail.html", context(request,
         page_title="Review intake identity", review=review, candidates=candidates, matches=matches,
         conflict_labels=[{
             "one_contact_only": "Only one contact matches an existing participant",
@@ -220,7 +221,7 @@ def review_detail(request, review_id):
             "offline_registration_conflict": "Offline ticket or registration evidence needs review",
         }.get(code, "Additional identity or registration review required") for code in review.conflict_reasons],
         search=search, target=target, comparison=_comparison(request.user, review.source_submission, target),
-        revision=review_revision(review), error=error,
+        revision=request.POST.get("revision") if error and request.method == "POST" else review_revision(review), error=error,
         can_decide=request.user.has_perm("events.change_participantmatchreview"),
         can_update=request.user.has_perm("participants.change_participant"),
         can_retry_registration=request.user.has_perms(("events.change_participantmatchreview", "events.add_eventregistration")),

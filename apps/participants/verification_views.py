@@ -4,6 +4,7 @@ from django.db import IntegrityError, transaction
 from django.core.exceptions import ValidationError
 from django.http import HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
+from apps.internal_ui.people_editors import people_render as render, people_saved
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
@@ -69,7 +70,7 @@ def qualification_approval_detail(request, kind, object_id):
                         if existing.participant_id != participant.pk or getattr(existing, f"{kind}_id") != target.pk or existing.reviewer_id != request.user.pk or existing.status != form.cleaned_data["status"]:
                             return HttpResponseForbidden("This review request key is already associated with another decision.")
                         messages.success(request, "This decision was already recorded.")
-                        return redirect("participants:staff-qualification-approvals")
+                        return people_saved(request,"participants:staff-qualification-approvals")
                     if kind == "qualification" and not locked.is_active:
                         raise ValidationError("Inactive qualifications cannot receive a new verification decision.")
                     evidence = form.cleaned_data.get("evidence_document")
@@ -89,7 +90,7 @@ def qualification_approval_detail(request, kind, object_id):
                 form.add_error(None, "A review was recorded concurrently. Reload and check history before trying again.")
             else:
                 messages.success(request, "Verification decision recorded.")
-                return redirect("participants:staff-qualification-approvals")
+                return people_saved(request,"participants:staff-qualification-approvals")
     return render(request, "participants/qualification_approval_detail.html", {
         "kind": kind, "target": target, "participant": participant, "summary": _summary(kind, target),
         "history": ParticipantVerificationRecord.objects.filter(**{kind: target}).select_related("reviewer", "evidence_document", "supersedes"),

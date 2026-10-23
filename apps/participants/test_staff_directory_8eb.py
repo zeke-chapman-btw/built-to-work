@@ -42,7 +42,8 @@ class StaffParticipantDirectoryTests(TestCase):
                 self.assertEqual(response.status_code, 200, getattr(response, "url", None))
                 self.assertContains(response, "Jordy")
                 self.assertContains(response, "Rivers")
-                self.assertContains(response, "1 matching participant")
+                self.assertEqual(response.context["total_participants"], 1)
+                self.assertEqual(list(response.context["page_obj"]), [self.person])
 
     def test_profile_is_authorized_and_shows_safe_empty_sections(self):
         self.assertTrue(self.client.login(username="directory-staff", password="test-password"))
@@ -77,7 +78,8 @@ class StaffParticipantDirectoryTests(TestCase):
         self.staff.user_permissions.add(*permissions)
         response = self.client.get(url)
         self.assertContains(response, "Event registrations")
-        self.assertContains(response, "Private document files remain available only through the authorized document workflow")
+        self.assertContains(response, "Private documents")
+        self.assertContains(self.client.get(url, {"section": "documents"}), "Private document files remain available only through the authorized document workflow")
 
     def test_missing_participant_returns_404(self):
         self.assertTrue(self.client.login(username="directory-staff", password="test-password"))

@@ -99,6 +99,12 @@
       if(!incoming || ![200,400,409,422].includes(response.status))throw new Error('Save not confirmed');
       const messages=[...doc.querySelectorAll('.btw-form-errors li,.errorlist li,p[role=alert],p.alert')].map(e=>e.textContent.trim()).filter(Boolean);
       if(!messages.length)throw new Error('Save not confirmed');
+      if(form.hasAttribute('data-server-review')){
+        if(incoming.querySelector('script') || form.querySelector('input[type=file]'))throw new Error('Unsupported review response');
+        const replacement=document.importNode(incoming,true);form.replaceWith(replacement);
+        const errors=replacement.querySelector('.btw-form-errors,[role=alert]');if(errors){errors.tabIndex=-1;errors.focus();}
+        return;
+      }
       // Keep the original controls and selected files; transfer error presentation only.
       form.querySelectorAll('[aria-invalid=true]').forEach(el=>el.removeAttribute('aria-invalid'));
       incoming.querySelectorAll('[aria-invalid=true]').forEach(el=>{if(el.id){const current=form.querySelector('#'+CSS.escape(el.id));if(current)current.setAttribute('aria-invalid','true');}});
