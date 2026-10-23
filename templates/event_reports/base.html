@@ -1,3 +1,5 @@
 {% extends 'operations/base.html' %}{% load static %}
 {% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/workdays.css' %}"><link rel="stylesheet" href="{% static 'internal/css/event_reports.css' %}">{% endblock %}
 {% block operations_content %}<div class="workdays-page reports-page">{% if not event %}<nav class="workday-actions" aria-label="Event reporting navigation">{% if can_report %}<a href="{% url 'event_reports:index' %}">Event Reports &amp; Analytics</a>{% endif %}{% if can_configure %}<a href="{% url 'event_reports:categories' %}">Expense Categories</a>{% endif %}</nav>{% endif %}{% block report_content %}{% endblock %}</div>{% endblock %}
+
+{% block event_record_editor %}{% endblock %}

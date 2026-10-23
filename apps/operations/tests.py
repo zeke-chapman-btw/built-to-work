@@ -159,7 +159,7 @@ class Operations9DTests(TestCase):
     def test_missing_durable_storage_rejects_real_upload(self):
         with override_settings(OPERATIONAL_DOCUMENT_STORAGE_DURABLE=False):
             with self.assertRaises(ValidationError):self.document(demo=False)
-            self.assertContains(self.client.get(self.event_url('documents')),'Real uploads unavailable')
+            self.assertContains(self.client.get(self.event_url('documents')),'Document uploads unavailable')
     def test_real_private_upload_and_download_uses_separate_root(self):
         with tempfile.TemporaryDirectory() as root,override_settings(OPERATIONAL_DOCUMENT_ROOT=root,OPERATIONAL_DOCUMENT_STORAGE_DURABLE=True):
             d=self.document(demo=False);self.assertTrue(d.storage_key.startswith('operational-events/'));self.assertTrue((Path(root)/d.storage_key).is_file());self.assertNotIn(d.original_filename,d.storage_key)

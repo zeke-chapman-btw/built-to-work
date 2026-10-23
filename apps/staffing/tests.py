@@ -212,7 +212,7 @@ class Staffing9CTests(TestCase):
         a=self.assignment(); self.staff_login(); r=self.client.get(reverse('staffing:staff-event',args=[self.event.pk])); self.assertContains(r,'ASSIGNED HOUSING 9C'); self.assertContains(r,'My confirmed assignment'); self.assertNotContains(r,'PRIVATE MANAGER NOTE'); self.assertNotContains(r,'OTHER PRIVATE STAFF NOTE')
         self.assertContains(self.client.get('/staff/',{'view':'assignments'}),self.event.name)
     def test_unassigned_staff_only_gets_published_summary(self):
-        self.staff_login(); r=self.client.get(reverse('staffing:staff-event',args=[self.event.pk])); self.assertContains(r,'I Can Work This Event'); self.assertNotContains(r,'ASSIGNED HOUSING 9C'); self.assertNotContains(r,'ASSIGNED LOGISTICS 9C'); self.assertNotContains(r,'MANAGER DESCRIPTION')
+        self.staff_login(); r=self.client.get(reverse('staffing:staff-event',args=[self.event.pk])); self.assertContains(r,'Request to work this event'); self.assertNotContains(r,'ASSIGNED HOUSING 9C'); self.assertNotContains(r,'ASSIGNED LOGISTICS 9C'); self.assertNotContains(r,'MANAGER DESCRIPTION')
     def test_staff_cannot_see_other_requests_or_assignments(self):
         self.request(self.other_person); self.assignment(person=self.other_person); self.staff_login()
         r=self.client.get('/staff/',{'view':'requests'}); self.assertNotContains(r,'SYNTHETIC offered dates')

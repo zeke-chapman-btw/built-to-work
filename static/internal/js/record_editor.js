@@ -1,6 +1,8 @@
 /* Opt-in progressive record editor. Domain endpoints own validation and return URLs. */
 (() => {
   'use strict';
+  if (document.documentElement.dataset.btwRecordEditorReady) return;
+  document.documentElement.dataset.btwRecordEditorReady = 'true';
   const dialog = document.querySelector('[data-record-editor-dialog]');
   const content = dialog?.querySelector('[data-editor-content]');
   let opener = null, busy = false, dirty = false, generation = 0, ownHistory = false, historyToken = 0;
@@ -110,7 +112,7 @@
       const form = event.target.closest('[data-editor-form]'); if (!form) return;
       event.preventDefault(); if (busy || form.hasAttribute('data-save-blocked')) return;
       const url = sameOrigin(form.action); if (!url) return;
-      const data = new FormData(form); setBusy(true); feedback('Saving…');
+      const data = new FormData(form); if (event.submitter?.name) data.append(event.submitter.name,event.submitter.value); setBusy(true); feedback('Saving…');
       try {
         const response = await request(url.href,{method:'POST',body:data,credentials:'same-origin',headers:{'X-BTW-Editor':'1'}});
         if (response.headers.get('X-BTW-Editor') !== '1') throw new Error('Unconfirmed response');
@@ -122,7 +124,7 @@
           const state = {...history.state}; delete state.btwRecordEditor; history.replaceState(state,'',target.href); location.reload();
         } else location.replace(target.href);
       } catch {
-        setBusy(false); feedback('We could not confirm the save. Your entries are retained. Retry this same form to safely check or finish the request.',true);
+        setBusy(false); feedback(form.dataset.safeRetry === 'true' ? 'We could not confirm the save. Your entries are retained. Retry this same form to safely check or finish the request.' : 'We could not confirm the save. Your entries are retained. Check the event in another tab before trying again so you do not create a duplicate record.',true);
       }
     });
     window.visualViewport?.addEventListener('resize', fitViewport); window.addEventListener('resize',fitViewport);

@@ -112,13 +112,13 @@ class OperationsTemplates10BTests(TestCase):
     def test_setup_permission_not_application(self):
         user=self.staff(('events.view_event','operations.view_event_operations_setup'));self.client.force_login(user,backend="django.contrib.auth.backends.ModelBackend")
         response=self.client.get(reverse('events:event_detail',args=[self.event.pk])+'?section=operations')
-        self.assertContains(response,'Event Operations Setup');self.assertNotContains(response,'preview application')
+        self.assertContains(response,'Event setup');self.assertNotContains(response,'preview application')
         rev=self.published()
         self.assertEqual(self.client.get(reverse('operations:template-apply',args=[self.event.pk,rev.pk])).status_code,403)
     def test_no_setup_data_for_view_only(self):
         user=self.staff(('events.view_event',));self.client.force_login(user,backend="django.contrib.auth.backends.ModelBackend")
         response=self.client.get(reverse('events:event_detail',args=[self.event.pk])+'?section=operations')
-        self.assertNotContains(response,'Event Operations Setup')
+        self.assertNotContains(response,'Event setup')
     def test_application_preview_has_no_writes(self):
         rev=self.published();plan,token=self.preview(rev)
         self.assertFalse(plan['conflicts']);self.assertTrue(token);self.assertFalse(self.event.station_assignments.exists());self.assertEqual(EventOperationsApplication.objects.count(),0)
@@ -238,7 +238,7 @@ class OperationsTemplates10BTests(TestCase):
         self.assertEqual(self.client.post(reverse('events:station_assign',args=[self.event.pk]),{}).status_code,403)
     def test_operations_navigation_and_contextual_task_preserved(self):
         rev=self.published();response=self.client.get(reverse('events:event_detail',args=[self.event.pk])+'?section=operations')
-        self.assertContains(response,'Event Operations Setup');self.assertContains(response,'+ Add Task');self.assertContains(response,'Event Health Monitor')
+        self.assertContains(response,'Event setup');self.assertContains(response,'+ Add Task');self.assertContains(response,'Event Health Monitor')
         self.assertEqual(response.content.count(b'data-global-task-create'),1)
         self.assertContains(self.client.get(reverse('internal:workspace',args=['operations'])),'Operations Templates')
 

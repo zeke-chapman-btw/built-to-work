@@ -9,6 +9,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
+from apps.internal_ui.record_editors import event_return, editor_response, editor_success, revision_conflict, record_unavailable
 from apps.events.models import Event
 from apps.events.event_management import available_actions
 from .models import StaffProfile, StaffingPlan, AvailabilityRequest, StaffAssignment
@@ -30,7 +31,13 @@ def staff_view(function):
 
 
 def display_form(request,form,*,title,submit,back,assignment=False,**context):
-    return render(request,"staffing/form.html",dict(form=form,page_title=title,submit_label=submit,back_url=back,assignment_form=assignment,**context),status=400 if form.is_bound else 200)
+    values=dict(form=form,page_title=title,submit_label=submit,back_url=back,assignment_form=assignment,**context)
+    if context.get('event'):
+        unavailable=record_unavailable(form) or bool(context.get('record') and context['record'].status!='pending')
+        values.update(record_unavailable=unavailable,back=event_return(request,context['event'],staffing=True),save_label=submit,
+            editor_context=context['event'].name,save_conflict=revision_conflict(form) or unavailable,fields_template='staffing/editor_fields.html')
+        return editor_response(request,template='staffing/form.html',panel='internal/ui/record_form_panel.html',context=values)
+    return render(request,"staffing/form.html",values,status=400 if form.is_bound else 200)
 
 
 @staff_view
@@ -120,7 +127,7 @@ def plan_edit(request,event_id):
             saved,form=services.save_plan(actor=request.user,event_id=event.pk,data=request.POST)
             if saved:
                 messages.success(request,"Staffing needs, publication and sign-up deadline saved.")
-                return redirect("staffing:event",event_id=event.pk)
+                return editor_success(request,event_return(request,event,staffing=True))
         except ValidationError as exc:
             form=PlanForm(request.POST,event=event,plan=plan); form.is_valid(); form.add_error(None,exc)
     from django.urls import reverse
@@ -132,7 +139,7 @@ def assignment_edit(request,event_id,assignment_id=None):
     services.require_manager(request.user)
     event=get_object_or_404(Event,pk=event_id); services.mutable(event)
     old=get_object_or_404(StaffAssignment,event=event,pk=assignment_id) if assignment_id else None
-    if old and old.status!="confirmed": raise Http404
+    if old and old.status!="confirmed" and request.method!="POST": raise Http404
     try: form=AssignmentForm(event=event,assignment=old)
     except ValidationError as exc: return render(request,"staffing/notice.html",dict(page_title="Review event schedule",notice=" ".join(exc.messages)),status=409)
     if request.method=="POST":
@@ -140,7 +147,7 @@ def assignment_edit(request,event_id,assignment_id=None):
             saved,form=services.save_assignment(actor=request.user,event_id=event.pk,assignment_id=assignment_id,data=request.POST)
             if saved:
                 messages.success(request,"Confirmed assignment saved. The staff schedule and coverage are updated; original availability is retained.")
-                return redirect("staffing:event",event_id=event.pk)
+                return editor_success(request,event_return(request,event,staffing=True))
         except ValidationError as exc:
             form=AssignmentForm(request.POST,event=event,assignment=old); form.is_valid(); form.add_error(None,exc)
     from django.urls import reverse
@@ -158,7 +165,7 @@ def request_decision(request,request_id,decision):
             saved,form=services.decide_request(actor=request.user,request_id=record.pk,decision=decision,data=request.POST)
             if saved:
                 messages.success(request,"Request approved and assignment confirmed." if decision=="approve" else "Request declined. No assignment was created.")
-                return redirect("staffing:event",event_id=record.event_id)
+                return editor_success(request,event_return(request,record.event,staffing=True))
         except ValidationError as exc:
             form=DecisionForm(request.POST,approve=decision=="approve"); form.is_valid(); form.add_error(None,exc)
     from django.urls import reverse
@@ -175,7 +182,7 @@ def assignment_remove(request,assignment_id):
             saved,form=services.remove_assignment(actor=request.user,assignment_id=old.pk,data=request.POST)
             if saved:
                 messages.success(request,"Assignment removed from active coverage. History and the original request are retained.")
-                return redirect("staffing:event",event_id=old.event_id)
+                return editor_success(request,event_return(request,old.event,staffing=True))
         except ValidationError as exc:
             form=DecisionForm(request.POST); form.is_valid(); form.add_error(None,exc)
     from django.urls import reverse
@@ -187,7 +194,7 @@ def request_queue(request):
     services.require_manager(request.user)
     if request.method!="GET": raise PermissionDenied
     queue=AvailabilityRequest.objects.filter(status="pending").select_related("event","staff").order_by("event__start_at","created_at")
-    return render(request,"staffing/queue.html",dict(page_title="Staff availability requests",requests=Paginator(queue,30).get_page(request.GET.get("page"))))
+    return render(request,"staffing/queue.html",dict(page_title="Staff availability requests",event_schedule_scope=True,requests=Paginator(queue,30).get_page(request.GET.get("page"))))
 
 
 @staff_view
@@ -198,7 +205,7 @@ def schedule(request):
     tab=request.GET.get("view","available")
     if tab not in ("available","requests","assignments","profile"): tab="available"
     events=Event.objects.filter(status="upcoming",staffing_plan__is_published=True,end_at__gt=timezone.now()).select_related("staffing_plan").order_by("start_at")
-    return render(request,"staffing/schedule.html",dict(page_title="My staff schedule",person=person,selected_view=tab,now=timezone.now(),events=Paginator(events,20).get_page(request.GET.get("page")),requests=Paginator(person.availability_requests.select_related("event").all(),20).get_page(request.GET.get("page")),assignments=Paginator(person.assignments.exclude(event__status="draft").select_related("event").prefetch_related("days"),20).get_page(request.GET.get("page"))))
+    return render(request,"staffing/schedule.html",dict(page_title="My staff schedule",event_schedule_scope=True,person=person,selected_view=tab,now=timezone.now(),events=Paginator(events,20).get_page(request.GET.get("page")),requests=Paginator(person.availability_requests.select_related("event").all(),20).get_page(request.GET.get("page")),assignments=Paginator(person.assignments.exclude(event__status="draft").select_related("event").prefetch_related("days"),20).get_page(request.GET.get("page"))))
 
 
 @staff_view

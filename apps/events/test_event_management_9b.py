@@ -44,7 +44,7 @@ class EventManagement9BTests(TestCase):
         self.assertIsNotNone(saved,form.errors)
     def test_create_form_renders_grouped_fields_without_existing_instance(self):
         response=self.client.get(reverse('events:event_create'))
-        self.assertContains(response,'Save Draft'); self.assertContains(response,'Contact and logistics'); self.assertContains(response,'Publish to Staff')
+        self.assertContains(response,'Save draft'); self.assertContains(response,'Contact and logistics'); self.assertContains(response,'Publish to staff')
     def test_draft_allows_optional_logistics_and_ignores_forged_status(self):
         event=self.create(status='upcoming',public_registration_status='open')
         self.assertEqual(event.status,'draft'); self.assertEqual(event.public_registration_status,'disabled'); self.assertIsNone(event.staff_published_at)
@@ -166,8 +166,8 @@ class EventManagement9BTests(TestCase):
     def test_detail_has_only_meaningful_sections_and_scoped_styles(self):
         event=self.create(); response=self.client.get(reverse('events:event_detail',args=[event.pk]))
         self.assertContains(response,'event-unified-tabs'); self.assertContains(response,'event_management.css'); self.assertNotContains(response,'Assign staff'); self.assertContains(response, reverse('event_reports:detail',args=[event.pk]))
-        self.assertNotContains(response,'Experience Overview')
-        self.assertContains(self.client.get(reverse('events:event_detail',args=[event.pk]),{'section':'results'}),'Experience Overview')
+        self.assertNotContains(response,'Event results')
+        self.assertContains(self.client.get(reverse('events:event_detail',args=[event.pk]),{'section':'results'}),'Event results')
     def test_new_metadata_is_not_silently_added_to_offline_wire_contract(self):
         from .downsync import EVENT_FIELDS, EVENT_DATES
         self.assertNotIn('contact_email',EVENT_FIELDS); self.assertNotIn('housing_information',EVENT_FIELDS); self.assertNotIn('staff_published_at',EVENT_DATES)

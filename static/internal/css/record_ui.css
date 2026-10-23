@@ -13,7 +13,7 @@
 .btw-editor-wide { grid-column:1/-1; min-width:0; }
 .internal-app #main-content .btw-ui .btw-field { margin:0; min-width:0; }
 .internal-app #main-content .btw-ui .btw-field label { display:block; margin:0 0 5px; font-size:14px; font-weight:600; }
-.internal-app #main-content .btw-ui .btw-field :is(input:not([type=hidden]),select,textarea) { font-size:16px !important; width:100%; max-width:100%; min-height:44px; margin:0; padding:8px 10px; border:1px solid var(--line); border-radius:6px; box-sizing:border-box; color:var(--ink); background:white; }
+.internal-app #main-content .btw-ui .btw-field :is(input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select,textarea) { font-size:16px !important; width:100%; max-width:100%; min-height:44px; margin:0; padding:8px 10px; border:1px solid var(--line); border-radius:6px; box-sizing:border-box; color:var(--ink); background:white; }
 .internal-app #main-content .btw-ui .btw-field textarea { min-height:62px; resize:vertical; }
 .internal-app #main-content .btw-ui .btw-field small { display:block; font-size:14px; line-height:1.4; margin-top:4px; color:var(--muted); }
 .btw-ui .btw-editor-actions { display:flex; justify-content:flex-end; gap:10px; padding:14px 24px; margin:0; border-top:1px solid var(--line); background:var(--surface); position:sticky; bottom:0; z-index:2; }

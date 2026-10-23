@@ -273,7 +273,7 @@ class EventIntegration8EDTests(TestCase):
     def test_event_detail_renders_real_overview_and_rejects_legacy_scan_action(self):
         self.session()
         response=self.client.get(self.detail, {"section": "results"})
-        self.assertContains(response,"Experience Overview")
+        self.assertContains(response,"Event results")
         self.assertContains(response,"Configuration checks only")
         self.assertContains(response,"No offline event preparation")
         self.assertNotContains(response,"checked-in")
@@ -289,7 +289,7 @@ class EventIntegration8EDTests(TestCase):
         self.assertNotContains(response,self.person.contact_email)
         self.assertNotContains(response,self.person.first_name)
         self.assertNotContains(response,"Register and issue ticket")
-        self.assertNotContains(response,"Experience Overview")
+        self.assertNotContains(response,"Event results")
         self.assertEqual(self.client.post(self.detail,{"action":"register","participant":self.person.pk,"source":"staff"}).status_code,403)
         self.assertEqual(EventRegistration.objects.count(),1)
 
@@ -300,7 +300,7 @@ class EventIntegration8EDTests(TestCase):
         user=self.staff("synthetic-operations-reader",OPERATIONS_PERMISSIONS)
         self.client.force_login(user,backend="django.contrib.auth.backends.ModelBackend")
         response=self.client.get(self.detail, {"section": "results"})
-        self.assertContains(response,"Experience Overview")
+        self.assertContains(response,"Event results")
         self.assertNotContains(response,"SYNTHETIC PRIVATE APPROVAL NOTE")
         self.assertNotContains(response,"Register and issue ticket")
 
