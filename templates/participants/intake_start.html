@@ -1,8 +1,19 @@
-{% extends "participants/intake_base.html" %}{% block content %}
-<main class="reg-main intake-welcome"><h1>Tell us about you</h1>
-<p>Share your background and interests in five steps.</p>
-<p class="muted">About 10 minutes · Ages 14 and up</p>
-<p>Have your email and phone number ready.</p>
-{% if event %}<p class="intake-event-context">Registering for {{ event.name }}</p>{% endif %}
-{% if error %}<p class="errors" role="alert">{{ error }}</p>{% endif %}
-<form method="post">{% csrf_token %}<button class="button" type="submit">Start intake</button></form></main>{% endblock %}
+{% extends "participants/intake_base.html" %}
+{% block page_class %}intake-page intake-welcome-page{% endblock %}
+{% block content %}
+<main class="reg-main intake-welcome">
+  <div class="intake-welcome-intro">
+    <p class="intake-welcome-eyebrow">Your next chapter starts here</p>
+    <h1>Put your skills <span>to work.</span></h1>
+    <p class="intake-welcome-message">At Built to Work, we’re powering the American workforce. Our goal is to help you find the right opportunities to put your skills to work.</p>
+    <p class="intake-welcome-challenge">Skilled trades deserve skilled people.<br>Show us what you’ve got.</p>
+    <p class="intake-welcome-invitation">Get started by filling out this form.</p>
+    {% if error %}<p class="errors" role="alert">{{ error }}</p>{% endif %}
+    <form method="post">{% csrf_token %}<button class="button" type="submit">Start intake <span aria-hidden="true">→</span></button></form>
+    <p class="intake-welcome-details">5 steps · About 10 minutes · Ages 14 and up</p>
+    {% if event %}<p class="intake-event-context">Registering for {{ event.name }}</p>{% endif %}
+    <p class="intake-registration-note">An active registration is needed to participate in one of our events.</p>
+  </div>
+</main>
+<footer class="intake-welcome-footer">Powering the American Workforce</footer>
+{% endblock %}
