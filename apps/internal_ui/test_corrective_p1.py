@@ -61,7 +61,9 @@ class CorrectivePassOneTests(TestCase):
         self.assertContains(response,'btw-record-primary')
         parser=LinkParser();parser.feed(response.content.decode())
         self.assertFalse(parser.nested)
-        self.assertContains(response,'View daily coverage')
+        self.assertNotContains(response,'View daily coverage')
+        detail=self.client.get(reverse('events:event_detail',args=[self.event.pk]))
+        self.assertContains(detail,reverse('staffing:event',args=[self.event.pk]))
 
     def test_setup_is_in_operations_and_results_keep_bridge(self):
         url=reverse('events:event_detail',args=[self.event.pk])
@@ -120,9 +122,10 @@ class CorrectivePassOneTests(TestCase):
         self.assertEqual(self.client.get(config['url']).status_code,200)
         self.assertFalse(any(row['label']=='Simulator configuration references' for row in event_tools(self.viewer,self.event)))
 
-    def test_coverage_sibling_records_its_own_event_return_context(self):
+    def test_directory_context_link_reaches_event_and_preserves_staff_tool(self):
         response=self.client.get('/events/?view=all&q=SYNTHETIC')
-        self.assertContains(response,'data-event-open="'+str(self.event.pk)+'" href="'+reverse('staffing:event',args=[self.event.pk])+'"')
+        self.assertContains(response,'data-event-open="'+str(self.event.pk)+'" href="'+reverse('events:event_detail',args=[self.event.pk])+'"')
+        self.assertContains(self.client.get(reverse('events:event_detail',args=[self.event.pk])),reverse('staffing:event',args=[self.event.pk]))
 
 
     def test_planned_pages_are_informational_and_self_highlighting(self):

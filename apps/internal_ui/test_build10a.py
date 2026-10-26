@@ -92,7 +92,8 @@ class Build10ATests(TestCase):
         self.assertEqual(tabs['staff']['url'],reverse('staffing:event',args=[self.next.pk]))
         self.assertEqual(tabs['tasks']['url'],reverse('operations:event',args=[self.next.pk,'tasks']))
         self.assertEqual(tabs['expenses']['url'],reverse('event_reports:detail',args=[self.next.pk])+'?section=expenses')
-        self.assertEqual(len(tabs),10)
+        self.assertEqual(tabs['clock']['url'],reverse('workdays:event',args=[self.next.pk]))
+        self.assertEqual(len(tabs),11)
     def test_event_name_and_lifecycle_confirmation_are_preserved(self):
         self.login(self.admin);response=self.client.get(reverse('events:event_detail',args=[self.next.pk]))
         self.assertContains(response,'class="record-title">'+self.next.name)

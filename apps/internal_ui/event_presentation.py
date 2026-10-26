@@ -43,8 +43,11 @@ def event_tabs(user, event):
         add("overview", "Info", "events:event_detail", [event.pk])
     if view_event and user.has_perm("staffing.manage_event_staffing"):
         add("staff", "Staff", "staffing:event", [event.pk])
-    elif workday_manager(user):
-        add("staff", "Staff", "workdays:event", [event.pk])
+    elif assigned:
+        add("staff", "Staff", "staffing:staff-event", [event.pk])
+    clock = clock_destination(user, event)
+    if clock:
+        tabs.append(clock)
     from apps.operations.template_services import can_view_setup
     from apps.operations.execution_services import can_view as can_view_execution
     if event_tools(user,event) or can_view_setup(user):
@@ -87,3 +90,47 @@ def staff_tabs(user, event):
     if workday_manager(user):
         tabs.append(dict(id="workdays", label="Workdays & mileage", url=reverse("workdays:event", args=[event.pk])))
     return tabs
+
+
+def clock_destination(user, event):
+    """Expose only the existing manager roster or already-authorized own view.
+
+    This is daily check-in/workdays, not a clock-out or time-based pay feature.
+    Match the existing workdays.checkin GET ownership predicates exactly.
+    """
+    if not staff_user(user):
+        return None
+    if workday_manager(user):
+        return dict(id="clock", label="Clock", url=reverse("workdays:event", args=[event.pk]))
+    from apps.workdays.services import person
+    from apps.workdays.models import Workday
+    from apps.staffing.models import AssignmentDay
+    profile = person(user)
+    if not profile or event.status == "draft":
+        return None
+    assigned = AssignmentDay.objects.filter(assignment__event=event, assignment__staff=profile,
+        assignment__status="confirmed").exists()
+    retained = Workday.objects.filter(event=event, staff=profile).exists()
+    if assigned or retained:
+        return dict(id="clock", label="Clock", url=reverse("workdays:checkin", args=[event.pk]))
+    return None
+
+
+def directory_counts(user, events):
+    """Aggregate existing evidence only for an already-authorized report reader.
+
+    No financial computations, row locks, writes or person-level data are needed.
+    Unavailable-for-role is None in the view, never a fabricated zero.
+    """
+    if not can_report(user):
+        return {}
+    from django.db.models import Count
+    from apps.event_reports.activity import activity_sources
+    ids = [event.pk for event in events]
+    result = {pk: {"registered": 0, "checked_in": 0} for pk in ids}
+    sources = activity_sources()
+    for key, name in (("registered", "registrations"), ("checked_in", "attendance")):
+        rows = sources[name].filter(event_id__in=ids).order_by().values("event_id").annotate(total=Count("participant_id", distinct=True))
+        for row in rows:
+            result[row["event_id"]][key] = row["total"]
+    return result

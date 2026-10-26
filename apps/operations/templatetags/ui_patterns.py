@@ -118,6 +118,12 @@ ICON_PATHS.update({
     "logout": ["M9 4H4v16h5", "M9 12h12m-4-4 4 4-4 4"],
 })
 
+# Event navigation aliases leave existing receipts/other consumers unchanged.
+ICON_PATHS.update({
+    "event-dollar": ["M12 2v20", "M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"],
+    "event-more": ["M12 5v14", "M5 12h14"],
+})
+
 @register.inclusion_tag("internal/ui/icon.html")
 def ui_icon(name):
     return {"icon_paths": ICON_PATHS.get(name, ICON_PATHS["overview"])}

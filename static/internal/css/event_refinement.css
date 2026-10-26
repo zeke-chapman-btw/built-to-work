@@ -146,3 +146,96 @@
 @media(max-width:700px){
  .internal-app #main-content .btw-event-surface .btw-event-facts > div { grid-template-columns:100px minmax(0,1fr); gap:10px; }
 }
+
+
+/* Pass 2: scoped Events composition on the accepted shared staff foundation. */
+body.internal-app #main-content .event-directory-table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:8px; background:var(--surface); }
+body.internal-app #main-content .event-directory-table { width:100%; min-width:720px; border-collapse:collapse; font:400 14px/20px var(--font); }
+body.internal-app #main-content .event-directory-table th { padding:10px 16px; font:500 11px/20px var(--font); letter-spacing:.05em; text-transform:uppercase; color:var(--muted); text-align:left; background:transparent; }
+body.internal-app #main-content .event-directory-table td { padding:12px 16px; border-top:1px solid var(--line); vertical-align:top; overflow-wrap:anywhere; }
+body.internal-app #main-content .event-directory-table td:first-child { width:29%; }
+body.internal-app #main-content .event-directory-table td:first-child a { font-weight:500; color:var(--ink); text-decoration:none; }
+body.internal-app #main-content .event-directory-table small { display:block; margin-top:4px; font:400 12px/16px var(--font); color:var(--muted); }
+body.internal-app #main-content .event-directory-count { font-variant-numeric:tabular-nums; }
+body.internal-app #main-content .event-directory-cards { display:none; }
+body.internal-app #main-content .event-preparation { color:#94621b; font-size:11px; line-height:16px; font-weight:500; }
+body.internal-app #main-content .event-preparation.is-finalized { color:#22653d; }
+body.internal-app #main-content .event-directory-card { display:grid; gap:5px; padding:16px; border:1px solid var(--line); border-radius:8px; background:var(--surface); text-decoration:none; color:var(--ink); min-width:0; }
+body.internal-app #main-content .event-directory-card>strong { font:500 14px/20px var(--font); overflow-wrap:anywhere; }
+body.internal-app #main-content .event-directory-card :is(.event-card-date,.event-card-location) { font:400 12px/18px var(--font); color:var(--muted); overflow-wrap:anywhere; }
+body.internal-app #main-content .event-directory-card:focus-visible,body.internal-app #main-content .event-directory-table a:focus-visible { outline:3px solid var(--btw-focus-color,#155eb6); outline-offset:3px; }
+body.internal-app #main-content .event-directory-card:hover { border-color:#bdc1c8; }
+@media(max-width:767px) {
+ body.internal-app #main-content .event-directory-table-wrap { display:none; }
+ body.internal-app #main-content .event-directory-cards { display:grid; gap:10px; }
+}
+
+body.internal-app.has-event-context #main-content .event-navigation-shell { container:btw-event-nav / inline-size; position:relative; min-width:0; margin:0 0 20px; }
+body.internal-app.has-event-context #main-content .event-navigation-pass2 { display:flex; flex-wrap:wrap; align-items:stretch; gap:2px; overflow:visible; border-bottom:1px solid var(--line); margin:0; max-width:100%; position:relative; }
+body.internal-app.has-event-context #main-content .event-navigation-pass2>.event-nav-control,
+body.internal-app.has-event-context #main-content .event-navigation-pass2>.event-more-menu>.event-nav-control { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-width:44px; min-height:44px; padding:8px; margin:0; border:0; border-bottom:2px solid transparent; border-radius:0; color:var(--muted); text-decoration:none; font:500 13px/20px var(--font); background:transparent; cursor:pointer; box-sizing:border-box; }
+body.internal-app.has-event-context #main-content .event-navigation-pass2>.event-nav-control[aria-current],
+body.internal-app.has-event-context #main-content .event-navigation-pass2>.event-more-menu.has-active>.event-nav-control { color:var(--red); border-bottom-color:var(--red); }
+body.internal-app.has-event-context #main-content .event-navigation-pass2 .btw-icon { width:18px; height:18px; flex-shrink:0; }
+body.internal-app.has-event-context #main-content .event-navigation-pass2>.event-more-menu { position:static; display:block; margin:0; padding:0; border:0; }
+body.internal-app.has-event-context #main-content .event-navigation-pass2>.event-more-menu>summary { list-style:none; }
+body.internal-app.has-event-context #main-content .event-navigation-pass2>.event-more-menu>summary::-webkit-details-marker { display:none; }
+body.internal-app.has-event-context #main-content .event-navigation-pass2>.event-more-menu>summary::after { display:none; content:none; }
+body.internal-app.has-event-context #main-content .event-more-links { position:absolute; top:100%; right:0; left:auto; width:min(360px,100%); min-width:0; max-height:min(65dvh,480px); overflow-y:auto; z-index:30; padding:8px; border:1px solid var(--line); border-radius:8px; background:var(--surface); box-shadow:0 8px 24px #0002; }
+body.internal-app.has-event-context #main-content .event-more-links>a { display:flex; align-items:center; gap:9px; min-height:44px; padding:8px 10px; color:var(--ink); font:400 13px/20px var(--font); text-decoration:none; overflow-wrap:anywhere; }
+body.internal-app.has-event-context #main-content .event-more-links>a:is(:hover,[aria-current]) { background:#fff1f3; color:var(--red); }
+body.internal-app.has-event-context #main-content .event-navigation-pass2 :focus-visible { outline:3px solid var(--btw-focus-color,#155eb6); outline-offset:-3px; }
+body.internal-app.has-event-context #main-content .event-current-section { display:none; margin:8px 0 0; font:500 12px/16px var(--font); color:var(--muted); }
+body.internal-app.has-event-context #main-content .event-result-links { display:flex; gap:16px; flex-wrap:wrap; margin:10px 0 0; }
+body.internal-app.has-event-context #main-content .event-result-links>a { display:inline-flex; align-items:center; min-height:44px; font:500 13px/20px var(--font); }
+@media(max-width:639px) {
+ body.internal-app.has-event-context #main-content .event-current-section { display:block; }
+ body.internal-app.has-event-context #main-content .event-navigation-pass2 { display:grid; grid-template-columns:repeat(var(--event-nav-count),minmax(44px,1fr)); gap:2px; }
+ body.internal-app.has-event-context #main-content .event-navigation-pass2>.event-more-menu>.event-nav-control { width:100%; }
+ body.internal-app.has-event-context #main-content .event-navigation-pass2 .event-nav-label { display:none; }
+ body.internal-app.has-event-context #main-content .event-more-links { width:100%; left:0; right:0; }
+ @container btw-event-nav (max-width:319px) {
+  body.internal-app.has-event-context #main-content .event-navigation-pass2 { grid-template-columns:repeat(4,minmax(44px,1fr)); }
+ }
+}
+
+body.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2 { gap:16px; }
+body.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2>.card { padding:16px; margin:0; }
+body.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2 .btw-event-facts { display:grid; grid-template-columns:minmax(0,1fr); margin:0; gap:16px; }
+body.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2 .btw-event-facts>div { display:block; border:0; padding:0; min-width:0; }
+body.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2 .btw-event-facts dt { display:block; margin:0 0 4px; font:400 12px/16px var(--font); color:var(--muted); text-transform:none; letter-spacing:0; }
+body.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2 .btw-event-facts dd { display:block; margin:0; font:500 14px/20px var(--font); overflow-wrap:anywhere; }
+body.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2 :is(h2,.btw-panel-heading h2) { font:600 12px/16px var(--font); letter-spacing:.05em; text-transform:uppercase; }
+body.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2 .event-description { margin:16px 0 0; padding-top:16px; border-top:1px solid var(--line); font:400 14px/20px var(--font); overflow-wrap:anywhere; }
+body.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2 .event-window-note { margin:16px 0 0; padding:12px 0 0; border-top:1px solid var(--line); font:400 12px/18px var(--font); }
+body.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2 .event-info-secondary>summary { min-height:44px; display:flex; align-items:center; font:400 13px/20px var(--font); cursor:pointer; }
+body.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2 .btw-panel-heading { margin-bottom:8px; }
+body.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2 .event-planning-details { margin-top:16px; padding-top:4px; border-top:1px solid var(--line); }
+/* All existing specialist event surfaces inherit compact section and row rhythm.
+   Keep distinct warnings/errors, financial totals, fields and broad layout families. */
+body.internal-app.has-event-context #main-content :is(.event-workspace-stack,.workdays-page,.reports-page,.event-operations) .btw-panel-heading h2 { font:600 12px/16px var(--font); letter-spacing:.05em; text-transform:uppercase; }
+body.internal-app.has-event-context #main-content .event-page-context { font:600 14px/20px var(--font); margin:0 0 16px; }
+body.internal-app.has-event-context #main-content .event-assignment-item .staffing-record h3 { font:500 14px/20px var(--font); }
+body.internal-app.has-event-context #main-content .btw-coverage-rows { display:flex; flex-wrap:wrap; gap:10px; }
+body.internal-app.has-event-context #main-content .btw-coverage-row { flex:0 1 160px; max-width:200px; padding:12px; border-radius:7px; }
+body.internal-app.has-event-context #main-content .btw-coverage-row h3 { font:500 12px/16px var(--font); }
+body.internal-app.has-event-context #main-content .event-record-header { margin-bottom:16px; }
+body.internal-app.has-event-context #main-content .event-record-header .event-back { margin-bottom:20px; }
+body.internal-app.has-event-context #main-content .event-record-header .event-summary { line-height:20px; }
+body.internal-app.has-corrective-events #main-content .event-form-page .btw-event-form-heading h1 { font:600 20px/28px var(--font); letter-spacing:0; }
+@media(max-width:639px) {
+ body.internal-app.has-event-context #main-content .btw-coverage-row { flex:1 1 calc(50% - 5px); max-width:none; min-width:0; }
+ body.internal-app.has-event-context #main-content .event-record-header .event-header-actions :is(a,summary) { min-height:44px; }
+}
+
+/* Phase 1: existing Event fields only; preserve all shared layout families. */
+body.internal-app.has-corrective-events #main-content .event-staffing-summary { margin-top:16px; padding:16px; }
+body.internal-app.has-corrective-events #main-content .event-staffing-summary h2 { margin:0; font:600 12px/16px var(--font); letter-spacing:.05em; text-transform:uppercase; }
+body.internal-app.has-corrective-events #main-content .event-staffing-summary p { margin:0 0 12px; font:400 13px/20px var(--font); }
+body.internal-app.has-corrective-events #main-content .event-staffing-summary dl { margin:0 0 12px; }
+body.internal-app.has-corrective-events #main-content .event-staffing-summary dt { font:400 12px/16px var(--font); color:var(--muted); }
+body.internal-app.has-corrective-events #main-content .event-staffing-summary dd { margin:4px 0 0; font:500 14px/20px var(--font); overflow-wrap:anywhere; }
+body.internal-app.has-corrective-events #main-content :is(.event-presentation-section,.event-staffing-summary) .button { min-height:44px; white-space:normal; }
+body.internal-app.has-corrective-events #main-content :is(.event-presentation-section,.event-staffing-summary) .btw-panel-heading { align-items:center; gap:12px; flex-wrap:wrap; }
+body.internal-app.has-corrective-events #main-content .event-presentation-section p { margin:0; font:400 13px/20px var(--font); }
+body.internal-app.has-corrective-events #main-content .btw-event-form-section { scroll-margin-top:80px; }

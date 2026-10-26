@@ -46,7 +46,7 @@ class EventForm(forms.ModelForm):
             **{name: forms.TimeInput(attrs={"type": "time"}) for name in ("staff_arrival_time", "daily_start_time", "daily_end_time")},
             **{name: forms.Textarea(attrs={"rows": 3}) for name in ("description", "housing_information", "logistics_instructions")},
         }
-        labels = {"location_name": "Venue", "return_date": "Arrival home date", "event_type_other": "Other event type", "timezone_name": "Time zone", "daily_start_time": "Default staff start time", "daily_end_time": "Default staff end time"}
+        labels = {"location_name": "Venue", "return_date": "Arrival home date", "event_type_other": "Other event type", "timezone_name": "Time zone", "daily_start_time": "Default staff start time", "daily_end_time": "Default staff end time", "contact_name": "Contact person"}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -124,10 +124,14 @@ class StaffingEditorTests(TestCase):
         self.client.force_login(self.employee,backend='django.contrib.auth.backends.ModelBackend')
         r=self.client.get(reverse('staffing:assignment-add',args=[self.event.pk]),{'return_to':'//evil.test'},HTTP_X_BTW_EDITOR='1')
         self.assertEqual(r.status_code,403)
-    def test_list_does_not_claim_assignment_counts_are_daily_coverage(self):
-        r=self.client.get(reverse('events:event_list'),{'view':'all'})
-        self.assertContains(r,'confirmed assignment');self.assertContains(r,'View daily coverage')
-        self.assertNotContains(r,'2 required')
+    def test_directory_keeps_daily_coverage_in_the_staff_workspace(self):
+        response=self.client.get(reverse('events:event_list'),{'view':'all'})
+        self.assertNotContains(response,'confirmed assignment')
+        self.assertNotContains(response,'View daily coverage')
+        self.assertNotContains(response,'2 required')
+        staff=self.client.get(reverse('staffing:event',args=[self.event.pk]))
+        self.assertContains(staff,'Daily coverage')
+        self.assertContains(staff,'How coverage is counted')
 
     def test_replaced_assignment_post_retains_entries_and_returns_to_current_records(self):
         a=self.assignment(coverage_role='staff');revision=a.updated_at.isoformat()

@@ -126,4 +126,14 @@
     }
   });
 
+  // Only the opt-in full EventForm gains navigation-away protection. No autosave.
+  document.querySelectorAll('[data-event-dirty-guard]').forEach(form => {
+    let dirty = !!form.querySelector('.btw-form-errors,.errorlist,[data-record-recovery]');
+    form.addEventListener('input', () => { dirty = true; });
+    form.addEventListener('change', () => { dirty = true; });
+    window.addEventListener('beforeunload', event => {
+      if (dirty && !form.dataset.saving) { event.preventDefault(); event.returnValue = ''; }
+    });
+  });
+
 })();

@@ -108,6 +108,14 @@ def event_list(request):
         events = events.select_related("staffing_plan").annotate(confirmed_staff=Count(
             "staff_assignments", filter=Q(staff_assignments__status="confirmed"), distinct=True))
     page = Paginator(events, 20).get_page(request.GET.get("page"))
+    # Read-only aggregates reuse the report-authorized accepted activity sources.
+    from apps.internal_ui.event_presentation import directory_counts
+    rows = list(page.object_list)
+    counts = directory_counts(request.user, rows)
+    for event in rows:
+        event.directory_registered = counts.get(event.pk, {}).get("registered")
+        event.directory_checked_in = counts.get(event.pk, {}).get("checked_in")
+    page.object_list = rows
     parameters = request.GET.copy(); parameters.pop("page", None)
     tabs = []
     for value, label in EventFilterForm.base_fields["view"].choices:

@@ -155,7 +155,8 @@ class Build10CTests(TestCase):
 
     def test_more_selected_section_is_identified(self):
         self.login();response=self.client.get(reverse('operations:event',args=[self.event.pk,'notes']))
-        self.assertContains(response,'More · Notes');self.assertContains(response,'has-active')
+        self.assertContains(response,'More event tools, Notes selected');self.assertContains(response,'has-active')
+        self.assertContains(response,reverse('operations:event',args=[self.event.pk,'notes']))
 
     def test_workdays_are_part_of_staff_without_changing_url_or_policy(self):
         self.login();response=self.client.get(reverse('workdays:event',args=[self.event.pk]))
