@@ -9,6 +9,8 @@ WORKSPACES = (
     {"id":"operations","label":"OPERATIONS","icon":"operations","url_name":"internal:workspace","url_kwargs":{"workspace_id":"operations"},"description":"Stations, trailer operations, synchronization, and assessments.","permissions":("events.view_event","stations.view_station","events.view_trailer","events.view_syncoperation","events.view_ticketdelivery","events.view_matchreview","events.view_operationalincident","assessments.view_assessmentcategory","assessments.add_assessmentcategory","staffing.view_staffprofile","staffing.manage_event_staffing","operations.view_operationstemplate","operations.manage_tasks","operations.manage_event_notes","operations.manage_event_documents","workdays.manage_workdays","event_reports.view_event_reports","operations.manage_event_execution","operations.manage_master_checklist","participants.view_consentacceptance")},
     {"id":"platform-tools","label":"PLATFORM TOOLS","icon":"operations","url_name":"internal:workspace","url_kwargs":{"workspace_id":"platform-tools"},"description":"Existing platform monitoring, reconciliation and recovery tools.","permissions":("events.view_syncoutboxitem","events.view_participantmatchreview","events.view_backuprecord")},
     {"id":"customers","label":"CUSTOMERS","icon":"customers","url_name":"internal:workspace","url_kwargs":{"workspace_id":"customers"},"description":"Customer management is planned; no customer records or tools are available yet.","permissions":(),"planned":True},
+    {"id":"campaigns","label":"CAMPAIGNS","icon":"campaigns","url_name":"internal:workspace","url_kwargs":{"workspace_id":"campaigns"},"description":"Campaign management is planned; no campaign records or tools are available yet.","permissions":(),"planned":True},
+    {"id":"approvals","label":"APPROVALS","icon":"approvals","url_name":"internal:workspace","url_kwargs":{"workspace_id":"approvals"},"description":"A unified approvals workspace is planned; existing review queues remain in their current workspaces.","permissions":(),"planned":True},
     {"id":"administration","label":"ADMIN","icon":"settings","url_name":"internal:workspace","url_kwargs":{"workspace_id":"administration"},"description":"Authorized BTW configuration and staff administration.","permissions":("staffing.view_staffprofile","workdays.manage_workdays","auth.view_user","auth.change_user","participants.change_registrationform","participants.view_testparticipant","participants.change_testparticipant","workdays.manage_compensation","event_reports.manage_expense_categories")},
 )
 
@@ -209,14 +211,15 @@ def _destination_allowed(user, item):
 
 
 def staff_destinations(user, current_path=""):
-    """Seven staff destinations; legacy workspace policies still guard each tool."""
+    """Owner-approved staff navigation; existing endpoint policies still guard tools."""
     legacy = {entry["id"]: entry for entry in visible_legacy_workspaces(user, current_path)}
     if not legacy:
         return []
     labels = {"home": "Home", "events": "Events", "participants": "Participants",
-              "operations": "Operations", "tasks": "Tasks"}
+              "operations": "Operations", "tasks": "Tasks", "customers": "Customers",
+              "campaigns": "Campaigns", "approvals": "Approvals"}
     entries = []
-    for key in ("home", "events", "participants", "operations", "tasks"):
+    for key in ("home", "tasks", "participants", "customers", "campaigns", "approvals", "events", "operations"):
         if key in legacy:
             entries.append(dict(legacy[key], label=labels[key]))
     entries.extend([
@@ -224,7 +227,7 @@ def staff_destinations(user, current_path=""):
         dict(id="settings", label="Settings & Administration", icon="settings", url=reverse("internal:settings"), active=False),
     ])
     active = next((entry["id"] for entry in entries if entry["active"]), None)
-    if any(legacy.get(key, {}).get("active") for key in ("administration", "platform-tools", "customers")):
+    if any(legacy.get(key, {}).get("active") for key in ("administration", "platform-tools")):
         active = "settings"
     if current_path.startswith(("/internal/reports/", "/reports/", "/workdays/reports/")):
         active = "events" if current_path.startswith("/reports/events/") else "settings" if current_path.startswith("/reports/categories/") else "reports"
@@ -251,7 +254,7 @@ def settings_groups(user):
 
 
 # Existing integrations and their context keep the established registry contract.
-# Only the shared shell opts in to the seven primary destinations.
+# Only the shared shell opts in to the owner-approved primary destinations.
 visible_workspaces = visible_legacy_workspaces
 
 

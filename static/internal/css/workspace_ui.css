@@ -59,3 +59,227 @@ body.internal-app.has-corrective-events #main-content .btw-event-surface .btw-de
 body.internal-app.has-corrective-events #main-content .btw-event-surface .event-day-tile.btw-coverage-row { padding:12px 0; border:0; border-top:1px solid var(--line,#dbe1e7); border-radius:0; }
 .btw-coverage-complete-label { display:block; font-size:12px; font-weight:500; color:#226e43; margin-top:4px; }
 .legacy-workspace-context { margin-bottom:16px; font-size:.875rem; }
+
+
+/* Pass 1: measured Base44 visual foundation, scoped to the internal staff shell.
+   Jost is served locally, unmodified, under the accompanying OFL-1.1 license.
+   Event rows, filters, counts, editors and business behavior remain unchanged. */
+@font-face {
+  font-family: "Jost";
+  src: url("../fonts/Jost-Variable.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+body.internal-app {
+  --font: "Jost", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font);
+  --sidebar: 224px;
+  --dark: #18181b;
+  --red: #d02030;
+  --radius: 10px;
+  --line: #e4e4e7;
+  --page: #f8f9fa;
+  --ink: #18181b;
+  --muted: #64748b;
+  font: 400 14px/1.5 var(--font);
+}
+.internal-app .sidebar {
+  width: var(--sidebar);
+  padding: 16px 12px;
+  border: 0;
+  background: var(--dark);
+  color: #d4d4d8;
+}
+.internal-app .sidebar-brand {
+  display: flex;
+  align-items: center;
+  min-height: 33px;
+  padding: 0 8px;
+  margin-bottom: 20px;
+  flex: 0 0 auto;
+}
+.internal-app .sidebar-brand .brand-logo { width: 184px; max-width: 100%; max-height: 30px; margin: 0; }
+.internal-app .workspace-nav { display: grid; gap: 4px; padding: 0; }
+.internal-app .nav-item {
+  min-height: 36px;
+  padding: 8px 12px;
+  gap: 12px;
+  border-radius: 8px;
+  color: #d4d4d8;
+  font: 500 14px/20px var(--font);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.internal-app .nav-item .btw-icon { width: 16px; height: 16px; flex: 0 0 16px; }
+.internal-app .nav-label { min-width: 0; overflow-wrap: anywhere; }
+.internal-app .nav-item:hover { color: #fff; background: #27272a; }
+.internal-app .nav-item.active { background: #d02030; color: #fff; }
+.internal-app .nav-planned {
+  margin-left: auto;
+  flex: 0 0 auto;
+  padding: 1px 5px;
+  border: 1px solid #71717a;
+  border-radius: 4px;
+  color: #e4e4e7;
+  font: 500 10px/16px var(--font);
+}
+.internal-app .nav-item.active .nav-planned { border-color: #fff9; color: #fff; }
+.internal-app .nav-group-label { margin: 20px 12px 4px; color: #a1a1aa; font-size: 11px; line-height: 16px; letter-spacing: .08em; text-transform: uppercase; }
+.internal-app .sidebar-bottom { margin-top: auto; padding: 12px 0 0; border-top: 1px solid #3f3f46; }
+.internal-app .sidebar-bottom .sidebar-user { padding: 8px 12px; color: #d4d4d8; font-size: 12px; line-height: 18px; }
+.internal-app .sidebar-user > span { min-width: 0; overflow-wrap: anywhere; }
+.internal-app .settings-gear { width: 32px; height: 32px; min-height: 32px; flex-basis: 32px; }
+.internal-app .settings-gear .btw-icon { width: 18px; height: 18px; }
+.internal-app .sign-out-form { margin: 0; }
+.internal-app .sign-out { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 36px; padding: 8px 12px; border-radius: 8px; font: 500 14px/20px var(--font); text-align: left; }
+.internal-app .sign-out:hover { background: #27272a; }
+.internal-app .main-column { margin-left: 224px; min-width: 0; }
+.internal-app .topbar {
+  min-height: 57px;
+  height: 57px;
+  flex-shrink: 0;
+  gap: 12px;
+  padding: 6px 24px;
+  background: #fff;
+  color: #52525b;
+  border-bottom: 1px solid var(--line);
+}
+.internal-app .utility-label { font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+.internal-app .utility-label > span { color: #71717a; }
+.internal-app .topbar .notification-bell > summary { color: #52525b; border-color: transparent; border-radius: 8px; }
+.internal-app .topbar .notification-bell[open] > summary { background: #f4f4f5; }
+.internal-app .topbar .notification-popover { border-radius: 10px; }
+.internal-app .menu-toggle { color: #52525b; background: transparent; border-color: transparent; border-radius: 8px; }
+.internal-app #main-content { padding: 24px 24px 32px; }
+body.internal-app.home-dashboard-page #main-content { width: 100%; max-width: none; }
+body.internal-app.has-corrective-p2 #main-content { padding-inline: 24px; }
+.internal-app.has-task-create #main-content { padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }
+.internal-app .page-header { gap: 16px; margin-bottom: 20px; padding-bottom: 16px; }
+.internal-app #main-content :is(h1,h2,h3,h4), .internal-app .task-dialog :is(h2,h3) { font-family: var(--font); letter-spacing: 0; }
+.internal-app #main-content :is(h1.page-title,h1.record-title,.page-header h1,.page-heading h1) {
+  font: 600 20px/28px var(--font);
+  text-transform: none;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+.internal-app #main-content :is(.section-heading h2,.workspace-card strong,.empty-state h2) { font: 600 16px/24px var(--font); }
+.internal-app .card, .internal-app .btw-panel { border-radius: 10px; box-shadow: 0 1px 2px #18181b08; }
+.internal-app #main-content :is(.workspace-table,.btw-table,.event-table) :is(th,td) { padding: 12px 16px; font-size: 14px; line-height: 20px; }
+.internal-app #main-content :is(.workspace-table,.btw-table,.event-table) th { padding: 10px 16px; font-size: 11px; font-weight: 500; letter-spacing: .025em; }
+.internal-app .btw-stack { gap: 20px; }
+.internal-app .btw-panel { padding: 16px; }
+.internal-app .planned-workspace { max-width: 720px; }
+.internal-app .planned-workspace .planned-workspace-return { margin-top: 20px; }
+.internal-app .btw-foundation-frame { padding-inline: 0; }
+.internal-app.has-wide-event-directory #main-content { width: 100%; max-width: none; }
+.internal-app.has-wide-event-directory .event-list-page { max-width: none; }
+.internal-app .sidebar :focus-visible { outline: 3px solid #fbbf24; outline-offset: 2px; }
+.internal-app .topbar :focus-visible { outline: 3px solid #155eb6; outline-offset: 2px; }
+@media (min-width: 640px) {
+  .internal-app.has-event-context.has-corrective-events #main-content :is(h1.page-title,h1.record-title) { font-size: 24px; line-height: 32px; font-weight: 700; }
+}
+@media (min-width: 1024px) {
+  .internal-app .sidebar { transform: none; box-shadow: none; }
+  .internal-app .menu-toggle { display: none; }
+  .internal-app .scrim { display: none; }
+}
+@media (max-width: 1023px) {
+  .internal-app .sidebar { transform: translateX(-100%); transition: transform .22s ease; box-shadow: 8px 0 30px #0004; }
+  .internal-app .sidebar.open { transform: translateX(0); }
+  .internal-app .main-column { margin-left: 0; }
+  .internal-app .menu-toggle { display: inline-grid; place-items: center; }
+  .internal-app .nav-item,.internal-app .sign-out,.internal-app .settings-gear { min-height: 44px; }
+  .internal-app .scrim:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 50; border: 0; background: #0008; }
+  body.internal-app.nav-open { overflow: hidden; }
+}
+@media (max-width: 639px) {
+  .internal-app .topbar { height: 57px; min-height: 57px; padding: 6px 16px; gap: 8px; }
+  .internal-app #main-content, body.internal-app.has-corrective-events #main-content { padding-inline: 16px; padding-top: 16px; }
+  body.internal-app.has-corrective-p2 #main-content { padding-inline: 16px; }
+  .internal-app .utility-label > span { display: none; }
+  .internal-app .page-header { margin-bottom: 16px; padding-bottom: 12px; }
+}
+@media (max-width: 700px) {
+  .internal-app .topbar .notification-popover { position: fixed; top: 63px; right: 16px; left: auto; width: calc(100% - 32px); max-width: 370px; max-height: calc(100dvh - 79px); }
+}
+
+
+/* October 26 independent review corrections F01–F06.
+   Target existing presentation families, preserving specialist layouts and data. */
+/* F01: a staff participant identity is not a section label or a display heading. */
+body.internal-app.has-participant-workspace #main-content h1.people-profile-name {
+  font: 600 20px/28px var(--font);
+  letter-spacing: 0;
+}
+
+/* F02: compact panel labels only. Record-row, dialog, warning and error headings
+   keep their existing hierarchy; semantic h2 elements remain h2 elements. */
+body.internal-app.home-dashboard-page #main-content .p2-home :is(.p2-panel-heading,.dashboard-section-header) h2,
+body.internal-app #main-content #operations-home > .card:not([role="alert"]) > h2,
+body.internal-app #main-content #operations-home > .card > .btw-panel-heading h2,
+body.internal-app #main-content > .card:has(> .btw-settings-links) > h2,
+body.internal-app #main-content #settings-heading,
+body.internal-app #main-content .portal-preview-settings-card > h2,
+body.internal-app.has-participant-workspace #main-content .people-workspace .btw-panel-heading:not([role="alert"]) h2,
+body.internal-app.has-participant-workspace #main-content .people-workspace > .card:not([role="alert"]) > h2 {
+  font: 600 12px/16px var(--font);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+/* F03/F04: keep the existing full-width scrolling main (and its scrollbar)
+   outside the ordinary event's 768px frame, yielding 720px content at desktop.
+   Only event detail and staff coverage opt in; reports/editors retain their widths. */
+body.internal-app.has-event-context.has-foundation-event-frame #main-content {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding: 0;
+}
+body.internal-app.has-foundation-event-frame .btw-event-content-frame {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 768px;
+  margin-inline: 0;
+  padding: 24px;
+  min-width: 0;
+}
+@media (max-width: 639px) {
+  body.internal-app.has-foundation-event-frame .btw-event-content-frame { padding-inline: 16px; padding-top: 16px; }
+}
+
+/* F05: all inherited event-identity headers, including the financial shell. */
+body.internal-app #main-content .event-record-header h1.record-title {
+  font: 600 20px/28px var(--font);
+  letter-spacing: 0;
+}
+@media (min-width: 640px) {
+  body.internal-app #main-content .event-record-header h1.record-title { font: 700 24px/32px var(--font); }
+}
+
+/* F06: native specialist tables already inside horizontal-scroll containers.
+   Leave the compact-table mobile card family, column semantics and actions alone. */
+body.internal-app #main-content .btw-section-surface :is(.btw-table-wrap,.table-scroll) > table:not(.btw-compact-table) :is(th,td),
+body.internal-app #main-content .people-table-scroll > table:not(.btw-compact-table) :is(th,td),
+body.internal-app.intake-workspace #main-content .btw-section-surface :is(.btw-table-wrap,.table-scroll) > table.btw-compact-table :is(th,td) {
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 20px;
+}
+body.internal-app #main-content .btw-section-surface :is(.btw-table-wrap,.table-scroll) > table:not(.btw-compact-table) th,
+body.internal-app #main-content .people-table-scroll > table:not(.btw-compact-table) th,
+body.internal-app.intake-workspace #main-content .btw-section-surface :is(.btw-table-wrap,.table-scroll) > table.btw-compact-table th {
+  padding: 10px 16px;
+  font-size: 11px;
+  line-height: 20px;
+  font-weight: 500;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+/* These two existing editors already use labeled mobile cards. Preserve that
+   layout and its zero cell padding while sharing the compact type hierarchy. */
+@media (max-width: 600px) {
+  body.internal-app.intake-workspace #main-content .btw-section-surface :is(.btw-table-wrap,.table-scroll) > table.btw-compact-table td { padding: 0; }
+}

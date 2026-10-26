@@ -1,4 +1,4 @@
-{% load static task_ui %}{% global_task_create_url as floating_task_create_url %}<!doctype html>
+{% load static task_ui ui_patterns %}{% global_task_create_url as floating_task_create_url %}<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}{{ page_title|default:'BTW workspace' }} · Built to Work{% endblock %}</title>
@@ -7,25 +7,31 @@
 <link rel="stylesheet" href="{% static 'internal/css/notifications.css' %}">
 <script src="{% static 'internal/js/notifications.js' %}" defer></script>
 <script src="{% static 'internal/js/task_create.js' %}" defer></script>
-<script src="{% static 'internal/js/shell.js' %}" defer></script>{% block extra_head %}{% endblock %}
-<link rel="stylesheet" href="{% static 'internal/css/build10a.css' %}"><link rel="stylesheet" href="{% static 'internal/css/btw_ui.css' %}?v=10c-events-4">{% if event %}<link rel="stylesheet" href="{% static 'internal/css/event_workspace.css' %}?v=event-workspace-6">{% endif %}<link rel="stylesheet" href="{% static 'internal/css/operations_workspace.css' %}?v=10d"><script src="{% static 'internal/js/ui_patterns.js' %}" defer></script><link rel="stylesheet" href="{% static 'internal/css/workspace_ui.css' %}?v=corrective-p1"></head><body class="internal-app{% if floating_task_create_url %} has-task-create{% endif %}{% if event %} has-event-context{% endif %}{% block body_class %}{% endblock %}">
+<script src="{% static 'internal/js/shell.js' %}?v=pass1-foundation-2" defer></script>{% block extra_head %}{% endblock %}
+<link rel="stylesheet" href="{% static 'internal/css/build10a.css' %}"><link rel="stylesheet" href="{% static 'internal/css/btw_ui.css' %}?v=10c-events-4">{% if event %}<link rel="stylesheet" href="{% static 'internal/css/event_workspace.css' %}?v=event-workspace-6">{% endif %}<link rel="stylesheet" href="{% static 'internal/css/operations_workspace.css' %}?v=10d"><script src="{% static 'internal/js/ui_patterns.js' %}" defer></script><link rel="stylesheet" href="{% static 'internal/css/workspace_ui.css' %}?v=pass1-foundation-6"></head><body class="internal-app{% if floating_task_create_url %} has-task-create{% endif %}{% if event %} has-event-context{% endif %}{% if request.resolver_match.view_name == 'events:event_detail' or request.resolver_match.view_name == 'staffing:event' %} has-foundation-event-frame{% endif %}{% block body_class %}{% endblock %}">
 <a class="skip-link" href="#main-content">Skip to main content</a>
 <aside class="sidebar" id="internal-sidebar" aria-label="Main navigation">
+  <a class="sidebar-brand" href="{% url 'internal:home' %}" aria-label="Built to Work home"><img class="brand-logo" src="{% static 'internal/images/built-to-work-linear.svg' %}" alt="Built to Work"></a>
   <nav class="workspace-nav" aria-label="Workspaces">
-    {% for item in primary_navigation %}<a class="nav-item{% if item.active %} active{% endif %}" href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>
-      <span>{{ item.label }}</span>
+    {% for item in primary_navigation %}{% if item.id == 'settings' %}<p class="nav-group-label">Internal</p>{% endif %}<a class="nav-item{% if item.active %} active{% endif %}" href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>
+      {% ui_icon item.icon %}<span class="nav-label">{{ item.label }}</span>{% if item.planned %}<span class="nav-planned">Planned</span>{% endif %}
     </a>{% endfor %}
   </nav>
-  <div class="sidebar-bottom"><div class="sidebar-user"><span>{{ request.user.get_username }}</span><a class="settings-gear{% if settings_link.active %} active{% endif %}" href="{% url 'internal:settings' %}" aria-label="Personal settings" title="Personal settings"{% if settings_link.active %} aria-current="page"{% endif %}><span aria-hidden="true">⚙</span></a></div></div>
+  <div class="sidebar-bottom">
+    <div class="sidebar-user"><span>{{ request.user.get_username }}</span><a class="settings-gear{% if settings_link.active %} active{% endif %}" href="{% url 'internal:settings' %}" aria-label="Personal settings" title="Personal settings">{% ui_icon 'settings' %}</a></div>
+    <form class="sign-out-form" method="post" action="{% url 'admin:logout' %}">{% csrf_token %}<button class="sign-out" type="submit">{% ui_icon 'logout' %}<span>Sign Out</span></button></form>
+  </div>
 </aside>
 <div class="main-column">
-  <header class="topbar"><button class="menu-toggle" type="button" aria-label="Open navigation" aria-controls="internal-sidebar" aria-expanded="false" data-menu-toggle>☰</button><a class="topbar-brand" href="{% url 'internal:home' %}" aria-label="Built to Work home"><img class="brand-logo" src="{% static 'internal/images/built-to-work-linear.svg' %}" alt="Built to Work"></a><span class="portal-tagline">POWERING THE AMERICAN WORKFORCE</span>{% include 'operations/notification_bell.html' %}<form class="sign-out-form" method="post" action="{% url 'admin:logout' %}">{% csrf_token %}<button class="sign-out" type="submit">Sign out</button></form></header>
+  <header class="topbar"><button class="menu-toggle" type="button" aria-label="Open navigation" aria-controls="internal-sidebar" aria-expanded="false" data-menu-toggle>☰</button><span class="utility-label">Built to Work <span>· Internal workspace</span></span>{% include 'operations/notification_bell.html' %}</header>
   <main id="main-content">
+    {% if request.resolver_match.view_name == 'events:event_detail' or request.resolver_match.view_name == 'staffing:event' %}<div class="btw-event-content-frame">{% endif %}
     {% if messages %}<div class="messages" aria-live="polite">{% for message in messages %}<p class="alert">{{ message }}</p>{% endfor %}</div>{% endif %}
     {% block page_heading %}<header class="page-header"><div><h1 class="{% if event or participant or task or profile or record %}record-title{% else %}page-title{% endif %}">{{ page_title|default:'Dashboard' }}</h1></div><div class="page-actions">{% block page_actions %}{% endblock %}</div></header>{% endblock %}
     {% if legacy_workspace_context %}<nav class="legacy-workspace-context" aria-label="Administrative workspace"><a href="{{ legacy_workspace_context.url }}" aria-current="page">{{ legacy_workspace_context.label|title }}</a></nav>{% endif %}
     {% block workspace_tabs %}{% endblock %}
     {% block content %}{% endblock %}
+    {% if request.resolver_match.view_name == 'events:event_detail' or request.resolver_match.view_name == 'staffing:event' %}</div>{% endif %}
     {% if floating_task_create_url and not task_action_in_event_header %}<a class="button button-primary global-task-create" data-task-create data-global-task-create href="{{ floating_task_create_url }}">+ Add Task</a>{% endif %}
   </main><footer>Built to Work · Internal workspace</footer>
 </div><button class="scrim" type="button" aria-label="Close navigation" data-scrim hidden></button>

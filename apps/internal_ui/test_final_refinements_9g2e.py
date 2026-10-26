@@ -42,11 +42,11 @@ class FinalRefinementTests(TestCase):
         request.user = user if user is not None else self.staff
         return {'request': request, **extra}
 
-    def test_single_official_logo_is_in_header_and_sidebar_has_none(self):
+    def test_single_official_logo_is_in_sidebar_and_utility_header_has_none(self):
         html = self.client.get(reverse('internal:home')).content.decode()
         self.assertEqual(html.count('class="brand-logo"'), 1)
-        self.assertIn('built-to-work-linear.svg', html.split('<header class="topbar">')[1])
-        self.assertNotIn('brand-logo', html.split('<aside')[1].split('</aside>')[0])
+        self.assertIn('built-to-work-linear.svg', html.split('<aside')[1].split('</aside>')[0])
+        self.assertNotIn('brand-logo', html.split('<header class="topbar">')[1].split('</header>')[0])
         self.assertEqual(html.count('aria-label="Built to Work home"'), 1)
 
     def test_home_labels_and_central_analytics_destination(self):

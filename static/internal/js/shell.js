@@ -3,7 +3,7 @@
   const toggle = document.querySelector('[data-menu-toggle]');
   const scrim = document.querySelector('[data-scrim]');
   if (!sidebar || !toggle || !scrim) return;
-  const mobile = window.matchMedia('(max-width: 900px)');
+  const mobile = window.matchMedia('(max-width: 1023px)');
   const background = [...document.querySelectorAll('.skip-link, .main-column > :not(.topbar), .topbar > *')];
   const previousInert = new Map();
   const isOpen = () => mobile.matches && sidebar.classList.contains('open');

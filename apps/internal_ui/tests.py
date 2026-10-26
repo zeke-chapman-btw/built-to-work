@@ -28,7 +28,7 @@ class InternalShellTests(TestCase):
     def test_workspace_registry_is_ordered_and_has_named_destinations(self):
         self.assertEqual(
             [item["id"] for item in WORKSPACES],
-            ["home", "events", "participants", "tasks", "operations", "platform-tools", "customers", "administration"],
+            ["home", "events", "participants", "tasks", "operations", "platform-tools", "customers", "campaigns", "approvals", "administration"],
         )
         self.assertTrue(all(item.get("url_name") for item in WORKSPACES))
 
@@ -50,16 +50,17 @@ class InternalShellTests(TestCase):
         self.assertContains(response, reverse('events:event_list'))
         self.assertContains(response, reverse('internal:workspace', kwargs={'workspace_id': 'participants'}))
         self.assertNotContains(response, 'aria-expanded="true"')
-        self.assertNotContains(response, 'PLANNED')
+        self.assertContains(response, 'class="nav-planned">Planned</span>', count=3)
 
     def test_named_workspace_pages_render_shared_shell_and_real_links(self):
         user = self.make_staff("workspace-owner", superuser=True)
         self.client.force_login(user, backend="django.contrib.auth.backends.ModelBackend")
-        for workspace_id in ("events", "participants", "operations", "platform-tools", "customers", "administration"):
+        for workspace_id in ("events", "participants", "operations", "platform-tools", "customers", "campaigns", "approvals", "administration"):
             with self.subTest(workspace=workspace_id):
                 response = self.client.get(reverse("internal:workspace", kwargs={"workspace_id": workspace_id}))
                 self.assertEqual(response.status_code, 200)
-                self.assertContains(response, "POWERING THE AMERICAN WORKFORCE")
+                self.assertContains(response, 'class="sidebar-brand"', count=1)
+                self.assertContains(response, 'class="utility-label"', count=1)
                 self.assertContains(response, "internal-sidebar")
                 if workspace_id == "operations":
                     self.assertContains(response, "operations-home")
@@ -68,8 +69,10 @@ class InternalShellTests(TestCase):
                 elif workspace_id == "participants":
                     self.assertContains(response, "people-directory")
                     self.assertContains(response, reverse("participants:staff-directory"))
-                elif workspace_id == "customers":
-                    self.assertContains(response, "PLANNED")
+                elif workspace_id in ("customers", "campaigns", "approvals"):
+                    self.assertContains(response, 'class="empty-state card planned-workspace"')
+                    self.assertContains(response, '<span class="badge">Planned</span>', html=True)
+                    self.assertNotContains(response, "workspace-card")
                 else:
                     self.assertContains(response, "workspace-card")
 
@@ -108,7 +111,7 @@ class PortalFoundationTests(TestCase):
         self.assertNotContains(response, "/events/")
         self.assertNotContains(response, "Active registrations")
         self.assertNotContains(response, "Create customer")
-        self.assertNotContains(response, "Planned")
+        self.assertContains(response, 'class="nav-planned">Planned</span>', count=3)
 
     def test_dashboard_uses_permission_scoped_event_data(self):
         self.client.force_login(self.staff_user("event-reader", ("events", "view_event")))
@@ -132,13 +135,19 @@ class PortalFoundationTests(TestCase):
         response = self.client.get(reverse("internal:home"))
         self.assertEqual(response.content.decode().count("<h1"), 1)
 
-    def test_staff_header_uses_tagline_and_official_drawer_logo(self):
+    def test_staff_shell_uses_official_sidebar_logo_and_slim_header(self):
         self.client.force_login(self.staff_user("dashboard-branding-staff"))
         response = self.client.get(reverse("internal:home"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'class="portal-tagline"')
-        self.assertContains(response, 'internal/images/built-to-work-linear.svg')
-        self.assertContains(response, "POWERING THE AMERICAN WORKFORCE")
+        self.assertContains(response, 'class="utility-label"', count=1)
+        self.assertContains(response, 'internal/images/built-to-work-linear.svg', count=1)
+        html = response.content.decode()
+        sidebar = html.split('<aside class="sidebar"', 1)[1].split('</aside>', 1)[0]
+        topbar = html.split('<header class="topbar">', 1)[1].split('</header>', 1)[0]
+        self.assertIn('built-to-work-linear.svg', sidebar)
+        self.assertIn('Built to Work', topbar)
+        self.assertNotIn('brand-logo', topbar)
+        self.assertNotIn('type="search"', topbar)
         self.assertNotContains(response, "Staff workspace")
     def test_event_page_does_not_keep_dashboard_active_or_duplicate_title(self):
         self.client.force_login(self.staff_user("event-page-reader", ("events", "view_event")))

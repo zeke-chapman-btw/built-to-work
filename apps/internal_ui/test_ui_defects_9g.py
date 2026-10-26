@@ -36,6 +36,14 @@ class StaffLogout9GTests(TestCase):
         forms = [attrs for tag, attrs in elements if tag == 'form' and attrs.get('action') == reverse('admin:logout')]
         self.assertEqual(len(forms), 1)
         self.assertEqual(forms[0]['method'], 'post')
+        html = response.content.decode()
+        sidebar = html.split('<aside class="sidebar"', 1)[1].split('</aside>', 1)[0]
+        header = html.split('<header class="topbar">', 1)[1].split('</header>', 1)[0]
+        self.assertIn('class="sign-out-form"', sidebar)
+        self.assertIn('Personal settings', sidebar)
+        self.assertNotIn('class="sign-out-form"', header)
+        self.assertNotIn('topbar-brand', header)
+        self.assertIn('built-to-work-linear.svg', sidebar)
         self.assertTrue(any(tag == 'input' and attrs.get('name') == 'csrfmiddlewaretoken' for tag, attrs in elements))
         self.assertFalse(any(tag == 'a' and attrs.get('href') == reverse('admin:logout') for tag, attrs in elements))
 
@@ -163,7 +171,7 @@ class NavigationAndHeading9GTests(TestCase):
     def test_corrected_route_context_does_not_grant_workspace_visibility(self):
         limited = get_user_model().objects.create_user(username='synthetic-limited-9g', is_staff=True)
         for path in ['/quizzes/', '/participants/staff/registration-forms/', '/participants/staff/testing/']:
-            self.assertEqual([item['id'] for item in visible_workspaces(limited, path)], ['home', 'tasks', 'customers'])
+            self.assertEqual([item['id'] for item in visible_workspaces(limited, path)], ['home', 'tasks', 'customers', 'campaigns', 'approvals'])
         self.client.force_login(limited)
         # The existing assessment landing page is staff-accessible without a workspace grant.
         self.assertEqual(self.client.get(reverse('assessments:dashboard')).status_code, 200)

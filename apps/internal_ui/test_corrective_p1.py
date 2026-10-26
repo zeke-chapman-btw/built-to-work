@@ -40,8 +40,8 @@ class CorrectivePassOneTests(TestCase):
     def setUp(self):
         self.client.force_login(self.owner, backend='django.contrib.auth.backends.ModelBackend')
 
-    def test_seven_destinations_and_legacy_authorization(self):
-        self.assertEqual([row['label'] for row in visible_workspaces(self.owner)], ['Home','Events','Participants','Operations','Tasks','Reports & Analytics','Settings & Administration'])
+    def test_approved_destinations_and_legacy_authorization(self):
+        self.assertEqual([row['label'] for row in visible_workspaces(self.owner)], ['Home','Tasks','Participants','Customers','Campaigns','Approvals','Events','Operations','Reports & Analytics','Settings & Administration'])
         self.assertIn('administration', [row['id'] for row in visible_legacy_workspaces(self.owner)])
         for key in ('administration','platform-tools','customers'):
             self.assertEqual(self.client.get(reverse('internal:workspace', kwargs={'workspace_id':key})).status_code, 200)
@@ -123,3 +123,77 @@ class CorrectivePassOneTests(TestCase):
     def test_coverage_sibling_records_its_own_event_return_context(self):
         response=self.client.get('/events/?view=all&q=SYNTHETIC')
         self.assertContains(response,'data-event-open="'+str(self.event.pk)+'" href="'+reverse('staffing:event',args=[self.event.pk])+'"')
+
+
+    def test_planned_pages_are_informational_and_self_highlighting(self):
+        for key in ('customers', 'campaigns', 'approvals'):
+            with self.subTest(workspace=key):
+                url = reverse('internal:workspace', kwargs={'workspace_id': key})
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual([row['id'] for row in response.context['primary_navigation'] if row['active']], [key])
+                html = response.content.decode()
+                section = html.split('class="empty-state card planned-workspace"', 1)[1].split('</section>', 1)[0]
+                self.assertIn('Planned', section)
+                self.assertIn('Back to Home', section)
+                for unexpected in ('<form', '<input', '<table', 'metric', 'counter'):
+                    self.assertNotIn(unexpected, section)
+                self.assertContains(response, 'class="nav-planned">Planned</span>', count=3)
+
+    def test_planned_pages_keep_existing_active_staff_boundary(self):
+        from django.test import Client
+        participant = get_user_model().objects.create_user('synthetic-p1-participant')
+        inactive = get_user_model().objects.create_user('synthetic-p1-inactive', is_staff=True, is_active=False)
+        for user in (self.viewer, participant, inactive):
+            client = Client()
+            client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
+            for key in ('customers', 'campaigns', 'approvals'):
+                response = client.get(reverse('internal:workspace', kwargs={'workspace_id': key}))
+                self.assertEqual(response.status_code, 200 if user == self.viewer else 403 if user.is_active else 302)
+        for key in ('customers', 'campaigns', 'approvals'):
+            self.assertEqual(Client().get(reverse('internal:workspace', kwargs={'workspace_id': key})).status_code, 302)
+        for user in (participant, inactive):
+            self.assertEqual(visible_workspaces(user), [])
+        # New informational destinations do not grant access to real tools.
+        client = Client()
+        client.force_login(self.viewer, backend='django.contrib.auth.backends.ModelBackend')
+        for name in ('participants:staff-directory', 'participants:intake-config-index', 'workdays:settings'):
+            self.assertEqual(client.get(reverse(name)).status_code, 403)
+
+    def test_extended_nested_routes_preserve_existing_primary_meanings(self):
+        paths = {
+            '/participants/staff/intake-forms/12/edit/': 'operations',
+            '/participants/staff/consents/12/': 'operations',
+            '/operations/execution/events/123/': 'events',
+            '/operations/setup/events/123/': 'events',
+            '/operations/documents/123/': 'events',
+            '/staff/directory/123/': 'settings',
+            '/workdays/compensation/': 'settings',
+            '/participants/staff/qualification-approvals/': 'participants',
+        }
+        for path, expected in paths.items():
+            with self.subTest(path=path):
+                self.assertEqual([row['id'] for row in visible_workspaces(self.owner, path) if row['active']], [expected])
+
+
+    def test_ordinary_event_frame_is_presentation_only_and_wraps_once(self):
+        for route in ('events:event_detail', 'staffing:event'):
+            with self.subTest(route=route):
+                response = self.client.get(reverse(route, args=[self.event.pk]))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, 'has-foundation-event-frame', count=1)
+                self.assertContains(response, '<div class="btw-event-content-frame">', count=1)
+                self.assertContains(response, self.event.name)
+                self.assertContains(response, 'aria-label="Event sections"')
+
+    def test_financial_and_long_event_editors_do_not_adopt_narrow_frame(self):
+        for route in ('events:event_edit', 'event_reports:detail', 'event_reports:expense-add'):
+            with self.subTest(route=route):
+                response = self.client.get(reverse(route, args=[self.event.pk]))
+                self.assertEqual(response.status_code, 200)
+                self.assertNotContains(response, 'has-foundation-event-frame')
+                self.assertNotContains(response, '<div class="btw-event-content-frame">')
+        # The visibility improvement does not alter the event's identity or dates.
+        before = (self.event.name, self.event.start_at, self.event.end_at, self.event.status)
+        self.event.refresh_from_db()
+        self.assertEqual((self.event.name, self.event.start_at, self.event.end_at, self.event.status), before)

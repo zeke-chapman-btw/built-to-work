@@ -106,6 +106,18 @@ ICON_PATHS = {
     ]
 }
 
+# Shared-shell icons reuse the existing renderer; no additional icon dependency.
+ICON_PATHS.update({
+    "home": ["M3 10l9-7 9 7", "M5 9v12h14V9M9 21v-7h6v7"],
+    "people": ICON_PATHS["staff"],
+    "customers": ["M3 21h18M5 21V5h14v16M9 9h1m4 0h1M9 13h1m4 0h1M10 21v-4h4v4"],
+    "campaigns": ["M3 10v4h4l10 5V5L7 10H3", "M7 14l2 7h3l-2-6M21 9v6"],
+    "approvals": ["M12 3l8 4v6c0 5-8 9-8 9s-8-4-8-9V7l8-4", "M8 12l3 3 5-6"],
+    "reports": ICON_PATHS["results"],
+    "settings": ["M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1 1-3", "M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6"],
+    "logout": ["M9 4H4v16h5", "M9 12h12m-4-4 4 4-4 4"],
+})
+
 @register.inclusion_tag("internal/ui/icon.html")
 def ui_icon(name):
     return {"icon_paths": ICON_PATHS.get(name, ICON_PATHS["overview"])}
