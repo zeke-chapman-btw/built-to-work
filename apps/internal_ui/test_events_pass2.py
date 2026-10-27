@@ -145,13 +145,15 @@ class EventsPassTwoTests(TestCase):
         Attendance.objects.create(event=self.event,registration=wrong_reg,participant=wrong)
         self.assertEqual(directory_counts(self.owner,[self.event])[self.event.pk],{'registered':1,'checked_in':1})
 
-    def test_mobile_cards_have_only_four_approved_fields_and_native_links(self):
+    def test_mobile_cards_retain_authoritative_counts_statuses_and_native_links(self):
         response=self.client.get('/events/')
         parser=CardParser();parser.feed(response.content.decode())
         self.assertFalse(parser.nested);self.assertEqual(len(parser.cards),1)
         card=parser.cards[0]
         for text in [self.event.name,'SYNTHETIC Venue','Jul 1, 2030','Details in Progress']:self.assertIn(text,card)
-        for text in ['Registered','Checked In','Upcoming','confirmed assignments','View daily coverage']:self.assertNotIn(text,card)
+        for text in ['Registered:','Checked In:','Upcoming']:self.assertIn(text,card)
+        self.assertIn('0',card)
+        for text in ['confirmed assignments','View daily coverage']:self.assertNotIn(text,card)
         self.assertContains(response,'<th scope="col">Checked In</th>')
         self.event.details_finalized_at=self.event.start_at;self.event.save()
         response=self.client.get('/events/');parser=CardParser();parser.feed(response.content.decode())
@@ -171,3 +173,44 @@ class EventsPassTwoTests(TestCase):
         for text in ['Venue','Address','Start','End','Time zone','Accommodation','SYNTHETIC lodging<br>Second line','event-info-pass2']:self.assertContains(response,text)
         self.assertContains(self.client.get(reverse('events:event_edit',args=[self.event.pk])),'data-event-dirty-guard')
         self.assertNotContains(self.client.get('/internal/'),'data-event-dirty-guard')
+
+    def test_mobile_counts_preserve_zero_unavailable_and_valid_evidence(self):
+        person=Participant.objects.create(first_name='SYNTHETIC',last_name='Card evidence')
+        reg=EventRegistration.objects.create(event=self.event,participant=person)
+        response=self.client.get('/events/')
+        parser=CardParser();parser.feed(response.content.decode())
+        card=' '.join(parser.cards[0].split())
+        self.assertIn('Registered: 1',card)
+        self.assertIn('Checked In: 0',card)
+        Attendance.objects.create(event=self.event,registration=reg,participant=person)
+        response=self.client.get('/events/');parser=CardParser();parser.feed(response.content.decode())
+        self.assertIn('Checked In: 1',' '.join(parser.cards[0].split()))
+        self.client.force_login(self.viewer,backend='django.contrib.auth.backends.ModelBackend')
+        response=self.client.get('/events/');parser=CardParser();parser.feed(response.content.decode())
+        card=' '.join(parser.cards[0].split())
+        self.assertIn('Registered: Unavailable',card)
+        self.assertIn('Checked In: Unavailable',card)
+        self.assertNotIn('Registered: 1',card)
+        self.assertNotIn(person.last_name,card)
+
+    def test_pass_a_readable_navigation_keeps_every_authorized_destination(self):
+        from urllib.parse import urlsplit, parse_qsl
+        class Links(HTMLParser):
+            def __init__(self): super().__init__();self.hrefs=[]
+            def handle_starttag(self,tag,attrs):
+                if tag=='a': self.hrefs.append(dict(attrs).get('href',''))
+        def normalized(url):
+            u=urlsplit(url);return u.path,tuple(sorted(parse_qsl(u.query))),u.fragment
+        for user in (self.owner,self.viewer,self.results_user):
+            self.client.force_login(user,backend='django.contrib.auth.backends.ModelBackend')
+            nav=self.navigation(user)
+            response=self.client.get(reverse('events:event_detail',args=[self.event.pk]))
+            self.assertEqual(response.status_code,200)
+            parser=Links();parser.feed(response.content.decode())
+            urls={normalized(u) for u in parser.hrefs}
+            for tab in nav['primary_event_tabs']+nav['more_event_tabs']:
+                self.assertIn(normalized(tab['url']),urls)
+            self.assertContains(response,'event-primary-scroll')
+            self.assertContains(response,'event-nav-label')
+        self.client.force_login(self.owner,backend='django.contrib.auth.backends.ModelBackend')
+        self.assertNotContains(self.client.get('/internal/'),'data-pass-a-event')

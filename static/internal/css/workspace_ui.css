@@ -283,3 +283,179 @@ body.internal-app.intake-workspace #main-content .btw-section-surface :is(.btw-t
 @media (max-width: 600px) {
   body.internal-app.intake-workspace #main-content .btw-section-surface :is(.btw-table-wrap,.table-scroll) > table.btw-compact-table td { padding: 0; }
 }
+
+/* Pass A — Events: approved 920px ordinary frame. Other staff workspaces and
+   public, portal, kiosk and native admin shells do not opt into these rules. */
+body.internal-app:is(.has-pass-a-events,:has([data-pass-a-event])) {
+  --pass-a-frame:920px; --pass-a-gutter:16px;
+  --pass-a-inner:calc(var(--pass-a-frame) - 2 * var(--pass-a-gutter));
+  height:100dvh; min-height:0; overflow:hidden;
+}
+body.internal-app:is(.has-pass-a-events,:has([data-pass-a-event])) .main-column {
+  display:flex; flex-direction:column; height:100dvh; min-height:0; overflow:hidden;
+}
+body.internal-app:is(.has-pass-a-events,:has([data-pass-a-event])) .main-column>#main-content {
+  position:relative; flex:1; min-height:0; width:100%; max-width:none; margin:0;
+  padding:0 0 calc(104px + env(safe-area-inset-bottom,0px)); overflow:auto;
+  scrollbar-gutter:stable;
+}
+/* Outrank the inherited Event/task shell's 24px bottom padding. */
+body.internal-app.has-event-context:is(.has-pass-a-events,:has([data-pass-a-event])) .main-column>#main-content {
+  padding-bottom:calc(104px + env(safe-area-inset-bottom,0px));
+}
+body.internal-app:is(.has-pass-a-events,:has([data-pass-a-event])) .main-column>footer {
+  flex:0 0 auto; min-height:64px; padding:16px 24px; background:var(--surface);
+}
+body.internal-app:is(.has-pass-a-events,:has([data-pass-a-event])) a.global-task-create {
+  bottom:calc(10px + env(safe-area-inset-bottom,0px)); min-height:44px;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .btw-event-content-frame {
+  width:100%; max-width:none; margin:0; padding:0; min-width:0;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-record-header {
+  width:100%; max-width:var(--pass-a-frame); margin:0 auto 12px;
+  padding:16px var(--pass-a-gutter) 0; box-sizing:border-box;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-record-header>.event-back {
+  display:inline-flex; align-items:center; min-height:36px; margin:0 0 8px; font:400 12px/18px var(--font);
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-title-row {
+  display:flex; align-items:flex-start; justify-content:space-between; gap:12px 20px;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-title-row>div:first-child { min-width:0; }
+body.internal-app:has([data-pass-a-event]) #main-content .event-record-header h1.record-title {
+  margin:0; font:600 20px/28px var(--font); overflow-wrap:anywhere;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-record-header :is(.event-summary,.event-date-line) {
+  margin:4px 0 0; font:400 12px/18px var(--font); color:var(--muted);
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-record-header .event-badges {
+  display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-header-actions {
+  display:flex; flex:0 0 auto; flex-wrap:wrap; align-items:center; gap:8px; margin:0;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-header-actions :is(a.button,summary.button) {
+  min-height:36px; padding:7px 11px; font:500 13px/20px var(--font); white-space:nowrap;
+}
+body.internal-app:has([data-pass-a-event]) #main-content :is(.event-operations,.staffing-page,.operations-design) {
+  width:100%; max-width:var(--pass-a-frame); margin-inline:auto; padding:0 var(--pass-a-gutter); min-width:0;
+}
+/* The specialist shell contains the common header, then an independently wide body. */
+body.internal-app:has([data-pass-a-event]) #main-content .operations-page {
+  width:100%; max-width:none; margin:0; padding:0;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .operations-page>.workdays-page {
+  width:100%; max-width:1200px; margin-inline:auto; padding:0 var(--pass-a-gutter);
+}
+body.internal-app:has([data-pass-a-event]) #main-content .operations-page>:is(.card,.ops-filter-grid,.btw-toolbar),
+body.internal-app:has([data-pass-a-event]) #main-content .btw-event-content-frame>.btw-tabs {
+  width:calc(100% - 2 * var(--pass-a-gutter)); max-width:var(--pass-a-inner); margin-inline:auto;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-page-context {
+  width:100%; max-width:var(--pass-a-frame); padding:0 var(--pass-a-gutter);
+  margin:0 auto 12px; font:600 14px/20px var(--font);
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-navigation-shell {
+  container:none; position:relative; margin:0 0 16px; min-width:0; overflow:visible;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-workspace-stack:not(.operations-design)>.event-navigation-shell,
+body.internal-app:has([data-pass-a-event]) #main-content .btw-event-settings>.event-navigation-shell,
+body.internal-app:has([data-pass-a-event]) #main-content .operations-page>.event-navigation-shell,
+body.internal-app:has([data-pass-a-event]) #main-content .btw-event-content-frame>.event-navigation-shell {
+  width:100%; max-width:var(--pass-a-frame); padding:0 var(--pass-a-gutter); margin-inline:auto;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-navigation-pass2 {
+  display:flex; flex-wrap:nowrap; gap:4px; align-items:stretch; overflow:visible; border-bottom:1px solid var(--line);
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-primary-scroll {
+  display:flex; flex:1 1 auto; align-items:stretch; gap:4px; min-width:0; overflow-x:auto;
+  overscroll-behavior-x:contain; scrollbar-width:thin;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-primary-scroll>.event-nav-control,
+body.internal-app:has([data-pass-a-event]) #main-content .event-more-menu>summary.event-nav-control {
+  display:inline-flex; flex:0 0 auto; align-items:center; justify-content:center; gap:5px;
+  min-width:44px; min-height:44px; padding:8px; width:auto;
+  font:500 13px/20px var(--font); color:var(--muted); text-decoration:none;
+  border:0; border-bottom:2px solid transparent; border-radius:0; background:transparent;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-primary-scroll>[aria-current],
+body.internal-app:has([data-pass-a-event]) #main-content .event-more-menu.has-active>summary {
+  color:var(--red); border-bottom-color:var(--red);
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-navigation-pass2 .event-nav-label { display:inline; white-space:nowrap; }
+body.internal-app:has([data-pass-a-event]) #main-content .event-navigation-pass2>.event-more-menu { flex:0 0 auto; position:static; }
+body.internal-app:has([data-pass-a-event]) #main-content .event-more-links {
+  width:min(360px,100%); left:auto; right:0; max-height:min(40dvh,360px);
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-current-section { display:block; margin:8px 0 0; font:500 12px/16px var(--font); }
+/* E1: a day tile is not a legacy three-column coverage row. */
+body.internal-app:has([data-pass-a-event]) #main-content .btw-coverage-rows {
+  display:flex; flex-wrap:wrap; gap:10px; align-items:stretch;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-day-tile.event-coverage-tile {
+  display:flex; flex:0 1 190px; flex-direction:column; align-items:stretch; gap:8px;
+  min-width:min(100%,150px); max-width:220px; padding:12px;
+  border:1px solid var(--line); border-radius:8px; background:#fafbfc;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-coverage-tile.needs-coverage { background:#fffcf5; border-color:#e5c991; }
+body.internal-app:has([data-pass-a-event]) #main-content .event-coverage-tile.coverage-complete { background:#f1faf5; border-color:#9bcbb0; }
+body.internal-app:has([data-pass-a-event]) #main-content .event-coverage-tile h3 { margin:0; font:500 12px/16px var(--font); }
+body.internal-app:has([data-pass-a-event]) #main-content .event-coverage-tile .event-coverage-role {
+  display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 8px; margin:0; padding:0; border:0;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-coverage-tile .coverage-state { grid-column:1/-1; white-space:normal; }
+body.internal-app:has([data-pass-a-event]) #main-content .event-coverage-tile :is(p,.event-coverage-review) { margin:0; overflow-wrap:normal; }
+body.internal-app:has([data-pass-a-event]) #main-content .event-coverage-tile .event-coverage-review { font-size:11px; line-height:16px; }
+/* Compact hierarchy keeps warnings and financial values distinct. */
+body.internal-app:has([data-pass-a-event]) #main-content :is(.btw-panel-heading,.btw-list-heading) h2,
+body.internal-app:has([data-pass-a-event]) #main-content :is(.reports-page,.workdays-page)>.card>h2 {
+  font:600 12px/16px var(--font); letter-spacing:.05em; text-transform:uppercase;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .workdays-page>.card>h3 { font:600 14px/20px var(--font); }
+body.internal-app:has([data-pass-a-event]) #main-content :is(.card,.btw-list-panel) { padding:16px; }
+body.internal-app:has([data-pass-a-event]) #main-content .report-navigation .btw-toolbar {
+  display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0;
+}
+body.internal-app:has([data-pass-a-event]) #main-content .report-navigation .btw-toolbar>a {
+  display:inline-flex; align-items:center; min-height:36px; padding:7px 10px; border:1px solid var(--line);
+  border-radius:6px; background:var(--surface); font:500 13px/20px var(--font);
+}
+body.internal-app.has-pass-a-events #main-content .event-form-page {
+  width:100%; max-width:var(--pass-a-frame) !important; margin:auto; padding:16px var(--pass-a-gutter) 0;
+}
+body.internal-app.has-pass-a-events #main-content .btw-event-form-section>h2,
+body.internal-app.has-pass-a-events #main-content .btw-event-form-section>summary { font:600 14px/20px var(--font); }
+body.internal-app.has-pass-a-events #main-content .btw-event-form-section { padding:16px; }
+body.internal-app.has-pass-a-events #main-content .btw-section-nav { gap:4px 12px; font:400 12px/18px var(--font); }
+body.internal-app.has-wide-event-directory.has-pass-a-events #main-content>.page-header {
+  max-width:1152px; width:calc(100% - 2 * var(--pass-a-gutter)); margin:16px auto; padding-bottom:12px;
+}
+body.internal-app.has-wide-event-directory.has-pass-a-events #main-content .event-list-page {
+  max-width:1200px; width:100%; margin:auto; padding:0 var(--pass-a-gutter);
+}
+body.internal-app.has-pass-a-events #main-content .events-list-heading { align-items:flex-start; text-align:left; }
+body.internal-app.has-pass-a-events #main-content .events-list-heading h1 { text-align:left; }
+body.internal-app.has-pass-a-events #main-content .event-card-status { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+body.internal-app.has-pass-a-events #main-content .event-card-counts { display:flex; flex-wrap:wrap; gap:6px 16px; font:400 12px/18px var(--font); }
+body.internal-app.has-pass-a-events #main-content .event-related-tools { margin-top:16px; border-top:1px solid var(--line); padding-top:8px; }
+body.internal-app.has-pass-a-events #main-content .event-related-tools>summary { display:inline-flex; align-items:center; min-height:44px; cursor:pointer; font:500 13px/20px var(--font); }
+body.internal-app.has-pass-a-events #main-content .event-related { display:flex; flex-wrap:wrap; gap:8px 16px; margin:0; padding:8px 0; }
+body.internal-app.has-pass-a-events #main-content .event-related a { display:inline-flex; align-items:center; min-height:44px; }
+@media(min-width:640px) {
+  body.internal-app:is(.has-pass-a-events,:has([data-pass-a-event])) { --pass-a-gutter:24px; }
+  body.internal-app:has([data-pass-a-event]) #main-content .event-record-header { padding-top:20px; }
+  body.internal-app:has([data-pass-a-event]) #main-content .event-record-header h1.record-title { font:700 24px/32px var(--font); }
+  body.internal-app:has([data-pass-a-event]) #main-content .event-current-section { display:none; }
+}
+@media(max-width:639.98px) {
+  body.internal-app:has([data-pass-a-event]) #main-content .event-title-row { flex-direction:column; gap:12px; }
+  body.internal-app:has([data-pass-a-event]) #main-content .event-header-actions :is(a.button,summary.button) { min-height:44px; }
+  body.internal-app:has([data-pass-a-event]) #main-content .event-navigation-pass2 .btw-icon { display:none; }
+  body.internal-app:has([data-pass-a-event]) #main-content .event-more-links { width:100%; }
+  body.internal-app:has([data-pass-a-event]) #main-content .event-day-tile.event-coverage-tile { flex:1 1 150px; max-width:none; }
+  body.internal-app:has([data-pass-a-event]) #main-content .report-navigation .btw-toolbar>a { min-height:44px; }
+  body.internal-app.has-pass-a-events #main-content .events-list-heading { flex-direction:column; }
+}
+
+body.internal-app:has([data-pass-a-event]) #main-content .event-more-group-label { display:block; padding:10px 10px 4px; color:var(--muted); font:600 11px/16px var(--font); letter-spacing:.04em; text-transform:uppercase; }

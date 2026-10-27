@@ -1,5 +1,5 @@
 {% extends 'internal/base.html' %}{% load static ui_patterns event_ui tz %}
-{% block body_class %} has-corrective-events{% endblock %}
+{% block body_class %} has-corrective-events has-pass-a-events{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{% static 'internal/css/event_management.css' %}">{% include 'internal/ui/event_assets.html' %}<script src="{% static 'internal/js/workspace_sections.js' %}" defer></script>{% endblock %}
 {% block page_heading %}{% endblock %}
 {% block content %}<div class="events-page btw-ui btw-event-surface event-form-page"><a class="event-back" href="{{ back }}">← Back</a><header class="btw-event-form-heading"><h1 class="record-title">{{ page_title }}</h1><p>{% if event %}Update the event details. All times use the event timezone.{% else %}Start with the event name, dates and timezone. Save a draft to finish later.{% endif %}</p></header>
