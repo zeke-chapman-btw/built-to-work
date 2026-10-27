@@ -47,7 +47,7 @@ def profile_sections(context):
     items=[('overview','Overview',True),('career','Skills & experience',True),('qualifications','Qualifications',context.get('can_view_qualifications')),('documents','Documents',context.get('can_view_documents')),('assessments','Assessments',any(context.get(k) for k in ['can_view_quiz_results','can_view_game_results','can_view_historical_scores','can_view_simulator_results'])),('events','Events',context.get('can_view_registrations')),('notes','Internal notes',context.get('can_view_notes')),('acquisition','Details & history',True),('activity','Activity',context.get('can_view_activity')),('tasks','Tasks',True)]
     rows=[dict(key=key,label=label,url=profile_link(request,person,key),active=key==active) for key,label,allowed in items if allowed]
     secondary={'assessments','events','notes','acquisition','activity','tasks'}
-    return dict(items=rows,primary_items=[x for x in rows if x['key'] not in secondary],more_items=[x for x in rows if x['key'] in secondary],more_active=next((x['label'] for x in rows if x['active'] and x['key'] in secondary),''),active_label=next((x['label'] for x in rows if x['active']),'Overview'))
+    return dict(section=active,items=rows,primary_items=[x for x in rows if x['key'] not in secondary],more_items=[x for x in rows if x['key'] in secondary],more_active=next((x['label'] for x in rows if x['active'] and x['key'] in secondary),''),active_label=next((x['label'] for x in rows if x['active']),'Overview'))
 
 @register.simple_tag(takes_context=True)
 def people_section_url(context,section):return profile_link(context['request'],context['participant'],section)
@@ -67,11 +67,11 @@ def people_label(value):return str(value).replace('_',' ').title()
 def people_filter_groups(context):
     form=context.get('filter_form')
     if form is None:return []
-    definitions=[('Location',['city','state']),('Interests & work',['trade_interest','skill','employment','experience_min','experience_data','availability','preferred_location','work_type','travel']),('Qualifications & evidence',['qualification','qualification_kind','qualification_status','document_status','assessment','assessment_category','score_min','score_max']),('Events & original source',['event','participation','channel','acquired_from','acquired_to']),('Profile records',['completeness','archived'])]
+    definitions=[('Interests & work',['trade_interest','skill','employment','experience_min','experience_data','availability','preferred_location','work_type','travel']),('Location',['city','state']),('Qualifications & evidence',['qualification','qualification_kind','qualification_status','document_status','assessment','assessment_category','score_min','score_max']),('Events & original source',['event','participation','channel','acquired_from','acquired_to']),('Profile records',['completeness','archived'])]
     used={'q','sort'};groups=[]
     for title,names in definitions:
         fields=[form[n] for n in names if n in form.fields];used.update(names)
-        if fields:groups.append(dict(title=title,fields=fields,open=any(f.errors for f in fields)))
+        if fields:groups.append(dict(title=title,fields=fields,open=title=='Interests & work' or any(f.errors or f.value() not in (None,'',[]) for f in fields)))
     extra=[f for f in form.visible_fields() if f.name not in used]
     if extra:groups.append(dict(title='Additional filters',fields=extra,open=any(f.errors for f in extra)))
     return groups
@@ -88,3 +88,33 @@ def people_active_filters(context):
             value=dict(field.field.choices).get(value,value)
         result.append(dict(label=field.label,value=str(value)))
     return result
+
+
+@register.simple_tag(takes_context=True)
+def people_filter_state(context):
+    """Display state only; the existing validated discovery query stays authoritative."""
+    form = context.get("filter_form")
+    if form is None:
+        return {"reset": False, "count": 0}
+    active = people_active_filters(context)
+    criteria = context.get("criteria") or {}
+    keyword = form["q"].value() if "q" in form.fields else ""
+    sort = form["sort"].value() if "sort" in form.fields else ""
+    request = context.get("request")
+    chart = bool(criteria.get("segments") or criteria.get("facet"))
+    return {"reset": bool(active or keyword or sort or chart or (request and request.GET.get("saved"))),
+            "count": len(active), "keyword": keyword, "chart": chart}
+
+
+@register.simple_tag
+def people_qualification_groups(records):
+    from apps.participants.ui_presentation import qualification_display_groups
+    return qualification_display_groups(records)
+
+
+@register.simple_tag
+def people_editor_groups(groups):
+    """Copy display metadata without changing bound fields or the save contract."""
+    return [dict(group, open=group.get("open", False) or any(
+        field.errors or field.value() not in (None, "", []) for field in group["fields"]))
+        for group in groups]

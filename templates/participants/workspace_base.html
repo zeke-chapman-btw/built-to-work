@@ -1,6 +1,6 @@
 {% extends 'operations/design_base.html' %}{% load static people_ui %}
-{% block body_class %}{{ block.super }} has-participant-workspace has-corrective-p2{% endblock %}
-{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/participant_workspace.css' %}?v=uxd-1">{% include 'internal/ui/corrective_p2_assets.html' %}{% endblock %}
+{% block body_class %}{{ block.super }} has-participant-workspace has-corrective-p2 has-participants-pass3{% endblock %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/participant_workspace.css' %}?v=pass3-profile-6">{% include 'internal/ui/corrective_p2_assets.html' %}{% endblock %}
 {% block page_heading %}<header class="page-header btw-section-heading"><div><h1 class="page-title">{{ page_title|default:'Participants' }}</h1></div>{% block design_actions %}{% endblock %}</header>{% endblock %}
 {% block design_navigation %}{% if not participant or not section %}{% people_navigation %}{% endif %}{% if participant and not section %}<div class="people-identity"><div class="people-identity-name"><span class="people-avatar people-avatar-small" aria-hidden="true">{{ participant|people_initials }}</span><strong>{{ participant }}</strong></div><a href="{% if people_return_url %}{{ people_return_url }}{% else %}{% url 'participants:staff-profile' participant.pk %}{% endif %}">← Back</a></div>{% endif %}{% endblock %}
 {% block design_content %}<div class="people-workspace event-workspace-stack">{% block people_content %}{% endblock %}</div>{% endblock %}

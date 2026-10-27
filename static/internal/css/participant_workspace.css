@@ -126,3 +126,242 @@
 
 .has-participant-workspace .people-navigation-refined .btw-section-home[aria-current=page],.has-participant-workspace .people-profile-more > summary[aria-current=page] {color:var(--red,#d91a32);border-bottom:2px solid var(--red,#d91a32);}
 .has-participant-workspace .people-directory-row {padding-block:14px;}
+
+
+/* Pass 3: Participants staff composition only. No portal, intake, kiosk or global shell overrides. */
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .btw-section-surface {max-width:1200px;margin-inline:0;min-width:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace {gap:16px;min-width:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-filter-surface {padding:16px;margin:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-search {display:grid;grid-template-columns:minmax(0,1fr) auto minmax(160px,200px);gap:12px;align-items:end;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-search .btw-field {margin:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-search > * {min-width:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-search-submit {min-height:44px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-filter-state {display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:8px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-active-filters {margin:0;gap:5px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-active-filters > span {padding:4px 8px;border-radius:5px;font:400 12px/18px var(--font);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-clear-filters {display:inline-flex;min-height:44px;align-items:center;font:500 13px/20px var(--font);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-advanced-filters {margin-top:10px;padding-top:4px;border-top:1px solid var(--line);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-advanced-filters > summary {min-height:44px;font:500 13px/20px var(--font);align-content:center;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-filter-hint {margin-left:10px;color:var(--muted);font:400 12px/18px var(--font);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-filter-count {display:inline-block;margin-left:8px;padding:2px 6px;background:#f1f2f5;border-radius:4px;font:500 11px/16px var(--font);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-filter-groups {gap:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-filter-groups > details {border-top:1px solid var(--line);padding:4px 0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-filter-groups summary {min-height:44px;font:500 13px/20px var(--font);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-filter-grid {padding:8px 0 12px;gap:12px 18px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-filter-footer {display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory-surface {padding:0;overflow:visible;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-results-heading {padding:12px 16px;margin:0;align-items:center;gap:12px;flex-wrap:wrap;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-results-heading h2 {margin:0;font:600 12px/16px var(--font);letter-spacing:.04em;text-transform:uppercase;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-save-view {display:inline-flex;min-height:44px;align-items:center;font:500 13px/20px var(--font);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-saved-shortcuts {padding:0 16px 8px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory-head {display:grid;grid-template-columns:minmax(0,1fr) 84px;align-items:center;border-block:1px solid var(--line);background:#fafbfc;color:var(--muted);font:500 11px/18px var(--font);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory-head-main {display:grid;grid-template-columns:minmax(150px,1.2fr) minmax(110px,.85fr) minmax(130px,1.1fr);gap:16px;padding:10px 16px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .has-registration-column .people-directory-head-main {grid-template-columns:minmax(150px,1.2fr) minmax(110px,.85fr) minmax(130px,1.1fr) 82px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory .p3-directory-row {position:relative;grid-template-columns:minmax(0,1fr) 84px;align-items:center;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory .btw-record-primary {display:grid;grid-template-columns:minmax(150px,1.2fr) minmax(110px,.85fr) minmax(130px,1.1fr);gap:2px 16px;align-items:center;min-height:64px;padding:12px 16px;text-decoration:none;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory.has-registration-column .btw-record-primary {grid-template-columns:minmax(150px,1.2fr) minmax(110px,.85fr) minmax(130px,1.1fr) 82px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory .btw-record-primary h3 {grid-column:1;grid-row:1;margin:0;font:500 14px/20px var(--font);overflow-wrap:anywhere;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-dir-location {grid-column:2;grid-row:1;font:400 13px/20px var(--font);color:var(--muted);overflow-wrap:anywhere;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-dir-interest {grid-column:3;grid-row:1;font:400 13px/20px var(--font);overflow-wrap:anywhere;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-dir-registrations {grid-column:4;grid-row:1;font:400 13px/20px var(--font);font-variant-numeric:tabular-nums;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-dir-archived {grid-column:1;grid-row:2;justify-self:start;font:500 11px/16px var(--font);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory .btw-record-secondary {padding:8px 8px 8px 0;max-width:none;align-self:start;min-width:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory .p3-row-details {position:static;width:auto;max-width:none;margin:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory .p3-row-details > summary {min-height:44px;display:flex;align-items:center;justify-content:center;padding:0 6px;border-radius:5px;font:500 13px/20px var(--font);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory .p3-row-details > summary:hover {background:#f3f4f7;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory .p3-row-details-panel {position:absolute;right:8px;top:56px;z-index:35;width:min(320px,calc(100% - 16px));max-height:min(60dvh,400px);overflow:auto;padding:16px;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;background:var(--surface,#fff);box-shadow:0 8px 24px #0002;font:400 13px/20px var(--font);overflow-wrap:anywhere;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-row-details-panel strong {font-weight:600;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-row-details-panel dl {margin:12px 0 0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-row-details-panel dt {margin-top:10px;color:var(--muted);font:400 12px/16px var(--font);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-row-details-panel dd {margin:3px 0 0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-pagination {margin:0;padding:14px 16px;border-top:1px solid var(--line);gap:12px;flex-wrap:wrap;font:400 13px/20px var(--font);}
+@media(max-width:899px){
+ body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory-head {display:none;}
+ body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory .p3-directory-row {grid-template-columns:minmax(0,1fr) 76px;align-items:start;}
+ body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory .btw-record-primary,body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory.has-registration-column .btw-record-primary {display:flex;flex-direction:column;gap:3px;align-items:flex-start;justify-content:center;min-height:72px;padding:12px;}
+ body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-dir-registrations {display:none;}
+ body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-dir-location,body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-dir-interest {font-size:12px;line-height:18px;}
+ body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory .btw-record-secondary {padding:8px 8px 8px 0;}
+}
+@media(max-width:639px){
+ body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-search {grid-template-columns:minmax(0,1fr) auto;gap:10px;}
+ body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-search-sort {grid-column:1/-1;}
+ body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-filter-hint {display:block;margin-left:0;font-size:11px;}
+ body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-filter-grid {grid-template-columns:1fr;}
+ body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-pagination {padding:12px;}
+}
+
+/* Pass 3: compact staff profile and specialist presentation; no public/portal scope. */
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-hero {max-width:1200px;margin:0 0 16px;padding:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-hero .people-profile-heading {gap:12px;align-items:center;padding:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-hero .people-avatar {width:44px;height:44px;font-size:16px;flex:none;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-hero .people-profile-title {min-width:0;flex:1;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-hero .people-profile-name {font-size:20px;line-height:28px;font-weight:600;margin:0;overflow-wrap:anywhere;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-hero .people-profile-title p {font-size:13px;line-height:20px;margin:2px 0 0;overflow-wrap:anywhere;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-actions {display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-tools {position:relative;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-tools summary {min-height:44px;display:flex;align-items:center;padding:0 12px;border:1px solid #d1d5db;border-radius:6px;cursor:pointer;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-tools[open]>div {position:absolute;z-index:25;right:0;min-width:220px;background:white;border:1px solid #e5e7eb;border-radius:6px;padding:6px;box-shadow:0 6px 16px #0002;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-tools a {min-height:44px;display:flex;align-items:center;padding:8px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-profile-sections {margin:0 0 16px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-profile-sections .btw-section-links>a {min-height:44px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-profile-sections summary {min-height:44px;display:flex;align-items:center;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-summary {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-summary>.card:last-child {grid-column:auto;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .card {padding:16px;min-width:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .btw-panel-heading {align-items:start;gap:12px;margin-bottom:12px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace h2 {font-size:13px;line-height:20px;font-weight:600;letter-spacing:0;margin:0 0 8px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .btw-panel-heading h2 {margin:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace h3 {font-size:14px;line-height:20px;font-weight:500;margin:0 0 4px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace p {font-size:13px;line-height:20px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-details {font-size:13px;line-height:20px;grid-template-columns:minmax(104px,.7fr) minmax(0,1.3fr);gap:8px 12px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-details dt {font-weight:500;color:#6b7280;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-details dd {margin:0;overflow-wrap:anywhere;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .p2-source {font-size:11px;line-height:16px;margin-top:2px;display:block;color:#6b7280;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-record,body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace article.record {padding:12px 0;border:0;border-bottom:1px solid #e5e7eb;border-radius:0;margin:0;gap:12px;min-width:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-record:last-child,body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace article.record:last-child {border-bottom:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-record>div {min-width:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-record p,body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace article.record p {margin:4px 0;overflow-wrap:anywhere;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-record .event-record-actions {flex-wrap:wrap;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-credential-summary {border-top:1px solid #e5e7eb;padding-top:12px;margin-top:12px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-credential-summary>div {display:block;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .p3-evidence-preview {margin:8px 0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .p3-evidence-preview>div {margin:8px 0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .p3-evidence-preview strong {font-size:13px;font-weight:500;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .p3-evidence-preview small {display:block;color:#6b7280;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .p3-evidence-group {margin-top:16px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .p3-evidence-group>h3 {font-size:12px;line-height:20px;font-weight:600;color:#4b5563;border-bottom:1px solid #e5e7eb;padding-bottom:8px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-secondary>summary,body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace details.card>summary {min-height:44px;padding:10px 0;font-size:13px;line-height:20px;font-weight:500;cursor:pointer;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-secondary:not([open]),body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace details.card:not([open]) {padding-block:4px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-form {max-width:896px;margin-inline:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-form>.card {margin:0 0 12px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .p3-editor-contract {margin:0 0 12px;color:#4b5563;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .p3-editor-fields {grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .p3-editor-fields textarea {min-height:96px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .btw-form-actions {gap:8px;flex-wrap:wrap;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace :is(button,.button,summary,input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select) {min-height:44px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace :is(.actions,.event-record-actions)>a {min-height:44px;display:inline-flex;align-items:center;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-search:not(.p3-directory-search) {display:flex;gap:8px;align-items:end;flex-wrap:wrap;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-search>.field {flex:1;min-width:180px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-table-scroll,body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .table-scroll {max-width:100%;overflow-x:auto;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-bars a {min-height:44px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-chart-grid {align-items:start;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .btw-inline-notice,body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .btw-feedback-warning,body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .alert {font-size:14px;line-height:22px;}
+@media(max-width:1023px){
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-summary {grid-template-columns:repeat(2,minmax(0,1fr));}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-summary>.card:last-child {grid-column:1/-1;}
+}
+@media(max-width:639px){
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-summary {grid-template-columns:minmax(0,1fr);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-summary>.card:last-child {grid-column:auto;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-actions {width:calc(100% - 56px);margin-left:56px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-hero .people-profile-heading {flex-wrap:wrap;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .p3-editor-fields {grid-template-columns:minmax(0,1fr);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-details {grid-template-columns:minmax(0,1fr);gap:2px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-details dd {margin-bottom:10px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-record {flex-wrap:wrap;}
+}
+
+/* Shared compact treatment of the existing participant review/editor controls. */
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace h2 {font-size:12px;line-height:16px;font-weight:600;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace h2.p3-record-title {font-size:16px;line-height:24px;font-weight:600;overflow-wrap:anywhere;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace form>label:not(:has(input)) {display:block;margin:12px 0 4px;font-size:13px;font-weight:500;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace form>label:has(input[type=checkbox]) {display:flex;align-items:start;gap:8px;margin-block:12px;min-height:44px;font-size:13px;line-height:20px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace form>input:not([type=hidden]) {max-width:100%;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace form>textarea {display:block;width:100%;max-width:100%;min-height:96px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace form>select {display:block;max-width:100%;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-metrics {gap:12px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-metric {font-size:24px;line-height:32px;font-weight:600;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-search>label {align-self:center;margin:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace article.review-history {padding:12px 0;border-bottom:1px solid #e5e7eb;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .btw-editor-fallback {max-width:896px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-profile-tabs a[aria-current=page] {font-weight:600;}
+
+/* Keep the compact directory composition above generic specialist card rules. */
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .card.people-directory-surface,
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-directory .card.p3-directory-row {padding:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-directory .btw-record-primary {box-sizing:border-box;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-actions>.button {min-height:44px;display:inline-flex;align-items:center;box-sizing:border-box;}
+
+/* Pass 3 profile usability corrections: staff Participants only. */
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .p3-compact-facts {grid-template-columns:minmax(88px,.8fr) minmax(0,1.6fr);gap:0 12px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .p3-compact-facts dd {margin:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content {max-width:none;width:100%;margin-inline:0;box-sizing:border-box;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace {gap:16px;}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-profile-hero {border:0;border-radius:0;box-shadow:none;background:transparent;margin-bottom:12px;}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-profile-hero .people-profile-heading {margin-top:8px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-jumps {display:flex;align-items:start;justify-content:space-between;gap:12px;margin:0;padding-bottom:8px;border-bottom:1px solid var(--line);font:500 13px/20px var(--font);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-jump-links {display:flex;flex-wrap:wrap;gap:0 16px;flex:1;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-jump-links a,
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-jump-picker a {display:flex;align-items:center;min-height:44px;text-decoration:none;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-jump-picker {display:none;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-management {position:relative;flex:none;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content :is(.p3-profile-management,.p3-jump-picker)>summary {min-height:44px;cursor:pointer;font:500 13px/20px var(--font);align-content:center;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-management[open]>div {position:absolute;z-index:30;right:0;width:240px;max-width:80vw;padding:8px;background:white;border:1px solid var(--line);border-radius:6px;box-shadow:0 8px 20px #0002;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-management a {display:flex;align-items:center;min-height:44px;padding-inline:8px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-continuous {display:grid;gap:20px;min-width:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-top {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;align-items:start;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-pair {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-reading-section {margin:0;min-width:0;scroll-margin-top:72px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-reading-section:focus {outline:2px solid var(--red);outline-offset:3px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-reading-section .btw-panel-heading {display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;margin:0 0 8px;padding:0 0 8px;border-bottom:1px solid var(--line);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-reading-section .btw-panel-heading h2 {font:600 12px/16px var(--font);letter-spacing:.025em;text-transform:uppercase;margin:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-reading-section .btw-panel-heading a {font:500 12px/18px var(--font);display:inline-flex;align-items:center;min-height:44px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-compact-facts {display:grid;grid-template-columns:minmax(88px,.8fr) minmax(0,1.6fr);margin:0;gap:0 12px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-compact-facts dt,
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-compact-facts dd {padding:6px 0;border:0;margin:0;font:400 13px/20px var(--font);overflow-wrap:anywhere;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-compact-facts .p2-source {display:inline;margin-left:5px;font:400 11px/16px var(--font);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-preview-row {padding:10px 0;margin:0;border-bottom:1px solid var(--line);overflow-wrap:anywhere;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-preview-row:last-child {border-bottom:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-preview-row h3 {font:500 13px/20px var(--font);margin:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-preview-row p {font:400 13px/20px var(--font);margin:3px 0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-record-heading {display:flex;align-items:start;gap:8px;flex-wrap:wrap;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-record-heading h3 {flex:1;min-width:160px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-reading-section p.p3-record-meta,
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-inline-source,
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-reading-section p.p3-preview-limit {font:400 11px/17px var(--font);color:var(--muted);margin:6px 0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-reading-section .p3-empty {margin:6px 0;font:400 13px/20px var(--font);color:var(--muted);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-record-action {display:inline-flex;align-items:center;min-height:44px;font:500 12px/18px var(--font);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-section-actions {display:flex;gap:12px;flex-wrap:wrap;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content h3.p3-source-label {font:600 12px/18px var(--font);margin:14px 0 4px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-review-notice {margin:0;padding:8px 12px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-directory-view-actions {display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-directory-view-actions .people-saved-shortcuts {padding:0;position:relative;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-directory-view-actions .people-saved-shortcuts>summary {min-height:44px;font:500 12px/18px var(--font);}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-directory-view-actions .people-saved-shortcuts[open]>div {position:absolute;z-index:25;right:0;min-width:200px;max-width:75vw;background:white;border:1px solid var(--line);border-radius:6px;padding:8px;box-shadow:0 8px 20px #0002;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-directory-view-actions .people-saved-shortcuts a {display:flex;align-items:center;min-height:44px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-filter-surface {padding:12px 16px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-advanced-filters {margin-top:6px;padding-top:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-filter-state {margin-top:4px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-results-heading {padding:4px 16px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .btw-section-heading {margin-bottom:8px;padding-bottom:8px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-navigation-refined {margin-block:0 8px;}
+@media(width < 1024px){
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-top {grid-template-columns:repeat(2,minmax(0,1fr));}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-top>section:last-child {grid-column:1/-1;}
+}
+@media(width < 640px){
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content {padding:16px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-top,
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-pair {grid-template-columns:minmax(0,1fr);gap:16px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-top>section:last-child {grid-column:auto;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-continuous {gap:16px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-jump-links {display:none;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-jump-picker {display:block;min-width:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-jump-picker[open]>div {display:grid;gap:0 12px;grid-template-columns:1fr;max-height:65vh;overflow:auto;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-jumps {flex-wrap:wrap;gap:0 12px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-management {margin-left:auto;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-compact-facts {grid-template-columns:minmax(88px,.8fr) minmax(0,1.6fr);gap:0 10px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-compact-facts dd {margin-bottom:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-profile-actions {width:100%;margin-left:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-results-heading {padding:4px 12px;gap:0 12px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-directory-view-actions {gap:0 12px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-filter-hint {display:none;}
+}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-preview-row {padding-block:8px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .p3-preview-row p.p3-record-meta {margin-block:3px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .btw-section-surface:has(.people-directory-surface) {gap:12px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .btw-section-surface:has(.people-directory-surface)>.people-navigation-refined {margin-bottom:0;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-results-heading {align-items:center;margin:0;gap:0 12px;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .btw-section-surface:has(.people-directory-surface)>.btw-section-heading {display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .btw-section-surface:has(.people-directory-surface)>.btw-section-heading>.button {width:auto;flex:0 0 auto;min-height:44px;display:inline-flex;align-items:center;box-sizing:border-box;}

@@ -1,1 +1,20 @@
-{% load ui_patterns people_ui %}{% people_filter_groups as filter_groups %}{% people_active_filters as active_filters %}<section class="card"><form method="get" role="search" class="people-filters">{% include 'internal/ui/form_errors.html' with form=filter_form %}{% for field in filter_form.hidden_fields %}{{ field }}{{ field.errors }}{% endfor %}<div class="people-search">{% ui_field filter_form.q %}{% ui_field filter_form.sort %}<button class="button button-primary" type="submit">Search</button><a href="{{ request.path }}">Clear filters</a></div><div class="people-active-filters">{% for item in active_filters %}<span title="{{ item.label }}: {{ item.value }}">{{ item.label }}: {{ item.value|truncatechars:70 }}</span>{% endfor %}{% if criteria.segments or criteria.facet %}<span>Chart filters active</span>{% endif %}</div><details class="btw-disclosure"{% if filter_form.errors %} open{% endif %}><summary>More filters</summary><div class="people-filter-groups">{% for group in filter_groups %}<details{% if group.open %} open{% endif %}><summary>{{ group.title }}</summary><div class="people-filter-grid">{% for field in group.fields %}{% ui_field field %}{% endfor %}</div></details>{% endfor %}</div><p class="event-help">Assessment scores keep their stored units. Unknown values stay separate from negative answers.</p><button class="button secondary" type="submit">Apply filters</button></details></form></section>
+{% load ui_patterns people_ui %}
+{% people_filter_groups as filter_groups %}{% people_active_filters as active_filters %}{% people_filter_state as filter_state %}
+<section class="card people-filter-surface" aria-label="Find participants">
+<form method="get" role="search" class="people-filters">
+{% include 'internal/ui/form_errors.html' with form=filter_form %}
+{% for field in filter_form.hidden_fields %}{{ field }}{{ field.errors }}{% endfor %}
+<div class="people-search p3-directory-search">
+<div class="people-search-query">{% ui_field filter_form.q %}</div>
+<button class="button button-primary people-search-submit" type="submit">Search</button>
+<div class="people-search-sort">{% ui_field filter_form.sort %}</div>
+</div>
+{% if filter_state.reset %}<div class="people-filter-state" aria-label="Active participant filters">
+<div class="people-active-filters">{% if filter_state.keyword %}<span>Search: {{ filter_state.keyword|truncatechars:70 }}</span>{% endif %}{% for item in active_filters %}<span title="{{ item.label }}: {{ item.value }}">{{ item.label }}: {{ item.value|truncatechars:70 }}</span>{% endfor %}{% if filter_state.chart %}<span>Chart filters active</span>{% endif %}</div>
+<a class="people-clear-filters" href="{{ request.path }}">Clear filters</a></div>{% endif %}
+<details class="btw-disclosure people-advanced-filters"{% if filter_form.errors %} open{% endif %}>
+<summary>More filters{% if filter_state.count %}<span class="people-filter-count">{{ filter_state.count }} active</span>{% endif %}<span class="people-filter-hint">Skills, qualifications, travel &amp; experience</span></summary>
+<div class="people-filter-groups">{% for group in filter_groups %}<details{% if group.open %} open{% endif %}><summary>{{ group.title }}</summary><div class="people-filter-grid">{% for field in group.fields %}{% ui_field field %}{% endfor %}</div></details>{% endfor %}</div>
+<p class="event-help">Text matches are recorded claims, not verification. Assessment scores keep their stored units; unknown is distinct from no.</p>
+<div class="people-filter-footer"><button class="button secondary" type="submit">Apply filters</button>{% if filter_state.reset %}<a class="people-clear-filters" href="{{ request.path }}">Reset all</a>{% endif %}</div>
+</details></form></section>

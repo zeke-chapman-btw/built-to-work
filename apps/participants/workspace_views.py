@@ -149,10 +149,18 @@ def profile(request, participant_id):
         qualifications = targets_with_review("qualification", pop).order_by("-created_at", "-pk")
         ctx["qualifications"] = Paginator(qualifications, PAGE_SIZE).get_page(request.GET.get("page")) if section == "qualifications" else qualifications[:5]
         ctx["qualification_total"] = qualifications.count()
+        if section == "overview":
+            from .ui_presentation import qualification_preview_groups
+            ctx["profile_qualification_groups"] = qualification_preview_groups(qualifications)
     if ctx["can_view_documents"]:
         documents = targets_with_review("document", pop).order_by("-uploaded_at", "-pk")
         ctx["documents"] = Paginator(documents, PAGE_SIZE).get_page(request.GET.get("page")) if section == "documents" else documents[:5]
         ctx["document_total"] = documents.count()
+        if section == "overview":
+            # Resume is an established category, never inferred from a filename.
+            resume = documents.filter(category__slug="resume").first()
+            recent = documents.exclude(pk=resume.pk) if resume else documents
+            ctx["profile_documents"] = ([resume] if resume else []) + list(recent[:2 if resume else 3])
     if ctx["can_view_internal_review"]:
         ctx["internal_review"] = person.internal_reviews.select_related("reviewer").first()
     ctx["career"] = ParticipantCareerProfile.objects.filter(participant=person).first()
@@ -164,24 +172,26 @@ def profile(request, participant_id):
             ctx["acquisition_changes"] = AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(ParticipantAcquisition), object_id=str(acq.pk)).select_related("actor")
         ctx["submissions"] = person.registration_submissions.select_related("event", "form_version").order_by("-submitted_at")[:50]
     source = activity_sources()
-    if ctx["can_view_registrations"] and section == "events":
-        ctx["recorded_sessions"] = source["sessions"].filter(participant_id__in=member_ids).select_related("event").order_by("-started_at")[:100]
-        ctx["legacy_attendance"] = source["attendance"].filter(participant_id__in=member_ids).select_related("event").order_by("-checked_in_at")[:100]
+    if ctx["can_view_registrations"] and section in ("overview", "events"):
+        participation_limit = 5 if section == "overview" else 100
+        ctx["recorded_sessions"] = source["sessions"].filter(participant_id__in=member_ids).select_related("event").order_by("-started_at")[:participation_limit]
+        ctx["legacy_attendance"] = source["attendance"].filter(participant_id__in=member_ids).select_related("event").order_by("-checked_in_at")[:participation_limit]
+    assessment_limit = 5 if section == "overview" else 50
     if ctx["can_view_quiz_results"]:
-        ctx["quiz_attempts"] = source["quizzes"].filter(participant_id__in=member_ids).select_related("experience_session__event").prefetch_related("sections__responses").order_by("-selected_at")[:50]
+        ctx["quiz_attempts"] = source["quizzes"].filter(participant_id__in=member_ids).select_related("experience_session__event").prefetch_related("sections__responses").order_by("-selected_at")[:assessment_limit]
         ctx["quiz_attempts"] = list(ctx["quiz_attempts"])
         for attempt in ctx["quiz_attempts"]:
             attempt.workspace_correct = sum(1 for section_row in attempt.sections.all() for response_row in section_row.responses.all() if response_row.is_correct)
     if ctx["can_view_game_results"]:
         from apps.games.models import GameSession
-        ctx["game_sessions"] = GameSession.objects.filter(experience_session__participant_id__in=member_ids).select_related("game", "experience_session__event").order_by("-created_at")[:50]
+        ctx["game_sessions"] = GameSession.objects.filter(experience_session__participant_id__in=member_ids).select_related("game", "experience_session__event").order_by("-created_at")[:assessment_limit]
     if ctx["can_view_simulator_results"]:
         from apps.simulators.models import SimulatorCapture
-        ctx["simulator_results"] = SimulatorCapture.objects.filter(participant_id__in=member_ids).select_related("event", "station").order_by("-captured_at")[:50]
+        ctx["simulator_results"] = SimulatorCapture.objects.filter(participant_id__in=member_ids).select_related("event", "station").order_by("-captured_at")[:assessment_limit]
     if ctx["can_view_historical_scores"]:
         from .models import HistoricalSimulatorScore, HistoricalEventRecord
-        ctx["historical_scores"] = HistoricalSimulatorScore.objects.filter(participant_id__in=member_ids).select_related("event_record").order_by("-scored_at", "-pk")[:50]
-        ctx["historical_events"] = HistoricalEventRecord.objects.filter(participant_id__in=member_ids).select_related("event").order_by("-event_date", "-pk")[:50]
+        ctx["historical_scores"] = HistoricalSimulatorScore.objects.filter(participant_id__in=member_ids).select_related("event_record").order_by("-scored_at", "-pk")[:assessment_limit]
+        ctx["historical_events"] = HistoricalEventRecord.objects.filter(participant_id__in=member_ids).select_related("event").order_by("-event_date", "-pk")[:assessment_limit]
     if ctx["can_view_notes"]:
         notes = ParticipantNote.objects.filter(participant_id__in=member_ids, audience="btw_internal").select_related("author", "edited_by")
         if request.GET.get("archived") != "1":
@@ -191,9 +201,18 @@ def profile(request, participant_id):
             note.can_edit = can_edit_note(request.user, note)
         ctx["notes_page"] = note_page
         ctx["notes_query"] = "section=notes" + ("&archived=1" if request.GET.get("archived") == "1" else "")
+        if section == "overview":
+            active_notes = notes.filter(archived_at__isnull=True)
+            ctx["profile_note_total"] = active_notes.count()
+            ctx["profile_notes"] = list(active_notes[:3])
     ctx["related_tasks"] = TaskParticipantLink.objects.filter(participant_id__in=member_ids, task__in=tasks_for(request.user)).select_related("task", "task__assigned_staff").order_by("-created_at")[:25]
     if section == "activity":
         ctx["timeline"] = factual_timeline(request.user, person, member_ids, ctx)
+    elif section == "overview" and ctx["can_view_activity"]:
+        ctx["profile_activity"] = factual_timeline(request.user, person, member_ids, ctx)[:10]
+    if section == "overview":
+        ctx["profile_work_total"] = ctx["work_history"].count()
+        ctx["profile_work_history"] = list(ctx["work_history"][:5])
     from .intake_workspace import workspace_intake_context
     ctx.update(workspace_intake_context(request.user, person, member_ids, ctx["career"]))
     from .ui_presentation import profile_preferences

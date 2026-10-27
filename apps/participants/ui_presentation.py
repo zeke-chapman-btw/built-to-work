@@ -59,3 +59,49 @@ def profile_preferences(context):
                 profile_life_stage=life_labels.get(life_stage, life_stage),
                 profile_intake_who=facts([("education_level", "Education"), ("school_name", "School or training"), ("training", "Trade training")]),
                 profile_intake_preferences=facts([("career_timeline", "Opportunity timing"), ("opportunity_types", "Opportunities"), ("career_priorities", "Career priorities"), ("travel_range", "Travel range")]))
+
+
+def qualification_display_groups(records):
+    """Group only supplied, authorized records; never infer or persist a kind.
+
+    A page remains a page. Generic/legacy and contradictory classifications stay
+    explicit rather than being promoted to a skill or credential by their label.
+    """
+    labels = ("Skills & Trades", "Education & Training", "Licenses & Certifications",
+              "Other recorded qualifications")
+    groups = {label: [] for label in labels}
+    reported = {"skill": labels[0], "training": labels[1], "credential": labels[2]}
+    catalog = {"skill": labels[0], "license": labels[2], "certification": labels[2]}
+    for record in records:
+        recorded_kind = getattr(record, "reported_kind", "") or ""
+        entry = getattr(record, "catalog_entry", None)
+        catalog_kind = getattr(entry, "kind", "") or ""
+        first, second = reported.get(recorded_kind), catalog.get(catalog_kind)
+        conflict = bool(first and second and first != second)
+        unknown = bool(recorded_kind and not first) or bool(catalog_kind and catalog_kind not in catalog)
+        label = labels[3] if conflict or unknown else (first or second or labels[3])
+        note = "Recorded kinds conflict; classification unchanged." if conflict else (
+            "No unambiguous recorded category; classification unchanged." if label == labels[3] else "")
+        groups[label].append(dict(record=record, classification_note=note))
+    return [dict(title=label, items=items) for label, items in groups.items() if items]
+
+
+def qualification_preview_groups(records, limit=5):
+    """Count the complete authorized collection; retain only bounded previews.
+
+    Stream using the existing evidence-prefetch pattern. A category is never
+    called empty merely because its records fall beyond a pagination boundary.
+    Classification is the same read-only contract used by the detailed pages.
+    """
+    definitions = [("skills", "Skills & Trades"), ("education", "Education & Training"),
+                   ("credentials", "Licenses & Certifications"),
+                   ("other", "Other recorded qualifications")]
+    groups = {title: dict(key=key, title=title, items=[], total=0)
+              for key, title in definitions}
+    for record in records.iterator(chunk_size=250):
+        classified = qualification_display_groups([record])[0]
+        group = groups[classified["title"]]
+        group["total"] += 1
+        if len(group["items"]) < limit:
+            group["items"].extend(classified["items"])
+    return list(groups.values())

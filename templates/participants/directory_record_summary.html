@@ -1,1 +1,4 @@
-<p class="p2-record-meta">{{ person.city|default:'Location not recorded' }}{% if person.state %}, {{ person.state }}{% endif %}{% if person.career_profile.career_interests %} · {{ person.career_profile.career_interests|truncatechars:80 }}{% endif %}{% if person.archived_at %} · Archived{% endif %}</p>
+<span class="people-dir-location"><span class="visually-hidden">Location: </span>{{ person.city|default:'Location not recorded' }}{% if person.state %}, {{ person.state }}{% endif %}</span>
+<span class="people-dir-interest" title="{{ person.career_profile.career_interests }}"><span class="visually-hidden">Work interests: </span>{{ person.career_profile.career_interests|default:'Not recorded'|truncatechars:80 }}</span>
+{% if can_view_registrations %}<span class="people-dir-registrations"><span class="visually-hidden">Registrations: </span>{{ person.registration_count }}<span class="visually-hidden"> · Attendance recorded separately</span></span>{% endif %}
+{% if person.archived_at %}<span class="badge people-dir-archived">Archived</span>{% endif %}
