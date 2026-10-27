@@ -2,7 +2,7 @@
 from django.db.models import Count, Avg, Max, Value, TextField
 from django.db.models.functions import Lower, Trim, Coalesce, TruncMonth
 from django.urls import reverse
-from .discovery import discover, query_string, segment_criteria, assessment_queryset, effective_people, current_interest_expression
+from .discovery import discover, query_string, segment_criteria, assessment_queryset, effective_people, current_interest_expression, apply_facet
 from .identity import member_ids, canonical_records
 from .workspace_access import can_analytics, ASSESSMENT_PERMISSIONS
 from apps.event_reports.activity import activity_sources
@@ -28,18 +28,24 @@ def _chart(title, dimension, rows, detail):
     return dict(title=title, dimension=dimension, rows=rows, detail=detail)
 
 
-def build_intelligence(user, population, criteria):
+def build_intelligence(user, population, criteria, *, current_group=False):
     if not can_analytics(user):
         from django.core.exceptions import PermissionDenied
         raise PermissionDenied
     charts = []
     directory = reverse("participants:staff-directory")
     def segment(dimension, bucket, label):
+        if current_group:
+            # Reuse the existing facet predicate inside the already authorized
+            # selected population. These composition counts are not drill-downs.
+            return dict(label=label, count=apply_facet(population, dimension, bucket, user).count(), url=None, bucket=bucket)
         candidate = segment_criteria(criteria, dimension, bucket)
         form, people, _ = discover(user, candidate, strict=True)
         return dict(label=label, count=people.count() if form.is_valid() else 0,
                     url=directory + "?" + query_string(candidate), bucket=bucket)
     def base(dimension):
+        if current_group:
+            return population.order_by()
         return discover(user, segment_criteria(criteria, dimension), strict=True)[1]
     charts.append(_chart("Original acquisition", "channel", [segment("channel", b, label) for b, label in
         [("event", "Event"), ("online", "Online"), ("unknown", "Unknown / unverified")]], "Original source remains separate from later activity."))
@@ -72,6 +78,12 @@ def build_intelligence(user, population, criteria):
         charts.append(_chart("Document status", "document", [segment("document", b, label) for b, label in
             [("present", "Active documents recorded"), ("verified", "Verified document"), ("pending", "Pending review"), ("expired", "Expired document"), ("none", "No active documents recorded")]],
             "No required-credential policy is inferred. Multiple document states may apply to one person."))
+    if current_group:
+        from .intake_discovery import filter_travel
+        charts.append(_chart("Willingness to travel", "travel", [
+            dict(label=label, count=filter_travel(population, value).count(), url=None, bucket=value)
+            for value, label in [("yes", "Yes"), ("maybe", "Maybe"), ("no", "No"), ("unknown", "Unknown")]
+        ], "Current effective reported preference; unknown is not No."))
     sources = activity_sources()
     members = member_ids(population)
     metrics = [dict(label="Participants", value=population.count(), detail="Unique canonical people in this filtered cohort")]
@@ -114,7 +126,9 @@ def build_intelligence(user, population, criteria):
         for title, lower, upper in bands:
             candidate = dict(segment_criteria(criteria, "assessment"), assessment=kind, score_min=lower, score_max=upper)
             form, people, _ = discover(user, candidate, strict=True)
+            if current_group:
+                people = people.filter(pk__in=population.values("pk"))
             rows.append(dict(label=title, count=people.count() if form.is_valid() else 0,
-                             url=directory + "?" + query_string(candidate)))
+                             url=None if current_group else directory + "?" + query_string(candidate)))
         charts.append(_chart(label, "score_" + kind, rows, "People with at least one accepted result in the band. Repeated results can place a person in several bands; score filters are replaced by the selected band."))
     return dict(metrics=metrics, charts=charts, assessment_rows=assessment_rows, metric_definitions=METRIC_DEFINITIONS)

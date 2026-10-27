@@ -5,13 +5,13 @@
   <a class="event-back" href="{{ directory_origin }}">← {{ directory_origin_label }}</a>
   <div class="people-profile-heading">
     <span class="people-avatar" aria-hidden="true">{{ participant|people_initials }}</span>
-    <div class="people-profile-title"><h1 class="people-profile-name">{{ participant }}</h1>
-      <p>{{ participant.city|default:'Location not recorded' }}{% if participant.state %}, {{ participant.state }}{% endif %}</p>
+    <div class="people-profile-title"><h1 class="people-profile-name"><a class="p3-profile-home" href="{% people_section_url 'overview' %}" aria-label="{{ participant }} — profile overview">{{ participant }}</a></h1>
+      <p>{{ participant.city|default:'Location not recorded' }}{% if participant.state %}, {{ participant.state }}{% endif %}{% if current_interests %}<span class="p3-identity-interest"> · {{ current_interests|truncatechars:80 }}</span>{% endif %}</p>
 
     </div>
     <div class="p3-profile-actions">
       {% if can_edit_profile and not participant.archived_at %}<a class="button button-primary" href="{% url 'participants:staff-edit' participant.pk %}?return_to={{ request.get_full_path|urlencode }}">Edit profile</a>{% endif %}
-      {% if perms.participants.manage_portal_invitations %}<details data-ui-menu class="p3-profile-tools"><summary>More actions</summary><div><a href="{% url 'participants:portal-invitations' %}?participant={{ participant.pk }}">Participant portal invitation →</a></div></details>{% endif %}
+      <details data-ui-menu class="p3-profile-tools"><summary>More actions</summary><div><a href="{% people_section_url 'tasks' %}">Linked tasks</a>{% if perms.participants.manage_portal_invitations %}<a href="{% url 'participants:portal-invitations' %}?participant={{ participant.pk }}">Participant portal invitation →</a>{% endif %}</div></details>
     </div>
   </div>
 </section>{% endblock %}

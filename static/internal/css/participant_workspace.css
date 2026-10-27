@@ -365,3 +365,166 @@ body.internal-app.has-participant-workspace.has-participants-pass3 #main-content
 body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .people-workspace .people-results-heading {align-items:center;margin:0;gap:0 12px;}
 body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .btw-section-surface:has(.people-directory-surface)>.btw-section-heading {display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
 body.internal-app.has-participant-workspace.has-participants-pass3 #main-content .btw-section-surface:has(.people-directory-surface)>.btw-section-heading>.button {width:auto;flex:0 0 auto;min-height:44px;display:inline-flex;align-items:center;box-sizing:border-box;}
+
+/* Pass 3B: staff Explorer only. Accepted Directory/Profile and public shells stay isolated. */
+.people-explorer{--ex-red:#d02030;--ex-line:#e4e4e7;display:flex;flex-direction:column;gap:16px;min-width:0}
+.people-explorer a:focus-visible,.people-explorer summary:focus-visible{outline:3px solid #b51b2a;outline-offset:3px}
+.people-explorer .ex-search{display:grid;grid-template-columns:minmax(180px,1fr) minmax(150px,220px) auto;align-items:end;gap:12px}
+.people-explorer label{display:block;font-size:12px;font-weight:600;margin-bottom:6px}
+.people-explorer input,.people-explorer select{width:100%;min-height:44px;max-width:100%;box-sizing:border-box;font:inherit}
+.people-explorer .ex-cohort-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;min-width:0}
+.people-explorer .ex-cohort-bar>div{margin-right:auto}.people-explorer .ex-cohort-bar strong{font-size:26px;margin-right:8px}.people-explorer .ex-cohort-bar small{display:block;font-size:11px;color:#71717a}
+.people-explorer .ex-cohort-bar>a,.people-explorer .ex-clear{display:inline-flex;align-items:center;min-height:44px;padding:0 8px}
+.people-explorer .ex-chip-row{display:flex;flex-wrap:wrap;gap:8px}.people-explorer .ex-chip{display:inline-flex;align-items:center;gap:8px;min-height:44px;max-width:100%;box-sizing:border-box;background:#fcebed;border:1px solid #f2cbd0;border-radius:24px;padding:8px 12px;color:#a8192b;font-size:12px;text-decoration:none;overflow-wrap:anywhere}
+.people-explorer .ex-layout{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px;align-items:start;min-width:0}
+.people-explorer .card{padding:0;border:1px solid var(--ex-line);border-radius:8px;box-shadow:none;min-width:0;overflow:hidden}
+.people-explorer .ex-desktop-filters{grid-column:1;grid-row:1}.people-explorer .ex-mobile-filters{display:none}
+.people-explorer .ex-panel-heading{padding:12px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--ex-line)}
+.people-explorer h2,.people-explorer h3{margin:0;font-size:12px;line-height:16px;font-weight:600}.people-explorer .ex-panel-heading h2,.people-explorer .ex-chart h3{text-transform:uppercase;letter-spacing:.04em}
+.people-explorer .ex-panel-heading a{font-size:12px;min-height:44px;display:inline-flex;align-items:center}.people-explorer .ex-panel-heading h2 span{color:#71717a;margin-left:6px}
+.people-explorer .ex-filter-content{padding:16px}.people-explorer .ex-logic{padding:12px;background:#f4f4f5;border-radius:6px;margin:0 0 16px;font-size:12px}.people-explorer .ex-logic span{display:block;color:#71717a;margin-top:5px}
+.people-explorer .ex-choice-group{padding:0;border:0;margin:0 0 20px;min-width:0}.people-explorer legend{font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;margin-bottom:8px;color:#52525b}
+.people-explorer .ex-choice-options{display:flex;flex-wrap:wrap;gap:6px}.people-explorer .ex-choice{display:flex;align-items:center;justify-content:center;min-height:44px;box-sizing:border-box;padding:7px 10px;border:1px solid transparent;border-radius:6px;background:#f4f4f5;color:#52525b;font-size:12px;text-align:center;text-decoration:none;flex:1 1 65px}
+.people-explorer .ex-choice.is-selected{background:var(--ex-red);color:white}.people-explorer .ex-choice:hover{border-color:var(--ex-red)}
+.people-explorer .ex-filter-group{border-top:1px solid var(--ex-line)}.people-explorer summary{cursor:pointer;min-height:44px;box-sizing:border-box;padding:12px 0;font-size:12px;font-weight:600}.people-explorer .ex-fields{display:grid;gap:12px;padding:6px 0 16px;min-width:0}.people-explorer .ex-field{min-width:0}.people-explorer .ex-help{font-size:11px;line-height:16px;color:#71717a;margin:12px 0 0}.people-explorer .ex-field-error{font-size:12px;color:#a8192b}
+.people-explorer .ex-advanced-form>.button{width:100%;margin-top:16px}.people-explorer .ex-analysis{grid-column:2;grid-row:1;min-width:0}.people-explorer .ex-analysis-heading{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px;align-items:start}.people-explorer .ex-analysis-heading h2{font-size:16px;line-height:22px}.people-explorer .ex-analysis-heading p{font-size:12px;color:#71717a;margin:5px 0 0}.people-explorer .ex-analysis-heading a{font-size:12px;min-height:44px;display:inline-flex;align-items:center;flex-shrink:0}
+.people-explorer .ex-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.people-explorer .ex-chart{padding:16px 16px 12px}.people-explorer .ex-chart-wide{grid-column:1/-1}.people-explorer .ex-chart-scope{font-size:10px;color:#71717a;margin:5px 0 10px}.people-explorer .ex-chart-content{display:flex;gap:12px;align-items:center;min-height:120px}.people-explorer .ex-donut{order:2;border-radius:50%;width:120px;height:120px;flex:0 0 120px;background:conic-gradient(var(--segments));display:grid;place-items:center}.people-explorer .ex-donut>span{background:#fff;border-radius:50%;width:72px;height:72px;display:grid;place-items:center;font-weight:600}
+.people-explorer .ex-chart-values{list-style:none;margin:0;padding:0;min-width:0;flex:1;font-size:12px}.people-explorer .ex-chart-values li{display:flex;align-items:start;justify-content:space-between;gap:8px;margin:8px 0;overflow-wrap:anywhere}.people-explorer .ex-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}.people-explorer .ex-chart-values strong{font-size:12px;font-weight:600}.people-explorer .ex-bars{list-style:none;margin:0;padding:0;width:100%}.people-explorer .ex-bars li{position:relative;display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px;padding-bottom:10px;font-size:12px;margin:12px 0}.people-explorer .ex-bars a{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;width:100%;min-height:44px}.people-explorer .ex-bars i{display:block;flex:0 0 100%;height:7px;background:linear-gradient(to right,var(--ex-red) var(--bar),#f4f4f5 var(--bar));border-radius:3px}
+.people-explorer .ex-mode-link{font-size:12px;margin:14px 0}.people-explorer .ex-mode-link a{display:inline-flex;min-height:44px;align-items:center}
+.people-explorer .ex-results{grid-column:1/-1;grid-row:2;scroll-margin-top:80px}.people-explorer .ex-result-head{display:grid;grid-template-columns:1fr 1.2fr 1fr;padding:10px 16px;font-size:11px;color:#71717a;text-transform:uppercase}.people-explorer .ex-result{border-top:1px solid var(--ex-line)}.people-explorer .ex-result:nth-of-type(even){background:#fafafa}.people-explorer .ex-result>.btw-record-primary{display:grid;grid-template-columns:1fr 1.2fr 1fr 20px;gap:16px;align-items:center;padding:12px 16px;min-height:44px;color:inherit;text-decoration:none;font-size:14px;line-height:20px;overflow-wrap:anywhere}.people-explorer .ex-result>.btw-record-primary:hover{background:#fff5f6}.people-explorer .ex-person-name{font-weight:600}.people-explorer .ex-result>.btw-record-primary small{display:block;color:#71717a;font-size:11px;line-height:16px;margin-top:4px}.people-explorer .ex-person-source{font-size:12px}.people-explorer .ex-open{color:var(--ex-red)}
+.people-explorer .ex-empty{padding:24px!important}.people-explorer .ex-empty p{font-size:13px;color:#71717a}.people-explorer .ex-pagination{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px}.people-explorer .ex-pagination a{display:inline-flex;min-height:44px;align-items:center}.people-explorer .ex-intelligence-details>summary{padding:16px}.people-explorer .ex-detail-content{padding:16px}.people-explorer .ex-detail-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.people-explorer .ex-detail-metrics p,.people-explorer .ex-detail-content dl{font-size:12px}.people-explorer .ex-detail-content dt{font-weight:600}.people-explorer .ex-detail-content dd{margin:6px 0 16px}
+@media(width<1024px){.people-explorer .ex-layout{grid-template-columns:230px minmax(0,1fr)}.people-explorer .ex-chart-content{flex-direction:column}.people-explorer .ex-donut{order:0}.people-explorer .ex-chart-values{width:100%}}
+@media(width<640px){.people-explorer .ex-search{grid-template-columns:minmax(0,1fr) auto}.people-explorer .ex-search>div:nth-child(2){grid-column:1;grid-row:2}.people-explorer .ex-search>button{grid-column:2;grid-row:1}.people-explorer .ex-cohort-bar{gap:6px 12px}.people-explorer .ex-cohort-bar>div{flex-basis:100%}.people-explorer .ex-cohort-bar strong{font-size:24px}.people-explorer .ex-cohort-bar .ex-results-jump{flex:1;justify-content:center}.people-explorer .ex-layout{display:flex;flex-direction:column;gap:12px}.people-explorer .ex-desktop-filters{display:none}.people-explorer .ex-mobile-filters{display:block;order:0;width:100%}.people-explorer .ex-mobile-filters>summary{padding:14px 16px}.people-explorer .ex-results{order:1;width:100%}.people-explorer .ex-analysis{order:2;width:100%;scroll-margin-top:72px}.people-explorer .ex-chart-grid{gap:10px}.people-explorer .ex-chart{padding:12px}.people-explorer .ex-donut{width:88px;height:88px;flex-basis:88px}.people-explorer .ex-donut>span{width:52px;height:52px}.people-explorer .ex-chart-values{font-size:11px}.people-explorer .ex-chart-content{min-height:0}.people-explorer .ex-result-head{display:none}.people-explorer .ex-result>.btw-record-primary{grid-template-columns:minmax(0,1fr) 20px;gap:7px 10px;padding:16px}.people-explorer .ex-person-facts,.people-explorer .ex-person-source{grid-column:1}.people-explorer .ex-open{grid-column:2;grid-row:1}.people-explorer .ex-detail-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.people-explorer .ex-analysis-heading{flex-wrap:wrap}.people-explorer .ex-chip{font-size:11px}.people-explorer .ex-panel-heading{flex-wrap:wrap}}
+
+/* Owner refinement: one Participants entry, opt-in analysis, retained secondary workflows. */
+.internal-app.has-participants-explorer .page-header.btw-section-heading{max-width:none;width:auto;margin-left:0;margin-right:0}
+.people-explorer .ex-desktop-filters>summary{padding:14px 16px;border-bottom:1px solid var(--ex-line)}
+.people-explorer .ex-results{grid-column:2;grid-row:1}.people-explorer .ex-analysis{grid-column:1/-1;grid-row:2}
+.people-explorer .ex-result{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;position:relative}
+.people-explorer .ex-result>.btw-record-primary{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);min-width:0;border:0;border-radius:0}
+.people-explorer .ex-person-name small{font-weight:400}.people-explorer .ex-result-head{grid-template-columns:1fr 1fr 1fr auto;gap:16px}
+.people-explorer .ex-result .p3-row-details{margin:12px 8px 0 0}.people-explorer .ex-result .p3-row-details>summary{padding:10px 8px;min-height:44px}
+.people-explorer .ex-results.card{overflow:visible}.people-explorer .ex-person-source{font-size:12px}.people-explorer .ex-result>.btw-record-primary:hover{background:#fff5f6}
+.people-explorer .ex-staff-workflows>summary{padding:14px 16px}.people-explorer .ex-staff-workflows>div{padding:0 16px 16px;display:flex;flex-wrap:wrap;gap:8px 20px}.people-explorer .ex-staff-workflows a{display:inline-flex;min-height:44px;align-items:center;font-size:12px}
+@media(width<640px){.people-explorer .ex-result>.btw-record-primary{grid-template-columns:minmax(0,1fr);padding:14px 16px;gap:7px}.people-explorer .ex-results{grid-row:auto}.people-explorer .ex-result .p3-row-details{margin:12px 6px 0 0}.people-explorer .ex-person-source small{font-size:10px}.people-explorer .ex-result-head{display:none}.people-explorer .ex-staff-workflows>div{flex-direction:column}}
+
+/* Unified directory heading follows its own full-width content rail. */
+.internal-app.has-participants-explorer #main-content .page-header.btw-section-heading{max-width:none;width:auto;margin-left:0;margin-right:0}
+.people-explorer .ex-filter-options a{overflow-wrap:normal}
+
+/* Keep shared card padding from doubling the Explorer content gutters. */
+.people-explorer .ex-results.card,.people-explorer .ex-desktop-filters.card,.people-explorer .ex-mobile-filters.card{padding:0!important}
+.people-explorer .ex-panel-heading h2{margin:0}
+@media(width<640px){.people-explorer .ex-cohort-bar .ex-results-jump{flex:0 0 100%;width:100%;white-space:nowrap}.people-explorer .ex-cohort-bar>a:not(.ex-results-jump){min-height:44px;display:inline-flex;align-items:center}.people-explorer .ex-cohort-bar{gap:4px 16px}}
+
+/* Pass 3B final owner refinement: compact directory controls, not global styles. */
+.people-explorer{gap:12px}
+.people-explorer .ex-layout{grid-template-columns:240px minmax(0,1fr);gap:12px}
+.people-explorer .ex-cohort-bar{gap:8px;margin:0}
+.people-explorer .ex-cohort-bar strong{font-size:20px;line-height:28px;margin-right:6px}
+.people-explorer .ex-cohort-bar .ex-results-jump{display:none}
+.people-explorer .ex-view-menu{position:relative;flex:0 0 auto;color:#52525b}
+.people-explorer .ex-view-menu>summary{padding:4px 8px;min-height:28px;font-size:12px;font-weight:400;border-radius:5px;border:1px solid var(--ex-line);background:white}
+.people-explorer .ex-view-menu[open]>div{position:absolute;right:0;top:100%;z-index:30;display:flex;flex-direction:column;min-width:180px;padding:6px;background:white;border:1px solid var(--ex-line);border-radius:6px;box-shadow:0 6px 18px #0002}
+.people-explorer .ex-view-menu a{display:flex;align-items:center;min-height:32px;padding:4px 8px;color:#ac1929;font-size:12px;text-decoration:none;white-space:nowrap}
+.people-explorer .ex-view-menu a:hover{background:#fff1f3}
+.people-explorer .ex-filter-content{padding:12px}
+.people-explorer .ex-logic{padding:0;margin:0 0 10px;background:none;font-size:10px;line-height:14px;color:#71717a}
+.people-explorer .ex-desktop-filters>summary{padding:8px 12px;min-height:36px}
+.people-explorer .ex-choice-group{margin:0 0 12px}
+.people-explorer legend{font-size:10px;line-height:14px;margin-bottom:5px}
+.people-explorer .ex-choice-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.people-explorer .ex-choice-group[data-filter=employment] .ex-choice-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+.people-explorer .ex-choice{min-height:28px;padding:4px 6px;line-height:18px;border-radius:4px;font-size:12px;flex:initial}
+.people-explorer .ex-common-fields{display:grid;gap:8px;margin-bottom:10px}
+.people-explorer .ex-field label{font-size:11px;line-height:16px;margin-bottom:3px}
+.people-explorer .ex-field input,.people-explorer .ex-field select{min-height:32px;padding:4px 8px;font-size:12px;line-height:20px}
+.people-explorer .ex-fields{gap:8px;padding:4px 0 10px}
+.people-explorer .ex-filter-group>summary{min-height:32px;padding:7px 0;font-size:11px;line-height:18px}
+.people-explorer .ex-advanced-form>.button{min-height:32px;padding:5px 10px;font-size:12px;margin-top:10px}
+.people-explorer .ex-chip{min-height:28px;padding:3px 9px;font-size:11px;line-height:18px}
+.people-explorer .ex-clear{min-height:28px;padding:0 6px;font-size:12px;color:#ac1929}
+.people-explorer .ex-result{align-items:center}
+.people-explorer .ex-result>.btw-record-primary{padding:8px 12px;gap:12px;line-height:18px;min-height:52px}
+.people-explorer .ex-result>.btw-record-primary small{margin-top:2px;line-height:16px}
+.people-explorer .ex-person-name{color:#aa1829}
+body.internal-app #main-content .people-explorer .ex-result .p3-row-details{margin:0 6px 0 0}
+body.internal-app #main-content .people-explorer .ex-result .p3-row-details>summary{padding:4px 6px;min-height:28px;line-height:20px;color:#aa1829;font-size:12px}
+.people-explorer .ex-result-head{padding:8px 12px;font-size:10px}
+@media(width<900px){.people-explorer .ex-result>.btw-record-primary{grid-template-columns:minmax(0,1fr);gap:4px}.people-explorer .ex-result-head{display:none}}
+@media(width<640px){
+.people-explorer .ex-layout{display:flex}
+.people-explorer .ex-cohort-bar>div{flex:1 1 auto}
+.people-explorer .ex-view-menu{order:1}
+.people-explorer .ex-view-menu>summary{min-height:44px;padding:12px 10px;line-height:20px}
+.people-explorer .ex-view-menu a{min-height:44px}
+.people-explorer .ex-cohort-bar .ex-results-jump{display:flex;order:2;flex:0 0 100%;min-height:44px;width:100%}
+.people-explorer .ex-choice{min-height:44px;padding:10px 6px}
+.people-explorer .ex-choice-group[data-filter=employment] .ex-choice-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+.people-explorer .ex-filter-group>summary{min-height:44px;padding:12px 0}
+.people-explorer .ex-field input,.people-explorer .ex-field select{min-height:44px;padding:10px 8px}
+.people-explorer .ex-advanced-form>.button{min-height:44px}
+.people-explorer .ex-chip,.people-explorer .ex-clear{min-height:44px}
+.people-explorer .ex-result>.btw-record-primary{padding:12px;gap:4px}
+body.internal-app #main-content .people-explorer .ex-result .p3-row-details>summary{min-height:44px;padding:12px 6px}
+}
+
+/* Resolve inherited staff form specificity within the unified directory only. */
+body.internal-app.has-participants-explorer #main-content .ex-cohort-bar .ex-results-jump{display:none}
+body.internal-app.has-participants-explorer #main-content .ex-view-menu>summary{min-height:28px;padding:4px 8px;font-weight:400}
+body.internal-app.has-participants-explorer #main-content .ex-desktop-filters>summary{min-height:36px;padding:8px 12px}
+body.internal-app.has-participants-explorer #main-content .ex-filter-group>summary{min-height:32px;padding:7px 0;font-size:11px;line-height:18px}
+body.internal-app.has-participants-explorer #main-content .ex-field label{font-size:11px;line-height:16px;margin:0 0 3px}
+body.internal-app.has-participants-explorer #main-content .ex-field input,body.internal-app.has-participants-explorer #main-content .ex-field select{min-height:32px;padding:4px 8px;font-size:12px;line-height:20px}
+body.internal-app.has-participants-explorer #main-content .ex-common-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+body.internal-app.has-participants-explorer #main-content .ex-common-fields>.ex-field:first-child{grid-column:1/-1}
+body.internal-app.has-participants-explorer #main-content .ex-advanced-form>.button{min-height:32px;padding:5px 10px;font-size:12px;margin-top:10px}
+@media(width<640px){
+body.internal-app.has-participants-explorer #main-content .ex-cohort-bar .ex-results-jump{display:flex}
+body.internal-app.has-participants-explorer #main-content .ex-view-menu>summary{min-height:44px;padding:12px 10px}
+body.internal-app.has-participants-explorer #main-content .ex-filter-group>summary{min-height:44px;padding:12px 0}
+body.internal-app.has-participants-explorer #main-content .ex-field input,body.internal-app.has-participants-explorer #main-content .ex-field select{min-height:44px;padding:10px 8px}
+body.internal-app.has-participants-explorer #main-content .ex-advanced-form>.button{min-height:44px}
+}
+
+/* Existing Pass 3 gives all staff controls a 44px minimum. Compact only these desktop Explorer controls. */
+body.internal-app.has-participants-explorer #main-content .ex-field input,body.internal-app.has-participants-explorer #main-content .ex-field select{min-height:32px!important;padding:4px 8px!important}
+body.internal-app.has-participants-explorer #main-content .ex-filter-group>summary{min-height:32px!important;padding:7px 0!important}
+body.internal-app.has-participants-explorer #main-content .ex-desktop-filters>summary{min-height:36px!important;padding:8px 12px!important}
+body.internal-app.has-participants-explorer #main-content .ex-view-menu>summary{min-height:28px!important;padding:4px 8px!important}
+body.internal-app.has-participants-explorer #main-content .ex-advanced-form>.button{min-height:32px!important;padding:5px 10px!important}
+@media(width<640px){
+body.internal-app.has-participants-explorer #main-content .ex-field input,body.internal-app.has-participants-explorer #main-content .ex-field select{min-height:44px!important;padding:10px 8px!important}
+body.internal-app.has-participants-explorer #main-content .ex-filter-group>summary{min-height:44px!important;padding:12px 0!important}
+body.internal-app.has-participants-explorer #main-content .ex-view-menu>summary{min-height:44px!important;padding:12px 10px!important}
+body.internal-app.has-participants-explorer #main-content .ex-advanced-form>.button{min-height:44px!important}
+}
+
+/* Approved final profile refinement: continuous staff profile only. */
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-profile-hero{margin-bottom:8px}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-profile-hero .people-profile-heading{gap:16px}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-profile-hero .people-avatar{width:56px;height:56px;background:#d02030;color:white;font-size:18px;font-weight:600}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-profile-title p{font-size:13px;line-height:20px}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-profile-continuous,body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-profile-top,body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-profile-pair{gap:16px}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section{padding:16px;border:1px solid #e4e4e7;border-radius:8px;box-shadow:none}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section>.btw-panel-heading{margin:-16px -16px 12px;padding:10px 16px;min-height:40px;box-sizing:border-box;align-items:center;gap:4px 12px;border-bottom:1px solid #e4e4e7}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section>.btw-panel-heading h2{font-size:12px;line-height:16px;font-weight:600;margin:0}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section>.btw-panel-heading a{color:#ac1929;min-height:28px;line-height:18px;padding:2px 0;font-size:12px;text-decoration:none}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section a:hover{text-decoration:underline}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section a:not(.button){color:#ac1929}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section>.btw-panel-heading a.p3-note-primary{background:#d02030;color:white;border-radius:5px;font-weight:600;padding:5px 10px;min-height:32px;box-sizing:border-box;text-decoration:none}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section .p3-compact-facts{margin:0;gap:0 12px}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section .p3-compact-facts dt,body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section .p3-compact-facts dd{padding:8px 0;font-size:13px;line-height:20px}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section .p3-compact-facts dd{text-align:right}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section .p3-compact-facts dt:last-of-type,body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section .p3-compact-facts dd:last-of-type{border-bottom:0}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section p.p3-empty{margin:6px 0;font-size:12px;line-height:18px}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-profile-tools a{color:#ac1929;text-decoration:none}
+@media(width<640px){
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-profile-actions{width:calc(100% - 72px);margin-left:72px}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section>.btw-panel-heading{gap:4px 8px}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section>.btw-panel-heading a{min-height:44px;align-items:center;padding:10px 0;box-sizing:border-box}
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-reading-section>.btw-panel-heading a.p3-note-primary{min-height:44px;padding:10px}
+}
+
+body.internal-app.has-participant-profile #main-content .people-profile-name .p3-profile-home{font:inherit;color:inherit;text-decoration:none}
+body.internal-app.has-participant-profile #main-content .people-profile-name .p3-profile-home:hover{color:#ac1929;text-decoration:underline}

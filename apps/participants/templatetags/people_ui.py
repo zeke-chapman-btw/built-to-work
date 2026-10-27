@@ -35,7 +35,7 @@ def people_navigation(context):
     if request.user.has_perm('participants.view_participant'):
         more.insert(0,dict(label='Saved views',url=reverse('participants:saved-views'),active=request.path.startswith(reverse('participants:saved-views'))))
     if request.user.has_perms(('participants.view_participant','participants.view_participant_analytics')):
-        more.insert(1,dict(label='Intelligence',url=reverse('participants:intelligence'),active=request.path.startswith(reverse('participants:intelligence'))))
+        more.insert(1,dict(label='Participant analysis',url=reverse('participants:intelligence'),active=request.path.startswith(reverse('participants:intelligence'))))
     active=next((x['label'] for x in primary+more if x['active']),'Participants')
     order={'Directory':0,'Review queue':1,'Qualifications':2,'Documents':3,'Verification':4}
     primary.sort(key=lambda item:order.get(item['label'],9))
@@ -118,3 +118,11 @@ def people_editor_groups(groups):
     return [dict(group, open=group.get("open", False) or any(
         field.errors or field.value() not in (None, "", []) for field in group["fields"]))
         for group in groups]
+
+
+@register.simple_tag(takes_context=True)
+def people_management_links(context):
+    """Retain specialist access below the unified directory, using existing gates."""
+    navigation = people_navigation(context)
+    return [item for item in navigation['primary'] + navigation['more']
+            if item['label'] not in {'Directory', 'Participant analysis', 'Saved views'}]

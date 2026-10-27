@@ -263,21 +263,24 @@ class ContinuousProfileCorrectionsTests(TestCase):
         self.assertLessEqual(len(response.context['profile_activity']),10)
         self.assertContains(response,'3 of 9 active documents')
 
-    def test_native_jump_links_have_real_focusable_on_page_targets(self):
+    def test_continuous_sections_and_contextual_actions_replace_redundant_navigation(self):
         response=self.profile()
         class Links(HTMLParser):
-            def __init__(self):super().__init__();self.ids={};self.jumps=[]
+            def __init__(self):super().__init__();self.ids={};self.links=[]
             def handle_starttag(self,tag,attrs):
                 attrs=dict(attrs)
                 if attrs.get('id','').startswith('profile-'):self.ids[attrs['id']]=attrs
-                if tag=='a' and attrs.get('href','').startswith('#profile-'):self.jumps.append(attrs['href'][1:])
+                if tag=='a':self.links.append(attrs.get('href',''))
         parsed=Links();parsed.feed(response.content.decode())
-        self.assertGreaterEqual(len(set(parsed.jumps)),12)
-        for target in parsed.jumps:
-            self.assertIn(target,parsed.ids)
-            self.assertEqual(parsed.ids[target].get('tabindex'),'-1')
-        self.assertContains(response,'Jump to section')
-        self.assertContains(response,'Detailed management')
+        for name in ('identity','documents','notes','skills','education','credentials','other','work','preferences','assessments','events','activity'):
+            self.assertEqual(parsed.ids['profile-'+name].get('tabindex'),'-1')
+        base=reverse('participants:staff-profile',args=[self.person.pk])
+        destinations={parse_qs(urlsplit(url).query).get('section',[''])[0] for url in parsed.links if urlsplit(url).path==base}
+        self.assertTrue({'career','qualifications','documents','assessments','events','notes','acquisition','activity','tasks'}<=destinations)
+        self.assertNotContains(response,'Jump to section')
+        self.assertNotContains(response,'Detailed management')
+        self.assertNotContains(response,'p3-profile-jumps')
+        self.assertContains(response,'Linked tasks')
         self.assertNotContains(response,'onchange=')
 
     def test_overview_get_does_not_write_domain_records(self):

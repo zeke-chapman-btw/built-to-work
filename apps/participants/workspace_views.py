@@ -92,27 +92,7 @@ def _criteria_from_request(request):
 @workspace
 @require_http_methods(["GET"])
 def directory(request):
-    try:
-        params = _criteria_from_request(request)
-        form, people, criteria = discover(request.user, params, strict=bool(request.GET.get("saved")))
-    except ValidationError as exc:
-        return render(request, "participants/workspace_error.html", context(request, error="; ".join(exc.messages)), status=400)
-    page = Paginator(people, PAGE_SIZE).get_page(request.GET.get("page"))
-    rows = list(page.object_list)
-    # Page-bounded annotations avoid one related-record query per displayed person.
-    ids = [p.pk for p in rows]
-    from .identity import canonical_records, member_ids
-    registry_counts = {}
-    if request.user.has_perm("events.view_eventregistration"):
-        registry_counts = dict(canonical_records(EventRegistration.objects.filter(participant_id__in=member_ids(Participant.objects.filter(pk__in=ids)), status="active")).values("_canonical_person").annotate(n=Count("pk")).values_list("_canonical_person", "n"))
-    for person in rows:
-        person.registration_count = registry_counts.get(person.pk, 0)
-    page.object_list = rows
-    return render(request, "participants/staff_directory.html", context(request,
-        page_obj=page, total_participants=page.paginator.count, search_query=form.data.get("q", ""),
-        has_search=bool(criteria), filter_form=form, criteria=criteria, query_without_page=query_string(criteria),
-        saved_views=SavedParticipantView.objects.filter(owner=request.user, archived_at__isnull=True),
-        page_title="Participants", save_view_form=SavedViewForm(), active_participant_tab="directory"), status=400 if form.errors else 200)
+    return _participant_explorer(request, include_analysis=False)
 
 
 @workspace
@@ -506,19 +486,164 @@ def saved_view_archive(request, view_id, restore=False):
         submit_label="Restore saved view" if restore else "Archive saved view", return_url=reverse("participants:saved-views")),
         status=400 if form.is_bound and form.errors else 200)
 
+def _explorer_presentation(request, form, population, criteria, data, page, *, include_analysis):
+    """URLs and chart decoration only; discover() remains the sole selector."""
+    from urllib.parse import urlencode
+    import json
+    route = reverse("participants:intelligence") if include_analysis else request.path
+    def target(values):
+        query = query_string(values)
+        return route + ("?" + query if query else "")
+    def change(key, value=None):
+        values = dict(criteria)
+        if value in (None, ""):
+            values.pop(key, None)
+        else:
+            values[key] = str(value)
+        # Score ranges belong to the explicitly selected source's stored units.
+        if key == "assessment" and str(value or "") != criteria.get(key, ""):
+            values.pop("score_min", None)
+            values.pop("score_max", None)
+            if value != "quiz":
+                values.pop("assessment_category", None)
+        return target(values)
+    chips = []
+    for key, value in criteria.items():
+        if key in {"q", "sort", "segments"} or key not in form.fields or value in (None, ""):
+            continue
+        field = form[key]
+        selected = form.cleaned_data.get(key, value)
+        if not hasattr(selected, "_meta") and hasattr(field.field, "choices"):
+            selected = dict(field.field.choices).get(str(value), value)
+        label = {"employment":"Interested in work", "travel":"Travel", "channel":"Original source",
+                 "experience_min":"Reported experience (minimum years)"}.get(key, field.label)
+        if key == "travel":
+            selected = {"yes":"Yes", "maybe":"Maybe", "no":"No", "unknown":"Unknown"}.get(str(value), selected)
+        chips.append(dict(label=label, value=str(selected), url=change(key)))
+    if criteria.get("q"):
+        chips.insert(0, dict(label="Search", value=criteria["q"], url=change("q")))
+    for dimension, bucket in json.loads(criteria.get("segments") or "[]"):
+        values = dict(criteria)
+        remaining = [pair for pair in json.loads(criteria["segments"]) if pair[0] != dimension]
+        if remaining:
+            values["segments"] = json.dumps(remaining, separators=(",", ":"))
+        else:
+            values.pop("segments", None)
+        display = next((row["label"] for chart in data.get("charts", []) if chart["dimension"] == dimension
+                        for row in chart["rows"] if row.get("bucket") == bucket), bucket.replace("_", " "))
+        chips.append(dict(label=dimension.replace("_", " ").title(), value=display, url=target(values)))
+    groups = []
+    for key, title in [("employment","Interested in work"), ("travel","Willing to travel"),
+                       ("channel","Original source"), ("assessment","Assessment source"),
+                       ("archived","Participant records")]:
+        if key not in form.fields:
+            continue
+        options = []
+        for value, label in form.fields[key].choices:
+            selected = str(criteria.get(key, "")) == str(value)
+            display_label = {"employment":{"":"Any", "seeking":"Seeking work", "open":"Open", "not_seeking":"Not seeking"},
+                             "travel":{"":"Any", "yes":"Yes", "maybe":"Maybe", "no":"No", "unknown":"Unknown"},
+                             "channel":{"":"All", "online":"Online", "event":"Event", "unknown":"Unknown"},
+                             "assessment":{"":"Any", "quiz":"Quiz", "simulator":"Simulator", "game":"Game"},
+                             "archived":{"":"Active", "active":"Active", "all":"All", "archived":"Archived"}}.get(key, {}).get(str(value), label)
+            options.append(dict(label=display_label, selected=selected, url=change(key, None if selected else value)))
+        groups.append(dict(key=key, title=title, options=options))
+    definitions = [("Skills & qualifications", ["skill","qualification","qualification_kind","qualification_status","document_status"]),
+                   ("Experience & work preferences", ["experience_min","experience_data","availability","preferred_location","work_type"]),
+                   ("Assessment limits", ["assessment_category","score_min","score_max"]),
+                   ("Events & source dates", ["event","participation","acquired_from","acquired_to","completeness"])]
+    panels, common_panels = {}, {}
+    for device in ("desktop", "mobile"):
+        def presentation_field(key):
+            bound = form[key]
+            identifier = "explorer-" + device + "-" + key
+            attrs = {"id":identifier}
+            if bound.errors:
+                attrs.update({"aria-invalid":"true", "aria-describedby":identifier + "-errors"})
+            return dict(label={"trade_interest":"Trade / work interest"}.get(key, bound.label),
+                        identifier=identifier, widget=bound.as_widget(attrs=attrs), errors=bound.errors)
+        common_panels[device] = [presentation_field(key) for key in ("trade_interest","city","state") if key in form.fields]
+        advanced = []
+        for title, names in definitions:
+            fields = []
+            for key in names:
+                if key not in form.fields or (key == "assessment_category" and criteria.get("assessment") not in (None, "", "quiz")):
+                    continue
+                fields.append(presentation_field(key))
+            if fields:
+                advanced.append(dict(title=title, fields=fields, has_errors=any(field["errors"] for field in fields)))
+        panels[device] = advanced
+    hidden = [(key, value) for key, value in criteria.items() if key not in {"q","sort","segments"}]
+    filter_hidden = [(key, criteria.get(key, "")) for key in
+                     ("q","sort","segments","employment","travel","channel","assessment","archived")
+                     if key in form.fields]
+    colors = ["#d02030", "#0ea5e9", "#f59e0b", "#10b981", "#8b5cf6", "#a1a1aa"]
+    total = page.paginator.count
+    preferred = ["employment","travel","channel","qualification","experience","completeness","interest"]
+    charts = sorted([c for c in data.get("charts", []) if c["dimension"] in preferred], key=lambda c:preferred.index(c["dimension"]))
+    for chart in charts:
+        stops, position = [], 0
+        for index, row in enumerate(chart["rows"]):
+            row["color"] = colors[index % len(colors)]
+            row["percent"] = round(100 * row["count"] / total, 2) if total else 0
+            end = position + row["percent"]
+            stops.append(f"{row['color']} {position:.2f}% {end:.2f}%")
+            position = end
+        if chart["dimension"] in {"employment","travel","channel","experience","completeness"} and total and sum(r["count"] for r in chart["rows"]) == total:
+            chart["gradient"] = ",".join(stops)
+    return dict(explorer_chips=chips, explorer_groups=groups, explorer_panels=panels, explorer_common=common_panels,
+                explorer_hidden=hidden, explorer_filter_hidden=filter_hidden, explorer_charts=charts,
+                explorer_origin=request.get_full_path(), explorer_clear=route,
+                explorer_unified=True, explorer_include_analysis=include_analysis,
+                explorer_analysis_url=reverse("participants:intelligence") + "?" + query_string(criteria) + "#explorer-analysis",
+                explorer_alternatives=target(dict(criteria, view="alternatives")) + "#explorer-analysis",
+                explorer_current=target(criteria), explorer_details=target(dict(criteria, view="details")) + "#detailed-intelligence",
+                explorer_save=reverse("participants:saved-views") + "?" + urlencode(dict(criteria, return_to=target(criteria))),
+                explorer_alternative_mode=request.GET.get("view") == "alternatives")
+
+
 @workspace
 @require_http_methods(["GET"])
 def analytics(request):
     if not can_analytics(request.user):
         raise PermissionDenied
+    return _participant_explorer(request, include_analysis=True)
+
+
+def _participant_explorer(request, *, include_analysis):
+    """One discovery pipeline and presentation for the directory and opt-in analysis."""
     try:
         params = _criteria_from_request(request)
         form, population, criteria = discover(request.user, params, strict=bool(request.GET.get("saved")))
     except ValidationError as exc:
         return render(request, "participants/workspace_error.html", context(request, error="; ".join(exc.messages)), status=400)
+    page = Paginator(population, PAGE_SIZE).get_page(request.GET.get("page"))
+    rows = list(page.object_list)
+    counts = {}
+    if request.user.has_perm("events.view_eventregistration"):
+        from .identity import canonical_records, member_ids
+        ids = [p.pk for p in rows]
+        counts = dict(canonical_records(EventRegistration.objects.filter(participant_id__in=member_ids(Participant.objects.filter(pk__in=ids)), status="active")).values("_canonical_person").annotate(n=Count("pk")).values_list("_canonical_person", "n"))
+    from .models import IntakeFieldState
+    from .intake_discovery import effective_travel
+    travel_states = {row.participant_id:row for row in IntakeFieldState.objects.filter(
+        participant_id__in=[p.pk for p in rows], destination="travel_willingness")}
+    for person in rows:
+        person.registration_count = counts.get(person.pk, 0)
+        career = getattr(person, "career_profile", None)
+        person.explorer_interest = getattr(person, "_current_interest", "")
+        person.explorer_skills = career.skills_interests if career else ""
+        person.explorer_employment = career.get_employment_interest_display() if career and career.employment_interest else "Not recorded"
+        person.explorer_travel = {"yes":"Yes","maybe":"Maybe","no":"No"}.get(
+            effective_travel(career, travel_states.get(person.pk)), "Unknown")
+    page.object_list = rows
     from .intelligence import build_intelligence
-    data = build_intelligence(request.user, population, criteria) if form.is_valid() else {}
-    return render(request, "participants/intelligence.html", context(request, page_title="Participant intelligence",
-        active_participant_tab="analytics", filter_form=form, criteria=criteria,
-        directory_url=reverse("participants:staff-directory") + "?" + query_string(criteria), **data),
+    alternative = request.GET.get("view") == "alternatives"
+    data = build_intelligence(request.user, population, criteria, current_group=not alternative) if include_analysis and form.is_valid() else {}
+    presentation = _explorer_presentation(request, form, population, criteria, data, page, include_analysis=include_analysis)
+    return render(request, "participants/intelligence.html", context(request, page_title="Participants",
+        active_participant_tab="analytics" if include_analysis else "directory", filter_form=form, criteria=criteria, page_obj=page,
+        total_participants=page.paginator.count, query_without_page=query_string(criteria),
+        directory_url=reverse("participants:staff-directory") + "?" + query_string(criteria),
+        explorer_details_open=request.GET.get("view") == "details", **presentation, **data),
         status=400 if form.errors else 200)
