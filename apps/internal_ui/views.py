@@ -60,18 +60,29 @@ def workspace(request,workspace_id):
         return render(request,"internal/platform_tools.html",_staff_context(request,
             page_title="Platform Tools",workspace_links=links))
     if workspace_id=="operations":
+        if request.GET.get("resource") == "games":
+            game_link = next((link for link in links if link["label"] == "Games / Duck Hunt"), None)
+            if game_link is None:
+                raise PermissionDenied
+            if request.method != "GET":
+                from django.http import HttpResponseNotAllowed
+                return HttpResponseNotAllowed(["GET"])
+            from apps.games.models import GameDefinition
+            from apps.operations.presentation import list_page
+            games, filters = list_page(request, GameDefinition.objects.all(),
+                search_fields=("display_name", "key", "implementation_key"), name_field="display_name",
+                newest_field="-updated_at", active_field="active", status_choices=(("active", "Active"), ("inactive", "Inactive")))
+            return render(request, "internal/operations_games.html", _staff_context(request,
+                page_title="Operations", page_description="Manage event resources, quizzes, games, forms and consents.",
+                games=games, game_admin_url=game_link["url"], resource_filter="games",
+                filter_clear_url=reverse("internal:workspace", args=["operations"]) + "?resource=games", **filters))
         from .event_presentation import operations_home
         from .reporting import report_destinations
         data=operations_home(request.user)
         from apps.events.experience_operations import can_view_event_operations
         if data["featured"] and can_view_event_operations(request.user):
             links=links+[dict(label="Simulator Scoring",url=reverse("events:event_detail",args=[data["featured"]["event"].pk])+"?section=results",description="View recorded simulator results for the next upcoming event.")]
-        from apps.operations.task_access import events_for
-        from django.db.models import Q
-        from django.utils import timezone
-        execution_events=list(events_for(request.user).filter(Q(status="upcoming",start_at__lte=timezone.now())|Q(status="completed",execution__closed_at__isnull=True)).order_by("start_at")[:10])
-        data["execution_events"]=execution_events
-        return render(request,"internal/operations_home.html",_staff_context(request,page_title="Operations",workspace_links=links,
+        return render(request,"internal/operations_home.html",_staff_context(request,page_title="Operations",page_description="Manage event resources, quizzes, games, forms and consents.",workspace_links=links,
             reporting_available=bool(report_destinations(request.user)),**data))
     return render(request,"internal/workspace.html",_staff_context(request,page_title=item["label"].title(),page_description=item["description"],workspace_id=workspace_id,workspace_links=links))
 

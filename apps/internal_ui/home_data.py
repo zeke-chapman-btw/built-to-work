@@ -92,6 +92,16 @@ def home_data(user):
         except DatabaseError:
             result.update(home_intake_state="unavailable", home_intake_count=None)
             unavailable.append("Intake review check unavailable")
+    # Reuse the existing scheduled-end candidate rule and end-action authorization.
+    from apps.operations.overview_presentation import end_attention_events
+    try:
+        end_count = end_attention_events(user).count()
+        if end_count:
+            attention.append(dict(id="event-end", count=end_count, label="Events past scheduled end",
+                scope="Not marked ended · your existing end-action access",
+                url=reverse("operations:execution-index") + "?view=attention"))
+    except DatabaseError:
+        unavailable.append("Scheduled-end check unavailable")
     result.update(home_attention=attention, home_attention_unavailable=unavailable)
     # Existing metrics keep their queries/meaning; only nonduplicated totals render here.
     result["home_summary_metrics"] = [m for m in result["home_metrics"]

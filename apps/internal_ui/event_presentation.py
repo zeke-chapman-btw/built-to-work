@@ -78,7 +78,14 @@ def operations_home(user):
         route="events:event_detail" if user.has_perm("events.view_event") else "operations:execution" if primary_event_manager(user,event) else "staffing:staff-event"
         return dict(event=event, url=reverse(route, args=[event.pk]))
     featured = present(upcoming[0]) if upcoming else None
-    return dict(featured=featured, other_events=[present(e) for e in upcoming[1:]],
+    from apps.operations.overview_presentation import operational_events, overview_rows, resource_overview_rows
+    # The landing page leads with current/upcoming preparation; follow-up stays separate.
+    current_upcoming = visible.filter(status="upcoming", end_at__gte=now).order_by("start_at", "pk")[:6]
+    followup = operational_events(user).filter(end_at__lt=now)[:3]
+    current_rows = overview_rows(user, current_upcoming)
+    return dict(operation_rows=current_rows, resource_rows=resource_overview_rows(user, current_rows),
+        followup_rows=overview_rows(user, followup),
+        featured=featured, other_events=[present(e) for e in upcoming[1:]],
         event_index_url=reverse("events:event_list" if user.has_perm("events.view_event") else "staffing:schedule"))
 
 

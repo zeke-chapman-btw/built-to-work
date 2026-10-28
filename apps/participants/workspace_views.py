@@ -203,9 +203,9 @@ def profile(request, participant_id):
 def factual_timeline(user, person, member_ids, ctx):
     """Bounded factual chronology; no copied activity store or invented attendance."""
     rows = []
-    def add(at, label, detail, source, key):
+    def add(at, label, detail, source, key, source_action=""):
         if at:
-            rows.append(dict(at=at, label=label, detail=detail, source=source, key=str(key)))
+            rows.append(dict(at=at, label=label, detail=detail, source=source, key=str(key), source_action=source_action))
     for row in Participant.objects.filter(pk__in=member_ids):
         add(row.created_at, "Participant record created", "Stored identity retained", "Participant", row.pk)
     if ctx["can_view_registrations"]:
@@ -245,7 +245,7 @@ def factual_timeline(user, person, member_ids, ctx):
         logs = AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(model), object_id__in=[str(pk) for pk in ids]).select_related("actor").order_by("-timestamp")[:100]
         for row in logs:
             add(row.timestamp, row.action.replace("participant.workspace.", "").replace(".", " ").title(),
-                f"{row.actor or 'System'} · {row.reason}", "Audited staff change", row.pk)
+                f"{row.actor or 'System'} · {row.reason}", "Audited staff change", row.pk, source_action=row.action)
     return sorted(rows, key=lambda r: (r["at"], r["source"], r["key"]), reverse=True)[:200]
 
 

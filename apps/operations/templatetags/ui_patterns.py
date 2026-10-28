@@ -124,6 +124,14 @@ ICON_PATHS.update({
     "event-more": ["M12 5v14", "M5 12h14"],
 })
 
+# Operations resource indicators reuse the existing SVG renderer.
+ICON_PATHS.update({
+    "resource-form": ICON_PATHS["report"],
+    "resource-quiz": ICON_PATHS["tasks"],
+    "resource-game": ["M6 8h12a4 4 0 0 1 4 4l-1 7-5-3H8l-5 3-1-7a4 4 0 0 1 4-4", "M7 10v6M4 13h6M16 11h.01M19 14h.01"],
+    "resource-simulator": ["M3 4h18v13H3V4", "M8 21h8M12 17v4"],
+})
+
 @register.inclusion_tag("internal/ui/icon.html")
 def ui_icon(name):
     return {"icon_paths": ICON_PATHS.get(name, ICON_PATHS["overview"])}

@@ -177,3 +177,10 @@
 .btw-section-surface [role="radiogroup"] label {display:flex;align-items:center;gap:10px;min-height:44px;}
 
 .internal-app #main-content .btw-section-surface .consents-workspace {display:grid;gap:16px;}
+
+/* Pass D: inset stacked records inside the existing standard table component.
+   Cell layout, accessible headers and wide specialist scroll tables remain intact. */
+@media(max-width:600px){
+ .internal-app #main-content .btw-section-surface .btw-compact-table tbody>tr{padding-inline:12px}
+ .internal-app #main-content .btw-section-surface .btw-compact-table tbody>tr>td{padding-inline:0}
+}

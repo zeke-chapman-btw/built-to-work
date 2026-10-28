@@ -161,3 +161,17 @@ def event_staffing_summary(context, event=None):
     return {"saved": True, "configured": plan is not None,
             "deadline": plan.signup_deadline if plan else None,
             "edit_url": edit_url, "coverage_url": reverse("staffing:event", args=[event.pk])}
+
+
+@register.filter
+def event_status_label(event):
+    """A temporal display label; never changes the stored lifecycle."""
+    from django.utils import timezone
+    if event.status == "upcoming":
+        now = timezone.now()
+        if event.start_at <= now <= event.end_at:
+            return "Current"
+        if event.end_at < now:
+            return "Scheduled window passed"
+        return "Upcoming"
+    return "Ended" if event.status == "completed" else event.get_status_display()

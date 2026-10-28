@@ -126,3 +126,27 @@ def people_management_links(context):
     navigation = people_navigation(context)
     return [item for item in navigation['primary'] + navigation['more']
             if item['label'] not in {'Directory', 'Participant analysis', 'Saved views'}]
+
+
+@register.filter
+def people_score(value):
+    """Display precision only; original decimal evidence remains in the source disclosure."""
+    from decimal import Decimal, InvalidOperation, localcontext
+    if value is None:
+        return "Unavailable"
+    try:
+        score = Decimal(str(value))
+        if not score.is_finite():
+            return "Unavailable"
+        with localcontext() as context:
+            context.prec = max(28, len(score.as_tuple().digits) + 4)
+            display = format(score.quantize(Decimal("0.01")), "f").rstrip("0").rstrip(".")
+        return display + "%"
+    except (InvalidOperation, ValueError, TypeError):
+        return "Unavailable"
+
+
+@register.filter
+def people_activity_label(value):
+    words = re.sub(r"[_.]+", " ", str(value or "")).strip()
+    return words[:1].upper() + words[1:].lower()

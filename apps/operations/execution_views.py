@@ -256,7 +256,17 @@ def execution_index(request):
     if request.method!="GET":raise PermissionDenied
     from .task_access import events_for
     from .presentation import list_page
-    events,filters=list_page(request,events_for(request.user).order_by("-start_at","pk"),
+    from .overview_presentation import operational_events, end_attention_events, overview_rows
+    selected_view = request.GET.get("view", "active")
+    if selected_view not in ("active", "all", "attention"):
+        selected_view = "active"
+    # An explicit stored-status filter always retains historical/cancelled/archived access.
+    explicit_status = request.GET.get("status") in Event.Status.values
+    queryset = (end_attention_events(request.user) if selected_view == "attention" else
+                events_for(request.user).order_by("-start_at", "pk") if selected_view == "all" or explicit_status else
+                operational_events(request.user))
+    events,filters=list_page(request,queryset,
         search_fields=("name","location_name","city"),newest_field="-start_at",
         status_field="status",status_choices=Event.Status.choices)
-    return render(request,"operations/execution_index.html",{"page_title":"Event execution","events":events,**filters})
+    return render(request,"operations/execution_index.html",{"page_title":"Event execution","events":events,
+        "operation_rows":overview_rows(request.user, events), "execution_view":selected_view, **filters})

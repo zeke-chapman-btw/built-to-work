@@ -98,3 +98,98 @@ body.internal-app.has-operations-refinement #main-content .btw-table-wrap td str
  body.internal-app.has-operations-refinement #main-content form :is(input:not([type=checkbox],[type=radio],[type=hidden]),select,textarea) { min-height:44px; font-size:16px; max-width:100%; }
  body.internal-app.has-operations-refinement #main-content .ops-resource-row { padding:12px 0; }
 }
+
+/* Pass D: broad operational overview, standard 920px records, focused 720px editors. */
+body.internal-app.has-operations-refinement.has-broad-workspace #main-content :is(.btw-standard-workspace,.operations-design),
+body.internal-app.has-operations-refinement.has-broad-workspace #main-content>.page-header{max-width:none;width:100%;margin-inline:0}
+body.internal-app.has-operations-refinement.has-focused-workspace #main-content :is(.btw-standard-workspace,.operations-design),
+body.internal-app.has-operations-refinement.has-focused-workspace #main-content>.page-header{max-width:720px}
+.internal-app .ops-overview-list{display:grid;min-width:0}
+.internal-app .ops-overview-row{min-width:0;border-top:1px solid var(--line);padding:16px 0;overflow-wrap:anywhere}
+.internal-app .ops-overview-row:first-child{border-top:0}
+.internal-app .ops-overview-row>header{display:flex;align-items:start;justify-content:space-between;gap:12px}
+.internal-app .ops-overview-row h3{font:600 14px/20px var(--font);margin:0 0 4px}
+.internal-app .ops-overview-row h3 a{color:var(--ink);text-decoration:none}
+.internal-app .ops-overview-row h3 a:hover{text-decoration:underline}
+.internal-app .ops-overview-row .event-help{font:400 12px/18px var(--font);margin:3px 0}
+.internal-app .ops-overview-meta{font:400 12px/18px var(--font);color:var(--muted);margin:8px 0}
+.internal-app .ops-overview-progress{list-style:none;padding:0;margin:10px 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.internal-app .ops-overview-progress li{background:#f5f6f8;border:1px solid var(--line);border-radius:6px;padding:8px;min-width:0}
+.internal-app .ops-overview-progress span,.internal-app .ops-overview-progress strong{display:block;font:400 12px/18px var(--font)}
+.internal-app .ops-overview-progress strong{font-weight:600;margin-top:3px}
+.internal-app .ops-attention-note,.internal-app .ops-unconfigured{font:400 13px/20px var(--font);padding:8px 10px;border-left:3px solid #b5791a;background:#fffbeb;margin:10px 0}
+.internal-app .ops-configuration>summary{cursor:pointer;font:600 12px/16px var(--font);letter-spacing:.05em;text-transform:uppercase;min-height:44px;display:flex;align-items:center}
+.internal-app .ops-configuration>summary::before{content:'+';font-size:18px;margin-right:8px}
+.internal-app .ops-configuration[open]>summary::before{content:'−'}
+.internal-app .ops-configuration .ops-tool-grid{margin-top:12px}
+.internal-app .ops-configuration .ops-tool-grid h2{font:600 12px/16px var(--font);text-transform:uppercase;letter-spacing:.05em}
+@media(max-width:639.98px){
+ .internal-app .ops-overview-row>header{flex-wrap:wrap;gap:6px}
+ .internal-app .ops-overview-progress{grid-template-columns:minmax(0,1fr);gap:4px}
+ .internal-app .ops-overview-progress li{display:flex;justify-content:space-between;gap:8px;padding:6px 8px}
+ .internal-app .ops-overview-progress strong{margin:0}
+ .internal-app .ops-overview-row .event-record-actions{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px}
+ .internal-app .ops-overview-row .event-record-actions>a{min-height:44px;display:inline-flex;align-items:center}
+}
+
+body.internal-app.has-operations-refinement.has-focused-workspace #main-content .btw-editor-heading h2{font:600 20px/28px var(--font)}
+
+/* Pass D Operations reference correction: direct tabs and compact resource overview. */
+body.internal-app.has-operations-refinement #main-content .ops-resource-navigation{display:flex;align-items:start;flex-wrap:wrap;gap:4px;padding:0;border:0;margin:0;min-width:0}
+body.internal-app.has-operations-refinement #main-content .ops-resource-navigation>.ops-resource-tab,
+body.internal-app.has-operations-refinement #main-content .ops-resource-more>summary{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;padding:6px 12px;border:0;border-radius:6px;font:500 12px/16px var(--font);color:#52525b;text-decoration:none;white-space:nowrap;cursor:pointer;list-style:none}
+body.internal-app.has-operations-refinement #main-content .ops-resource-navigation>.ops-resource-tab[aria-current=page],
+body.internal-app.has-operations-refinement #main-content .ops-resource-more>summary.is-active{background:#18181b;color:#fff}
+body.internal-app.has-operations-refinement #main-content .ops-resource-navigation>.ops-resource-tab:hover{background:#e9e9ec;color:#18181b}
+body.internal-app.has-operations-refinement #main-content .ops-resource-navigation>.ops-resource-tab[aria-current=page]:hover{background:#18181b;color:#fff}
+body.internal-app.has-operations-refinement #main-content .ops-resource-more{position:relative;min-width:0}
+body.internal-app.has-operations-refinement #main-content .ops-resource-more>summary::-webkit-details-marker{display:none}
+body.internal-app.has-operations-refinement #main-content .ops-resource-menu{position:absolute;z-index:30;top:calc(100% + 6px);right:0;min-width:230px;max-width:calc(100vw - 40px);padding:8px;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px #0002}
+body.internal-app.has-operations-refinement #main-content .ops-resource-menu-label{display:block;padding:10px 10px 4px;font:600 10px/16px var(--font);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+body.internal-app.has-operations-refinement #main-content .ops-resource-menu a{display:flex;align-items:center;min-height:44px;padding:8px 10px;color:var(--ink);font:400 13px/20px var(--font);text-decoration:none;border-radius:4px;overflow-wrap:anywhere}
+body.internal-app.has-operations-refinement #main-content .ops-resource-menu a:hover{background:#f4f4f5}
+body.internal-app.has-operations-refinement #main-content #operations-home .ops-resource-panel{padding:0;overflow:visible}
+body.internal-app.has-operations-refinement #main-content .ops-resource-panel-heading{padding:16px;border-bottom:1px solid var(--line)}
+body.internal-app.has-operations-refinement #main-content .ops-resource-panel-heading h2{font:600 12px/16px var(--font);letter-spacing:.04em;text-transform:uppercase;margin:0}
+body.internal-app.has-operations-refinement #main-content .ops-resource-panel-heading p{font:400 12px/18px var(--font);color:var(--muted);margin:4px 0 0}
+body.internal-app.has-operations-refinement #main-content .ops-resource-event-row{padding:12px 16px;border-bottom:1px solid #f0f0f2;min-width:0}
+body.internal-app.has-operations-refinement #main-content .ops-resource-event-row:nth-child(even){background:#fafafa}
+body.internal-app.has-operations-refinement #main-content .ops-resource-event-row>header{display:flex;align-items:start;justify-content:space-between;gap:12px;min-width:0}
+body.internal-app.has-operations-refinement #main-content .ops-resource-event-primary{display:block;min-width:0;color:var(--ink);text-decoration:none;overflow-wrap:anywhere}
+body.internal-app.has-operations-refinement #main-content .ops-resource-event-primary h3{font:500 14px/20px var(--font);margin:0}
+body.internal-app.has-operations-refinement #main-content .ops-resource-event-primary p{font:400 12px/16px var(--font);color:var(--muted);margin:0}
+body.internal-app.has-operations-refinement #main-content .ops-resource-event-primary:hover h3{text-decoration:underline}
+body.internal-app.has-operations-refinement #main-content .ops-resource-event-tools{display:flex;align-items:center;gap:6px;flex-shrink:0}
+body.internal-app.has-operations-refinement #main-content .ops-resource-lifecycle{font:500 12px/16px var(--font);color:#52525b;padding:2px 0;white-space:nowrap}
+body.internal-app.has-operations-refinement #main-content .ops-resource-checks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:8px;min-width:0}
+body.internal-app.has-operations-refinement #main-content .ops-resource-check{display:grid;grid-template-columns:16px minmax(0,1fr) auto;align-items:center;gap:8px;min-width:0;min-height:48px;padding:10px 12px;border:1px solid #e4e4e7;border-radius:6px;background:#fff;color:#3f3f46;text-decoration:none;font:500 12px/16px var(--font)}
+body.internal-app.has-operations-refinement #main-content a.ops-resource-check:hover{border-color:#a1a1aa;background:#fdfdfd}
+body.internal-app.has-operations-refinement #main-content .ops-resource-check>svg{width:16px;height:16px;color:#a1a1aa}
+body.internal-app.has-operations-refinement #main-content .ops-resource-label{min-width:0;overflow-wrap:anywhere}
+body.internal-app.has-operations-refinement #main-content .ops-resource-state{display:inline-flex;align-items:center;gap:5px;color:#52525b;font:500 12px/16px var(--font);white-space:nowrap}
+body.internal-app.has-operations-refinement #main-content .ops-resource-state>span{display:inline-block;width:6px;height:6px;border-radius:50%;background:#a1a1aa;flex-shrink:0}
+body.internal-app.has-operations-refinement #main-content .ops-resource-state.is-configured>span{background:#26977a}
+body.internal-app.has-operations-refinement #main-content .ops-resource-state.is-missing>span{background:#d38a16}
+body.internal-app.has-operations-refinement #main-content .ops-resource-empty{padding:16px;font:400 13px/20px var(--font)}
+body.internal-app.has-operations-refinement #main-content .ops-resource-panel-footer{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:8px 16px;font:400 12px/18px var(--font);color:var(--muted)}
+body.internal-app.has-operations-refinement #main-content .ops-resource-panel-footer details{min-width:0;flex:1 1 250px}
+body.internal-app.has-operations-refinement #main-content .ops-resource-panel-footer summary{cursor:pointer;min-height:32px;display:flex;align-items:center;font:500 12px/18px var(--font)}
+body.internal-app.has-operations-refinement #main-content .ops-resource-panel-footer p{max-width:760px;margin:4px 0 8px}
+body.internal-app.has-operations-refinement #main-content .ops-resource-panel-footer>a{display:inline-flex;align-items:center;min-height:32px}
+body.internal-app.has-operations-refinement #main-content .ops-resource-followup>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;min-height:44px;font:500 13px/20px var(--font)}
+body.internal-app.has-operations-refinement #main-content .ops-resource-followup>summary span{font-size:12px;color:var(--muted)}
+body.internal-app.has-operations-refinement #main-content .ops-followup-links{display:grid;margin:8px 0}
+body.internal-app.has-operations-refinement #main-content .ops-followup-links>a{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;padding:10px 0;border-top:1px solid var(--line);min-height:44px;font:500 13px/20px var(--font);text-decoration:none;overflow-wrap:anywhere}
+body.internal-app.has-operations-refinement #main-content .ops-followup-links small{font:400 12px/18px var(--font);color:var(--muted)}
+body.internal-app.has-operations-refinement #main-content .btw-section-surface :is([data-record-table] tbody tr,.btw-record-row):nth-child(even){background:#fafafa}
+@media(max-width:639.98px){
+ body.internal-app.has-operations-refinement #main-content .ops-resource-navigation{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+ body.internal-app.has-operations-refinement #main-content .ops-resource-navigation>.ops-resource-tab,
+ body.internal-app.has-operations-refinement #main-content .ops-resource-more>summary{min-height:44px;width:100%;padding:6px 4px;font-size:12px}
+ body.internal-app.has-operations-refinement #main-content .ops-resource-event-primary{min-height:44px}
+ body.internal-app.has-operations-refinement #main-content .ops-resource-event-tools{padding-top:3px}
+ body.internal-app.has-operations-refinement #main-content .ops-resource-checks{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body.internal-app.has-operations-refinement #main-content .ops-resource-check{grid-template-columns:16px minmax(0,1fr);gap:0 6px;padding:6px 8px;min-height:48px}
+ body.internal-app.has-operations-refinement #main-content .ops-resource-state{grid-column:2;font-size:12px;line-height:16px}
+ body.internal-app.has-operations-refinement #main-content .ops-resource-panel-footer summary,.internal-app .ops-resource-panel-footer>a{min-height:44px}
+}

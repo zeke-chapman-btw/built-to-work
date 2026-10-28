@@ -49,7 +49,7 @@ class Build10ATests(TestCase):
         self.assertEqual(operations_home(self.staff)['featured']['event'],self.later)
     def test_no_event_leak_for_unassigned_staff(self):
         self.login();response=self.client.get(reverse('internal:workspace',args=['operations']))
-        self.assertContains(response,'No authorized upcoming events')
+        self.assertContains(response,'No authorized operational events')
         self.assertNotContains(response,self.next.name)
         self.assertNotContains(response,self.active.name)
     def test_assigned_staff_only_sees_own_confirmed_future_events(self):
