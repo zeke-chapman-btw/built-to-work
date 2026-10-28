@@ -189,3 +189,11 @@ body.internal-app.has-tasks-refinement #main-content .filter-advanced-fields{dis
  body.internal-app.has-tasks-refinement #main-content .filter-advanced-fields{grid-template-columns:minmax(0,1fr)}
  body.internal-app.has-tasks-refinement #main-content .task-results-heading{margin-top:10px}
 }
+
+/* Pass E: recognizable disclosure without changing native keyboard/open behavior. */
+body.internal-app.has-tasks-refinement #main-content .filter-advanced>summary{list-style:none;gap:8px;width:fit-content;max-width:100%;padding:8px 12px;border:1px solid var(--line);border-radius:6px;background:#fff}
+body.internal-app.has-tasks-refinement #main-content .filter-advanced>summary::-webkit-details-marker{display:none}
+body.internal-app.has-tasks-refinement #main-content .filter-advanced>summary::after{content:'⌄';display:inline-block;flex-shrink:0;transition:transform .15s}
+body.internal-app.has-tasks-refinement #main-content .filter-advanced[open]>summary::after{transform:rotate(180deg)}
+body.internal-app.has-tasks-refinement #main-content .filter-advanced>summary:hover{background:#f4f4f5}
+body.internal-app.has-tasks-refinement #main-content .filter-advanced>summary:focus-visible{outline:3px solid #155eb6;outline-offset:2px}
