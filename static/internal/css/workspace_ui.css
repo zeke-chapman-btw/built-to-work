@@ -459,3 +459,38 @@ body.internal-app.has-pass-a-events #main-content .event-related a { display:inl
 }
 
 body.internal-app:has([data-pass-a-event]) #main-content .event-more-group-label { display:block; padding:10px 10px 4px; color:var(--muted); font:600 11px/16px var(--font); letter-spacing:.04em; text-transform:uppercase; }
+
+/* Pass B: opt-in ordinary workspace. Accepted Events and Participants retain
+   their own layout families; public/portal/kiosk/admin shells do not opt in. */
+body.internal-app .btw-standard-workspace {
+  box-sizing:border-box; width:100%; max-width:var(--btw-standard-ordinary);
+  margin-inline:auto; padding-inline:var(--btw-standard-gutter); min-width:0;
+}
+body.internal-app.has-shared-workspace { height:100dvh; min-height:0; overflow:hidden; }
+body.internal-app.has-shared-workspace .main-column {
+  display:flex; flex-direction:column; height:100dvh; min-height:0; overflow:hidden;
+}
+body.internal-app.has-shared-workspace .main-column>#main-content {
+  position:relative; flex:1; min-height:0; width:100%; max-width:none; margin:0;
+  padding:0 0 calc(104px + env(safe-area-inset-bottom,0px)); overflow:auto; scrollbar-gutter:stable;
+}
+body.internal-app.has-shared-workspace #main-content>.page-header {
+  width:100%; max-width:var(--btw-standard-ordinary); box-sizing:border-box;
+  margin:0 auto 16px; padding:16px var(--btw-standard-gutter) 0; border:0;
+}
+body.internal-app.has-shared-workspace #main-content>.page-header h1 {
+  margin:0; font:var(--btw-standard-page-weight) var(--btw-standard-page-size)/var(--btw-standard-page-line) var(--font);
+  letter-spacing:0; text-align:left;
+}
+body.internal-app.has-shared-workspace .main-column>footer {
+  flex:0 0 64px; min-height:64px; padding:16px 24px; background:var(--surface);
+}
+body.internal-app.has-shared-workspace a.global-task-create {
+  bottom:calc(10px + env(safe-area-inset-bottom,0px)); min-height:var(--btw-standard-touch);
+}
+
+/* Home is the approved broad-layout exception; ordinary workspaces stay 920px. */
+body.internal-app.home-dashboard-page.has-shared-workspace #main-content>.page-header,
+body.internal-app.home-dashboard-page.has-shared-workspace #main-content>.btw-standard-workspace {
+  max-width:none; margin-inline:0;
+}

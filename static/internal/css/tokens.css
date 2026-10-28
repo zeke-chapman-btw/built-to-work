@@ -25,3 +25,20 @@
   --control-height: 38px;
   --control-line: #7b8793;
 }
+
+/* Pass B: reusable internal presentation tokens. Existing families opt in. */
+body.internal-app {
+  --btw-standard-ordinary:920px;
+  --btw-standard-wide:1200px;
+  --btw-standard-gutter:16px;
+  --btw-standard-page-size:20px;
+  --btw-standard-page-line:28px;
+  --btw-standard-page-weight:600;
+  --btw-standard-label-size:12px;
+  --btw-standard-label-line:16px;
+  --btw-standard-copy-size:13px;
+  --btw-standard-copy-line:20px;
+  --btw-standard-control:36px;
+  --btw-standard-touch:44px;
+}
+@media(min-width:640px) { body.internal-app { --btw-standard-gutter:24px; } }

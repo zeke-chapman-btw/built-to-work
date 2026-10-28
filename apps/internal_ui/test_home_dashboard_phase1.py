@@ -27,7 +27,7 @@ class HomeDashboardPhaseOneTests(TestCase):
     def test_dashboard_sections_use_live_data_and_existing_routes(self):
         response = self.client.get(reverse('internal:home'))
         self.assertEqual(response.status_code, 200)
-        for section in ('My Tasks', 'Notifications', 'Quick Actions', 'Analytics'):
+        for section in ('Needs Attention', 'Current &amp; Upcoming Events', 'My Tasks', 'Updates', 'Quick Actions', 'Operational Summary'):
             self.assertContains(response, section)
         self.assertContains(response, 'No task notifications yet.')
         self.assertContains(response, reverse('operations:updates'))
@@ -36,12 +36,11 @@ class HomeDashboardPhaseOneTests(TestCase):
         self.assertEqual(len(response.context['home_metrics']), 4)
         self.assertContains(response, reverse('events:event_create'))
         self.assertContains(response, reverse('participants:staff-directory'))
-        self.assertContains(response, reverse('admin:participants_participant_add'))
+        self.assertContains(response, reverse('participants:staff-add'))
         controls = Controls(); controls.feed(response.content.decode())
         read_buttons = [b for b in controls.buttons if b.get('class') == 'dashboard-read']
-        self.assertEqual(len(read_buttons), 1)
-        self.assertIn('disabled', read_buttons[0])
-        self.assertEqual(read_buttons[0]['type'], 'submit')
+        # Empty Updates has one feed link; bulk read remains for unread notices.
+        self.assertEqual(len(read_buttons), 0)
         self.assertEqual(response.content.decode().count('<h1'), 1)
 
     def test_settings_gear_replaces_row_on_home_and_existing_feature_pages(self):

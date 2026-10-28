@@ -22,8 +22,19 @@ MAX_QUICK_ACTIONS = 9
 def available_quick_actions(user):
     if not user.is_authenticated or not user.is_active or not user.is_staff:
         return []
-    return [dict(action, url=reverse(action["route"])) for action in QUICK_ACTIONS
-            if not action["permissions"] or any(user.has_perm(p) for p in action["permissions"])]
+    actions = []
+    for entry in QUICK_ACTIONS:
+        if entry["permissions"] and not any(user.has_perm(p) for p in entry["permissions"]):
+            continue
+        action = dict(entry)
+        if action["id"] == "add-participant":
+            if user.has_perm("participants.view_participant"):
+                action["route"] = "participants:staff-add"
+            else:
+                action["label"] = "Add Participant (administration)"
+        action["url"] = reverse(action["route"])
+        actions.append(action)
+    return actions
 
 def quick_actions_for(user):
     available = available_quick_actions(user)

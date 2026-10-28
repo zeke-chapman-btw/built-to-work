@@ -1,8 +1,9 @@
 """Home must preview real, bounded, permission-scoped operational records."""
 from datetime import timedelta
+from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
-from django.db import connection
+from django.db import connection, DatabaseError
 from django.test import Client, TestCase
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
@@ -46,11 +47,11 @@ class HomeDashboard9G2ETests(TestCase):
         values.update(kwargs)
         return Event.objects.create(**values)
 
-    def test_four_sections_have_required_reading_order_and_real_counts(self):
+    def test_business_sections_have_required_reading_order_and_real_counts(self):
         self.task()
         response = self.client.get(self.home)
         html = response.content.decode()
-        headings = ['id="dashboard-tasks-title"', 'id="dashboard-updates-title"', 'id="dashboard-actions-title"', 'id="dashboard-analytics-title"']
+        headings = ['id="dashboard-attention-title"', 'id="dashboard-actions-title"', 'id="dashboard-events-title"', 'id="dashboard-tasks-title"', 'id="dashboard-updates-title"', 'id="dashboard-summary-title"']
         self.assertEqual(sorted(html.index(h) for h in headings), [html.index(h) for h in headings])
         self.assertEqual(html.count('<h1'), 1)
         self.assertEqual(response.context['home_task_count'], 1)
@@ -204,3 +205,54 @@ class HomeDashboard9G2ETests(TestCase):
         response = self.client.get(reverse('events:event_list'), {'view':'all','event_type':'rodeo'})
         self.assertContains(response, '<details class="event-filter-popover" data-ui-menu open>')
         self.assertContains(response, 'UTC calendar dates')
+
+    def test_pass_b_promotes_attention_and_events_without_widening_task_scope(self):
+        from .test_home_dashboard_phase1b import Markup
+        self.grant(self.staff, 'operations', 'manage_tasks')
+        self.grant(self.staff, 'events', 'view_event')
+        self.task('SYNTHETIC B own overdue', due_date=timezone.localdate()-timedelta(days=1))
+        self.task('SYNTHETIC B colleague overdue', assigned_staff=self.profiles[self.other.pk],
+                  due_date=timezone.localdate()-timedelta(days=2))
+        event = self.event()
+        response = self.client.get(self.home)
+        self.assertEqual(response.context['home_task_count'], 1)
+        self.assertEqual(response.context['home_attention_count'], 2)
+        markup = Markup(); markup.feed(response.content.decode())
+        areas = {n['attrs'].get('aria-labelledby'): n for n in markup.with_class('dashboard-section')}
+        self.assertEqual(list(areas), ['dashboard-attention-title', 'dashboard-actions-title',
+            'dashboard-events-title', 'dashboard-tasks-title', 'dashboard-updates-title', 'dashboard-summary-title'])
+        attention = ' '.join(''.join(areas['dashboard-attention-title']['text']).split())
+        tasks = ' '.join(''.join(areas['dashboard-tasks-title']['text']).split())
+        events = ' '.join(''.join(areas['dashboard-events-title']['text']).split())
+        self.assertEqual(response.context['home_attention'][0]['count'], 2)
+        self.assertIn('Accessible overdue tasks', attention)
+        self.assertIn('may be assigned to someone else', attention)
+        self.assertNotIn('Accessible overdue tasks', tasks)
+        self.assertNotContains(response, 'SYNTHETIC B colleague overdue')
+        self.assertIn(event.name, events)
+        self.assertNotIn(event.name, tasks)
+
+    def test_pass_b_stored_record_label_keeps_archived_rows_and_permission_boundary(self):
+        self.grant(self.staff, 'participants', 'view_participant')
+        Participant.objects.create(first_name='SYNTHETIC', last_name='B current')
+        Participant.objects.create(first_name='SYNTHETIC', last_name='B archived', archived_at=timezone.now())
+        response = self.client.get(self.home)
+        metric = next(m for m in response.context['home_metrics'] if m['label']=='Participant records')
+        self.assertEqual(metric['value'], 2)
+        self.assertContains(response, 'Stored records; a person may have more than one.')
+        self.staff.user_permissions.clear()
+        response = self.client.get(self.home)
+        self.assertNotContains(response, 'Participant records')
+        self.assertNotContains(response, 'Stored records; a person may have more than one.')
+
+    def test_pass_b_failed_reads_render_unavailable_without_false_empty_claims(self):
+        with patch('apps.internal_ui.home_data._work_data', side_effect=DatabaseError('synthetic work failure')), \
+             patch('apps.internal_ui.home_data.task_access.events_for', side_effect=DatabaseError('synthetic event failure')):
+            response = self.client.get(self.home)
+        self.assertEqual(response.status_code, 200)
+        for text in ('Assigned work unavailable', 'Operational counts unavailable', 'Events unavailable'):
+            self.assertContains(response, text)
+        for text in ('No open tasks assigned to you', 'No accessible overdue tasks',
+                     'No current or upcoming events in your scope'):
+            self.assertNotContains(response, text)
+        self.assertIsNone(response.context['home_task_count'])
