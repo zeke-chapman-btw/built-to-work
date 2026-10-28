@@ -1,3 +1,5 @@
 {% extends 'operations/base.html' %}{% load static %}
+{% block body_class %}{{ block.super }}{% if not event %} has-tasks-refinement has-shared-workspace{% endif %}{% endblock %}
 {% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/tasks.css' %}">{% endblock %}
+{% block content %}{% if not event %}<div class="btw-standard-workspace task-workspace-frame">{% endif %}{{ block.super }}{% if not event %}</div>{% endif %}{% endblock %}
 {% block operations_content %}<div class="task-page">{% block task_content %}{% endblock %}</div>{% endblock %}

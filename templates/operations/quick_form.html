@@ -1,4 +1,4 @@
-<h2 class="task-create-title">Add Task</h2><p class="event-help">Give it a clear title and choose who will take the next step.</p>
+<p class="event-help">Give it a clear title and choose who will take the next step.</p>
 {% if context_event %}<p class="task-context-pill"><strong>Event automatically linked:</strong> {{ context_event.name }}</p>{% endif %}{% if context_participant %}<p class="task-context-pill"><strong>Participant automatically linked:</strong> {{ context_participant }}. This association is retained when you create the task.</p>{% endif %}
 {% if form.errors %}<div class="task-quick-errors" role="alert" tabindex="-1" data-task-errors><h3>Please review the highlighted fields</h3>{{ form.non_field_errors }}<ul>{% for field in form %}{% if field.errors %}<li>{{ field.label }}: {{ field.errors|striptags }}</li>{% endif %}{% endfor %}</ul></div>{% endif %}
 <form class="task-quick-form" method="post" action="{{ action }}" data-task-form data-task-lookup="{{ lookup_url }}">{% csrf_token %}{% for field in form.hidden_fields %}{{ field }}{% endfor %}<input type="hidden" name="return_to" value="{{ return_to }}">

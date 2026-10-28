@@ -26,3 +26,11 @@
 .task-dialog :focus-visible,.task-quick-form :focus-visible { outline:3px solid #155eb6; outline-offset:3px; }
 .task-dialog[aria-busy=true],.task-dialog button:disabled { cursor:wait; }
 @media(max-width:700px) { .task-dialog { width:calc(100% - 20px); max-height:calc(100dvh - 20px); margin:auto; } .task-dialog-top { padding:12px 16px; } .task-dialog-content { padding:18px 16px; } .task-quick-grid { grid-template-columns:minmax(0,1fr); } .task-quick-actions .button { flex:1 1 auto; text-align:center; } }
+
+/* Pass C: a single semantic dialog title; shared native form/field contracts stay intact. */
+.internal-app .task-dialog-top #task-dialog-label { margin:0; font:600 16px/24px var(--font); letter-spacing:0; text-transform:none; }
+.internal-app .task-dialog-content>.event-help { margin:0 0 12px; color:var(--muted); font:400 13px/20px var(--font); }
+.internal-app .task-quick-field label { font:500 13px/20px var(--font); }
+.internal-app .task-link-options { border:0; border-top:1px solid var(--line); border-radius:0; padding:8px 0 0; }
+.internal-app .task-link-options summary { display:flex; align-items:center; gap:4px; font:500 13px/20px var(--font); }
+@media(max-width:639.98px) { .internal-app .task-quick-field :is(input,select,textarea) { font-size:16px; } }

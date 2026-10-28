@@ -47,3 +47,54 @@
 .internal-app .ops-form-stack textarea{min-height:80px;max-width:100%;width:100%;padding:10px;border:1px solid var(--line);border-radius:7px;font:inherit}
 
 .internal-app .operations-design>.event-navigation{min-width:0;max-width:100%}
+
+/* Pass C: non-Event Operations opt in; event execution/health/closeout are preserved. */
+body.internal-app.has-operations-refinement #main-content .btw-standard-workspace { max-width:920px; width:100%; margin-inline:auto; padding-inline:var(--btw-standard-gutter); }
+body.internal-app.has-operations-refinement #main-content .operations-design { gap:16px; padding-block:0; }
+body.internal-app.has-operations-refinement #main-content .operations-page.btw-standard-workspace { padding-top:16px; }
+body.internal-app.has-operations-refinement #main-content .operations-page>.page-header { padding:0; margin:0; border:0; }
+body.internal-app.has-operations-refinement #main-content>.page-header p { font:400 13px/20px var(--font); color:var(--muted); margin:4px 0 0; }
+body.internal-app.has-operations-refinement #main-content .card { padding:16px; margin:0; min-width:0; }
+body.internal-app.has-operations-refinement #main-content :is(.card>h2,.btw-panel-heading>h2) { font:600 12px/16px var(--font); letter-spacing:.05em; text-transform:uppercase; margin:0 0 12px; }
+body.internal-app.has-operations-refinement #main-content .btw-panel-heading { align-items:center; gap:8px; margin:0 0 12px; }
+body.internal-app.has-operations-refinement #main-content .btw-panel-heading>h2 { margin:0; }
+body.internal-app.has-operations-refinement #main-content :is(.card>details>summary,details.card>summary,.btw-disclosure>summary) { font:500 13px/20px var(--font); min-height:36px; }
+body.internal-app.has-operations-refinement #main-content .ops-resource-list { display:grid; }
+body.internal-app.has-operations-refinement #main-content .ops-resource-row { display:block; padding:12px 4px; border-top:1px solid var(--line); border-radius:0; color:var(--ink); text-decoration:none; min-width:0; }
+body.internal-app.has-operations-refinement #main-content .ops-resource-row:first-child { border-top:0; }
+body.internal-app.has-operations-refinement #main-content .ops-resource-row:hover { background:#f4f5f6; }
+body.internal-app.has-operations-refinement #main-content .ops-resource-row strong { display:flex; align-items:center; justify-content:space-between; gap:12px; font:500 14px/20px var(--font); }
+body.internal-app.has-operations-refinement #main-content .ops-resource-row small { display:block; margin-top:4px; font:400 12px/18px var(--font); color:var(--muted); overflow-wrap:anywhere; }
+body.internal-app.has-operations-refinement #main-content .ops-resource-row:focus-visible { outline:3px solid #155eb6; outline-offset:2px; }
+body.internal-app.has-operations-refinement #main-content .btw-section-navigation { margin:0; gap:6px 12px; min-width:0; }
+body.internal-app.has-operations-refinement #main-content .btw-section-navigation :is(a,summary) { font:500 13px/20px var(--font); }
+body.internal-app.has-operations-refinement #main-content .p2-record-list { gap:0; }
+body.internal-app.has-operations-refinement #main-content .btw-record-row { border:0; border-top:1px solid var(--line); border-radius:0; margin:0; }
+body.internal-app.has-operations-refinement #main-content .btw-record-row:first-child { border-top:0; }
+body.internal-app.has-operations-refinement #main-content .btw-record-primary { padding:12px 0; }
+body.internal-app.has-operations-refinement #main-content .btw-record-primary h3 { font:600 14px/20px var(--font); margin:0 0 4px; }
+body.internal-app.has-operations-refinement #main-content .btw-record-primary p { font:400 12px/18px var(--font); margin:2px 0; }
+body.internal-app.has-operations-refinement #main-content .btw-record-secondary { padding:8px 0 8px 12px; }
+body.internal-app.has-operations-refinement #main-content .p2-resource-facts { gap:12px 24px; margin:12px 0; }
+body.internal-app.has-operations-refinement #main-content .p2-resource-facts dt { font:500 12px/18px var(--font); color:var(--muted); }
+body.internal-app.has-operations-refinement #main-content .p2-resource-facts dd { font:400 14px/20px var(--font); margin:3px 0 0; }
+body.internal-app.has-operations-refinement #main-content :is(.btw-section-row,.ops-checklist-row) { padding:12px 0; gap:12px; }
+body.internal-app.has-operations-refinement #main-content .btw-section-row h3 { font:600 14px/20px var(--font); }
+body.internal-app.has-operations-refinement #main-content .ops-form-stack { gap:12px; margin-top:12px; }
+body.internal-app.has-operations-refinement #main-content :is(form label,.btw-field>label) { font:500 13px/20px var(--font); }
+body.internal-app.has-operations-refinement #main-content .btw-form-card { max-width:none; }
+body.internal-app.has-operations-refinement #main-content .event-record-actions { gap:8px; }
+body.internal-app.has-operations-refinement #main-content .consents-workspace { display:grid; gap:16px; min-width:0; }
+body.internal-app.has-operations-refinement #main-content .consent-page-actions .button { font:500 13px/20px var(--font); }
+body.internal-app.has-operations-refinement #main-content .btw-table-wrap { min-width:0; max-width:100%; overflow-x:auto; }
+body.internal-app.has-operations-refinement #main-content .btw-table-wrap table :is(th,td) { padding:10px 12px; font-size:13px; line-height:20px; }
+body.internal-app.has-operations-refinement #main-content .btw-table-wrap th { font-size:11px; font-weight:500; color:var(--muted); }
+body.internal-app.has-operations-refinement #main-content .btw-table-wrap td strong { font-weight:500; }
+@media(max-width:639.98px) {
+ body.internal-app.has-operations-refinement #main-content :is(.button,.btw-section-navigation a,.btw-section-navigation summary,.btw-disclosure>summary,details.card>summary,.btw-section-row> a,.btw-table-wrap td>a) { min-height:44px; display:inline-flex; align-items:center; }
+ body.internal-app.has-operations-refinement #main-content .btw-record-secondary { padding:0 0 8px; }
+ body.internal-app.has-operations-refinement #main-content .btw-panel-heading { flex-wrap:wrap; }
+ body.internal-app.has-operations-refinement #main-content .btw-section-row { flex-wrap:wrap; }
+ body.internal-app.has-operations-refinement #main-content form :is(input:not([type=checkbox],[type=radio],[type=hidden]),select,textarea) { min-height:44px; font-size:16px; max-width:100%; }
+ body.internal-app.has-operations-refinement #main-content .ops-resource-row { padding:12px 0; }
+}
