@@ -1,0 +1,1 @@
+{% extends 'internal/base.html' %}{% block content %}<section class="card"><a href="{% url 'accounts:staff-index' %}">← Staff accounts</a><h2>{{ page_title }}</h2><form method="post">{% csrf_token %}{{ form.as_p }}<button class="button" type="submit">Save</button></form></section>{% endblock %}

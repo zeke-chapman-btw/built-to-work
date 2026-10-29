@@ -70,6 +70,9 @@ def save_profile(*,actor,data,profile_id=None):
 
 @transaction.atomic
 def link_account(*,actor,profile_id,data):
+    from apps.accounts.roles import managed
+    if managed(actor) and not actor.is_superuser:
+        raise PermissionDenied("Use Staff accounts for reviewed profile linking.")
     require_perm(actor,"staffing.link_staff_account"); require_perm(actor,"staffing.change_staffprofile")
     profile=StaffProfile.objects.select_for_update().get(pk=profile_id)
     form=AccountLinkForm(data,profile=profile)
