@@ -100,6 +100,10 @@ class EventsPassTwoTests(TestCase):
         self.assertEqual(self.client.get(reverse('staffing:event',args=[self.event.pk])).status_code,403)
 
     def test_clock_reuses_existing_owned_or_manager_routes_only(self):
+        from apps.accounts.roles import role_configuration,ROLE_GROUPS
+        from django.contrib.auth.models import Group
+        role_configuration(apply=True)
+        self.assigned_user.groups.add(Group.objects.get(name=ROLE_GROUPS['event_staff']))
         self.assertEqual(clock_destination(self.owner,self.event)['url'],reverse('workdays:event',args=[self.event.pk]))
         self.assertEqual(clock_destination(self.assigned_user,self.event)['url'],reverse('workdays:checkin',args=[self.event.pk]))
         self.assertIsNone(clock_destination(self.viewer,self.event))

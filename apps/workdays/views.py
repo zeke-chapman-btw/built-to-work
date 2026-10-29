@@ -18,6 +18,8 @@ from .models import StaffRole, CompensationRate, Workday, MileageTrip, EventMile
 from .forms import CheckinForm, WorkdayForm, RoleForm, RateForm, DistanceForm, TripForm, RevisionForm
 
 def page(request,template,**context):
+    from apps.accounts.roles import has_role
+    context["can_self_checkin"]=has_role(request.user,"event_staff")
     context.update(can_manage=svc.manager(request.user),can_configure=svc.administrator(request.user))
     query=request.GET.copy();query.pop('page',None);query.pop('export',None);context['pagination_query']=query.urlencode()
     query=request.GET.copy();query.pop('trip_page',None);query.pop('export',None);context['trip_pagination_query']=query.urlencode()

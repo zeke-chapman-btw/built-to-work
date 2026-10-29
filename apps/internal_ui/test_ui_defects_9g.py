@@ -33,7 +33,7 @@ class StaffLogout9GTests(TestCase):
     def test_rendered_logout_is_csrf_protected_post_at_existing_endpoint(self):
         response = self.client.get(reverse('internal:home'))
         elements = Elements(response.content.decode()).elements
-        forms = [attrs for tag, attrs in elements if tag == 'form' and attrs.get('action') == reverse('admin:logout')]
+        forms = [attrs for tag, attrs in elements if tag == 'form' and attrs.get('action') == reverse('accounts:logout')]
         self.assertEqual(len(forms), 1)
         self.assertEqual(forms[0]['method'], 'post')
         html = response.content.decode()

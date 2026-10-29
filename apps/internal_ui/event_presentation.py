@@ -109,6 +109,8 @@ def clock_destination(user, event):
         return None
     if workday_manager(user):
         return dict(id="clock", label="Clock", url=reverse("workdays:event", args=[event.pk]))
+    from apps.accounts.roles import has_role
+    if not has_role(user,'event_staff'):return None
     from apps.workdays.services import person
     from apps.workdays.models import Workday
     from apps.staffing.models import AssignmentDay

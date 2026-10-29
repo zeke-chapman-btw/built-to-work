@@ -143,3 +143,26 @@ class StaffFoundationTests(TestCase):
         output=StringIO();call_command('review_staff_access',stdout=output)
         self.assertEqual(json.loads(output.getvalue())['automatic_changes'],0)
         self.assertEqual(before,list(U.objects.order_by('pk').values_list('pk','security_revision')))
+
+    def test_native_admin_rechecks_last_administrator_under_lock(self):
+        from .admin import CustomUserAdmin
+        from django.contrib import admin
+        from django.test import RequestFactory
+        from django.db import transaction
+        request=RequestFactory().post('/admin/');request.user=self.admin
+        changed=U.objects.get(pk=self.admin.pk);changed.is_active=False
+        with transaction.atomic(),self.assertRaises(ValidationError):
+            CustomUserAdmin(U,admin.site).save_model(request,changed,None,True)
+        self.admin.refresh_from_db();self.assertTrue(self.admin.is_active)
+
+    def test_native_admin_rejects_actor_revoked_after_form_opened(self):
+        from .admin import CustomUserAdmin
+        from django.contrib import admin
+        from django.test import RequestFactory
+        from django.db import transaction
+        request=RequestFactory().post('/admin/');request.user=self.admin
+        U.objects.filter(pk=self.admin.pk).update(is_active=False)
+        changed=U.objects.get(pk=self.worker.pk);changed.is_superuser=True
+        with transaction.atomic(),self.assertRaises(PermissionDenied):
+            CustomUserAdmin(U,admin.site).save_model(request,changed,None,True)
+        self.worker.refresh_from_db();self.assertFalse(self.worker.is_superuser)

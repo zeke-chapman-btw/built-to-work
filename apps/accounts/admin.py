@@ -30,10 +30,24 @@ class CustomUserAdmin(UserAdmin):
     def has_delete_permission(self,request,obj=None):return False
     def save_model(self,request,obj,form,change):
         lock_role_groups()
+        actor=User.objects.select_for_update().get(pk=request.user.pk)
+        if not (actor.is_active and actor.is_staff and actor.is_superuser):
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied
+        if change and not (obj.is_superuser and obj.is_active and obj.is_staff):
+            existing=User.objects.select_for_update().get(pk=obj.pk)
+            if existing.is_superuser and existing.is_active and existing.is_staff and not User.objects.filter(is_superuser=True,is_active=True,is_staff=True).exclude(pk=obj.pk).exists():
+                from django.core.exceptions import ValidationError
+                raise ValidationError('Retain at least one active Administrator.')
         request._staff_before=account_state(User.objects.get(pk=obj.pk)) if change else None
         super().save_model(request,obj,form,change)
     @transaction.atomic
     def user_change_password(self,request,id,form_url=""):
+        lock_role_groups()
+        actor=User.objects.select_for_update().get(pk=request.user.pk)
+        if not (actor.is_active and actor.is_staff and actor.is_superuser):
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied
         response=super().user_change_password(request,id,form_url)
         if request.method=="POST" and response.status_code in (302,303):
             from .models import StaffInvitation
@@ -67,6 +81,10 @@ class ProtectedGroupAdmin(GroupAdmin):
     def has_delete_permission(self,request,obj=None):return False
     def save_model(self,request,obj,form,change):
         lock_role_groups()
+        actor=User.objects.select_for_update().get(pk=request.user.pk)
+        if not (actor.is_active and actor.is_staff and actor.is_superuser):
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied
         request._group_before={'name':Group.objects.get(pk=obj.pk).name,'permissions':list(Group.objects.get(pk=obj.pk).permissions.values_list('pk',flat=True))} if change else None
         super().save_model(request,obj,form,change)
     def save_related(self,request,form,formsets,change):

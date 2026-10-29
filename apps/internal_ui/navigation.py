@@ -141,7 +141,7 @@ def visible_legacy_workspaces(user,current_path=""):
     role_managed=managed(user)
     visible=[]
     for item in WORKSPACES:
-        if role_managed and item.get('planned'):continue
+        if role_managed and not user.is_superuser and not has_role(user,'manager') and item.get('planned'):continue
         if not _can_see(user,item["permissions"]):
             from apps.staffing.models import StaffProfile
             if role_managed:

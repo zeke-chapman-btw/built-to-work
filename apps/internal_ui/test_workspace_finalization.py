@@ -52,7 +52,7 @@ class WorkspaceFinalizationTests(TestCase):
         response = self.client.get(reverse("internal:settings"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.user.username)
-        self.assertContains(response, reverse("admin:password_change"))
+        self.assertContains(response, reverse("accounts:password-change"))
         nonstaff = get_user_model().objects.create_user(username="nonstaff", password="test-only-password")
         self.client.force_login(nonstaff, backend="django.contrib.auth.backends.ModelBackend")
         self.assertEqual(self.client.get(reverse("internal:settings")).status_code, 403)

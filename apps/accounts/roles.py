@@ -329,9 +329,11 @@ def active_staff(user):
 def has_role(user,role):
     if not active_staff(user):return False
     if role=='administrator':return user.is_superuser
-    return role in ROLE_GROUPS and user.groups.filter(name=ROLE_GROUPS[role]).exists()
+    return role in roles_for(user)
 def roles_for(user):
-    return ({'administrator'} if user.is_superuser else set()) | {key for key,name in ROLE_GROUPS.items() if user.groups.filter(name=name).exists()}
+    if not hasattr(user,'_staff_group_names'):
+        user._staff_group_names=set(user.groups.values_list('name',flat=True))
+    return ({'administrator'} if user.is_superuser else set()) | {key for key,name in ROLE_GROUPS.items() if name in user._staff_group_names}
 def manager(user):return active_staff(user) and (has_role(user,'administrator') or has_role(user,'manager'))
 def managed(user):return bool(roles_for(user))
 def require_account_manager(user):

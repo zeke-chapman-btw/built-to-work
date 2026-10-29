@@ -6,7 +6,7 @@ from django.utils import timezone
 class User(AbstractUser):
     id=models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False)
     quick_action_ids=models.JSONField(null=True,blank=True,default=None,editable=False)
-    security_revision=models.PositiveIntegerField(default=0,editable=False)
+    security_revision=models.PositiveIntegerField(default=0,db_default=0,editable=False)
     def _get_session_auth_hash(self,secret=None):
         # Existing sessions retain their hash until an explicit security event.
         if not self.security_revision:return super()._get_session_auth_hash(secret=secret)

@@ -49,7 +49,7 @@ class StaffPostgreSQLTests(TransactionTestCase):
             proxy=get_user_model()(id=ident,password=password,is_staff=True,is_active=True)
             session=SessionStore();session[SESSION_KEY]=str(ident);session[BACKEND_SESSION_KEY]='django.contrib.auth.backends.ModelBackend';session[HASH_SESSION_KEY]=AbstractBaseUser._get_session_auth_hash(proxy);session.save();cookie=session.session_key
         finally:
-            MigrationExecutor(connection).migrate([('accounts','0003_staff_access_foundation')])
+            MigrationExecutor(connection).migrate([('accounts','0004_security_revision_database_default')])
         user=get_user_model().objects.get(pk=ident)
         self.assertEqual(user.security_revision,0);self.assertEqual(user.password,password);self.assertEqual(user.groups.count(),0)
         client=Client();client.cookies['sessionid']=cookie;self.assertEqual(client.get(reverse('internal:home')).status_code,200)
