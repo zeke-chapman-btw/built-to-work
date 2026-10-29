@@ -53,3 +53,22 @@ class StaffPostgreSQLTests(TransactionTestCase):
         user=get_user_model().objects.get(pk=ident)
         self.assertEqual(user.security_revision,0);self.assertEqual(user.password,password);self.assertEqual(user.groups.count(),0)
         client=Client();client.cookies['sessionid']=cookie;self.assertEqual(client.get(reverse('internal:home')).status_code,200)
+
+    def test_unseeded_native_admin_cannot_concurrently_remove_last_administrator(self):
+        from django.contrib import admin
+        from django.test import RequestFactory
+        from django.db import transaction
+        from .admin import CustomUserAdmin
+        U=get_user_model()
+        admins=[U.objects.create_superuser('synthetic-bootstrap-'+str(i),None,None) for i in range(2)]
+        Group.objects.filter(name__in=ROLE_GROUPS.values()).delete()
+        def deactivate(i):
+            actor=U.objects.get(pk=admins[i].pk)
+            request=RequestFactory().post('/admin/');request.user=actor
+            target=U.objects.get(pk=actor.pk);target.is_active=False
+            try:
+                with transaction.atomic():CustomUserAdmin(U,admin.site).save_model(request,target,None,True)
+                return 'saved'
+            except ValidationError:return 'retained'
+        self.assertCountEqual(self.run_threads(deactivate),['saved','retained'])
+        self.assertEqual(U.objects.filter(is_superuser=True,is_active=True,is_staff=True).count(),1)

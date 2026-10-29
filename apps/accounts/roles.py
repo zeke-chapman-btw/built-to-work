@@ -357,6 +357,9 @@ def require_target(actor,target):
     if not actor.is_superuser and protected_target(target):raise PermissionDenied('This account requires Administrator review.')
 
 def lock_role_groups():
+    # Serialize bootstrap administration even before the role groups are seeded.
+    from .models import User
+    User.objects.select_for_update().filter(is_superuser=True).order_by('pk').first()
     return list(Group.objects.select_for_update().filter(name__in=ROLE_GROUPS.values()).order_by('pk'))
 
 def role_configuration(apply=False):
