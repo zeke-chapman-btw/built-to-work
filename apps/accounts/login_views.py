@@ -39,7 +39,7 @@ def safe_next(request,value):
     return None
 def page(request,title,form=None,**extra):
     response=render(request,'accounts/access_form.html',dict(page_title=title,form=form,**extra))
-    response['Cache-Control']='private, no-store';response['Referrer-Policy']='no-referrer';return response
+    response['Cache-Control']='private, no-store';response['Referrer-Policy']='same-origin';return response
 
 @never_cache
 @sensitive_post_parameters('password')

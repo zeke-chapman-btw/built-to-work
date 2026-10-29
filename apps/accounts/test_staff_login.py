@@ -68,3 +68,66 @@ class StaffLoginTests(TestCase):
         self.assertEqual(self.client.get('/admin/login/').status_code,200)
     def test_invalid_activation_is_branded(self):
         r=self.client.get(reverse('accounts:activate',args=['invalid']));self.assertContains(r,'built-to-work-linear.svg');self.assertContains(r,'invalid, expired or already used')
+
+    def browser_headers(self, response, url):
+        # Model a browser without an Origin header. Only the page's declared
+        # same-origin policy permits its HTTPS referrer to accompany a POST.
+        self.assertEqual(response['Referrer-Policy'], 'same-origin')
+        self.assertContains(response, '<meta name="referrer" content="same-origin">')
+        return {'HTTP_REFERER': url}
+
+    def test_https_login_follows_declared_referrer_policy(self):
+        strict = Client(enforce_csrf_checks=True)
+        path = reverse('accounts:login')
+        page = strict.get(path, secure=True)
+        headers = self.browser_headers(page, 'https://testserver' + path)
+        response = strict.post(path, {
+            'username': self.worker.username,
+            'password': 'Synthetic-test-password-123',
+            'csrfmiddlewaretoken': strict.cookies['csrftoken'].value,
+        }, secure=True, **headers)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse('staffing:general-schedule'))
+        self.assertIn('_auth_user_id', strict.session)
+
+    def test_https_login_rejects_cross_origin_with_valid_csrf_token(self):
+        strict = Client(enforce_csrf_checks=True)
+        path = reverse('accounts:login')
+        strict.get(path, secure=True)
+        response = strict.post(path, {
+            'username': self.worker.username,
+            'password': 'Synthetic-test-password-123',
+            'csrfmiddlewaretoken': strict.cookies['csrftoken'].value,
+        }, secure=True, HTTP_ORIGIN='https://untrusted.example',
+            HTTP_REFERER='https://untrusted.example/')
+        self.assertEqual(response.status_code, 403)
+        self.assertNotIn('_auth_user_id', strict.session)
+
+    def test_https_recovery_follows_declared_referrer_policy(self):
+        strict = Client(enforce_csrf_checks=True)
+        path = reverse('accounts:recovery')
+        page = strict.get(path, secure=True)
+        headers = self.browser_headers(page, 'https://testserver' + path)
+        response = strict.post(path, {
+            'username': self.worker.username, 'email': self.worker.email,
+            'csrfmiddlewaretoken': strict.cookies['csrftoken'].value,
+        }, secure=True, **headers)
+        self.assertContains(response, 'Check your email')
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_https_activation_follows_declared_referrer_policy(self):
+        from .staff_services import issue_invitation, invitation_token, read_invitation
+        invitation = issue_invitation(user=self.worker, purpose='reset',
+                                      reason='Synthetic HTTPS regression')
+        token = invitation_token(invitation)
+        path = reverse('accounts:activate', args=[token])
+        strict = Client(enforce_csrf_checks=True)
+        page = strict.get(path, secure=True)
+        headers = self.browser_headers(page, 'https://testserver' + path)
+        response = strict.post(path, {
+            'new_password1': 'New-Synthetic-Https-Password-567',
+            'new_password2': 'New-Synthetic-Https-Password-567',
+            'csrfmiddlewaretoken': strict.cookies['csrftoken'].value,
+        }, secure=True, **headers)
+        self.assertEqual(response.status_code, 302)
+        self.assertIsNone(read_invitation(token))
