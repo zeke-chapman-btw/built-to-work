@@ -19,7 +19,7 @@
   </nav>
   <div class="sidebar-bottom">
     <div class="sidebar-user"><span>{{ request.user.get_username }}</span><a class="settings-gear{% if settings_link.active %} active{% endif %}" href="{% url 'internal:settings' %}" aria-label="Personal settings" title="Personal settings">{% ui_icon 'settings' %}</a></div>
-    <form class="sign-out-form" method="post" action="{% url 'admin:logout' %}">{% csrf_token %}<button class="sign-out" type="submit">{% ui_icon 'logout' %}<span>Sign Out</span></button></form>
+    <form class="sign-out-form" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="sign-out" type="submit">{% ui_icon 'logout' %}<span>Sign Out</span></button></form>
   </div>
 </aside>
 <div class="main-column">

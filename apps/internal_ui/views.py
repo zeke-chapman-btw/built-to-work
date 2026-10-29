@@ -90,7 +90,7 @@ def workspace(request,workspace_id):
 @login_required
 def settings(request):
     _require_staff(request)
-    return render(request,"internal/settings.html",_staff_context(request,page_title="Settings & Administration",page_description="Your account and authorized administration tools.",settings_groups=settings_groups(request.user),password_change_url=reverse("admin:password_change")))
+    return render(request,"internal/settings.html",_staff_context(request,page_title="Settings & Administration",page_description="Your account and authorized administration tools.",settings_groups=settings_groups(request.user),password_change_url=reverse("accounts:password-change")))
 
 @login_required
 @require_http_methods(["GET", "POST"])

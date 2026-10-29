@@ -14,7 +14,7 @@ from .staff_services import save_account,revision,set_active,issue_invitation,in
 from .staff_forms import StaffAccountForm,AccountActionForm
 
 def account_manager(view):
-    @login_required(login_url='/admin/login/')
+    @login_required(login_url='accounts:login')
     @wraps(view)
     def secured(request,*args,**kwargs):
         require_account_manager(request.user);return view(request,*args,**kwargs)
@@ -99,6 +99,6 @@ def activate(request,token):
         elif form and form.is_valid():
             try:accept_invitation(token=token,password=form.cleaned_data['new_password1'])
             except ValidationError as exc:form.add_error(None,exc)
-            else:return redirect('/admin/login/?next=/internal/')
+            else:return redirect('accounts:login')
     response=render(request,'accounts/staff_activation.html',{'form':form,'page_title':'Set up your staff account','invalid':not item})
     response['Cache-Control']='private, no-store';response['Referrer-Policy']='same-origin';return response

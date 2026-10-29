@@ -1,7 +1,11 @@
 from django.urls import path
-from . import staff_views
+from . import staff_views,login_views
 app_name='accounts'
 urlpatterns=[
+ path('login/',login_views.sign_in,name='login'),
+ path('logout/',login_views.sign_out,name='logout'),
+ path('password-change/',login_views.password_change,name='password-change'),
+ path('password-reset/',login_views.recovery,name='recovery'),
  path('staff/',staff_views.index,name='staff-index'),
  path('staff/create/',staff_views.edit,name='staff-create'),
  path('staff/<uuid:user_id>/',staff_views.detail,name='staff-detail'),
