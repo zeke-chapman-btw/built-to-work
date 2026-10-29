@@ -199,6 +199,10 @@ def request_queue(request):
 
 @staff_view
 def schedule(request):
+    from apps.accounts.operational_access import safe_event_worker
+    if safe_event_worker(request.user):
+        from .general_views import schedule as general_schedule
+        return general_schedule(request)
     if request.method!="GET": raise PermissionDenied
     person=services.own_profile(request.user)
     if not person: return render(request,"staffing/notice.html",dict(page_title="My staff schedule",notice="Your account has no active staff profile link. Contact an authorized manager to review your profile and account link."))
@@ -210,6 +214,8 @@ def schedule(request):
 
 @staff_view
 def staff_event(request,event_id):
+    from apps.accounts.operational_access import safe_event_worker
+    if safe_event_worker(request.user):return redirect('staffing:general-event',event_id=event_id)
     person=services.own_profile(request.user)
     if not person: raise PermissionDenied
     event=get_object_or_404(Event,pk=event_id)

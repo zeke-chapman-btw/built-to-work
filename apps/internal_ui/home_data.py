@@ -46,6 +46,10 @@ def _event_destinations(user, events):
         for event in events:
             event.home_url = reverse("events:event_detail", args=[event.pk])
         return
+    from apps.accounts.operational_access import safe_event_worker
+    if safe_event_worker(user):
+        for event in events:event.home_url=reverse('staffing:general-event',args=[event.pk])
+        return
     from apps.operations.execution_models import EventExecution
     managed = set(EventExecution.objects.filter(event_id__in=[e.pk for e in events],
         primary_manager__user=user, primary_manager__is_active=True).values_list("event_id", flat=True))

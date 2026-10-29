@@ -137,15 +137,22 @@ def _resolved(item):
 def visible_legacy_workspaces(user,current_path=""):
     if not getattr(user,"is_active",False) or not getattr(user,"is_staff",False):
         return []
+    from apps.accounts.roles import managed,has_role
+    role_managed=managed(user)
     visible=[]
     for item in WORKSPACES:
+        if role_managed and item.get('planned'):continue
         if not _can_see(user,item["permissions"]):
             from apps.staffing.models import StaffProfile
-            if item["id"] not in ("events","operations") or not StaffProfile.objects.filter(user=user,is_active=True).exists():
+            if role_managed:
+                if item['id']!='events' or not has_role(user,'event_staff'):continue
+            elif item["id"] not in ("events","operations") or not StaffProfile.objects.filter(user=user,is_active=True).exists():
                 continue
         entry=_resolved(item)
         if item["id"]=="events" and not user.has_perm("events.view_event"):
             entry["url"]=reverse("events:event_create" if user.has_perm("events.add_event") else "staffing:schedule")
+        if item['id']=='events' and has_role(user,'event_staff') and not user.has_perm('events.view_event'):
+            entry['url']=reverse('staffing:general-schedule')
         entry["active"]=current_path==entry["url"] or any(current_path.startswith(prefix) for prefix in ACTIVE_PREFIXES.get(item["id"],()))
         if item["id"]=="operations" and current_path.startswith(("/operations/tasks/","/operations/my-tasks/")):
             entry["active"]=False
@@ -195,6 +202,15 @@ def visible_workspace_links(user,workspace_id):
 def _destination_allowed(user, item):
     """Match complete existing endpoint policies, without granting permissions."""
     route=item["url_name"]
+    if route=='workdays:settings':
+        from apps.workdays.services import administrator
+        return administrator(user)
+    if route=='event_reports:categories':
+        from apps.event_reports.services import can_configure
+        return can_configure(user)
+    if route=='admin:index':
+        from apps.accounts.operational_access import limited_staff
+        return not limited_staff(user)
     if route=="internal:portal-preview":return user.is_superuser
     if route=="operations:trailers":return user.is_superuser
     if route in ("workdays:index","workdays:reports"):
@@ -222,10 +238,12 @@ def staff_destinations(user, current_path=""):
     for key in ("home", "tasks", "participants", "customers", "campaigns", "approvals", "events", "operations"):
         if key in legacy:
             entries.append(dict(legacy[key], label=labels[key]))
+    from .reporting import report_destinations
     entries.extend([
         dict(id="reports", label="Reports & Analytics", icon="reports", url=reverse("internal:reports"), active=False),
         dict(id="settings", label="Settings & Administration", icon="settings", url=reverse("internal:settings"), active=False),
     ])
+    if not report_destinations(user):entries=[entry for entry in entries if entry['id']!='reports']
     active = next((entry["id"] for entry in entries if entry["active"]), None)
     if any(legacy.get(key, {}).get("active") for key in ("administration", "platform-tools")):
         active = "settings"
@@ -247,6 +265,9 @@ def settings_groups(user):
             links = visible_workspace_links(user, key)
             if links:
                 groups.append(dict(label=label, links=links))
+    from apps.accounts.roles import manager
+    if manager(user):
+        groups.insert(0,dict(label='Staff access',links=[dict(label='Staff accounts',description='Reviewed account setup, ordinary roles and secure invitations.',url=reverse('accounts:staff-index'))]))
     # Retain the existing planned destination, without adding customer features.
     if "customers" in allowed:
         groups.append(dict(label="Other destinations", links=[dict(label="Customers", description="Planned workspace", url=reverse("internal:workspace", kwargs={"workspace_id": "customers"}))]))

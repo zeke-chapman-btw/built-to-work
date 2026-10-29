@@ -110,6 +110,8 @@ def opportunity_open(event,plan):
 
 @transaction.atomic
 def request_availability(*,actor,event_id,data):
+    from apps.accounts.roles import managed,has_role
+    if managed(actor) and not has_role(actor,'event_staff'):raise PermissionDenied
     require_staff(actor)
     event=Event.objects.select_for_update().get(pk=event_id)
     profile=own_profile(actor)

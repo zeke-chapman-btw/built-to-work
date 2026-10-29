@@ -106,6 +106,9 @@ def profile(request, participant_id):
         return redirect("participants:staff-profile", participant_id=root)
     member_ids = identity_members(person.pk)
     section = request.GET.get("section", "overview")
+    from apps.accounts.operational_access import general_recruiter
+    if section == "acquisition" and general_recruiter(request.user) and not request.user.has_perm("participants.view_registrationsubmission"):
+        raise PermissionDenied
     permissions = {"documents": "participants.view_participantdocument", "qualifications": "participants.view_participantqualification",
                    "events": "events.view_eventregistration", "notes": "participants.view_participantnote",
                    "activity": "participants.view_participant_activity"}

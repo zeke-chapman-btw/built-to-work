@@ -1,5 +1,6 @@
 """Participant workspace boundaries use the existing Django staff/permission system."""
 from django.core.exceptions import PermissionDenied
+from apps.accounts.roles import manager
 from django.db.models import Q
 from .models import Participant
 
@@ -28,7 +29,7 @@ def can_notes(user):
 
 
 def can_edit_note(user, note):
-    return can_notes(user) and user.has_perm("participants.change_participantnote") and (user.is_superuser or note.author_id == user.pk)
+    return can_notes(user) and user.has_perm("participants.change_participantnote") and (user.is_superuser or manager(user) or note.author_id == user.pk)
 
 
 def can_create_customer_note(user, **kwargs):

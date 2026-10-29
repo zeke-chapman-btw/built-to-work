@@ -18,7 +18,9 @@ def can_manage(user):return can_report(user) and user.has_perm('event_reports.ma
 def require_manage(user):
     require_report(user)
     if not can_manage(user):raise PermissionDenied
-def can_configure(user):return bool(user.is_authenticated and user.is_active and user.is_staff and user.has_perm('event_reports.manage_expense_categories'))
+def can_configure(user):
+    from apps.accounts.operational_access import protected_configuration
+    return protected_configuration(user,'event_reports.manage_expense_categories')
 def require_configure(user):
     require_staff(user)
     if not can_configure(user):raise PermissionDenied

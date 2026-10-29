@@ -29,6 +29,8 @@ def assigned_event(user,event):
     return bool(p and event.status not in ("draft","archived","cancelled") and StaffAssignment.objects.filter(event=event,staff=p,status="confirmed").exists())
 def event_access(user,event,kind):
     require_staff(user)
+    from apps.accounts.operational_access import safe_event_worker
+    if kind!='tasks' and safe_event_worker(user):raise PermissionDenied
     if not (manager(user,kind) or assigned_event(user,event) or (kind=="tasks" and primary_event_manager(user,event))):raise PermissionDenied
 
 def mutable(event):

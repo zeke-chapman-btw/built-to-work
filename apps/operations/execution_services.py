@@ -28,12 +28,16 @@ def master_administrator(user):
 
 
 def manager(user,execution):
+    from apps.accounts.operational_access import safe_event_worker
+    if safe_event_worker(user):return False
     return administrator(user) or bool(execution and execution.primary_manager_id and
         execution.primary_manager.is_active and execution.primary_manager.user_id==user.pk
         and user.is_authenticated and user.is_active and user.is_staff)
 
 
 def can_view(user,event):
+    from apps.accounts.operational_access import safe_event_worker
+    if safe_event_worker(user):return False
     if not user.is_authenticated or not user.is_active or not user.is_staff:return False
     execution=EventExecution.objects.select_related("primary_manager").filter(event=event).first()
     if user.has_perm("events.view_event") or manager(user,execution):return True

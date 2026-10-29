@@ -54,6 +54,8 @@ def mine(request):
 
 @staff_view
 def checkin(request,event_id):
+    from apps.accounts.roles import has_role
+    if not has_role(request.user,'event_staff'):raise PermissionDenied
     event=get_object_or_404(Event,pk=event_id);staff=svc.person(request.user)
     if not staff:raise PermissionDenied
     assigned=AssignmentDay.objects.filter(assignment__event=event,assignment__staff=staff,assignment__status='confirmed').order_by('date')

@@ -18,7 +18,8 @@ from .forms import CheckinForm, WorkdayForm, RoleForm, RateForm, DistanceForm, T
 def manager(user):
     return bool(user.is_authenticated and user.is_active and user.is_staff and user.has_perm('workdays.manage_workdays') and user.has_perm('events.view_event'))
 def administrator(user):
-    return bool(user.is_authenticated and user.is_active and user.is_staff and user.has_perm('workdays.manage_compensation'))
+    from apps.accounts.operational_access import protected_configuration
+    return protected_configuration(user,'workdays.manage_compensation')
 def require_manager(user):
     require_staff(user)
     if not manager(user):raise PermissionDenied
@@ -61,6 +62,8 @@ def driving_trip(actor,event,staff,source='staff_declaration'):
     return obj
 @transaction.atomic
 def checkin(*,actor,event_id,data):
+    from apps.accounts.roles import has_role
+    if not has_role(actor,'event_staff'):raise PermissionDenied('Event Staff membership and an eligible assignment are required.')
     staff=person(actor)
     if not staff:raise PermissionDenied
     event=Event.objects.select_for_update().get(pk=event_id)

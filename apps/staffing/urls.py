@@ -1,7 +1,9 @@
 from django.urls import path
-from . import views
+from . import views, general_views
 app_name="staffing"
 urlpatterns=[
+    path('published/',general_views.schedule,name='general-schedule'),
+    path('published/<uuid:event_id>/',general_views.detail,name='general-event'),
     path("",views.schedule,name="schedule"),
     path("directory/",views.directory,name="directory"),
     path("directory/add/",views.profile_edit,name="profile-add"),

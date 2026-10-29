@@ -31,9 +31,13 @@ class Workday9ETests(TestCase):
         cls.public=U.objects.create_user('synthetic-9e-public',password='test-password')
         cls.manager.user_permissions.add(Permission.objects.get(content_type__app_label='workdays',codename='manage_workdays'),Permission.objects.get(content_type__app_label='events',codename='view_event'))
         cls.admin.user_permissions.add(*Permission.objects.filter(content_type__app_label='workdays',codename__in=['manage_workdays','manage_compensation']),Permission.objects.get(content_type__app_label='events',codename='view_event'))
+        from apps.accounts.roles import role_configuration,ROLE_GROUPS
+        from django.contrib.auth.models import Group
+        role_configuration(apply=True)
+        cls.employee.groups.add(Group.objects.get(name=ROLE_GROUPS['event_staff']))
         cls.staff=StaffProfile.objects.create(first_name='SYNTHETIC',last_name='9E Employee',user=cls.employee)
         cls.second=StaffProfile.objects.create(first_name='SYNTHETIC',last_name='9E Other',user=cls.other)
-        cls.event=Event.objects.create(name='SYNTHETIC 9E event',start_at=datetime(2030,7,1,13,tzinfo=UTC),end_at=datetime(2030,7,3,21,tzinfo=UTC),status='upcoming',timezone_name='America/New_York',address_line_1='SYNTHETIC 123 Test Street',city='Athens',state='GA')
+        cls.event=Event.objects.create(name='SYNTHETIC 9E event',start_at=datetime(2030,7,1,13,tzinfo=UTC),end_at=datetime(2030,7,3,21,tzinfo=UTC),status='upcoming',staff_published_at=timezone.now(),timezone_name='America/New_York',address_line_1='SYNTHETIC 123 Test Street',city='Athens',state='GA')
         cls.role=StaffRole.objects.create(name='SYNTHETIC daily role',per_diem_eligible=True)
         cls.unknown=StaffRole.objects.create(name='SYNTHETIC unconfigured role')
         cls.rate=CompensationRate.objects.create(kind='role',role=cls.role,amount=100,effective_from=date(2030,1,1),reason='SYNTHETIC daily rate')

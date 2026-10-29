@@ -89,4 +89,15 @@ def workspace_intake_context(user, person, members, career):
                               if person.date_of_birth else person.age_classification or "Not recorded"}
     if full_dob_allowed(user):
         result["authorized_dob"] = person.date_of_birth
+    from apps.accounts.operational_access import general_recruiter
+    result['can_view_intake_history'] = not general_recruiter(user) or user.has_perm('participants.view_registrationsubmission')
+    if not result['can_view_intake_history']:
+        # General mapped profile facts remain visible. Raw submission identity,
+        # mapping internals and review queues do not become Recruiter data.
+        result['intake_history'] = []
+        result['intake_pending_count'] = None
+        result['can_review_intake'] = False
+        for row in rows:
+            row['source'] = None; row['reported_at'] = None
+        for row in entries:row['operation'] = None
     return result

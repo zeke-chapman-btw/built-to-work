@@ -43,6 +43,12 @@ def events_for(user):
     require_task_staff(user)
     if user.has_perm("events.view_event"):
         return Event.objects.all()
+    from apps.accounts.operational_access import safe_event_worker
+    from apps.accounts.roles import has_role
+    if safe_event_worker(user):
+        if not has_role(user,'event_staff'):return Event.objects.none()
+        from apps.staffing.general_views import published_events
+        return published_events()
     assigned=Q(staff_assignments__staff__user=user,staff_assignments__staff__is_active=True,
                staff_assignments__status="confirmed") & ~Q(status__in=("draft","archived","cancelled"))
     managed=Q(execution__primary_manager__user=user,execution__primary_manager__is_active=True)
