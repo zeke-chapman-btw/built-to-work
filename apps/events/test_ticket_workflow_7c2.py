@@ -134,10 +134,89 @@ class TicketWorkflowTests(TestCase):
         for route in ('offline-ticket-png', 'offline-ticket-pdf', 'offline-ticket-print'):
             self.assertEqual(self.client.get(reverse('events:' + route, args=[uuid4()])).status_code, 404)
 
+    def test_initialization_keeps_unrelated_overlap_validation(self):
+        conflict = TicketAllocationBlock.objects.create(
+            name='custom-reserved', start_number=4000000001,
+            end_number=4000000002, next_number=4000000001,
+        )
+        with self.assertRaises(ValidationError):
+            allocate_ticket_number(block_name='trailer1')
+        self.assertFalse(TicketAllocationBlock.objects.filter(name='trailer1').exists())
+        conflict.refresh_from_db()
+        self.assertEqual(conflict.next_number, 4000000001)
+
 class TicketAllocationConcurrencyTests(TransactionTestCase):
+    def parallel_numbers(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Barrier
+        from django.db import connections
+
+        ready = Barrier(4)
+        def worker(_):
+            connections.close_all()
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute('SELECT pg_backend_pid()')
+                    backend_pid = cursor.fetchone()[0]
+                ready.wait(timeout=20)
+                return allocate_ticket_number(), backend_pid
+            finally:
+                connections.close_all()
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            results = list(pool.map(worker, range(12)))
+        self.assertGreaterEqual(len({pid for _, pid in results}), 4)
+        return [number for number, _ in results]
+
     @skipIf(connection.vendor == 'sqlite', 'SQLite cannot verify row-lock allocation; run against PostgreSQL.')
     def test_parallel_allocations_are_unique(self):
-        from concurrent.futures import ThreadPoolExecutor
-        with ThreadPoolExecutor(max_workers=4) as pool:
-            numbers = list(pool.map(lambda _: allocate_ticket_number(), range(12)))
+        numbers = self.parallel_numbers()
         self.assertEqual(len(numbers), len(set(numbers)))
+        self.assertEqual(sorted(numbers), [f'{value:010d}' for value in range(1, 13)])
+        self.assertEqual(TicketAllocationBlock.objects.filter(name='cloud').count(), 1)
+        self.assertEqual(TicketAllocationBlock.objects.get(name='cloud').next_number, 13)
+
+    @skipIf(connection.vendor == 'sqlite', 'SQLite cannot verify row-lock allocation; run against PostgreSQL.')
+    def test_creation_validation_race_uses_committed_block(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Barrier, Event as ThreadEvent, local
+        from unittest.mock import patch
+        from django.db import connections
+
+        both_creating = Barrier(2)
+        first_committed = ThreadEvent()
+        worker_state = local()
+        original_save = TicketAllocationBlock.save
+
+        def ordered_save(block, *args, **kwargs):
+            if block._state.adding and block.name == 'cloud':
+                both_creating.wait(timeout=20)
+                if worker_state.index == 1:
+                    self.assertTrue(first_committed.wait(timeout=20))
+            return original_save(block, *args, **kwargs)
+
+        def worker(index):
+            connections.close_all()
+            worker_state.index = index
+            try:
+                return allocate_ticket_number()
+            finally:
+                if index == 0:
+                    first_committed.set()
+                connections.close_all()
+
+        with patch.object(TicketAllocationBlock, 'save', ordered_save):
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                numbers = list(pool.map(worker, range(2)))
+        self.assertEqual(sorted(numbers), ['0000000001', '0000000002'])
+        self.assertEqual(TicketAllocationBlock.objects.count(), 1)
+        self.assertEqual(TicketAllocationBlock.objects.get(name='cloud').next_number, 3)
+
+    @skipIf(connection.vendor == 'sqlite', 'SQLite cannot verify row-lock allocation; run against PostgreSQL.')
+    def test_repeated_cold_start_contention(self):
+        for trial in range(10):
+            with self.subTest(trial=trial):
+                TicketAllocationBlock.objects.all().delete()
+                numbers = self.parallel_numbers()
+                self.assertEqual(sorted(numbers), [f'{value:010d}' for value in range(1, 13)])
+                self.assertEqual(TicketAllocationBlock.objects.count(), 1)
+                self.assertEqual(TicketAllocationBlock.objects.get(name='cloud').next_number, 13)

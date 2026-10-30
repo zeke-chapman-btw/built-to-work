@@ -8,7 +8,14 @@ def allocate_ticket_number(*, block_name="cloud"):
         if block_name not in defaults:
             raise ValidationError("Unknown ticket allocation block.")
         start,end=defaults[block_name]
-        TicketAllocationBlock.objects.get_or_create(name=block_name, defaults={"start_number": start, "end_number": end, "next_number": start})
+        try:
+            TicketAllocationBlock.objects.get_or_create(name=block_name, defaults={"start_number": start, "end_number": end, "next_number": start})
+        except ValidationError:
+            # Model full_clean can observe a concurrent creator before INSERT.
+            # Recover only if the authoritative named block now exists.
+            # Unrelated overlap/range errors must still propagate.
+            if not TicketAllocationBlock.objects.filter(name=block_name).exists():
+                raise
         block=TicketAllocationBlock.objects.select_for_update().get(name=block_name, is_active=True)
         if block.next_number > block.end_number:
             raise ValidationError("No ticket numbers remain in this allocation block.")
