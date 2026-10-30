@@ -47,6 +47,9 @@ def reports(request):
 @login_required
 def workspace(request,workspace_id):
     _require_staff(request)
+    if workspace_id in ('customers','campaigns'):
+        from apps.customers.views import directory, campaign_directory
+        return (directory if workspace_id=='customers' else campaign_directory)(request)
     item=next((entry for entry in WORKSPACES if entry["id"]==workspace_id and entry["id"]!="home"),None)
     if item is None:
         raise Http404

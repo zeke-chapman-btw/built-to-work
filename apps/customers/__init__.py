@@ -1,0 +1,1 @@
+"""Internal customer management foundation."""

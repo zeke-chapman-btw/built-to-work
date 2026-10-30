@@ -1,7 +1,7 @@
 """Versioned staff roles. Administrator remains Django superuser authority."""
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.models import Group, Permission
-ROLE_VERSION=1
+ROLE_VERSION=2
 # Explicit reviewed snapshot: future permissions require a new approved version.
 MANAGER_PERMISSIONS_V1 = frozenset([
     "assessments.add_assessmentcategory",
@@ -322,6 +322,7 @@ MANAGER_PERMISSIONS_V1 = frozenset([
     "workdays.view_workday"
 ])
 ROLE_GROUPS={'manager':'BTW Manager','recruiter':'BTW Recruiter','event_staff':'BTW Event Staff'}
+MANAGER_PERMISSIONS_V2 = MANAGER_PERMISSIONS_V1 | frozenset({'customers.manage_customers'})
 ORDINARY_ROLES={'recruiter','event_staff'}
 
 def active_staff(user):
@@ -343,7 +344,7 @@ def permission_names(role):
     if role=='recruiter':return {'participants.view_participant','participants.view_participantqualification','participants.view_qualificationcatalogentry','participants.view_participantnote','participants.add_participantnote','participants.change_participantnote'}
     if role=='event_staff':return set()
     if role!='manager':return set()
-    return set(MANAGER_PERMISSIONS_V1)
+    return set(MANAGER_PERMISSIONS_V2)
 
 def protected_target(user):
     if user.is_superuser or has_role(user,'manager'):return True
@@ -354,6 +355,8 @@ def protected_target(user):
 
 def require_target(actor,target):
     require_account_manager(actor)
+    from apps.customers.access import customer_identity
+    if customer_identity(target):raise PermissionDenied('Customer identities cannot be converted into staff accounts.')
     if not actor.is_superuser and protected_target(target):raise PermissionDenied('This account requires Administrator review.')
 
 def lock_role_groups():

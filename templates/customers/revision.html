@@ -1,0 +1,1 @@
+{% for group in sections %}<section class="customer-term-group"><h3>{{ group.title }}</h3><dl class="customer-facts">{% for item in group.values %}<div><dt>{{ item.label|capfirst }}</dt><dd>{{ item.value|linebreaksbr }}</dd></div>{% endfor %}</dl></section>{% empty %}<p class="customer-muted">No hiring details entered yet.</p>{% endfor %}

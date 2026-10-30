@@ -8,8 +8,8 @@ WORKSPACES = (
     {"id":"tasks","label":"TASKS","icon":"tasks","url_name":"operations:tasks","description":"Your tasks, assignments and shared activity.","permissions":()},
     {"id":"operations","label":"OPERATIONS","icon":"operations","url_name":"internal:workspace","url_kwargs":{"workspace_id":"operations"},"description":"Stations, trailer operations, synchronization, and assessments.","permissions":("events.view_event","stations.view_station","events.view_trailer","events.view_syncoperation","events.view_ticketdelivery","events.view_matchreview","events.view_operationalincident","assessments.view_assessmentcategory","assessments.add_assessmentcategory","staffing.view_staffprofile","staffing.manage_event_staffing","operations.view_operationstemplate","operations.manage_tasks","operations.manage_event_notes","operations.manage_event_documents","workdays.manage_workdays","event_reports.view_event_reports","operations.manage_event_execution","operations.manage_master_checklist","participants.view_consentacceptance")},
     {"id":"platform-tools","label":"PLATFORM TOOLS","icon":"operations","url_name":"internal:workspace","url_kwargs":{"workspace_id":"platform-tools"},"description":"Existing platform monitoring, reconciliation and recovery tools.","permissions":("events.view_syncoutboxitem","events.view_participantmatchreview","events.view_backuprecord")},
-    {"id":"customers","label":"CUSTOMERS","icon":"customers","url_name":"internal:workspace","url_kwargs":{"workspace_id":"customers"},"description":"Customer management is planned; no customer records or tools are available yet.","permissions":(),"planned":True},
-    {"id":"campaigns","label":"CAMPAIGNS","icon":"campaigns","url_name":"internal:workspace","url_kwargs":{"workspace_id":"campaigns"},"description":"Campaign management is planned; no campaign records or tools are available yet.","permissions":(),"planned":True},
+    {"id":"customers","label":"CUSTOMERS","icon":"customers","url_name":"customers:directory","description":"Customer organizations, users, Workforce Needs and customer activity.","permissions":()},
+    {"id":"campaigns","label":"CAMPAIGNS","icon":"campaigns","url_name":"customers:campaign-directory","description":"Coordinated customer recruiting efforts and their Workforce Needs.","permissions":()},
     {"id":"approvals","label":"APPROVALS","icon":"approvals","url_name":"internal:workspace","url_kwargs":{"workspace_id":"approvals"},"description":"A unified approvals workspace is planned; existing review queues remain in their current workspaces.","permissions":(),"planned":True},
     {"id":"administration","label":"ADMIN","icon":"settings","url_name":"internal:workspace","url_kwargs":{"workspace_id":"administration"},"description":"Authorized BTW configuration and staff administration.","permissions":("staffing.view_staffprofile","workdays.manage_workdays","auth.view_user","auth.change_user","participants.change_registrationform","participants.view_testparticipant","participants.change_testparticipant","workdays.manage_compensation","event_reports.manage_expense_categories")},
 )
@@ -137,10 +137,14 @@ def _resolved(item):
 def visible_legacy_workspaces(user,current_path=""):
     if not getattr(user,"is_active",False) or not getattr(user,"is_staff",False):
         return []
-    from apps.accounts.roles import managed,has_role
+    from apps.accounts.roles import managed,has_role,manager
     role_managed=managed(user)
     visible=[]
     for item in WORKSPACES:
+        if item['id'] in ('customers','campaigns'):
+            # Presentation uses the existing request-local role/permission cache.
+            # Customer routes, queries, forms and mutations recheck fresh authority.
+            if not manager(user) or not (user.is_superuser or user.has_perm('customers.manage_customers')):continue
         if role_managed and not user.is_superuser and not has_role(user,'manager') and item.get('planned'):continue
         if not _can_see(user,item["permissions"]):
             from apps.staffing.models import StaffProfile
@@ -154,6 +158,8 @@ def visible_legacy_workspaces(user,current_path=""):
         if item['id']=='events' and has_role(user,'event_staff') and not user.has_perm('events.view_event'):
             entry['url']=reverse('staffing:general-schedule')
         entry["active"]=current_path==entry["url"] or any(current_path.startswith(prefix) for prefix in ACTIVE_PREFIXES.get(item["id"],()))
+        if item['id'] in ('customers','campaigns'):
+            entry['active']=current_path.startswith('/internal/'+item['id']+'/') or current_path==reverse('internal:workspace',kwargs={'workspace_id':item['id']})
         if item["id"]=="operations" and current_path.startswith(("/operations/tasks/","/operations/my-tasks/")):
             entry["active"]=False
         if item["id"]=="operations" and current_path.startswith("/reports/categories/"):
@@ -268,9 +274,9 @@ def settings_groups(user):
     from apps.accounts.roles import manager
     if manager(user):
         groups.insert(0,dict(label='Staff access',links=[dict(label='Staff accounts',description='Reviewed account setup, ordinary roles and secure invitations.',url=reverse('accounts:staff-index'))]))
-    # Retain the existing planned destination, without adding customer features.
+    # Customer authority stays explicit; existing other settings remain unchanged.
     if "customers" in allowed:
-        groups.append(dict(label="Other destinations", links=[dict(label="Customers", description="Planned workspace", url=reverse("internal:workspace", kwargs={"workspace_id": "customers"}))]))
+        groups.append(dict(label="Other destinations", links=[dict(label="Customers", description="Customer management", url=reverse("customers:directory"))]))
     return groups
 
 
@@ -281,4 +287,4 @@ visible_workspaces = visible_legacy_workspaces
 
 def legacy_workspace_context(user, current_path=""):
     return next((entry for entry in visible_legacy_workspaces(user, current_path)
-                 if entry["active"] and entry["id"] in ("administration", "platform-tools", "customers")), None)
+                 if entry["active"] and entry["id"] in ("administration", "platform-tools")), None)

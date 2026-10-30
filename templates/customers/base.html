@@ -1,0 +1,10 @@
+{% extends "internal/base.html" %}{% load customer_ui %}{% load static %}
+{% block title %}{% if organization %}{{ organization.name }} · {% endif %}Customers · Built to Work{% endblock %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/customers.css' %}">{% endblock %}
+{% block body_class %}{{ block.super }} customer-app{% endblock %}
+{% block page_heading %}{% endblock %}{% block page_actions %}{% endblock %}
+{% block content %}<div class="customer-page">
+{% if organization %}<a class="customer-back" href="{{ back_url }}">← Customers</a><header class="customer-heading"><div><h1>{{ organization.name }}</h1><p>{{ organization.industry|default:"Customer workspace" }}</p></div><span class="customer-badge">{{ organization.get_status_display }}</span></header>
+{% if organization.status == 'archived' %}<p class="customer-notice" role="status">Archived customer. Records and history are preserved. <a href="{% customer_url 'customers:organization-action' organization.pk 'restore' %}">Restore customer</a> to make changes.</p>{% endif %}
+<nav class="customer-tabs" aria-label="Customer workspace">{% for item in customer_tabs %}<a href="{{ item.url }}" {% if item.key == active_tab %}aria-current="page"{% endif %}>{{ item.label }}</a>{% endfor %}</nav>{% endif %}
+{% block customer_content %}{% endblock %}</div>{% endblock %}

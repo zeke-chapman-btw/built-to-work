@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db.models import Q
 
 from .models import AuditLog
 
@@ -22,6 +23,18 @@ class AuditLogAdmin(admin.ModelAdmin):
         "reason",
     )
     fields = readonly_fields
+
+    def get_queryset(self, request):
+        query = super().get_queryset(request)
+        from apps.customers.access import is_manager
+        if not is_manager(request.user):
+            # A legacy audit grant must not bypass the customer role boundary.
+            # Keep unrelated audit records and their existing permissions intact.
+            query = query.exclude(Q(customer_scopes__isnull=False)
+                                  | Q(content_type__app_label="customers")
+                                  | Q(source="customer_management")
+                                  | Q(action__startswith="customer."))
+        return query
 
     def has_add_permission(self, request):
         return False

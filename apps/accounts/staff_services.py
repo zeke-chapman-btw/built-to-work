@@ -44,6 +44,8 @@ def check_fields(data):
 def save_account(*,actor,data,user_id=None):
     check_fields(data);lock_role_groups();actor,target=lock_users(actor,user_id);require_account_manager(actor)
     if user_id and target is None:raise ValidationError('Account not found.')
+    from apps.customers.access import customer_identity
+    if target and customer_identity(target):raise PermissionDenied('Prepare customer users through Customers; staff conversion is not permitted.')
     if target:
         require_target(actor,target)
         if data.get('revision')!=revision(target):raise ValidationError('This account changed. Reload before saving.')
@@ -116,6 +118,8 @@ def issue_invitation(*,user,actor=None,purpose='setup',reason='Account setup',ex
         if expected_revision!=revision(target):raise ValidationError('This account changed. Reload before inviting.')
     else:target=get_user_model().objects.select_for_update().get(pk=user.pk)
     if actor is None and purpose!='reset':raise PermissionDenied
+    from apps.customers.access import customer_identity
+    if customer_identity(target):raise PermissionDenied('Customer activation and invitations are not available in Build 13.')
     if not target.is_staff or not target.email or (purpose=='reset' and not target.is_active):raise ValidationError('Account setup is unavailable.')
     if purpose=='setup' and target.is_active and target.has_usable_password():raise ValidationError('Use password recovery for an active account.')
     StaffInvitation.objects.filter(user=target,purpose=purpose,accepted_at__isnull=True,revoked_at__isnull=True).update(revoked_at=timezone.now())

@@ -13,6 +13,8 @@ class AuditedUserForm(UserChangeForm):
     audit_reason=forms.CharField(label='Reason for account change',widget=forms.Textarea(attrs={'rows':2}))
     def clean(self):
         values=super().clean()
+        from apps.customers.access import customer_identity
+        if customer_identity(self.instance):raise forms.ValidationError('Manage prepared customer identities through Customers; native authentication changes are disabled.')
         from apps.participants.models import ParticipantAccount
         if self.instance.pk and values.get('is_staff') and ParticipantAccount.objects.filter(user=self.instance).exists():raise forms.ValidationError('Staff and participant identities must remain separate.')
         if self.instance.pk and self.instance.is_superuser and (not values.get('is_superuser') or not values.get('is_active') or not values.get('is_staff')) and User.objects.filter(is_superuser=True,is_active=True,is_staff=True).exclude(pk=self.instance.pk).count()==0:raise forms.ValidationError('Retain at least one active Administrator.')
@@ -26,7 +28,9 @@ class CustomUserAdmin(UserAdmin):
     def has_module_permission(self,request):return request.user.is_active and request.user.is_superuser
     def has_view_permission(self,request,obj=None):return self.has_module_permission(request)
     def has_add_permission(self,request):return self.has_module_permission(request)
-    def has_change_permission(self,request,obj=None):return self.has_module_permission(request)
+    def has_change_permission(self,request,obj=None):
+        from apps.customers.access import customer_identity
+        return self.has_module_permission(request) and not customer_identity(obj)
     def has_delete_permission(self,request,obj=None):return False
     def save_model(self,request,obj,form,change):
         lock_role_groups()
@@ -43,6 +47,10 @@ class CustomUserAdmin(UserAdmin):
         super().save_model(request,obj,form,change)
     @transaction.atomic
     def user_change_password(self,request,id,form_url=""):
+        from apps.customers.models import CustomerIdentity
+        if CustomerIdentity.objects.filter(user_id=id).exists():
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied('Customer credentials cannot be activated in Build 13.')
         lock_role_groups()
         actor=User.objects.select_for_update().get(pk=request.user.pk)
         if not (actor.is_active and actor.is_staff and actor.is_superuser):

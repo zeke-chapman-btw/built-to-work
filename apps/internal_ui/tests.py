@@ -50,7 +50,7 @@ class InternalShellTests(TestCase):
         self.assertContains(response, reverse('events:event_list'))
         self.assertContains(response, reverse('internal:workspace', kwargs={'workspace_id': 'participants'}))
         self.assertNotContains(response, 'aria-expanded="true"')
-        self.assertContains(response, 'class="nav-planned">Planned</span>', count=3)
+        self.assertContains(response, 'class="nav-planned">Planned</span>', count=1)
 
     def test_named_workspace_pages_render_shared_shell_and_real_links(self):
         user = self.make_staff("workspace-owner", superuser=True)
@@ -69,7 +69,10 @@ class InternalShellTests(TestCase):
                 elif workspace_id == "participants":
                     self.assertContains(response, "people-directory")
                     self.assertContains(response, reverse("participants:staff-directory"))
-                elif workspace_id in ("customers", "campaigns", "approvals"):
+                elif workspace_id in ("customers", "campaigns"):
+                    self.assertContains(response, 'class="customer-page"')
+                    self.assertNotContains(response, 'planned-workspace')
+                elif workspace_id == "approvals":
                     self.assertContains(response, 'class="empty-state card planned-workspace"')
                     self.assertContains(response, '<span class="badge">Planned</span>', html=True)
                     self.assertNotContains(response, "workspace-card")
@@ -111,7 +114,9 @@ class PortalFoundationTests(TestCase):
         self.assertNotContains(response, "/events/")
         self.assertNotContains(response, "Active registrations")
         self.assertNotContains(response, "Create customer")
-        self.assertContains(response, 'class="nav-planned">Planned</span>', count=3)
+        self.assertContains(response, 'class="nav-planned">Planned</span>', count=1)
+        self.assertNotContains(response, reverse('customers:directory'))
+        self.assertNotContains(response, reverse('customers:campaign-directory'))
 
     def test_dashboard_uses_permission_scoped_event_data(self):
         self.client.force_login(self.staff_user("event-reader", ("events", "view_event")))

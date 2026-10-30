@@ -37,15 +37,14 @@ class WorkspaceFinalizationTests(TestCase):
         self.assertEqual(quiz["url"], reverse("assessments:dashboard"))
         self.assertNotIn("assessments", [item["id"] for item in visible_workspaces(self.user)])
 
-    def test_customers_workspace_is_explicitly_planned_and_has_no_fake_tools(self):
+    def test_customers_workspace_has_real_directory_without_fake_matches(self):
         response = self.client.get(reverse("internal:workspace", kwargs={"workspace_id": "customers"}))
         self.assertEqual((response.status_code, response.get("Location"), response.wsgi_request.user.is_authenticated), (200, None, True))
-        self.assertContains(response, '<span class="badge">Planned</span>', html=True)
-        self.assertContains(response, "no customer records or tools are available yet.")
-        section = response.content.decode().split('class="empty-state card planned-workspace"', 1)[1].split("</section>", 1)[0]
-        self.assertNotIn("<form", section)
-        self.assertNotIn("<input", section)
-        self.assertNotIn("<table", section)
+        self.assertContains(response, 'class="customer-page"')
+        self.assertContains(response, 'No customers found')
+        self.assertContains(response, reverse('customers:new'))
+        self.assertNotContains(response, 'planned-workspace')
+        self.assertNotContains(response, 'Candidate rankings')
         self.assertNotContains(response, "workspace-card")
 
     def test_settings_is_staff_only_and_uses_existing_self_password_change(self):
@@ -61,7 +60,9 @@ class WorkspaceFinalizationTests(TestCase):
         staff = get_user_model().objects.create_user(username="limited-staff", password="test-only-password", is_staff=True)
         self.client.force_login(staff, backend="django.contrib.auth.backends.ModelBackend")
         nav = visible_workspaces(staff)
-        self.assertEqual([item["id"] for item in nav], ["home", "tasks", "customers", "campaigns", "approvals"])
+        self.assertEqual([item["id"] for item in nav], ["home", "tasks", "approvals"])
+        for key in ('customers', 'campaigns'):
+            self.assertEqual(self.client.get(reverse('internal:workspace', kwargs={'workspace_id': key})).status_code, 403)
         self.assertEqual(self.client.get(reverse("internal:workspace", kwargs={"workspace_id": "participants"})).status_code, 403)
         permission = Permission.objects.get(content_type__app_label="participants", codename="view_participant")
         staff.user_permissions.add(permission)

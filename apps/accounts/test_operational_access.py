@@ -1,6 +1,7 @@
 """Synthetic role matrix and direct-URL/forged-write security regression tests."""
 import uuid
 from datetime import timedelta,date
+from zoneinfo import ZoneInfo
 from unittest.mock import patch
 from django.test import TestCase,Client
 from django.contrib.auth import get_user_model
@@ -30,6 +31,7 @@ class OperationalRoleTests(TestCase):
     def setUpTestData(cls):
         foundation.StaffFoundationTests.setUpTestData.__func__(cls)
         now=timezone.now()
+        cls.checkin_at=now  # Keep assignment and check-in on the same event-local day.
         cls.event=Event.objects.create(name='SYNTHETIC general event',start_at=now-timedelta(hours=1),end_at=now+timedelta(hours=5),status='upcoming',staff_published_at=now,contact_name='PRIVATE_CONTACT_MARKER',housing_information='PRIVATE_HOUSING_MARKER',logistics_instructions='PRIVATE_OPERATIONS_MARKER')
         cls.plan=StaffingPlan.objects.create(event=cls.event,is_published=True,required_staff=2)
         cls.profile=StaffProfile.objects.get(user=cls.worker)
@@ -43,10 +45,11 @@ class OperationalRoleTests(TestCase):
     def assignment(self,user=None,coverage_role='staff'):
         profile=StaffProfile.objects.get(user=user or self.worker)
         row=StaffAssignment.objects.create(event=self.event,staff=profile,coverage_role=coverage_role)
-        AssignmentDay.objects.create(assignment=row,**day_window(self.event,self.event.local_start_at.date()))
+        AssignmentDay.objects.create(assignment=row,**day_window(self.event,timezone.localdate(self.checkin_at,ZoneInfo(self.event.timezone_name))))
         return row
     def check(self,user):
-        return workdays.checkin(actor=user,event_id=self.event.pk,data={'work_date':timezone.localdate().isoformat(),'role':str(self.pay_role.pk),'drove':''})
+        with patch('apps.workdays.services.timezone.now',return_value=self.checkin_at):
+            return workdays.checkin(actor=user,event_id=self.event.pk,data={'work_date':timezone.localdate(self.checkin_at,ZoneInfo(self.event.timezone_name)).isoformat(),'role':str(self.pay_role.pk),'drove':''})
     def test_published_history_includes_cancelled_and_archived(self):
         self.login_as(self.worker)
         for status in ('upcoming','completed','cancelled','archived'):

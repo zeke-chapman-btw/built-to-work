@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "apps.core.apps.CoreConfig",
     "apps.accounts.apps.AccountsConfig",
+    "apps.customers.apps.CustomersConfig",
     "apps.staffing.apps.StaffingConfig",
     "apps.operations.apps.OperationsConfig",
     "apps.workdays.apps.WorkdaysConfig",

@@ -136,12 +136,16 @@ class CorrectivePassOneTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual([row['id'] for row in response.context['primary_navigation'] if row['active']], [key])
                 html = response.content.decode()
+                if key in ('customers', 'campaigns'):
+                    self.assertContains(response, 'class="customer-page"')
+                    self.assertNotContains(response, 'planned-workspace')
+                    continue
                 section = html.split('class="empty-state card planned-workspace"', 1)[1].split('</section>', 1)[0]
                 self.assertIn('Planned', section)
                 self.assertIn('Back to Home', section)
                 for unexpected in ('<form', '<input', '<table', 'metric', 'counter'):
                     self.assertNotIn(unexpected, section)
-                self.assertContains(response, 'class="nav-planned">Planned</span>', count=3)
+                self.assertContains(response, 'class="nav-planned">Planned</span>', count=1)
 
     def test_planned_pages_keep_existing_active_staff_boundary(self):
         from django.test import Client
@@ -152,7 +156,8 @@ class CorrectivePassOneTests(TestCase):
             client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
             for key in ('customers', 'campaigns', 'approvals'):
                 response = client.get(reverse('internal:workspace', kwargs={'workspace_id': key}))
-                self.assertEqual(response.status_code, 200 if user == self.viewer else 403 if user.is_active else 302)
+                expected = 200 if user == self.viewer and key == 'approvals' else 403 if user.is_active else 302
+                self.assertEqual(response.status_code, expected)
         for key in ('customers', 'campaigns', 'approvals'):
             self.assertEqual(Client().get(reverse('internal:workspace', kwargs={'workspace_id': key})).status_code, 302)
         for user in (participant, inactive):
