@@ -1,0 +1,1 @@
+{% if rows.has_other_pages %}<nav class="actions" aria-label="Pages">{% if rows.has_previous %}<a class="button" href="?page={{ rows.previous_page_number }}">Previous</a>{% endif %}<span>Page {{ rows.number }} of {{ rows.paginator.num_pages }}</span>{% if rows.has_next %}<a class="button" href="?page={{ rows.next_page_number }}">Next</a>{% endif %}</nav>{% endif %}

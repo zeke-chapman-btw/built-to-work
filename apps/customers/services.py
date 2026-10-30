@@ -40,9 +40,17 @@ def fields_only(data, allowed):
         raise ValidationError("Unsupported fields: " + ", ".join(sorted(unknown)))
 
 
-def locked_org(actor, org_id, revision, *, archived=False):
-    actor = require_manager(actor, lock=True)
-    org = Org.objects.select_for_update().get(pk=org_id)
+def locked_org(actor, org_id, revision, *, archived=False, customer_action=None):
+    from .portal_policy import is_customer, require_membership
+    if is_customer(actor):
+        if not customer_action:
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied("BTW authority is required for this action.")
+        membership = require_membership(actor, org_id, action=customer_action, lock=True)
+        actor, org = membership.identity.user, membership.organization
+    else:
+        actor = require_manager(actor, lock=True)
+        org = Org.objects.select_for_update().get(pk=org_id)
     expected(org, revision, "organization")
     if org.status == Org.Status.ARCHIVED and not archived:
         raise ValidationError("Restore this archived organization before making changes.")
@@ -215,8 +223,6 @@ def _prepare_identity(data):
     User = get_user_model()
     if CustomerIdentity.objects.filter(email__iexact=email).exists():
         raise ValidationError({"email": "Select the existing prepared customer identity explicitly; matching emails are not merged."})
-    if email and User.objects.filter(email__iexact=email).exists():
-        raise ValidationError({"email": "This email needs identity review; no staff or participant account was converted."})
     user = User(username="customer-" + uuid.uuid4().hex, is_active=False, is_staff=False, is_superuser=False, email="")
     user.set_unusable_password()
     user.save()
@@ -228,13 +234,25 @@ def _prepare_identity(data):
 
 @transaction.atomic
 def save_membership(*, actor, org_id, expected_org_revision, role, state="enabled", identity_id=None,
-                    identity_data=None, contact_id=None, membership_id=None, expected_revision=None,
+                    identity_data=None, identity_email=None, contact_id=None, membership_id=None, expected_revision=None,
                     designate_primary=False, why):
-    actor, org = locked_org(actor, org_id, expected_org_revision)
+    from .portal_policy import is_customer
+    customer = is_customer(actor)
+    actor, org = locked_org(actor, org_id, expected_org_revision, customer_action="members")
+    if customer and (role != "member" or designate_primary):
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied("Only BTW may create or promote Leads.")
     why = reason(why)
     if role not in {"lead", "member"} or state not in {"enabled", "suspended", "removed"}:
         raise ValidationError("Choose a valid membership role and state.")
     old = Membership.objects.select_for_update().get(pk=membership_id, organization=org) if membership_id else None
+    if customer and old and old.role != "member":
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied("Only BTW may manage Leads.")
+    if customer and not old and identity_id:
+        if not CustomerIdentity.objects.filter(pk=identity_id, email=str(identity_email or "").strip().casefold()).exists():
+            from django.core.exceptions import PermissionDenied
+            raise PermissionDenied("Invite the intended customer's email explicitly.")
     if not old and getattr(org.access_plan, role + "_limit") is None:
         raise ValidationError({"role": "Configure this role's allowance before adding a membership, including a suspended membership."})
     if old:
@@ -328,6 +346,11 @@ def update_identity(*, actor, org_id, expected_org_revision, identity_id, expect
         raise ValidationError("Edit this identity from an available organization membership.")
     expected(org, expected_org_revision, "organization")
     fields_only(data, IDENTITY_FIELDS)
+    if "email" in data and data["email"].strip().casefold() != identity.email:
+        if identity.activated_at:
+            raise ValidationError({"email": "An activated sign-in email requires a separate verified email-change workflow. Contact BTW support."})
+        from .models import CustomerAccessToken
+        CustomerAccessToken.objects.filter(identity=identity, consumed_at__isnull=True, revoked_at__isnull=True).update(revoked_at=timezone.now())
     changed = [k for k, v in data.items() if getattr(identity, k) != v]
     for key, value in data.items():
         setattr(identity, key, value)
@@ -361,7 +384,7 @@ def lock_need(org, need_id, revision):
 
 @transaction.atomic
 def save_hiring_draft(*, actor, org_id, expected_org_revision, data, need_id=None, expected_need_revision=None, expected_working_id=None, why):
-    actor, org = locked_org(actor, org_id, expected_org_revision)
+    actor, org = locked_org(actor, org_id, expected_org_revision, customer_action="needs")
     fields_only(data, EDITABLE_TERM_FIELDS)
     why = reason(why)
     if need_id:
@@ -400,9 +423,15 @@ def save_hiring_draft(*, actor, org_id, expected_org_revision, data, need_id=Non
 
 @transaction.atomic
 def revision_action(*, actor, org_id, need_id, expected_org_revision, expected_need_revision, revision_id, action, why):
-    actor, org = locked_org(actor, org_id, expected_org_revision)
+    from .portal_policy import is_customer
+    if is_customer(actor) and action not in {"submit", "withdraw"}:
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied("BTW retains review and approval authority.")
+    actor, org = locked_org(actor, org_id, expected_org_revision, customer_action="needs")
     need = lock_need(org, need_id, expected_need_revision)
     why = reason(why)
+    if is_customer(actor) and need.status in {"closed", "cancelled"} and action != "withdraw":
+        raise ValidationError("This Need is closed or cancelled. Only a pending revision may be withdrawn.")
     if str(need.working_revision_id or "") != str(revision_id):
         raise ValidationError("Review the actual current working/submitted revision.")
     rev = Revision.objects.select_for_update().get(pk=revision_id, need=need, organization=org)
@@ -487,21 +516,25 @@ CAMPAIGN_FIELDS = ("name", "description", "objectives", "start_date", "end_date"
 
 def invalidate_campaign(campaign):
     campaign.planning_version += 1
+    campaign.review_state = "draft"
     campaign.approved_planning_version = None
     campaign.approved_by = None
     campaign.approved_at = None
     if campaign.status == "active":
         campaign.status = "hold"
-    touch(campaign, "planning_version", "approved_planning_version", "approved_by", "approved_at", "status")
+    touch(campaign, "review_state", "planning_version", "approved_planning_version", "approved_by", "approved_at", "status")
 
 
 @transaction.atomic
 def save_campaign(*, actor, org_id, expected_org_revision, data, campaign_id=None, expected_revision=None, why):
-    actor, org = locked_org(actor, org_id, expected_org_revision)
+    actor, org = locked_org(actor, org_id, expected_org_revision, customer_action="campaigns")
     fields_only(data, CAMPAIGN_FIELDS)
     obj = Campaign.objects.select_for_update().get(pk=campaign_id, organization=org) if campaign_id else Campaign(organization=org)
     if campaign_id:
         expected(obj, expected_revision, "Campaign")
+        from .portal_policy import is_customer
+        if is_customer(actor) and obj.review_state in {"submitted", "review"}:
+            raise ValidationError("Submitted Campaign planning is frozen. Withdraw it or wait for BTW feedback before editing.")
         if obj.status in {"completed", "cancelled"}:
             raise ValidationError("This Campaign is completed/cancelled; its planning history is retained.")
     data = dict(data)
@@ -516,6 +549,7 @@ def save_campaign(*, actor, org_id, expected_org_revision, data, campaign_id=Non
         changed.append("contact_name")
     if changed:
         obj.planning_version += 1
+        obj.review_state = "draft"
         obj.approved_planning_version, obj.approved_by, obj.approved_at = None, None, None
         if obj.status == "active":
             obj.status = "hold"
@@ -540,6 +574,7 @@ def campaign_action(*, actor, org_id, campaign_id, expected_org_revision, expect
             raise ValidationError("Provide meaningful Campaign description and objectives before approval.")
         obj.status, obj.approved_planning_version = "active", obj.planning_version
         obj.approved_by, obj.approved_at = actor, timezone.now()
+        obj.review_state = "approved"
     elif action == "hold" and old in {"planning", "active"}:
         obj.status = "hold"
     elif action == "planning" and old == "hold":
@@ -551,7 +586,7 @@ def campaign_action(*, actor, org_id, campaign_id, expected_org_revision, expect
     else:
         raise ValidationError("Use an available explicit Campaign action; generic status updates cannot activate it.")
     obj.full_clean()
-    touch(obj, "status", "approved_planning_version", "approved_by", "approved_at")
+    touch(obj, "status", "review_state", "approved_planning_version", "approved_by", "approved_at")
     touch(org)
     audit(actor, org, "campaign." + action, obj, before={"status": old},
           after={"status": obj.status, "planning_version": obj.planning_version, "approved_version": obj.approved_planning_version}, why=why, campaign=obj)

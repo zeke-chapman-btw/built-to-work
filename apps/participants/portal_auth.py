@@ -57,8 +57,7 @@ def sign_in(request):
             login(request, user, backend='apps.participants.auth.ParticipantAuthenticationBackend')
             return redirect('participants:profile')
         form.add_error(None, 'Check your email and password, or try again later. Need help? Use account recovery below.')
-    return render(request, 'participants/portal/form.html', {'title': 'Welcome back', 'intro': 'Your skills. Your next opportunity.',
-        'form': form, 'login_form': True, 'submit_label': 'Sign in'})
+    return render(request, 'accounts/unified_login.html', {'page_title': 'Welcome to Built to Work', 'form': form, 'account_type': 'participant', 'recovery_url': reverse('participants:password-reset')})
 
 
 @never_cache

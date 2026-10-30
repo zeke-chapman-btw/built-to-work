@@ -1,0 +1,1 @@
+{% for item in recent %}<p class="row"><strong>{{ item.label }}</strong><span class="help">{{ item.at }}</span></p>{% empty %}<p class="muted">No recent workflow activity.</p>{% endfor %}

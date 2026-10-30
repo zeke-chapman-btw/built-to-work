@@ -120,6 +120,7 @@ BTW_PREVIEW_GATE_PASSWORD = os.environ.get("BTW_PREVIEW_GATE_PASSWORD", "")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTHENTICATION_BACKENDS = [
+    "apps.customers.auth.CustomerAuthenticationBackend",
     "apps.participants.auth.ParticipantAuthenticationBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]

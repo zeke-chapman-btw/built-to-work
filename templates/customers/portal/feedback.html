@@ -1,0 +1,1 @@
+{% for item in feedback %}<article class="row"><span class="help">BTW · {{ item.created_at }}{% if item.version_label %} · {{ item.version_label }}{% endif %}</span><p>{{ item.body|linebreaksbr }}</p></article>{% empty %}<p class="muted">No customer-visible feedback has been published.</p>{% endfor %}

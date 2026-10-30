@@ -1,0 +1,1 @@
+{% extends 'customers/portal/base.html' %}{% block content %}<section class="card"><h2>No company access</h2><p>Your selected company is not currently available. Membership must be accepted and enabled, and the company must be active. Contact BTW or your company Lead.</p>{% if companies %}{% include 'customers/portal/switcher.html' %}{% endif %}</section>{% endblock %}

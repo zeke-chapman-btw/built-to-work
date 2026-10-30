@@ -1,0 +1,1 @@
+{% for group in revision.sections %}<details class="term-group"{% if forloop.first %} open{% endif %}><summary>{{ group.title }}</summary><dl class="facts">{% for item in group.values %}<div><dt>{{ item.label|capfirst }}</dt><dd>{{ item.value|linebreaksbr }}</dd></div>{% endfor %}</dl></details>{% endfor %}

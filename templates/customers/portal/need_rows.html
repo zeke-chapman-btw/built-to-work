@@ -1,0 +1,1 @@
+{% for n in needs %}<a class="row" href="{% url 'customer_portal:need' n.id %}"><strong>{{ n.title }}</strong><span>{{ n.trade }}{% if n.quantity %} · {{ n.quantity }} workers{% endif %}</span><span>{{ n.status }}{% if n.review_state != 'approved' and n.review %} · {{ n.review }}{% endif %}</span></a>{% empty %}<p>No Workforce Needs yet.</p>{% endfor %}

@@ -1,4 +1,4 @@
-"""Customer foundation. Customer authentication and recruiting are deliberately absent."""
+"""Customer domain, explicit customer identity and organization-scoped collaboration."""
 from decimal import Decimal
 
 from django.conf import settings
@@ -113,6 +113,8 @@ class CustomerIdentity(VersionedRecord):
     phone = models.CharField(max_length=60, blank=True)
     title = models.CharField(max_length=160, blank=True)
 
+    activated_at = models.DateTimeField(null=True, blank=True, editable=False)
+
     class Meta:
         ordering = ["first_name", "last_name", "email", "pk"]
         constraints = [
@@ -127,12 +129,13 @@ class CustomerIdentity(VersionedRecord):
             from apps.staffing.models import StaffProfile
             from apps.accounts.models import StaffInvitation
             u = self.user
-            if (u.is_active or u.is_staff or u.is_superuser or u.has_usable_password() or u.email
+            if (u.is_staff or u.is_superuser or u.email
+                    or ((self._state.adding or self.activated_at is None) and (u.is_active or u.has_usable_password()))
                     or u.groups.exists() or u.user_permissions.exists()
                     or ParticipantAccount.objects.filter(user=u).exists()
                     or StaffProfile.objects.filter(user=u).exists()
                     or StaffInvitation.objects.filter(user=u).exists()):
-                raise ValidationError("Use a new, inactive customer identity; existing staff and participant identities cannot be converted.")
+                raise ValidationError("Customer identities must remain separate from staff and participant accounts; activation requires a verified invitation.")
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}".strip() + f" · {self.email}"
@@ -153,6 +156,10 @@ class CustomerMembership(VersionedRecord):
     contact = models.ForeignKey(CustomerContact, on_delete=models.PROTECT, null=True, blank=True, related_name="memberships")
     role = models.CharField(max_length=8, choices=Role.choices)
     state = models.CharField(max_length=12, choices=State.choices, default=State.ENABLED)
+
+    accepted_at = models.DateTimeField(null=True, blank=True, editable=False)
+    manage_needs = models.BooleanField(default=False)
+    manage_campaigns = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["identity__first_name", "pk"]
@@ -203,6 +210,11 @@ class Campaign(VersionedRecord):
     approved_planning_version = models.PositiveIntegerField(null=True, blank=True, editable=False)
     approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, blank=True, related_name="customer_campaign_approvals", editable=False)
     approved_at = models.DateTimeField(null=True, blank=True, editable=False)
+
+    review_state = models.CharField(max_length=12, choices=[("draft", "Draft"), ("submitted", "Submitted"), ("review", "In review"), ("returned", "Changes requested"), ("approved", "Approved")], default="draft", editable=False)
+    submitted_planning_version = models.PositiveIntegerField(null=True, blank=True, editable=False)
+    submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, blank=True, related_name="customer_campaign_submissions", editable=False)
+    submitted_at = models.DateTimeField(null=True, blank=True, editable=False)
 
     class Meta:
         ordering = ["-updated_at", "pk"]
@@ -440,3 +452,38 @@ class CustomerAuditScope(models.Model):
     class Meta:
         constraints = [models.UniqueConstraint(fields=["organization", "audit"], name="customer_audit_scope_unique")]
         indexes = [models.Index(fields=["organization", "audit"], name="customer_history_scope_idx")]
+
+
+class CustomerAccessToken(UUIDModel, TimestampedModel):
+    """Only a digest is stored. Reissuing revokes all older links of that scope."""
+    identity = models.ForeignKey(CustomerIdentity, on_delete=models.PROTECT, related_name="access_tokens")
+    membership = models.ForeignKey(CustomerMembership, on_delete=models.PROTECT, null=True, blank=True, related_name="invitations")
+    purpose = models.CharField(max_length=12, choices=[("invite", "Invitation"), ("reset", "Recovery")])
+    token_digest = models.CharField(max_length=64, unique=True, editable=False)
+    email = models.EmailField(editable=False)
+    security_revision = models.PositiveIntegerField(editable=False)
+    expires_at = models.DateTimeField(editable=False)
+    consumed_at = models.DateTimeField(null=True, blank=True, editable=False)
+    revoked_at = models.DateTimeField(null=True, blank=True, editable=False)
+    delivery = models.CharField(max_length=12, choices=[("pending", "Pending"), ("sent", "Transport accepted"), ("captured", "Test capture only"), ("failed", "Delivery failed")], default="pending", editable=False)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=Q(purpose="invite", membership__isnull=False) | Q(purpose="reset", membership__isnull=True), name="customer_token_purpose_scope"),
+            models.CheckConstraint(condition=Q(consumed_at__isnull=True) | Q(revoked_at__isnull=True), name="customer_token_single_outcome"),
+            models.CheckConstraint(condition=Q(delivery__in=["pending", "sent", "captured", "failed"]), name="customer_delivery_valid"),
+        ]
+
+
+class CustomerFeedback(UUIDModel, TimestampedModel):
+    """Deliberately published customer text, never copied from private audit reasons."""
+    organization = models.ForeignKey(CustomerOrganization, on_delete=models.PROTECT, related_name="feedback")
+    workforce_need = models.ForeignKey(WorkforceNeed, on_delete=models.PROTECT, null=True, blank=True, related_name="feedback")
+    campaign = models.ForeignKey(Campaign, on_delete=models.PROTECT, null=True, blank=True, related_name="feedback")
+    body = models.TextField(max_length=4000)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="customer_feedback")
+    audit = models.OneToOneField("core.AuditLog", on_delete=models.PROTECT, related_name="published_customer_feedback")
+
+    class Meta:
+        ordering = ["-created_at", "pk"]
+        constraints = [models.CheckConstraint(condition=Q(workforce_need__isnull=False, campaign__isnull=True) | Q(workforce_need__isnull=True, campaign__isnull=False), name="customer_feedback_one_subject")]

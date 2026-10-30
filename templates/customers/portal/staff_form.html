@@ -1,0 +1,1 @@
+{% extends 'customers/base.html' %}{% block customer_content %}<section class="customer-card"><h1>{{ title }}</h1><p class="customer-notice">{{ notice }}</p><form method="post">{% csrf_token %}{{ form.as_p }}<button class="customer-button primary">Confirm</button></form></section>{% endblock %}

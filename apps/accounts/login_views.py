@@ -45,6 +45,15 @@ def page(request,title,form=None,**extra):
 @sensitive_post_parameters('password')
 @require_http_methods(['GET','POST'])
 def sign_in(request):
+    realm = request.POST.get('account_type', request.GET.get('account_type', 'staff'))
+    if realm == 'customer':
+        from apps.customers.portal_auth import sign_in as customer_login
+        return customer_login(request)
+    if realm == 'participant':
+        from apps.participants.portal_auth import sign_in as participant_login
+        return participant_login(request)
+    if realm != 'staff':
+        realm = 'staff'
     if active_staff(request.user):return redirect(safe_next(request,request.GET.get('next')) or home(request.user))
     form=StaffLoginForm(request,data=request.POST if request.method=='POST' else None)
     if request.method=='POST':
@@ -56,7 +65,7 @@ def sign_in(request):
             user=form.get_user();login(request,user,backend='django.contrib.auth.backends.ModelBackend')
             audit(user,'signed_in',user,reason='Account holder signed in through BTW staff login.')
             return redirect(safe_next(request,request.POST.get('next')) or home(user))
-    return page(request,'Staff sign in',form,submit_label='Sign in',mode='login',next=safe_next(request,request.GET.get('next') or request.POST.get('next')) or '')
+    return render(request, 'accounts/unified_login.html', {'page_title': 'Welcome to Built to Work', 'form': form, 'account_type': 'staff', 'next': safe_next(request, request.GET.get('next') or request.POST.get('next')) or '', 'recovery_url': reverse('accounts:recovery')})
 
 @never_cache
 @require_POST
