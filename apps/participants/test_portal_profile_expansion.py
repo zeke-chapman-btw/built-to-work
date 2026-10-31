@@ -1,5 +1,6 @@
 """Read-first UX, additive history and participant/staff boundaries."""
 import uuid
+import re
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 from unittest import skipUnless
@@ -53,7 +54,7 @@ class PortalProfileExpansionTests(TestCase):
         self.assertNotContains(response, '<textarea')
         jobs = self.client.get(self.path('portal-jobs'))
         self.assertContains(jobs, 'Coming soon')
-        self.assertContains(jobs, 'aria-current="page" href="' + self.path('portal-jobs') + '"')
+        self.assertRegex(jobs.content.decode(), r'<a\b(?=[^>]*href="' + re.escape(self.path('portal-jobs')) + r'")(?=[^>]*aria-current="page")[^>]*>')
         self.assertNotContains(self.client.get(self.path('portal-events')), '<h2>Job Opportunities</h2>')
 
     def test_each_current_section_updates_only_its_fields(self):

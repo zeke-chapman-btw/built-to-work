@@ -1,0 +1,19 @@
+/* Shared portal adaptation of the approved Staff frame; Staff geometry is unchanged. */
+.has-portal-shell .portal-workspace,.has-portal-shell .portal-main{box-sizing:border-box;width:100%;max-width:var(--btw-standard-ordinary);min-height:0;margin:0 auto;padding:0 var(--btw-standard-gutter)}
+.has-portal-shell #main-content>.messages,.has-portal-shell .application-notice-frame{box-sizing:border-box;width:100%;max-width:var(--btw-standard-ordinary);margin:16px auto;padding:0 var(--btw-standard-gutter)}
+.has-portal-shell .application-preview-notice{margin:0;padding:12px 16px;border:1px solid #e4c36b;border-radius:8px;background:#fff8e6;color:#302600;font:400 13px/20px var(--font)}
+.has-portal-shell .application-preview-notice p{margin:4px 0 0}
+.has-portal-shell .application-return,.has-portal-shell .application-account{margin-left:auto;flex:0 0 auto}
+.has-portal-shell .application-return .button{min-height:36px;padding:6px 12px;font:500 13px/20px var(--font)}
+.has-portal-shell .application-account{display:inline-flex;width:40px;height:40px;align-items:center;justify-content:center;border-radius:8px}
+.has-portal-shell .application-account .btw-icon{width:18px;height:18px}
+.has-portal-shell .application-context{margin:4px 12px 8px;font:400 12px/18px var(--font);color:#a1a1aa;overflow-wrap:anywhere}
+.has-portal-shell .application-company-switch{margin:0 12px 8px;color:#d4d4d8;font:400 12px/18px var(--font)}
+.has-portal-shell .application-company-switch>summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
+.has-portal-shell .application-company-switch .company-switch{display:grid;gap:6px;margin:0;min-width:0}
+.has-portal-shell .application-company-switch :is(select,button){box-sizing:border-box;width:100%;max-width:100%;min-height:36px;font:400 12px/18px var(--font);padding:6px;border:1px solid #71717a;border-radius:6px;background:#27272a;color:#fff}
+.has-portal-shell .application-company-switch label{color:#d4d4d8}
+.has-portal-shell .portal-preview-content{min-width:0;border:0;margin:0;padding:0}
+.has-portal-shell #main-content .profile-identity .profile-name{font:600 20px/28px var(--font);margin:0 0 6px;letter-spacing:0;text-transform:none}
+.has-portal-shell .portal-page .intro{font:400 14px/22px var(--font)}
+@media(max-width:1023px){.has-portal-shell .application-company-switch :is(select,button),.has-portal-shell .application-return .button,.has-portal-shell .application-account{min-height:44px}.has-portal-shell .application-account{width:44px;height:44px}}

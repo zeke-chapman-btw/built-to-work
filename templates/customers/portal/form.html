@@ -1,4 +1,4 @@
-{% extends 'customers/portal/base.html' %}{% block content %}<section class="card"><h2>{{ title }}</h2>{% if notice %}<p class="notice">{{ notice }}</p>{% endif %}
+{% extends 'customers/portal/base.html' %}{% block content %}<section class="card">{% if notice %}<p class="notice">{{ notice }}</p>{% endif %}
 <form method="post" data-structured-form novalidate>{% csrf_token %}{% for hidden in form.hidden_fields %}{{ hidden }}{{ hidden.errors }}{% endfor %}
 {% if form.errors %}<div role="alert" class="form-error-summary" tabindex="-1" data-error-summary><h3>Review the highlighted information</h3>{{ form.non_field_errors }}<ul>{% for field in form.visible_fields %}{% if field.errors %}<li><a href="#{{ field.id_for_label }}">{{ field.label }}: {{ field.errors|join:', ' }}</a></li>{% endif %}{% endfor %}</ul></div>{% endif %}
 {% if form.groups %}<nav class="customer-form-nav" aria-label="Form sections" data-section-links>{% for group in form.groups %}<a href="#hiring-group-{{ forloop.counter }}">{{ group.title }}</a>{% endfor %}</nav>

@@ -68,7 +68,8 @@ class ProfileRefinementTests(TestCase):
 
     def test_name_led_read_first_profile_and_natural_empty_assessments(self):
         response = self.client.get(reverse('participants:profile'))
-        self.assertContains(response, '<h1>Alex Profile</h1>', html=True)
+        self.assertContains(response, '<h1 class="page-title">My Profile</h1>', html=True)
+        self.assertContains(response, '<h2 class="profile-name">Alex Profile</h2>', html=True)
         self.assertContains(response, 'Example City, GA')
         self.assertContains(response, 'Assessment Results')
         self.assertContains(response, 'eligible assessment results will appear here')

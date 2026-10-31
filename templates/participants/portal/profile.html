@@ -6,8 +6,7 @@
   <header class="profile-identity">
     <span class="profile-avatar" aria-hidden="true">{{ profile_initials }}</span>
     <div class="profile-identity-copy">
-      <p class="profile-eyebrow">My Profile</p>
-      <h1>{{ profile_name }}</h1>
+      <h2 class="profile-name">{{ profile_name }}</h2>
       {% if profile_current_role %}<p class="profile-headline">{{ profile_current_role }}</p>{% elif profile_interests %}<p class="profile-headline"><span>Interested in</span> {{ profile_interests }}</p>{% endif %}
       {% if profile_location %}<p class="profile-location">{{ profile_location }}</p>{% endif %}
       <p class="profile-guidance">Your experience, skills and next steps. Keep your story up to date.</p>
