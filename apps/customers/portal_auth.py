@@ -39,6 +39,10 @@ def page(request, title, form=None, *, notice='', status=200, submit='Continue')
 @sensitive_post_parameters('password')
 @require_http_methods(['GET', 'POST'])
 def sign_in(request):
+    from .portal_preview import SESSION_KEY, selected_fixture
+    if request.session.get(SESSION_KEY):
+        selected_fixture(request)
+        return redirect('customer_portal:home')
     if request.session.get('_auth_user_backend') == 'apps.customers.auth.CustomerAuthenticationBackend':
         try:
             identity_for(request.user)
@@ -65,6 +69,9 @@ def sign_in(request):
 @never_cache
 @require_POST
 def sign_out(request):
+    from .portal_preview import SESSION_KEY, exit as exit_preview
+    if request.session.get(SESSION_KEY):
+        return exit_preview(request)
     if request.session.get('_auth_user_backend') == 'apps.customers.auth.CustomerAuthenticationBackend' and request.user.is_authenticated:
         from apps.core.audit import record_audit
         record_audit(actor=request.user, action='customer.signed_out', instance=identity_for(request.user), source='customer_authentication', reason='Customer signed out.')
@@ -75,6 +82,9 @@ def sign_out(request):
 @never_cache
 @require_http_methods(['GET', 'POST'])
 def recovery(request):
+    from .portal_preview import SESSION_KEY
+    if request.session.get(SESSION_KEY):
+        raise PermissionDenied('Return to Admin before changing accounts or requesting account communications.')
     form = RecoveryForm(request.POST if request.method == 'POST' else None)
     if request.method == 'POST' and form.is_valid():
         ip_ok = rate_limit('customer-reset-ip', request.META.get('REMOTE_ADDR', ''), 15)
@@ -89,6 +99,9 @@ def recovery(request):
 @sensitive_post_parameters('new_password1', 'new_password2')
 @require_http_methods(['GET', 'POST'])
 def accept(request, token):
+    from .portal_preview import SESSION_KEY
+    if request.session.get(SESSION_KEY):
+        raise PermissionDenied('Return to Admin before changing accounts or requesting account communications.')
     try:
         item = invites.valid_token(token, 'invite')
     except ValidationError:
@@ -116,6 +129,9 @@ def accept(request, token):
 @sensitive_post_parameters('new_password1', 'new_password2')
 @require_http_methods(['GET', 'POST'])
 def reset_confirm(request, token):
+    from .portal_preview import SESSION_KEY
+    if request.session.get(SESSION_KEY):
+        raise PermissionDenied('Return to Admin before changing accounts or requesting account communications.')
     try:
         item = invites.valid_token(token, 'reset')
     except ValidationError:

@@ -19,34 +19,35 @@ TABS = [('overview', 'Overview'), ('company', 'Company Information'), ('needs', 
 def customer_view(view):
     @wraps(view)
     def guarded(request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return redirect(reverse('accounts:login') + '?account_type=customer')
-        if request.session.get('_auth_user_backend') != 'apps.customers.auth.CustomerAuthenticationBackend':
-            raise PermissionDenied('Use Customer sign in for this workspace.')
-        identity_for(request.user)
-        companies = list(eligible_memberships(request.user))
-        selected = request.session.get('customer_organization')
-        if selected is None and companies:
-            selected = str(companies[0].organization_id)
-            request.session['customer_organization'] = selected
-        request.customer_companies = [{'id': str(m.organization_id), 'name': m.organization.name} for m in companies]
-        try:
-            request.customer_member = require_membership(request.user, selected) if selected else None
-        except (PermissionDenied, ValidationError):
-            request.customer_member = None
-        if not request.customer_member and view.__name__ != 'switch_company':
-            response = render(request, 'customers/portal/no_access.html', {'companies': request.customer_companies}, status=403)
-        else:
-            response = view(request, *args, **kwargs)
-        response['Cache-Control'] = 'private, no-store'
-        response['Referrer-Policy'] = 'same-origin'
-        return response
+        from .portal_preview import review_context
+        with review_context(request):
+            if not request.user.is_authenticated:
+                return redirect(reverse('accounts:login') + '?account_type=customer')
+            if request.session.get('_auth_user_backend') != 'apps.customers.auth.CustomerAuthenticationBackend' and not getattr(request, 'customer_preview', False):
+                raise PermissionDenied('Use Customer sign in for this workspace.')
+            identity_for(request.user)
+            companies = list(eligible_memberships(request.user))
+            selected = request.session.get('customer_organization')
+            if selected is None and companies:
+                selected = str(companies[0].organization_id)
+                request.session['customer_organization'] = selected
+            request.customer_companies = [{'id': str(m.organization_id), 'name': m.organization.name} for m in companies]
+            try:
+                request.customer_member = require_membership(request.user, selected) if selected else None
+            except (PermissionDenied, ValidationError):
+                request.customer_member = None
+            if not request.customer_member and view.__name__ != 'switch_company':
+                response = render(request, 'customers/portal/no_access.html', {'companies': request.customer_companies}, status=403)
+            else:
+                response = view(request, *args, **kwargs)
+            response['Cache-Control'] = 'private, no-store'
+            response['Referrer-Policy'] = 'same-origin'
+            return response
     return guarded
-
 
 def context(request, tab='overview', **extra):
     m = request.customer_member
-    return {'company': {'id': m.organization_id, 'name': m.organization.name}, 'companies': request.customer_companies,
+    return {'customer_admin_preview': bool(getattr(request, 'customer_preview', False)), 'company': {'id': m.organization_id, 'name': m.organization.name}, 'companies': request.customer_companies,
             'active_tab': tab, 'tabs': TABS, 'is_lead': m.role == 'lead',
             'can_needs': (m.role == 'lead' or m.manage_needs) and m.organization.access_plan.workforce_need_creation is True,
             'can_campaigns': m.role == 'lead' or m.manage_campaigns, **extra}

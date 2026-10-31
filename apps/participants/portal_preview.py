@@ -189,6 +189,9 @@ def index(request):
 @require_POST
 def enter(request):
     fixture = fixture_for(request.user)
+    from apps.customers.portal_preview import SESSION_KEY as CUSTOMER_PREVIEW_KEY
+    request.session.pop(CUSTOMER_PREVIEW_KEY, None)
+    request.session.pop('customer_organization', None)
     request.session[SESSION_KEY] = {'fixture':str(fixture.pk), 'administrator':str(request.user.pk),
         'started':timezone.now().timestamp()}
     _audit(request.user, 'entered', fixture)
