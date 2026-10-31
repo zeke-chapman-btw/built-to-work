@@ -11,6 +11,7 @@ ALLOWED_HOSTS = [
 ]
 
 INSTALLED_APPS = [
+    "apps.trailer_control.apps.TrailerControlConfig",
     "apps.stations.apps.StationsConfig",
     "apps.assessments.apps.AssessmentsConfig",
     "django.contrib.admin",
@@ -144,3 +145,9 @@ BTW_SMS_PROVIDER_TOKEN = os.environ.get("BTW_SMS_PROVIDER_TOKEN", "")
 BTW_CENTRAL_SYNC_URL = os.environ.get("BTW_CENTRAL_SYNC_URL", "")
 
 PRIVATE_HISTORICAL_ROOT = Path(os.environ.get("PRIVATE_HISTORICAL_ROOT", BASE_DIR / "private_historical_imports"))
+
+# Opt-in trailer-local operations. Disabled on existing deployments by default.
+TRAILER_CONTROL_ENABLED = os.environ.get("TRAILER_CONTROL_ENABLED", "false").lower() == "true"
+TRAILER_CONTROL_IDENTITY = os.environ.get("BTW_TRAILER_IDENTITY", "").strip()
+TRAILER_CONTROL_DATA_ROOT = os.environ.get("TRAILER_CONTROL_DATA_ROOT", "")
+TRAILER_CONTROL_VIDEO_ROOT = os.environ.get("TRAILER_CONTROL_VIDEO_ROOT", "")
