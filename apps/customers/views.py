@@ -12,6 +12,7 @@ from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_http_methods
 from . import forms as f, services as s
+from .presentation import membership_rows
 from .access import require_manager, organizations
 from .models import (CustomerOrganization as Org, CustomerContact, CustomerLocation,
                      CustomerRelationship, CustomerMembership as Membership, CustomerIdentity,
@@ -105,7 +106,7 @@ def workspace(request, org_id, tab="overview"):
             query = query.filter(status=status)
         data.update(rows=page(request, query), q=term, status=status, statuses=choices)
     elif tab == "users":
-        data.update(memberships=org.memberships.select_related("identity", "contact"), contacts=org.contacts.all())
+        data.update(memberships=org.memberships.select_related("identity", "contact"), membership_rows=membership_rows(org), contacts=org.contacts.all())
     elif tab == "access":
         plan = org.access_plan
         data.update(plan=plan, capabilities=[(plan._meta.get_field(name).verbose_name, "Enabled" if getattr(plan, name) is True else "Disabled" if getattr(plan, name) is False else "Unconfigured") for name in s.PLAN_FIELDS[2:]], recent=activity(org).filter(audit__action="customer.access_plan.updated")[:5])
@@ -200,7 +201,7 @@ def membership_editor(request, org_id, record_id=None):
     obj = get_object_or_404(Membership.objects.select_related("identity"), pk=record_id, organization=org) if record_id else None
     def save(d):
         return s.save_membership(actor=request.user, org_id=org.pk, expected_org_revision=d["org_revision"], membership_id=record_id, expected_revision=d["record_revision"], role=d["role"], state=d["state"], contact_id=d["contact"].pk if d.get("contact") else None, identity_id=d["identity"].pk if d.get("identity") else None, identity_data={k:d[k] for k in s.IDENTITY_FIELDS} if not obj and d["identity_mode"] == "new" else None, designate_primary=d.get("designate_primary", False), why=d["reason"])
-    return form_screen(request, org=org, tab="users", title="Edit membership" if obj else "Prepare customer user", description="Prepared identities cannot log in. Enabled memberships reserve seats. No invitation or activation messages are sent.", form_class=f.MembershipEditForm if obj else f.MembershipForm, instance=obj, initial=initials(request, org, obj), save=save)
+    return form_screen(request, org=org, tab="users", title="Edit membership" if obj else "Prepare customer user", description="Preparation reserves a seat for an enabled membership. Customer access requires an active account, invitation acceptance and an eligible company membership. Preparing or editing this record does not send an invitation.", form_class=f.MembershipEditForm if obj else f.MembershipForm, instance=obj, initial=initials(request, org, obj), save=save)
 
 
 @staff_view

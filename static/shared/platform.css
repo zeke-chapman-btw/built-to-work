@@ -1,0 +1,71 @@
+/* One presentation vocabulary; audience permissions and shells stay independent. */
+@font-face{font-family:Jost;src:url('../internal/fonts/Jost-Variable.ttf') format('truetype');font-weight:100 900;font-style:normal;font-display:swap}
+body.btw-platform{--btw-content:920px;--btw-frame:968px;--btw-gutter:24px;--btw-copy:13px;--btw-line:20px;--btw-border:#dce0e4;--btw-brand:#d91f2a;--btw-muted:#56616d;--font:Jost,system-ui,-apple-system,'Segoe UI',sans-serif;--font-interface:var(--font);--font-display:var(--font);font-family:var(--font);font-size:var(--btw-copy);line-height:var(--btw-line)}
+.btw-platform :is(button,input,select,textarea){font-family:var(--font)}
+.btw-platform :is(a,button,input,select,textarea,summary):focus-visible{outline:3px solid #1764ac;outline-offset:3px}
+.btw-platform :is(h1,h2,h3,h4){font-family:var(--font);letter-spacing:0;overflow-wrap:anywhere}
+.btw-platform :is(.portal-main,.portal-workspace){box-sizing:border-box;max-width:var(--btw-frame);width:100%;padding:24px var(--btw-gutter) 72px;margin-inline:auto;min-width:0}
+.btw-platform :is(.portal-main,.portal-workspace) h1,.btw-platform .portal-main .profile-identity h1{font:600 24px/32px var(--font);margin:0 0 12px}
+.btw-platform :is(.portal-main,.portal-workspace) h2{font:600 16px/24px var(--font)}
+.btw-platform :is(.portal-main,.portal-workspace) .intro{font:400 14px/22px var(--font);margin-bottom:16px}
+.btw-platform :is(.card,.portal-card,.customer-card){border-color:var(--btw-border);border-radius:8px;box-shadow:none}
+.btw-platform :is(.portal-workspace>.card,.portal-main>.portal-card){padding:16px;margin-block:16px}
+.btw-platform :is(.card,.portal-card,.customer-card)>.heading>h2,.btw-platform .customer-section-heading>h2,.btw-platform .btw-panel-heading>h2{font:600 12px/18px var(--font);letter-spacing:.04em;text-transform:uppercase}
+.btw-platform :is(.button,.customer-button,button.primary){min-height:36px;font:500 13px/20px var(--font);border-radius:6px}
+.btw-platform :is(.portal-main,.portal-workspace) .button{padding:7px 12px}
+.btw-platform :is(.portal-header,.portal-footer){font-family:var(--font)}
+.btw-platform .portal-header{min-height:60px;padding:10px var(--btw-gutter);gap:16px}
+.btw-platform .portal-header img{width:190px;max-width:100%;height:32px;object-fit:contain}
+.btw-platform .portal-header>span{font-size:12px}
+.btw-platform :is(.portal-workspace,.portal-main) :is(.facts,.profile-facts,.record-list){font:400 13px/20px var(--font)}
+.btw-platform :is(.field,.customer-field){margin-bottom:14px;min-width:0}
+.btw-platform :is(.field,.customer-field) label{font-weight:500}
+.btw-platform textarea{min-height:64px;resize:vertical}
+.btw-platform :is(.badge,.customer-badge,.status-pill){letter-spacing:0;font:500 11px/16px var(--font);white-space:normal}
+.btw-platform :is(.notice,.portal-admin-preview,.admin-preview-banner){font:400 13px/20px var(--font)}
+.btw-platform :is(.row,.customer-row-link){gap:4px;padding-block:10px;min-width:0;overflow-wrap:anywhere}
+.btw-platform .portal-main .profile-section>.section-heading h2{font:600 14px/20px var(--font)}
+.btw-platform .profile-section-links{font-family:var(--font)}
+.btw-platform .customer-page{max-width:var(--btw-frame);width:100%;margin-inline:auto;box-sizing:border-box}
+.btw-platform .customer-line{align-items:flex-start;gap:12px;padding-block:12px}
+.btw-platform .customer-line p{margin:4px 0}
+.btw-platform .customer-capabilities{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px}
+.btw-platform .customer-access-state{color:var(--btw-muted);font-size:12px}
+.btw-platform .customer-form-nav{display:flex;flex-wrap:wrap;gap:4px 12px;margin:12px 0 16px}
+.btw-platform .customer-form-nav a{display:inline-flex;align-items:center;min-height:44px}
+.btw-platform .customer-form-group{border:1px solid var(--btw-border);border-radius:8px;margin-block:12px;padding:0 16px;background:#fff;scroll-margin-top:16px}
+.btw-platform .customer-form-group>summary{display:flex;align-items:center;min-height:48px;cursor:pointer;font-weight:600;gap:8px}
+.btw-platform .customer-form-group>summary::before{content:'+';font-weight:500}.btw-platform .customer-form-group[open]>summary::before{content:'−'}
+.btw-platform .customer-form-group fieldset{margin:0;padding:4px 0 16px;border:0;min-width:0}
+.btw-platform .form-error-summary{padding:12px 16px;border:1px solid #ba2336;border-radius:6px;background:#fff4f5;margin-block:16px}
+.btw-platform .form-error-summary a{color:#a31527}.btw-platform .form-error-summary:empty{display:none}
+.btw-platform .customer-nav-chooser{display:none}
+.btw-platform .profile-evidence{font-size:12px;color:var(--btw-muted);margin-top:6px}
+.btw-platform .profile-evidence>summary{min-height:32px;cursor:pointer;font-weight:500}
+.btw-platform.internal-app{--btw-standard-ordinary:968px}
+.btw-platform.internal-app:is(.has-pass-a-events,:has([data-pass-a-event])){--pass-a-frame:968px}
+.btw-platform.internal-app:has([data-pass-a-event]) #main-content .event-record-header,.btw-platform.internal-app:has([data-pass-a-event]) #main-content .event-navigation-pass2{max-width:var(--pass-a-frame);margin-inline:auto;width:100%;box-sizing:border-box}
+body.btw-platform.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2 .event-info-card>.btw-event-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px}
+body.btw-platform.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2 .event-info-card>.btw-event-facts>div{display:block;padding:10px 0;min-width:0;border-bottom:1px solid var(--btw-border)}
+body.btw-platform.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2 .event-info-card>.btw-event-facts dt{font:400 12px/18px var(--font);color:var(--btw-muted)}
+body.btw-platform.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2 .event-info-card>.btw-event-facts dd{font:500 13px/20px var(--font);margin:4px 0 0}
+.btw-platform.internal-app.has-pass-a-events #main-content .event-directory-table :is(th,td){padding-block:10px}
+.btw-platform.internal-app.has-pass-a-events #main-content .event-directory-card{padding-block:12px;gap:4px}
+.btw-platform.internal-app.has-tasks-refinement #main-content .task-row-primary{padding-block:10px}
+.btw-platform.internal-app.has-tasks-refinement #main-content .task-row-primary h3{margin:2px 0;font:600 14px/20px var(--font)}
+.btw-platform.internal-app.has-tasks-refinement #main-content .task-row-primary .task-card-people{margin-top:4px;font-size:12px}
+.btw-platform .access-denied{max-width:600px;margin:48px auto;padding:24px}
+@media(max-width:639.98px){body.btw-platform{--btw-gutter:16px}.btw-platform :is(.portal-main,.portal-workspace){padding-top:16px}.btw-platform :is(.portal-main,.portal-workspace) h1,.btw-platform .portal-main .profile-identity h1{font:600 20px/28px var(--font)}.btw-platform :is(.portal-workspace>.card,.portal-main>.portal-card){padding:16px}.btw-platform :is(.button,.customer-button,button.primary,input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select){min-height:44px}.btw-platform.btw-platform-enhanced .portal-tabs{display:none}.btw-platform.btw-platform-enhanced .customer-nav-chooser{display:block;margin:12px 0 16px}.btw-platform .customer-nav-chooser label{display:block;font-weight:500;margin-bottom:4px}.btw-platform .customer-nav-chooser select{width:100%;font:500 14px/20px var(--font);padding:9px;border:1px solid #87939e;border-radius:6px;background:#fff}body.btw-platform.internal-app.has-corrective-events.has-event-context #main-content .btw-event-surface .event-info-pass2 .event-info-card>.btw-event-facts{grid-template-columns:1fr}.btw-platform .portal-main .intro{font-size:13px}.btw-platform .profile-evidence>summary{min-height:44px}.btw-platform .portal-header>span{display:none}}
+@media(prefers-reduced-motion:reduce){.btw-platform{scroll-behavior:auto}.btw-platform *{scroll-behavior:auto}}
+
+.btw-platform .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.btw-platform .portal-nav{max-width:var(--btw-frame);width:100%;box-sizing:border-box;margin-inline:auto;padding-inline:var(--btw-gutter);font-family:var(--font)}
+.btw-platform .portal-nav a{font:500 13px/20px var(--font);min-height:44px;display:inline-flex;align-items:center}
+/* Keep primary text and next-step guidance on distinct, scannable lines. */
+.btw-platform .portal-workspace .row>a{display:flex;flex-direction:column;gap:4px;color:inherit;text-decoration:none}
+.btw-platform .portal-workspace .row>a>span{font:400 12px/18px var(--font);color:#a31527}
+.btw-platform .portal-workspace .row>a:hover strong{text-decoration:underline}
+body.btw-platform{--red:var(--btw-brand);--brand-red:var(--btw-brand);background:#f4f5f6;color:#252830}
+.btw-platform .portal-main .button:not(.secondary),.btw-platform .button.button-primary,.btw-platform .button.primary{background:var(--btw-brand);border-color:var(--btw-brand);color:#fff}
+.btw-platform.staff-access .button{display:inline-flex;align-items:center;min-height:44px;padding:8px 12px;border:1px solid #87939e;border-radius:6px;text-decoration:none}
+.btw-platform.internal-app.has-tasks-refinement #main-content .task-card-description{font:400 12px/18px var(--font);margin:4px 0}

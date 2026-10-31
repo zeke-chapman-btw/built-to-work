@@ -1,0 +1,20 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const handlers={}, classNames=[];
+let navigated='',focused=0;
+const group={tagName:'DETAILS',open:false,parentElement:null};
+const invalid={parentElement:group};
+const error={parentElement:group};
+const summary={focus(){focused++;}};
+const form={querySelector:()=>summary,querySelectorAll:()=>[error],addEventListener:(name,fn)=>handlers[name]=fn};
+const select={selectedOptions:[{value:'/customer/workspace/needs/'}],addEventListener:(name,fn)=>handlers.choose=fn};
+const document={body:{classList:{add:value=>classNames.push(value)}},querySelectorAll:selector=>
+  selector==='[data-section-chooser]'?[select]:selector==='[data-structured-form]'?[form]:[],getElementById:()=>invalid};
+vm.runInNewContext(fs.readFileSync('static/shared/platform.js','utf8'),{document,window:{location:{assign:value=>navigated=value}}});
+assert.equal(group.open,true,'server errors must reveal their containing disclosure');
+assert.equal(focused,1,'error summary receives keyboard focus');
+group.open=false;handlers.invalid({target:invalid});assert.equal(group.open,true,'native validation reveals collapsed groups');
+handlers.choose();assert.equal(navigated,'/customer/workspace/needs/','native chooser uses its server-rendered destination');
+assert.ok(classNames.includes('btw-platform-enhanced'),'no-JS navigation remains a progressive fallback');
+console.log('Platform presentation interactions passed');

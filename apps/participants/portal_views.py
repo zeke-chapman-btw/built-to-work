@@ -270,7 +270,9 @@ def event_detail(request, event_id):
 def activity(request):
     person = request.portal_account.participant
     registrations = list(EventRegistration.objects.filter(participant_id__in=identity_members(person.pk)).select_related('event').order_by('-event__start_at'))
+    visible_event_ids = set(public_events().values_list('pk', flat=True))
     for registration in registrations:
+        registration.event_detail_available = registration.event_id in visible_event_ids
         registration.portal_ticket = registration.tickets.filter(is_current=True, revoked_at__isnull=True,
             expires_at__gte=timezone.now()).first() if registration.status == 'active' else None
         registration.is_past = registration.event.end_at < timezone.now()

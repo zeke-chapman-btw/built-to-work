@@ -4,7 +4,7 @@
 <dl class="btw-event-facts">
 <div><dt>Event type</dt><dd>{{ event.event_type_label|default:'Not set' }}</dd></div>
 <div><dt>Venue</dt><dd>{{ event.location_name|default:'Not set' }}</dd></div>
-<div><dt>Address</dt><dd>{{ event.address_line_1 }}{% if event.address_line_2 %}<br>{{ event.address_line_2 }}{% endif %}{% if event.city or event.state or event.postal_code or event.country %}{% if event.address_line_1 or event.address_line_2 %}<br>{% endif %}{{ event.city }} {{ event.state }} {{ event.postal_code }} {{ event.country }}{% endif %}</dd></div>
+<div><dt>Address</dt><dd>{% if not event.address_line_1 and not event.address_line_2 and not event.city and not event.state and not event.postal_code and not event.country %}Not recorded{% endif %}{{ event.address_line_1 }}{% if event.address_line_2 %}<br>{{ event.address_line_2 }}{% endif %}{% if event.city or event.state or event.postal_code or event.country %}{% if event.address_line_1 or event.address_line_2 %}<br>{% endif %}{{ event.city }} {{ event.state }} {{ event.postal_code }} {{ event.country }}{% endif %}</dd></div>
 <div><dt>Start</dt><dd>{{ event.local_start_at|date:'M j, Y · g:i A' }}</dd></div>
 <div><dt>End</dt><dd>{{ event.local_end_at|date:'M j, Y · g:i A' }}</dd></div>
 <div><dt>Time zone</dt><dd>{{ event|event_timezone }}</dd></div>

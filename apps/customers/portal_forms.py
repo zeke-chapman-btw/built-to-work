@@ -3,6 +3,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from .models import WorkforceNeedRevision, Campaign, CustomerContact, CustomerLocation, EDITABLE_TERM_FIELDS
 from .forms import HIRING_SECTIONS
+from .presentation import label_hiring_fields
 from .services import CAMPAIGN_FIELDS
 from .portal_policy import require_membership
 
@@ -32,11 +33,12 @@ class PortalModelForm(ScopedForm, forms.ModelForm):
             if isinstance(field, forms.DateField):
                 field.widget = forms.DateInput(attrs={'type': 'date'})
             if isinstance(field.widget, forms.Textarea):
-                field.widget.attrs['rows'] = 3
+                field.widget.attrs['rows'] = 2
+        label_hiring_fields(self.fields)
 
     @property
     def groups(self):
-        return [{'title': title, 'fields': [self[k] for k in keys if k in self.fields]} for title, keys in self.sections]
+        return [{'title': title, 'fields': [self[k] for k in keys if k in self.fields], 'errors': any(self[k].errors for k in keys if k in self.fields)} for title, keys in self.sections]
 
 
 class NeedForm(PortalModelForm):

@@ -82,8 +82,26 @@ def workspace(request, tab='overview'):
         rows = p.campaigns(request.user, org.pk)
         data['campaigns'] = rows[:5] if tab == 'overview' else Paginator(rows, 20).get_page(request.GET.get('page'))
     if tab == 'overview':
-        data['attention'] = [{'label': n['title'] + ' · ' + n['review'], 'url': reverse('customer_portal:need', args=[n['id']])} for n in p.needs(request.user, org.pk) if n['review_state'] in {'draft', 'returned', 'submitted', 'review'}][:5]
-        data['attention'] += [{'label': c['name'] + ' · ' + c['review'], 'url': reverse('customer_portal:campaign', args=[c['id']])} for c in p.campaigns(request.user, org.pk) if c['review_state'] in {'draft', 'submitted', 'review', 'returned'}][:5]
+        attention = []
+        for kind, rows, allowed in [('need', p.needs(request.user, org.pk), data['can_needs']),
+                                    ('campaign', p.campaigns(request.user, org.pk), data['can_campaigns'])]:
+            visible_count = 0
+            for row in rows:
+                state = row['review_state']
+                if state not in {'draft', 'returned', 'submitted', 'review'} or row['record_status'] in {'closed', 'cancelled', 'completed'}:
+                    continue
+                action = {'draft': 'Continue draft' if allowed else 'View draft',
+                          'returned': 'Review BTW feedback', 'submitted': 'Awaiting BTW review', 'review': 'BTW review in progress'}[state]
+                if kind == 'need' and row.get('effective_number') and row['pending']:
+                    action = 'Review proposed revision'
+                visible_feedback = p.feedback(request.user, org.pk, **{kind + '_id': row['id']})
+                attention.append({'label': (row.get('title') or row.get('name')) + ' · ' + row['review'],
+                                  'action': action, 'url': reverse('customer_portal:' + kind, args=[row['id']]),
+                                  'feedback': visible_feedback[0] if visible_feedback else None})
+                visible_count += 1
+                if visible_count == 5:
+                    break
+        data['attention'] = attention[:10]
         data['recent'] = p.history(request.user, org.pk)[:5]
     if tab == 'company':
         data['details'] = {key: getattr(org, key) for key in ('name', 'legal_name', 'industry', 'website', 'business_email', 'phone', 'description')}
@@ -129,7 +147,18 @@ def form_page(request, title, form, *, tab, notice='', save=None, success=None):
         else:
             messages.success(request, 'Your change was saved.' )
             return redirect(success(obj) if success else reverse('customer_portal:workspace', args=[tab]))
-    return render(request, 'customers/portal/form.html', context(request, tab, title=title, form=form, notice=notice))
+    if isinstance(form, f.NeedForm):
+        submit_label = 'Save Draft'
+    elif isinstance(form, f.CampaignForm):
+        submit_label = 'Save Planning'
+    elif isinstance(form, f.MemberForm):
+        submit_label = 'Save Member Changes'
+    elif isinstance(form, f.InviteForm):
+        submit_label = 'Send Invitation'
+    else:
+        submit_label = {'Submit': 'Submit to BTW', 'Withdraw': 'Withdraw Submission',
+                        'Resend': 'Resend Invitation', 'Revoke': 'Revoke Invitation'}.get(title.split()[0], title)
+    return render(request, 'customers/portal/form.html', context(request, tab, title=title, form=form, notice=notice, submit_label=submit_label))
 
 
 @customer_view

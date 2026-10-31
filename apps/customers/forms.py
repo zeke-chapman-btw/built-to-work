@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 
 from .access import require_manager
+from .presentation import label_hiring_fields
 from .models import (CustomerOrganization as Org, CustomerContact, CustomerLocation,
                      CustomerIdentity, CustomerMembership, CustomerAccessPlan,
                      Campaign, WorkforceNeedRevision, EDITABLE_TERM_FIELDS)
@@ -21,7 +22,7 @@ class AuthorizedForm:
             self.instance.organization = organization
         for name, field in self.fields.items():
             if isinstance(field.widget, forms.Textarea):
-                field.widget.attrs.setdefault("rows", 3)
+                field.widget.attrs.setdefault("rows", 2)
             if isinstance(field, forms.DateField):
                 field.widget = forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")
             field.widget.attrs.setdefault("class", "customer-control")
@@ -202,7 +203,7 @@ class CampaignForm(CustomerModelForm):
 
 
 HIRING_SECTIONS = (
-    ("Role and worker quantity", ("title", "trade", "description", "worker_quantity", "employment_type", "employment_details")),
+    ("Role and staffing", ("title", "trade", "description", "worker_quantity", "employment_type", "employment_details")),
     ("Work location", ("location_mode", "location", "location_name", "address_line1", "address_line2", "city", "location_state", "postal_code", "country", "location_details")),
     ("Pay, overtime and benefits", ("pay_response", "pay_minimum", "pay_maximum", "pay_currency", "pay_basis", "pay_details", "overtime_response", "overtime_details", "benefits_response", "benefits_details", "per_diem_response", "per_diem_details", "per_diem_amount")),
     ("Schedule and timing", ("shift", "schedule_details", "hours_mode", "hours_per_week", "start_mode", "start_date", "start_timeframe", "duration_response", "duration_details", "end_date")),
@@ -231,6 +232,7 @@ class HiringForm(CustomerModelForm):
                 self.fields[name].label = self.fields[name].label.replace(" response", "")
         self.fields["location"].help_text = "Location addresses come from Company Profile. Update an incomplete address there, or choose Other work location."
         self.fields["pay_currency"].help_text = "Three-letter currency code. No currency or pay amount is assumed."
+        label_hiring_fields(self.fields)
         self.fields["working_id"].initial = self.instance.pk if not self.instance._state.adding else None
 
 

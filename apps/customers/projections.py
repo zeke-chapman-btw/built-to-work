@@ -2,6 +2,7 @@
 from .models import CustomerAuditScope, CustomerFeedback, WorkforceNeed, Campaign
 from .portal_policy import require_membership
 from .forms import HIRING_SECTIONS
+from .presentation import HIRING_LABELS
 
 SAFE_ACTIVITY = {
     'customer.need.draft_saved': 'Workforce Need draft saved',
@@ -63,7 +64,7 @@ def terms(rev):
                 value = f'{rev.pay_currency or "Currency unspecified"} {value:,.2f}'
             elif display:
                 value = display()
-            values.append({'label': rev._meta.get_field(name).verbose_name, 'value': value})
+            values.append({'label': HIRING_LABELS.get(name, rev._meta.get_field(name).verbose_name), 'value': value})
         if title.startswith('Contact') and rev.contact_name:
             values[:0] = [{'label': 'Hiring contact', 'value': rev.contact_name}, {'label': 'Contact email', 'value': rev.contact_email}, {'label': 'Contact phone', 'value': rev.contact_phone}]
         if values:
@@ -78,7 +79,7 @@ def need_row(obj):
             'trade': rev.trade if rev else '', 'quantity': rev.worker_quantity if rev else None,
             'pending': bool(obj.working_revision_id), 'review_state': latest.state if latest else '',
             'review': 'Changes requested' if latest and latest.state == 'returned' else latest.get_state_display() if latest else '',
-            'updated_at': obj.updated_at}
+            'updated_at': obj.updated_at, 'record_status': obj.status, 'effective_number': obj.effective_revision.number if obj.effective_revision else None}
 
 
 def needs(user, org_id):
@@ -87,7 +88,7 @@ def needs(user, org_id):
 
 
 def campaign_row(obj):
-    return {key: getattr(obj, key) for key in ('id', 'name', 'description', 'objectives', 'start_date', 'end_date', 'contact_name', 'planning_version', 'submitted_planning_version', 'review_state')} | {'status': obj.get_status_display(), 'review': obj.get_review_state_display()}
+    return {key: getattr(obj, key) for key in ('id', 'name', 'description', 'objectives', 'start_date', 'end_date', 'contact_name', 'planning_version', 'submitted_planning_version', 'review_state')} | {'status': obj.get_status_display(), 'record_status': obj.status, 'review': obj.get_review_state_display()}
 
 
 def campaigns(user, org_id):

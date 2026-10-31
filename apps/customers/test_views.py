@@ -175,10 +175,11 @@ class CustomerScreenTests(CustomerFixtures, TestCase):
         self.assertFalse(member.identity.user.is_active)
         self.assertFalse(member.identity.user.is_staff)
 
-    def test_prepared_identity_never_exposes_activation_actions(self):
+    def test_prepared_identity_shows_pending_access_without_password_setup(self):
         self.membership(self.org_a)
         response = self.client.get(self.url("workspace", self.org_a.pk, "users"))
-        self.assertContains(response, "Prepared users cannot log in")
+        self.assertContains(response, "Awaiting invitation acceptance")
+        self.assertContains(response, "Invitation: Not invited")
         self.assertNotContains(response, "Send invitation")
         self.assertNotContains(response, "Set password")
 

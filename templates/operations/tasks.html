@@ -1,4 +1,4 @@
-{% extends 'operations/task_base.html' %}
+{% extends 'operations/task_base.html' %}{% load task_ui %}{% block operations_page_actions %}{% global_task_create_url as header_task_create_url %}{% if header_task_create_url %}<a class="button button-primary" data-task-create href="{{ header_task_create_url }}">New Task</a>{% endif %}{% endblock %}
 {% block task_content %}<section class="task-workspace" data-task-workspace>
 <p class="task-purpose">Your assignments and work you’ve delegated, in one place.</p>
 <div class="task-summary" aria-label="Accessible task summary"><div><span>Open tasks</span><strong>{{ summary.open }}</strong></div><div><span>Overdue</span><strong>{{ summary.overdue }}</strong></div><div><span>Completed</span><strong>{{ summary.completed }}</strong></div></div>
