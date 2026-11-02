@@ -31,7 +31,9 @@ def staff_view(fn):
         try:zone=ZoneInfo(cfg.preparation.event.timezone_name) if cfg and cfg.preparation_id else ZoneInfo("UTC")
         except ZoneInfoNotFoundError:zone=ZoneInfo("UTC")
         with timezone.override(zone):response=fn(request,*args,**kwargs)
-        response["Referrer-Policy"]="no-referrer"
+        # Keep HTTPS form Origin/Referer checks usable without leaking referrers cross-origin.
+        # Public TV responses retain their separate no-referrer policy.
+        response["Referrer-Policy"]="same-origin"
         return response
     return wrapped
 
