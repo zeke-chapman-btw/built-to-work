@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.cache import never_cache
-from django.views.decorators.debug import sensitive_post_parameters
+from django.views.decorators.debug import sensitive_post_parameters,sensitive_variables
 from django.views.decorators.http import require_http_methods,require_POST
 from .roles import active_staff,has_role,manager,lock_role_groups
 from .models import StaffInvitation
@@ -42,34 +42,92 @@ def page(request,title,form=None,**extra):
     response['Cache-Control']='private, no-store';response['Referrer-Policy']='same-origin';return response
 
 @never_cache
-@sensitive_post_parameters('password')
+@sensitive_variables()
+@sensitive_post_parameters('password','username','email','identifier')
 @require_http_methods(['GET','POST'])
 def sign_in(request):
-    realm = request.POST.get('account_type', request.GET.get('account_type', 'staff'))
-    if realm == 'customer':
-        from apps.customers.portal_auth import sign_in as customer_login
-        return customer_login(request)
-    if realm == 'participant':
-        from apps.participants.portal_auth import sign_in as participant_login
-        return participant_login(request)
-    if realm != 'staff':
-        realm = 'staff'
-    if active_staff(request.user):return redirect(safe_next(request,request.GET.get('next')) or home(request.user))
-    form=StaffLoginForm(request,data=request.POST if request.method=='POST' else None)
-    if request.method=='POST':
-        allowed_ip=rate_limit('login-ip',request.META.get('REMOTE_ADDR',''),30)
-        allowed_user=rate_limit('login-user',request.POST.get('username','').strip().casefold(),10)
-        if not (allowed_ip and allowed_user):
-            form.is_valid();form.add_error(None,'Unable to sign in. Please wait before trying again.')
-        elif form.is_valid():
-            user=form.get_user();login(request,user,backend='django.contrib.auth.backends.ModelBackend')
-            audit(user,'signed_in',user,reason='Account holder signed in through BTW staff login.')
-            return redirect(safe_next(request,request.POST.get('next')) or home(user))
-    return render(request, 'accounts/unified_login.html', {'page_title': 'Welcome to Built to Work', 'form': form, 'account_type': 'staff', 'next': safe_next(request, request.GET.get('next') or request.POST.get('next')) or '', 'recovery_url': reverse('accounts:recovery')})
+    from . import unified_auth as unified
+    from apps.customers.portal_preview import SESSION_KEY as customer_preview, selected_fixture
+    from apps.participants.portal_preview import SESSION_KEY as participant_preview, participant_context
+    if request.session.get(customer_preview):
+        selected_fixture(request)
+        return redirect('customer_portal:home')
+    if request.session.get(participant_preview):
+        with participant_context(request):
+            return redirect('participants:profile')
+    if request.user.is_authenticated:
+        realm = next((key for key, backend in unified.BACKENDS.items() if request.session.get('_auth_user_backend') == backend), None)
+        if realm and unified.eligible(realm, request.user):
+            item = {'realm': realm, 'user': str(request.user.pk), 'proof': request.user.get_session_auth_hash()}
+            default = home(request.user) if realm == 'staff' else reverse('customer_portal:home') if realm == 'customer' else reverse('participants:profile')
+            return redirect(unified.safe_destination(request, request.GET.get('next', ''), realm, request.user) or default)
+    if request.method == 'GET':
+        request.session.pop(unified.PENDING, None)
+    form = unified.LoginForm(unified.submitted_data(request) if request.method == 'POST' else None)
+    if request.method == 'POST':
+        request.session.pop(unified.PENDING, None)
+        valid = form.is_valid()
+        allowed = unified.allowed_attempt(request, form.cleaned_data.get('username', '') if valid else '')
+        if valid and allowed:
+            matches = unified.authenticate_all(request, form.cleaned_data['username'], form.cleaned_data['password'])
+            destination = request.POST.get('next', '')
+            if len(matches) == 1:
+                target = unified.establish(request, matches[0], destination)
+                if target:
+                    return redirect(target)
+            elif len(matches) > 1:
+                unified.begin_choice(request, matches, destination)
+                return redirect('accounts:identity-choice')
+        form.add_error(None, unified.GENERIC)
+    response = render(request, 'accounts/unified_login.html', {'page_title': 'Sign in', 'form': form,
+        'next': request.POST.get('next', '') if request.method == 'POST' else request.GET.get('next', ''),
+        'recovery_url': reverse('accounts:recovery')})
+    response['Cache-Control'] = 'private, no-store'
+    response['Referrer-Policy'] = 'same-origin'
+    return response
+
+
+@never_cache
+@sensitive_post_parameters('challenge')
+@require_http_methods(['GET', 'POST'])
+def identity_choice(request):
+    from . import unified_auth as unified
+    if request.method == 'POST':
+        target = unified.choose(request, request.POST.get('challenge', ''), request.POST.get('choice', ''))
+        if target:
+            return redirect(target)
+        messages.error(request, unified.GENERIC)
+        return redirect('accounts:login')
+    pending = unified.pending_choice(request)
+    if not pending:
+        return redirect('accounts:login')
+    choices = []
+    for index, item in enumerate(pending['identities']):
+        user = unified.fresh_identity(item)
+        if user:
+            label = {'staff': 'Staff workspace', 'customer': 'Customer workspace', 'participant': 'Participant Portal'}[item['realm']]
+            if item['realm'] == 'staff':
+                label += ' — ' + user.username
+            choices.append({'value': str(index), 'label': label})
+    response = render(request, 'accounts/identity_choice.html', {'page_title': 'Choose your workspace',
+        'choices': choices, 'challenge': pending['nonce']})
+    response['Cache-Control'] = 'private, no-store'
+    response['Referrer-Policy'] = 'same-origin'
+    return response
 
 @never_cache
 @require_POST
 def sign_out(request):
+    from .unified_auth import BACKENDS
+    from apps.customers.portal_preview import SESSION_KEY as customer_preview
+    from apps.participants.portal_preview import SESSION_KEY as participant_preview
+    backend = request.session.get('_auth_user_backend')
+    if request.session.get(customer_preview) or backend == BACKENDS['customer']:
+        from apps.customers.portal_auth import sign_out as customer_logout
+        return customer_logout(request)
+    if request.session.get(participant_preview) or backend == BACKENDS['participant']:
+        from apps.participants.portal_auth import sign_out as participant_logout
+        return participant_logout(request)
     if active_staff(request.user):audit(request.user,'signed_out',request.user,reason='Account holder signed out.')
     logout(request);return redirect('accounts:login')
 
@@ -97,7 +155,7 @@ def password_change(request):
 
 @never_cache
 @require_http_methods(['GET','POST'])
-def recovery(request):
+def _staff_recovery(request):
     form=RecoveryForm(request.POST if request.method=='POST' else None)
     if request.method=='POST' and form.is_valid():
         allowed_ip=rate_limit('recovery-ip',request.META.get('REMOTE_ADDR',''),20)
@@ -112,3 +170,23 @@ def recovery(request):
                 except Exception:pass
         return page(request,'Check your email',mode='sent',notice='If the details match an eligible staff account, recovery instructions will be sent. Contact an Administrator if you still need help.')
     return page(request,'Recover staff access',form,mode='recovery',submit_label='Send recovery instructions')
+
+
+@never_cache
+@sensitive_variables()
+@sensitive_post_parameters('email','username')
+@require_http_methods(['GET','POST'])
+def recovery(request):
+    from . import unified_recovery as unified
+    unified.guard_preview(request)
+    form=unified.RecoveryRequestForm(request.POST if request.method=='POST' else None)
+    if request.method=='POST' and form.is_valid():
+        email=form.cleaned_data['email'];username=form.cleaned_data['username']
+        checks=[rate_limit('unified-recovery-ip',request.META.get('REMOTE_ADDR',''),15),
+                rate_limit('unified-recovery-email',email.casefold(),3)]
+        if all(checks):
+            unified.dispatch(request,email,username)
+        return page(request,'Check your email',mode='sent',notice=unified.NOTICE)
+    response=render(request,'accounts/unified_recovery.html',{'page_title':'Reset your password','form':form})
+    response['Cache-Control']='private, no-store';response['Referrer-Policy']='same-origin'
+    return response

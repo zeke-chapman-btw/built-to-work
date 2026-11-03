@@ -18,7 +18,7 @@ class StaffLoginTests(TestCase):
     def login(self,user=None,next=''):
         return self.client.post(reverse('accounts:login'),{'username':(user or self.worker).username,'password':'Synthetic-test-password-123','next':next})
     def test_branded_login_and_missing_route_fixed(self):
-        r=self.client.get('/accounts/login/');self.assertEqual(r.status_code,200);self.assertContains(r,'built-to-work-linear.svg');self.assertContains(r,'Staff sign in')
+        r=self.client.get('/accounts/login/');self.assertEqual(r.status_code,200);self.assertContains(r,'built-to-work-linear.svg');self.assertContains(r,'Email or username');self.assertNotContains(r,'name="account_type"')
     def test_default_internal_redirect_resolves(self):
         r=self.client.get('/internal/',follow=True);self.assertEqual(r.status_code,200)
     def test_worker_landing(self):

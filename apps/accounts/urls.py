@@ -3,6 +3,7 @@ from . import staff_views,login_views
 app_name='accounts'
 urlpatterns=[
  path('login/',login_views.sign_in,name='login'),
+ path('login/choose/',login_views.identity_choice,name='identity-choice'),
  path('logout/',login_views.sign_out,name='logout'),
  path('password-change/',login_views.password_change,name='password-change'),
  path('password-reset/',login_views.recovery,name='recovery'),

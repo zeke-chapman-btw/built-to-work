@@ -52,6 +52,10 @@ class NeedForm(PortalModelForm):
 
 
 class CampaignForm(PortalModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['description'].label = 'Campaign description'
+
     action_policy = 'campaigns'
     sections = (('Campaign purpose', ('name', 'description', 'objectives')), ('Timing and contact', ('start_date', 'end_date', 'primary_contact')))
 

@@ -1,5 +1,6 @@
 """Shared Customer Portal. Read projections and locked mutations remain separate."""
 from functools import wraps
+from urllib.parse import urlencode
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError, ObjectDoesNotExist
 from django.core.paginator import Paginator
@@ -9,6 +10,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 from . import portal_forms as f, services as s, invitations as invites, projections as p
 from .collaboration import campaign_submission
+from .portal_presentation import effective_access, record_restriction, need_prerequisites
 from .portal_policy import identity_for, eligible_memberships, require_membership
 from .models import WorkforceNeed as Need, WorkforceNeedRevision as Revision, Campaign, CustomerMembership as Membership, TERM_FIELD_NAMES
 
@@ -22,7 +24,7 @@ def customer_view(view):
         from .portal_preview import review_context
         with review_context(request):
             if not request.user.is_authenticated:
-                return redirect(reverse('accounts:login') + '?account_type=customer')
+                return redirect(reverse('accounts:login') + '?' + urlencode({'next': request.get_full_path()}))
             if request.session.get('_auth_user_backend') != 'apps.customers.auth.CustomerAuthenticationBackend' and not getattr(request, 'customer_preview', False):
                 raise PermissionDenied('Use Customer sign in for this workspace.')
             identity_for(request.user)
@@ -49,6 +51,7 @@ def context(request, tab='overview', **extra):
     m = request.customer_member
     return {'customer_admin_preview': bool(getattr(request, 'customer_preview', False)), 'company': {'id': m.organization_id, 'name': m.organization.name}, 'companies': request.customer_companies,
             'active_tab': tab, 'tabs': TABS, 'is_lead': m.role == 'lead',
+            'effective_access': effective_access(request.user, m.organization_id, preview=bool(getattr(request, 'customer_preview', False))),
             'can_needs': (m.role == 'lead' or m.manage_needs) and m.organization.access_plan.workforce_need_creation is True,
             'can_campaigns': m.role == 'lead' or m.manage_campaigns, **extra}
 
@@ -75,6 +78,8 @@ def workspace(request, tab='overview'):
         raise Http404
     org = organization(request)
     data = context(request, tab)
+    if tab == 'needs':
+        data['need_setup'] = need_prerequisites(org)
     if tab in {'overview', 'needs'}:
         rows = p.needs(request.user, org.pk)
         data['needs'] = rows[:5] if tab == 'overview' else Paginator(rows, 20).get_page(request.GET.get('page'))
@@ -138,7 +143,7 @@ def add_error(form, error):
         form.add_error(None, error.messages)
 
 
-def form_page(request, title, form, *, tab, notice='', save=None, success=None):
+def form_page(request, title, form, *, tab, notice='', save=None, success=None, cancel_url=None):
     if request.method == 'POST' and form.is_valid():
         try:
             obj = save(form.cleaned_data)
@@ -158,7 +163,10 @@ def form_page(request, title, form, *, tab, notice='', save=None, success=None):
     else:
         submit_label = {'Submit': 'Submit to BTW', 'Withdraw': 'Withdraw Submission',
                         'Resend': 'Resend Invitation', 'Revoke': 'Revoke Invitation'}.get(title.split()[0], title)
-    return render(request, 'customers/portal/form.html', context(request, tab, title=title, form=form, notice=notice, submit_label=submit_label))
+    return render(request, 'customers/portal/form.html', context(request, tab, title=title, form=form, notice=notice, submit_label=submit_label,
+        cancel_url=cancel_url or reverse('customer_portal:workspace', args=[tab]),
+        editor_mode=isinstance(form, (f.NeedForm, f.CampaignForm)),
+        need_setup=need_prerequisites(request.customer_member.organization, form.instance) if isinstance(form, f.NeedForm) else None))
 
 
 @customer_view
@@ -169,6 +177,8 @@ def need_detail(request, record_id):
     revisions = [{'number': r.number, 'state': r.get_state_display()} for r in obj.revisions.order_by('-number')]
     latest = obj.revisions.order_by('-number').first()
     return render(request, 'customers/portal/need.html', context(request, 'needs', need=p.need_row(obj),
+        record_restriction=record_restriction(obj, 'need'),
+        need_setup=need_prerequisites(org, obj.working_revision or obj.effective_revision),
         editable=obj.status not in {'closed', 'cancelled'} and (not obj.working_revision or obj.working_revision.state == 'draft'),
         pending_state=obj.working_revision.state if obj.working_revision else '',
         effective=p.terms(obj.effective_revision), proposed=p.terms(obj.working_revision), previous=p.terms(latest) if not obj.working_revision_id and latest and latest.state == 'returned' else None, revisions=revisions,
@@ -192,7 +202,8 @@ def need_editor(request, record_id=None):
         notice='Save an incomplete draft at any time. Submit separately when every required hiring detail is ready. Approved details remain effective while proposed changes are reviewed.',
         save=lambda d: s.save_hiring_draft(actor=request.user, org_id=org.pk, expected_org_revision=d['org_revision'], need_id=record_id,
             expected_need_revision=d['record_revision'], expected_working_id=d['working_id'], data={k:d[k] for k in f.EDITABLE_TERM_FIELDS}, why='Customer saved hiring-term draft.'),
-        success=lambda obj: reverse('customer_portal:need', args=[obj.pk]))
+        success=lambda obj: reverse('customer_portal:need', args=[obj.pk]),
+        cancel_url=reverse('customer_portal:need', args=[need.pk]) if need else reverse('customer_portal:workspace',args=['needs']))
 
 
 @customer_view
@@ -215,6 +226,7 @@ def campaign_detail(request, record_id):
     org = organization(request)
     obj = get_object_or_404(Campaign, pk=record_id, organization=org)
     return render(request, 'customers/portal/campaign.html', context(request, 'campaigns', campaign=p.campaign_row(obj), review_state=obj.review_state,
+        record_restriction=record_restriction(obj, 'campaign'),
         editable=obj.status not in {'completed', 'cancelled'} and obj.review_state not in {'submitted', 'review'},
         needs=[p.need_row(n) for n in obj.workforce_needs.select_related('effective_revision', 'working_revision')],
         feedback=p.feedback(request.user, org.pk, campaign_id=obj.pk), recent=p.history(request.user, org.pk, campaign_id=obj.pk)))
@@ -233,7 +245,8 @@ def campaign_editor(request, record_id=None):
     return form_page(request, 'Edit Campaign planning' if record_id else 'New Campaign', form, tab='campaigns',
         notice='Saving does not submit or approve this Campaign. Material planning changes invalidate approval and place an active Campaign on hold.',
         save=lambda d: s.save_campaign(actor=request.user, org_id=org.pk, expected_org_revision=d['org_revision'], campaign_id=record_id, expected_revision=d['record_revision'], data={k:d[k] for k in s.CAMPAIGN_FIELDS}, why='Customer saved Campaign planning.'),
-        success=lambda obj: reverse('customer_portal:campaign', args=[obj.pk]))
+        success=lambda obj: reverse('customer_portal:campaign', args=[obj.pk]),
+        cancel_url=reverse('customer_portal:campaign', args=[record_id]) if record_id else reverse('customer_portal:workspace',args=['campaigns']))
 
 
 @customer_view
