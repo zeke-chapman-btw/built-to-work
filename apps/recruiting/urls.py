@@ -1,8 +1,22 @@
 from django.urls import path
-from . import views, matching_views
+from . import views, matching_views, workflow_views, job_views
 
 app_name = 'recruiting'
 urlpatterns = [
+    path('',workflow_views.overview,name='overview'),
+    path('campaigns/',workflow_views.campaigns,name='campaigns'),
+    path('requests/group/',workflow_views.request_group,name='request-group'),
+    path('pipelines/',workflow_views.pipeline,name='pipeline'),
+    path('candidates/<uuid:candidate_id>/',workflow_views.candidate_detail,name='candidate-detail'),
+    path('opportunities/<uuid:opportunity_id>/settings/',workflow_views.opportunity_settings,name='opportunity-settings'),
+    path('opportunities/<uuid:opportunity_id>/followup/',workflow_views.followup,name='followup'),
+    path('interests/',workflow_views.interests,name='interests'),
+    path('interests/<uuid:interest_id>/',workflow_views.interest_review,name='interest-review'),
+    path('settings/stages/',workflow_views.stages,name='stages'),
+    path('settings/stages/<slug:key>/',workflow_views.stages,name='stage-edit'),
+    path('identity/history/',workflow_views.identity_history,name='identity-history'),
+    path('portal/jobs/<uuid:opportunity_id>/',job_views.detail,name='portal-job'),
+    path('portal/interests/<uuid:interest_id>/withdraw/',job_views.withdraw,name='portal-interest-withdraw'),
     path('matching/',matching_views.matching_directory,name='matching-directory'),
     path('matching/<uuid:opportunity_id>/',matching_views.matching_results,name='matching'),
     path('matching/<uuid:opportunity_id>/criteria/',matching_views.criteria_editor,name='criteria'),

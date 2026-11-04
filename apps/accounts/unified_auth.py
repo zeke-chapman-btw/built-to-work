@@ -159,6 +159,11 @@ def safe_destination(request, value, realm, user):
         request.session['customer_organization'] = str(org_id)
         return value
     if realm == 'participant':
+        if match.namespace=='recruiting' and match.url_name in {'portal-job','portal-preferences'}:
+            from apps.recruiting.access import fresh_participant
+            try:fresh_participant(user)
+            except PermissionDenied:return None
+            return value
         if match.namespace != 'participants' or not (path == reverse('participants:profile') or path.startswith('/participants/portal/')):
             return None
         # Own-profile and list destinations are scope-filtered by existing portal views.

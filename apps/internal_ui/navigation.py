@@ -141,7 +141,9 @@ def visible_legacy_workspaces(user,current_path=""):
     role_managed=managed(user)
     visible=[]
     for item in WORKSPACES:
-        if item['id'] in ('customers','campaigns'):
+        if item['id']=='campaigns':
+            if not (user.has_perm('participants.view_participant') and (manager(user) or has_role(user,'recruiter') or user.has_perm('recruiting.manage_recruiting'))):continue
+        if item['id']=='customers':
             # Presentation uses the existing request-local role/permission cache.
             # Customer routes, queries, forms and mutations recheck fresh authority.
             if not manager(user) or not (user.is_superuser or user.has_perm('customers.manage_customers')):continue
@@ -153,6 +155,7 @@ def visible_legacy_workspaces(user,current_path=""):
             elif item["id"] not in ("events","operations") or not StaffProfile.objects.filter(user=user,is_active=True).exists():
                 continue
         entry=_resolved(item)
+        if item['id']=='campaigns':entry.update(url=reverse('recruiting:overview'),label='RECRUITING')
         if item["id"]=="events" and not user.has_perm("events.view_event"):
             entry["url"]=reverse("events:event_create" if user.has_perm("events.add_event") else "staffing:schedule")
         if item['id']=='events' and has_role(user,'event_staff') and not user.has_perm('events.view_event'):
@@ -160,6 +163,7 @@ def visible_legacy_workspaces(user,current_path=""):
         entry["active"]=current_path==entry["url"] or any(current_path.startswith(prefix) for prefix in ACTIVE_PREFIXES.get(item["id"],()))
         if item['id'] in ('customers','campaigns'):
             entry['active']=current_path.startswith('/internal/'+item['id']+'/') or current_path==reverse('internal:workspace',kwargs={'workspace_id':item['id']})
+            if item['id']=='campaigns' and current_path.startswith('/recruiting/'):entry['active']=True
         if item["id"]=="operations" and current_path.startswith(("/operations/tasks/","/operations/my-tasks/")):
             entry["active"]=False
         if item["id"]=="operations" and current_path.startswith("/reports/categories/"):
@@ -239,7 +243,7 @@ def staff_destinations(user, current_path=""):
         return []
     labels = {"home": "Home", "events": "Events", "participants": "Participants",
               "operations": "Operations", "tasks": "Tasks", "customers": "Customers",
-              "campaigns": "Campaigns", "approvals": "Approvals"}
+              "campaigns": "Recruiting", "approvals": "Approvals"}
     entries = []
     for key in ("home", "tasks", "participants", "customers", "campaigns", "approvals", "events", "operations"):
         if key in legacy:

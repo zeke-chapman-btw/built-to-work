@@ -24,14 +24,20 @@ from .portal_services import (own_account, profile_revision, save_profile, visib
 from .identity import identity_members
 
 
-def participant_view(view):
+def participant_view(view=None, *, allow_identity_review=False):
+    if view is None:
+        return lambda actual:participant_view(actual,allow_identity_review=allow_identity_review)
     @never_cache
     @login_required(login_url='participants:login')
     @wraps(view)
     def secured(request, *args, **kwargs):
         from .portal_preview import participant_context
         with participant_context(request):
-            request.portal_account = own_account(request.user)
+            if allow_identity_review:
+                from apps.recruiting.jobs import account_for
+                request.portal_account = account_for(request.user)
+            else:
+                request.portal_account = own_account(request.user)
             response = view(request, *args, **kwargs)
         # Keep same-origin form provenance for Django CSRF checks while
         # preventing private portal paths from leaking to other origins.
@@ -200,10 +206,11 @@ def events(request):
     return render(request, 'participants/portal/events.html', {'events': items, 'section': 'events'})
 
 
-@participant_view
+@participant_view(allow_identity_review=True)
 @require_GET
 def jobs(request):
-    return render(request, 'participants/portal/jobs.html', {'section': 'jobs'})
+    from apps.recruiting.job_views import directory_content
+    return directory_content(request)
 
 
 class EventForm(forms.Form):

@@ -28,7 +28,7 @@ def fresh_staff(actor, *, administrator=False):
     return user
 
 
-def fresh_participant(actor, *, lock=False):
+def fresh_participant(actor, *, lock=False, allow_identity_review=False):
     from apps.participants.portal_accounts import active_account
     from apps.participants.models import ParticipantAccount
     if not getattr(actor, 'is_authenticated', False):
@@ -37,7 +37,8 @@ def fresh_participant(actor, *, lock=False):
     user = users.filter(pk=actor.pk, is_active=True, is_staff=False, is_superuser=False).first()
     if not user or user.get_session_auth_hash() != actor.get_session_auth_hash() or hasattr(user, 'customer_identity'):
         raise PermissionDenied('Use your current Participant sign-in.')
-    account = active_account(user)
+    account = (ParticipantAccount.objects.select_related('participant','user').filter(user=user,status='active',email_verified_at__isnull=False,participant__kind='person',participant__archived_at__isnull=True).first()
+        if allow_identity_review else active_account(user))
     if not account:
         raise PermissionDenied('An active Participant identity is required.')
     if lock:
@@ -82,5 +83,9 @@ def serialize_identity_write(function):
     @wraps(function)
     def guarded(*args, **kwargs):
         with policy_transaction():
-            return function(*args, **kwargs)
+            from .identity_hooks import before_reviewed_write, after_reviewed_write
+            before=before_reviewed_write(function.__name__,kwargs)
+            result=function(*args, **kwargs)
+            after_reviewed_write(before,kwargs.get('actor'))
+            return result
     return guarded

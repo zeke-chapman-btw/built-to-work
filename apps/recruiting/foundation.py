@@ -327,7 +327,9 @@ def reverse_consolidation(*, actor, consolidation_id, why):
         if row.reversed_at:
             return row
         # Splitting later shared evidence/decisions is not guessed. Retain an actionable review.
-        if row.collision_history or row.target.updated_at > row.created_at or CandidateListEntry.objects.filter(participant=row.target, updated_at__gt=row.created_at).exists():
+        from .models import CandidateOpportunity, CandidateInterest
+        later_recruiting=CandidateOpportunity.objects.filter(participant=row.target,updated_at__gt=row.created_at).exists() or CandidateInterest.objects.filter(participant=row.target,updated_at__gt=row.created_at).exists()
+        if row.collision_history or later_recruiting or row.target.updated_at > row.created_at or CandidateListEntry.objects.filter(participant=row.target, updated_at__gt=row.created_at).exists():
             row.reversal_review_required, row.reversal_note = True, why
             row.save()
             audit(actor, 'identity.reversal_review_required', row, why=why)
@@ -347,6 +349,7 @@ def group_positions(*, actor, organization_id, name, need_ids, request_id=None, 
     from apps.customers.models import CustomerOrganization, WorkforceNeed
     with policy_transaction():
         actor = fresh_staff(actor)
+        if not manager(actor):raise PermissionDenied('A Manager groups employer positions.')
         organization = CustomerOrganization.objects.select_for_update().get(pk=organization_id)
         row = WorkforceRequest.objects.select_for_update().get(pk=request_id, organization=organization) if request_id else WorkforceRequest(organization=organization, created_by=actor)
         if row.revision != expected_revision:

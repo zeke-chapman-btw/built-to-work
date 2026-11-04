@@ -237,3 +237,35 @@ class ConsentWithdrawal(UUIDModel, TimestampedModel):
     acceptance = models.ForeignKey('participants.ConsentAcceptance', null=True, blank=True, on_delete=models.PROTECT, related_name='recruiting_withdrawals')
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')
     reason = models.CharField(max_length=500)
+
+
+class CandidateOutreach(UUIDModel, TimestampedModel):
+    candidate = models.ForeignKey(CandidateOpportunity, on_delete=models.PROTECT, related_name='outreach')
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    method = models.CharField(max_length=16, choices=[('phone','Phone'),('email','Email'),('text','Text'),('in_person','In person'),('other','Other')])
+    contacted_at = models.DateTimeField()
+    outcome = models.CharField(max_length=160)
+    response = models.CharField(max_length=500, blank=True)
+    notes = models.TextField(blank=True, max_length=3000)
+    task = models.ForeignKey('operations.Task', null=True, blank=True, on_delete=models.PROTECT)
+    operation_id = models.UUIDField(unique=True)
+
+
+class InterestReview(UUIDModel, TimestampedModel):
+    interest = models.ForeignKey(CandidateInterest, on_delete=models.PROTECT, related_name='reviews')
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    status = models.CharField(max_length=24)
+    note = models.CharField(max_length=1500)
+    task = models.ForeignKey('operations.Task', null=True, blank=True, on_delete=models.PROTECT)
+    candidate = models.ForeignKey(CandidateOpportunity, null=True, blank=True, on_delete=models.PROTECT)
+    operation_id = models.UUIDField(unique=True)
+
+
+class RecruitingTaskLink(UUIDModel, TimestampedModel):
+    task = models.ForeignKey('operations.Task', on_delete=models.PROTECT, related_name='recruiting_links')
+    opportunity = models.ForeignKey(RecruitingOpportunity, on_delete=models.PROTECT, related_name='task_links')
+    candidate = models.ForeignKey(CandidateOpportunity, null=True, blank=True, on_delete=models.PROTECT, related_name='task_links')
+    interest = models.ForeignKey(CandidateInterest, null=True, blank=True, on_delete=models.PROTECT, related_name='task_links')
+    added_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['task','opportunity'], name='recruiting_task_opportunity')]
