@@ -454,6 +454,7 @@ class TicketDelivery(models.Model):
 
 
 class ParticipantMatchReview(models.Model):
+    established_person_review = models.BooleanField(default=False, editable=False)
     class Status(models.TextChoices):
         OPEN = "open", "Open"
         LATER = "later", "Review later"
@@ -477,8 +478,9 @@ class ParticipantMatchReview(models.Model):
 
     class Meta:
         constraints = [models.CheckConstraint(
-            condition=(Q(envelope__isnull=False, source_submission__isnull=True)
-                       | Q(envelope__isnull=True, source_submission__isnull=False, source_participant__isnull=False)),
+            condition=(Q(established_person_review=False, envelope__isnull=False, source_submission__isnull=True)
+                       | Q(established_person_review=False, envelope__isnull=True, source_submission__isnull=False, source_participant__isnull=False)
+                       | Q(established_person_review=True, envelope__isnull=True, source_submission__isnull=True, source_participant__isnull=False)),
             name="participant_review_exact_source")]
 
 

@@ -37,6 +37,7 @@ class CareerProfileForm(forms.ModelForm):
 
 
 class StaffParticipantCreateForm(forms.ModelForm):
+    lead_source = forms.CharField(required=False, max_length=240, label="Lead source", help_text="Staff-created people remain leads until required intake is verified.")
     confirm_distinct = forms.BooleanField(required=False, label="I reviewed the possible matches and this is a different person")
     duplicate_revision = forms.CharField(required=False, widget=forms.HiddenInput)
     audit_reason = forms.CharField(max_length=500, label="Source / reason for adding this person")
@@ -98,6 +99,7 @@ class NoteForm(forms.ModelForm):
 
 
 class SavedViewForm(forms.Form):
+    shared = forms.BooleanField(required=False, label="Share search criteria with authorized staff; current evidence permissions still apply")
     name = forms.CharField(max_length=100, label="View name")
     def clean_name(self):
         return self.cleaned_data["name"].strip()
@@ -113,6 +115,9 @@ class ParticipantEventForm(forms.Form):
 
 
 class DiscoveryForm(forms.Form):
+    relocation = forms.ChoiceField(required=False, choices=[("", "Any relocation preference"), ("yes", "Willing to relocate"), ("no", "Not willing to relocate"), ("unknown", "Relocation preference unknown")])
+    employment_classification = forms.CharField(required=False, max_length=80, label="Employment classification key")
+    availability_classification = forms.CharField(required=False, max_length=80, label="Availability classification key")
     segments = forms.CharField(required=False, max_length=12000, widget=forms.HiddenInput)
     facet = forms.ChoiceField(required=False, choices=[("", "No chart segment")] + [(x, x.replace("_", " ").title()) for x in ("channel", "state", "employment", "experience", "interest", "qualification", "document", "verification", "participation", "assessment", "completeness", "acquisition_month")], widget=forms.HiddenInput)
     bucket = forms.CharField(required=False, max_length=240, widget=forms.HiddenInput)

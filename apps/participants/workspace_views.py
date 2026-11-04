@@ -59,6 +59,12 @@ def context(request, **extra):
         "can_view_events": request.user.has_perm("events.view_event"),
         "can_register_person": request.user.has_perms(("events.add_eventregistration", "events.view_eventregistration")),
     })
+    from apps.recruiting.access import fresh_staff
+    try:
+        fresh_staff(request.user)
+        result["can_recruiting"] = True
+    except PermissionDenied:
+        result["can_recruiting"] = False
     result.update(extra)
     return result
 
@@ -82,7 +88,7 @@ def _criteria_from_request(request):
             saved_id = int(saved_id)
         except (ValueError, TypeError):
             raise ValidationError("Choose a valid saved view.")
-        saved = get_object_or_404(SavedParticipantView, pk=saved_id, owner=request.user, archived_at__isnull=True)
+        saved = get_object_or_404(SavedParticipantView.objects.filter(Q(owner=request.user) | Q(shared=True)), pk=saved_id, archived_at__isnull=True)
         if saved.schema_version != 1 or not isinstance(saved.criteria, dict):
             raise ValidationError("This saved view requires a supported criteria version.")
         values = dict(saved.criteria)
@@ -445,6 +451,7 @@ def saved_views(request):
             params = request.GET.copy()
             params.update(request.POST)
             params.pop("return_to", None)  # Navigation context is not saved search criteria.
+            params.pop("shared", None)  # Visibility is not a discovery filter.
             filters, population, criteria = discover(request.user, params, strict=True)
         except ValidationError as exc:
             form.add_error(None, exc)
@@ -458,12 +465,12 @@ def saved_views(request):
                     form.add_error(None, "This account has reached its limit of 100 retained saved views.")
                 else:
                     with transaction.atomic():
-                        row = SavedParticipantView.objects.create(owner=request.user, name=form.cleaned_data["name"], criteria=criteria)
+                        row = SavedParticipantView.objects.create(owner=request.user, name=form.cleaned_data["name"], criteria=criteria, shared=form.cleaned_data["shared"])
                     audit(request.user, "view.saved", row, after={"name": row.name, "criteria": criteria}, reason="Owner saved participant filters")
                     messages.success(request, "Participant view saved.")
                     return people_saved(request,"participants:staff-directory")
     return render(request, "participants/saved_views.html", context(request, form=form,
-        saved_views=SavedParticipantView.objects.filter(owner=request.user), page_title="Saved participant views"),
+        saved_views=SavedParticipantView.objects.filter(Q(owner=request.user) | Q(shared=True, archived_at__isnull=True)), page_title="Saved participant views"),
         status=400 if form.is_bound and form.errors else 200)
 
 
@@ -552,7 +559,7 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
             options.append(dict(label=display_label, selected=selected, url=change(key, None if selected else value)))
         groups.append(dict(key=key, title=title, options=options))
     definitions = [("Skills & qualifications", ["skill","qualification","qualification_kind","qualification_status","document_status"]),
-                   ("Experience & work preferences", ["experience_min","experience_data","availability","preferred_location","work_type"]),
+                   ("Experience & work preferences", ["experience_min","experience_data","availability","preferred_location","work_type","relocation","employment_classification","availability_classification"]),
                    ("Assessment limits", ["assessment_category","score_min","score_max"]),
                    ("Events & source dates", ["event","participation","acquired_from","acquired_to","completeness"])]
     panels, common_panels = {}, {}

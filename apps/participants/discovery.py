@@ -180,6 +180,16 @@ def discover(user, params, *, strict=False):
     if not form.is_valid():
         return form, qs.none(), {}
     d = form.cleaned_data
+    from apps.recruiting.models import RecruitingProfile
+    extra = canonical_records(RecruitingProfile.objects.all())
+    relocation = d.get("relocation")
+    if relocation in {"yes", "no"}:
+        qs = qs.filter(pk__in=extra.filter(willing_to_relocate=relocation == "yes").values("_canonical_person"))
+    elif relocation == "unknown":
+        qs = qs.exclude(pk__in=extra.filter(willing_to_relocate__isnull=False).values("_canonical_person"))
+    for key in ("employment_classification", "availability_classification"):
+        if d.get(key):
+            qs = qs.filter(pk__in=extra.filter(**{key + "__key": d[key]}).values("_canonical_person"))
     if d.get("archived") == "only":
         qs = qs.filter(archived_at__isnull=False)
     elif d.get("archived") != "all":

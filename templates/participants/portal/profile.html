@@ -3,6 +3,7 @@
 {% block title %}My Profile · Built to Work{% endblock %}
 {% block content %}
 <div class="profile-workspace">
+  <section class="card"><h2>Keep your profile current</h2><p>Confirm the information you reviewed and update availability or relocation preferences.</p><a href="{% url 'recruiting:portal-preferences' %}">Review recruiting preferences &amp; confirm profile</a></section>
   <header class="profile-identity">
     <span class="profile-avatar" aria-hidden="true">{{ profile_initials }}</span>
     <div class="profile-identity-copy">

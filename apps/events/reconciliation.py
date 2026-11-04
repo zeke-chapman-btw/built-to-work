@@ -1,4 +1,5 @@
 """Audited, non-destructive resolution of uncertain offline identities."""
+from apps.recruiting.access import serialize_identity_write
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -18,6 +19,7 @@ def _require_reviewer(actor):
 
 
 @transaction.atomic
+@serialize_identity_write
 def resolve_match(*, review_id, action, reason, actor):
     """Import the source identity, then optionally link it to the candidate.
 
@@ -89,6 +91,7 @@ def resolve_match(*, review_id, action, reason, actor):
 
 
 @transaction.atomic
+@serialize_identity_write
 def reverse_match(*, review_id, reason, actor):
     if not (actor.is_authenticated and actor.is_active and actor.is_superuser):
         raise PermissionDenied

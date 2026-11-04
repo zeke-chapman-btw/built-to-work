@@ -82,6 +82,8 @@ def create_person(*, actor, data):
     audit(actor, "profile.created", person, after={"identity_uuid": str(person.identity_uuid),
           "distinct_person_confirmed": bool(matches.exists())}, reason=reason)
     initial_acquisition(participant=person, channel="unknown", provenance="Staff-created record; original source not asserted", actor=actor)
+    from apps.recruiting.foundation import record_lead
+    record_lead(actor=actor, participant=person, source=(data.get("lead_source") or reason)[:240])
     return person
 
 

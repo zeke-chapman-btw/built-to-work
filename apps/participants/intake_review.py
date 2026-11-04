@@ -1,4 +1,5 @@
 """Permissioned Participant Review Queue decisions over existing identity links."""
+from apps.recruiting.access import serialize_identity_write
 import hashlib
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
@@ -41,6 +42,7 @@ def _new_origin(source, actor):
 
 
 @transaction.atomic
+@serialize_identity_write
 def decide(*, actor, review_id, action, reason, expected_revision, target_id=None, confirmed=False):
     require_review(actor, write=True, update=action in {"associate_update", "separate"})
     if action not in ACTIONS:
