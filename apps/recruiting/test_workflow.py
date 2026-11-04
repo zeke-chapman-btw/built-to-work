@@ -20,6 +20,7 @@ class WorkflowFixtures(MatchingFixtures):
     def publish(self,**changes):
         self.opportunity.refresh_from_db()
         data={'actor':self.admin,'opportunity_id':self.opportunity.pk,'expected_revision':self.opportunity.revision,
+            'expected_need_revision':self.opportunity.need.effective_revision_id,
             'action':'publish','details':{'title':'SYNTHETIC approved welding position','trade':'Welding','summary':'SYNTHETIC approved participant-facing opportunity','location':'Example City, GA','employment_type':'Full time'},'why':'SYNTHETIC reviewed public copy'}
         data.update(changes)
         row=workflow.publish(**data);self.opportunity=row
@@ -31,6 +32,7 @@ class WorkflowFixtures(MatchingFixtures):
         row.refresh_from_db()
         conflicts=selection.conflict_set(self.admin,self.person,excluding=self.opportunity.pk)
         data={'actor':self.admin,'interest_id':row.pk,'status':'review','note':'SYNTHETIC review of participant interest','expected_revision':row.revision,
+            'expected_need_revision':row.opportunity.need.effective_revision_id,
             'operation_id':uuid.uuid4(),'expected_conflicts':conflicts['fingerprint'],'acknowledged':conflicts['has_conflicts']}
         data.update(changes)
         return workflow.review_interest(**data)
@@ -57,6 +59,17 @@ class WorkflowTests(WorkflowFixtures,TestCase):
         self.assertEqual(one.source_participant,self.person);self.assertEqual(one.publication,self.opportunity.publication)
         self.assertFalse(CandidateOpportunity.objects.exists());self.assertEqual(one.status,'received')
         self.assertEqual(jobs.own_interests(self.portal).count(),1)
+
+    def test_own_interest_history_is_complete_paginated_and_private(self):
+        self.publish()
+        for index in range(21):CandidateInterest.objects.create(opportunity=self.opportunity,publication=self.opportunity.publication,
+            participant=self.person,source_participant=self.person,submitted_by=self.portal,active=False,status='withdrawn')
+        other=Participant.objects.create(first_name='SYNTHETIC PRIVATE',last_name='Other interest owner')
+        CandidateInterest.objects.create(opportunity=self.opportunity,publication=self.opportunity.publication,
+            participant=other,source_participant=other,submitted_by=self.admin)
+        self.client.force_login(self.portal,backend='apps.participants.auth.ParticipantAuthenticationBackend')
+        response=self.client.get(reverse('participants:portal-jobs')+'?view=interests&interest_page=2')
+        self.assertEqual(response.status_code,200);self.assertContains(response,'Page 2 of 2');self.assertNotContains(response,'Other interest owner')
 
     def test_incomplete_intake_interest_is_retained_until_staff_review(self):
         self.publish()

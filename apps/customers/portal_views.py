@@ -15,7 +15,7 @@ from .portal_policy import identity_for, eligible_memberships, require_membershi
 from .models import WorkforceNeed as Need, WorkforceNeedRevision as Revision, Campaign, CustomerMembership as Membership, TERM_FIELD_NAMES
 
 TABS = [('overview', 'Overview'), ('company', 'Company Information'), ('needs', 'Workforce Needs'),
-        ('campaigns', 'Campaigns'), ('users', 'Users & Membership'), ('access', 'Access & Plan'), ('history', 'History & Feedback')]
+        ('campaigns', 'Campaigns'), ('candidates', 'Candidates'), ('users', 'Users & Membership'), ('access', 'Access & Plan'), ('history', 'History & Feedback')]
 
 
 def customer_view(view):
@@ -76,6 +76,9 @@ def switch_company(request):
 def workspace(request, tab='overview'):
     if tab not in dict(TABS):
         raise Http404
+    if tab=='candidates':
+        from apps.recruiting.employer_views import directory_content
+        return directory_content(request)
     org = organization(request)
     data = context(request, tab)
     if tab == 'needs':

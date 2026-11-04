@@ -1,8 +1,11 @@
 from django.urls import path
-from . import views, matching_views, workflow_views, job_views
+from . import views, matching_views, workflow_views, job_views, employer_views
 
 app_name = 'recruiting'
 urlpatterns = [
+    path('candidates/<uuid:candidate_id>/employer-release/',employer_views.disclosure,name='disclosure'),
+    path('disclosures/<uuid:disclosure_id>/members/<uuid:membership_id>/',employer_views.member_permission,name='disclosure-member'),
+    path('people/<int:participant_id>/sharing-withdrawal/',employer_views.withdrawal,name='sharing-withdrawal'),
     path('',workflow_views.overview,name='overview'),
     path('campaigns/',workflow_views.campaigns,name='campaigns'),
     path('requests/group/',workflow_views.request_group,name='request-group'),

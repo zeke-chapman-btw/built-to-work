@@ -41,7 +41,7 @@ class CorrectivePassOneTests(TestCase):
         self.client.force_login(self.owner, backend='django.contrib.auth.backends.ModelBackend')
 
     def test_approved_destinations_and_legacy_authorization(self):
-        self.assertEqual([row['label'] for row in visible_workspaces(self.owner)], ['Home','Tasks','Participants','Customers','Campaigns','Approvals','Events','Operations','Reports & Analytics','Settings & Administration'])
+        self.assertEqual([row['label'] for row in visible_workspaces(self.owner)], ['Home','Tasks','Participants','Customers','Recruiting','Approvals','Events','Operations','Reports & Analytics','Settings & Administration'])
         self.assertIn('administration', [row['id'] for row in visible_legacy_workspaces(self.owner)])
         for key in ('administration','platform-tools','customers'):
             self.assertEqual(self.client.get(reverse('internal:workspace', kwargs={'workspace_id':key})).status_code, 200)

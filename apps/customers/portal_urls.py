@@ -1,7 +1,9 @@
 from django.urls import path
 from . import portal_views as v, portal_auth as a, portal_staff as staff
+from apps.recruiting import employer_views
 app_name = 'customer_portal'
 urlpatterns = [
+    path('candidates/<uuid:record_id>/',employer_views.customer_candidate,name='recruiting-candidate'),
     path('', v.workspace, name='home'),
     path('auth/login/', a.sign_in, name='login'),
     path('auth/logout/', a.sign_out, name='logout'),

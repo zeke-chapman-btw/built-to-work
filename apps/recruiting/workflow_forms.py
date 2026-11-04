@@ -41,6 +41,7 @@ class CollaborationForm(ReassignmentForm):
 
 
 class PublicationForm(VersionReasonForm):
+    expected_need_revision=forms.UUIDField(widget=forms.HiddenInput)
     action=forms.ChoiceField(choices=[('publish','Publish a reviewed version'),('unpublish','Unpublish'),('close','Close to new interest')])
     title=forms.CharField(max_length=200,required=False)
     trade=forms.CharField(max_length=160,required=False)
@@ -74,6 +75,7 @@ class OutreachForm(VersionReasonForm):
 
 
 class ReviewForm(VersionReasonForm):
+    expected_need_revision=forms.UUIDField(widget=forms.HiddenInput)
     operation_id=forms.UUIDField(widget=forms.HiddenInput,initial=uuid.uuid4)
     status=forms.ChoiceField(choices=[c for c in CandidateInterest._meta.get_field('status').choices if c[0]!='withdrawn'])
     task=forms.ModelChoiceField(queryset=None,required=False)

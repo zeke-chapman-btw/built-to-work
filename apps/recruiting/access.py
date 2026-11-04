@@ -37,10 +37,12 @@ def fresh_participant(actor, *, lock=False, allow_identity_review=False):
     user = users.filter(pk=actor.pk, is_active=True, is_staff=False, is_superuser=False).first()
     if not user or user.get_session_auth_hash() != actor.get_session_auth_hash() or hasattr(user, 'customer_identity'):
         raise PermissionDenied('Use your current Participant sign-in.')
-    account = (ParticipantAccount.objects.select_related('participant','user').filter(user=user,status='active',email_verified_at__isnull=False,participant__kind='person',participant__archived_at__isnull=True).first()
+    account = (ParticipantAccount.objects.select_related('participant','user').filter(user=user,status='active',email_verified_at__isnull=False,participant__kind='person',participant__archived_at__isnull=True,participant__admin_preview_fixture__isnull=True).first()
         if allow_identity_review else active_account(user))
     if not account:
         raise PermissionDenied('An active Participant identity is required.')
+    if canonical_id(account.participant_id)!=account.participant_id:
+        raise PermissionDenied('This account requires identity ownership review; an alias account cannot act for another identity.')
     if lock:
         account = ParticipantAccount.objects.select_for_update().select_related('participant').get(pk=account.pk)
         if account.status != 'active' or not account.email_verified_at:

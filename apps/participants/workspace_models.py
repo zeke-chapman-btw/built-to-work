@@ -116,7 +116,7 @@ class ParticipantNote(TimestampedModel, ArchivableModel):
 
 
 class SavedParticipantView(TimestampedModel, ArchivableModel):
-    shared = models.BooleanField(default=False)
+    shared = models.BooleanField(default=False, db_default=False)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="saved_participant_views")
     name = models.CharField(max_length=100)
     criteria = models.JSONField(default=dict)

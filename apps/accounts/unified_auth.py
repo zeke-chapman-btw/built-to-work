@@ -145,6 +145,9 @@ def safe_destination(request, value, realm, user):
         org_id = members[0].organization_id
         if match.kwargs.get('record_id'):
             model = WorkforceNeed if match.url_name.startswith('need') else Campaign if match.url_name.startswith('campaign') else CustomerMembership if match.url_name.startswith('member') else None
+            if match.url_name=='recruiting-candidate':
+                from apps.recruiting.models import CandidateDisclosure
+                model=CandidateDisclosure
             obj = model.objects.filter(pk=match.kwargs['record_id']).first() if model else None
             if not obj:
                 return None

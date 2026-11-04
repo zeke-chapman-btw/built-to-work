@@ -89,12 +89,13 @@ def reassign(*,actor,candidate_id,user_id,expected_revision,why):
         return row
 
 
-def publish(*,actor,opportunity_id,expected_revision,action,details=None,expires_at=None,why):
+def publish(*,actor,opportunity_id,expected_revision,action,details=None,expires_at=None,expected_need_revision=None,why):
     """Only reviewed allowlisted participant copy; no automatic private-term dump."""
     with policy_transaction():
         actor=fresh_staff(actor);item=opportunity_for(actor,opportunity_id,write=True,lock=True);current_revision(item,expected_revision)
         if action=='publish':
             revision=item.need.effective_revision
+            if str(item.need.effective_revision_id)!=str(expected_need_revision):raise ValidationError('The approved position changed. Review it before publishing job details.')
             if item.need.status!='active' or not revision or revision.state!='approved':raise ValidationError('Publish only an approved active position.')
             if expires_at and expires_at<=timezone.now():raise ValidationError('Expiration must be in the future.')
             allowed={'title','trade','summary','location','employment_type','schedule','pay','qualifications','travel'}
@@ -166,7 +167,7 @@ def record_outreach(*,actor,candidate_id,data,operation_id,expected_revision):
         return event
 
 
-def review_interest(*,actor,interest_id,status,note,expected_revision,operation_id,task_id=None,select=False,expected_conflicts='',acknowledged=False):
+def review_interest(*,actor,interest_id,status,note,expected_revision,operation_id,task_id=None,select=False,expected_conflicts='',expected_need_revision=None,acknowledged=False):
     from apps.operations.models import Task
     from apps.operations.task_access import require_task_access
     with policy_transaction():
@@ -180,12 +181,13 @@ def review_interest(*,actor,interest_id,status,note,expected_revision,operation_
         current_revision(row,expected_revision)
         if not row.active:raise ValidationError('This interest is historical.')
         if status not in {'received','review','information','not_selected'}:raise ValidationError('Choose a participant-safe review status.')
+        if select and status=='not_selected':raise ValidationError('Selecting a pipeline candidate cannot be combined with No Longer Under Consideration.')
         task=Task.objects.get(pk=task_id) if task_id else None
         if task:require_task_access(actor,task);attach_task(actor=actor,opportunity_id=row.opportunity_id,task_id=task.pk,interest_id=row.pk)
         candidate=None
         if select:
             candidate=select_candidate(actor=actor,opportunity_id=row.opportunity_id,participant_id=row.participant_id,
-                expected_conflicts=expected_conflicts,acknowledged=acknowledged,why=note)
+                expected_conflicts=expected_conflicts,expected_need_revision=expected_need_revision,acknowledged=acknowledged,why=note)
             row.candidate=candidate
         row.status=status;row.revision+=1;row.save()
         event=InterestReview.objects.create(interest=row,actor=actor,status=status,note=reason(note),task=task,

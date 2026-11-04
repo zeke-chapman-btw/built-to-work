@@ -4,7 +4,7 @@ from django.urls import reverse
 
 register = template.Library()
 CUSTOMER_ICONS = {'overview':'home','company':'customers','needs':'people',
-                  'campaigns':'campaigns','users':'staff','access':'settings','history':'clock'}
+                  'campaigns':'campaigns','candidates':'people','users':'staff','access':'settings','history':'clock'}
 PARTICIPANT_LINKS = (
     ('profile','My Profile','people','participants:profile'),
     ('events','Events','calendar','participants:portal-events'),

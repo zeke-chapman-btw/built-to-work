@@ -69,7 +69,7 @@ class CustomerSharedShellTests(PortalFixtures,TestCase):
                 self.client.logout();self.assertEqual(self.client.post(reverse('accounts:login'),
                     {'account_type':'customer','email':member.identity.email,'password':PASSWORD}).status_code,302)
                 response=self.client.get(reverse('customer_portal:home'));links=chrome(self,response)
-                self.assertEqual(len(links),7)
+                self.assertEqual(len(links),8)
                 self.assertFalse(any(x['url'].startswith(('/internal/','/operations/','/participants/')) for x in links))
                 self.assertEqual(self.client.get(reverse('customer_portal:need-create')).status_code,200 if needs else 403)
                 self.assertEqual(self.client.get(reverse('customer_portal:campaign-create')).status_code,200 if campaigns else 403)
@@ -184,7 +184,7 @@ class PreviewSharedShellTests(PortalFixtures,TestCase):
         self.client.force_login(self.admin,backend='django.contrib.auth.backends.ModelBackend')
         self.assertEqual(self.client.post(reverse('internal:portal-preview-customer-enter')).status_code,302)
         response=self.client.get(reverse('customer_portal:home'));links=chrome(self,response)
-        self.assertEqual(len(links),7);self.assertTrue(all(x['url'].startswith('/customer/') for x in links))
+        self.assertEqual(len(links),8);self.assertTrue(all(x['url'].startswith('/customer/') for x in links))
         self.assertContains(response,'View-only customer preview');self.assertContains(response,'Return to Admin',count=1)
         self.assertNotContains(response,'data-task-create');self.assertContains(response,'application-preview-notice')
         self.assertEqual(self.client.post(reverse('customer_portal:logout')).status_code,302)

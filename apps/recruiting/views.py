@@ -1,4 +1,5 @@
 from functools import wraps
+from django.forms import BaseForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError, PermissionDenied
@@ -11,7 +12,7 @@ from apps.participants.models import Participant
 from apps.participants.identity import participant_candidates
 from .access import fresh_staff, person, policy_transaction
 from .models import CandidateList, RecruitingProfile, Classification, CampaignRecruitingPolicy
-from .forms import PreferencesForm, ListForm, ConsolidationForm, ClassificationForm, CampaignPolicyForm
+from .forms import PreferencesForm, ListForm, ConsolidationForm, ClassificationForm, CampaignPolicyForm,CampaignSourceForm
 from . import foundation as service
 
 
@@ -29,6 +30,18 @@ def staff(view):
 def page(request, template, **context):
     context.setdefault('page_title', 'Recruiting')
     context.setdefault('active_workspace', 'participants')
+    # Independent forms keep their POST contracts but must not share HTML IDs.
+    def label_forms(value, key):
+        if isinstance(value, BaseForm):
+            value.auto_id = 'recruiting_' + key + '_%s'
+        elif isinstance(value, dict):
+            for name, child in value.items():
+                label_forms(child, key + '_' + str(name))
+        elif isinstance(value, (list, tuple)):
+            for index, child in enumerate(value):
+                label_forms(child, key + '_' + str(index))
+    for key, value in context.items():
+        label_forms(value, key)
     return render(request, template, context)
 
 
@@ -84,6 +97,7 @@ def candidate_foundation(request, participant_id):
         'availability_classification': row.availability_classification_id if row else None,
         'willing_to_relocate': '' if not row or row.willing_to_relocate is None else 'yes' if row.willing_to_relocate else 'no'}
     form = PreferencesForm(request.POST if request.method == 'POST' and request.POST.get('operation') == 'preferences' else None, initial=initial)
+    source_form=CampaignSourceForm(request.POST if request.method=='POST' and request.POST.get('operation')=='source_campaign' else None,actor=request.recruiting_actor)
     if request.method == 'POST':
         try:
             action = request.POST.get('operation')
@@ -97,6 +111,15 @@ def candidate_foundation(request, participant_id):
                 service.request_update(actor=request.user, participant_id=item.pk, message=request.POST.get('reason'))
             elif action == 'add_list':
                 service.change_list_member(actor=request.user, list_id=request.POST.get('list_id'), participant_id=item.pk)
+            elif action=='source_campaign':
+                if not source_form.is_valid():raise ValidationError('Review the Campaign sourcing fields.')
+                data=source_form.cleaned_data
+                service.source_campaign(actor=request.user,campaign_id=data['campaign'].pk,participant_id=item.pk,exclusive=data['exclusive'],why=data['reason'])
+            elif action=='release_source':
+                from .models import CampaignSource
+                from apps.participants.identity import identity_members
+                source=get_object_or_404(CampaignSource,pk=request.POST.get('source'),participant_id__in=identity_members(item.pk))
+                service.release_exclusivity(actor=request.user,source_id=source.pk,why=request.POST.get('reason'))
             elif action == 'review_selection':
                 from .selection import opportunity_for
                 opportunity = opportunity_for(request.user, request.POST.get('opportunity_id'), write=True)
@@ -112,10 +135,23 @@ def candidate_foundation(request, participant_id):
             return redirect('recruiting:candidate', participant_id=item.pk)
     duplicates = participant_candidates(email=item.contact_email, phone=item.contact_phone).exclude(pk=item.pk)
     from .selection import opportunities_for
+    from .models import CampaignSource
+    from apps.participants.identity import identity_members
+    from datetime import timedelta
+    from django.utils import timezone
+    visible=set(service.visible_campaigns(request.recruiting_actor).values_list('pk',flat=True))
+    sources=[]
+    for source in CampaignSource.objects.filter(participant_id__in=identity_members(item.pk)).select_related('campaign').order_by('-created_at'):
+        policy=CampaignRecruitingPolicy.objects.filter(campaign=source.campaign).first()
+        end=policy.completed_at+timedelta(days=policy.exclusivity_days) if policy and policy.completed_at and policy.exclusivity_days is not None else None
+        status='Released' if source.released_at else 'Not exclusive' if not source.exclusive else 'Expired' if end and timezone.now()>=end else 'Active; completion/duration setup needed' if not end else 'Active'
+        sources.append({'id':str(source.pk),'label':source.campaign.name if source.campaign_id in visible else 'Restricted Campaign sourcing',
+            'status':status,'end':end if source.campaign_id in visible else None,'created_at':source.created_at,'released':source.released_at})
     return page(request, 'recruiting/candidate.html', participant=item, recruiting_profile=row, readiness=service.readiness(item),
         freshness=service.freshness(item), fingerprint=service.profile_fingerprint(item), form=form,
         candidate_lists=service.visible_lists(request.user).filter(owner=request.user, archived_at__isnull=True),
-        possible_duplicates=duplicates[:20], available_opportunities=opportunities_for(request.user).filter(need__status='active',archived_at__isnull=True), page_title='Recruiting · ' + str(item), administrator=request.recruiting_actor.is_superuser)
+        possible_duplicates=duplicates[:20], available_opportunities=opportunities_for(request.user).filter(need__status='active',archived_at__isnull=True), page_title='Recruiting · ' + str(item), administrator=request.recruiting_actor.is_superuser,
+        source_form=source_form,campaign_sources=sources)
 
 
 @staff
@@ -146,18 +182,29 @@ def consolidation(request, source_id, target_id):
 def classifications(request, classification_id=None):
     fresh_staff(request.user, administrator=True)
     item = get_object_or_404(Classification, pk=classification_id) if classification_id else None
-    form = ClassificationForm(request.POST or None, instance=item)
+    form = ClassificationForm(request.POST or None, instance=item,initial={'expected_revision':item.updated_at.isoformat() if item else 'new'})
     if item:
         form.fields['kind'].disabled = True
         form.fields['key'].disabled = True
     if request.method == 'POST' and form.is_valid():
-        with policy_transaction():
-            actor = fresh_staff(request.user, administrator=True)
-            result = form.save()
-            service.audit(actor, 'classification.saved', result, data={'key': result.key, 'active': result.is_active})
-        return redirect('recruiting:classifications')
+        try:
+            with policy_transaction():
+                actor = fresh_staff(request.user, administrator=True)
+                current=Classification.objects.select_for_update().get(pk=item.pk) if item else None
+                if form.cleaned_data['expected_revision']!=(current.updated_at.isoformat() if current else 'new'):
+                    raise ValidationError('This classification changed. Reload its current settings.')
+                fields=('kind','key','label','position','is_active')
+                previous={k:getattr(current,k) for k in fields} if current else None
+                result = form.save(commit=False);result.full_clean();result.save()
+                service.audit(actor, 'classification.saved', result, data={k:getattr(result,k) for k in fields},before=previous,why=form.cleaned_data['reason'])
+        except ValidationError as exc:form.add_error(None,exc)
+        else:return redirect('recruiting:classifications')
+    from apps.core.models import AuditLog
+    from django.contrib.contenttypes.models import ContentType
+    history=AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(Classification),action='recruiting.classification.saved')
+    if item:history=history.filter(object_id=str(item.pk))
     return page(request, 'recruiting/classifications.html', form=form, classifications=Classification.objects.all(),
-        page_title='Employment & availability classifications', active_workspace='administration')
+        page_title='Employment & availability classifications', active_workspace='administration',history=history.order_by('-timestamp')[:30])
 
 
 @staff

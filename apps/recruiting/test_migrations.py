@@ -1,11 +1,13 @@
 """Populated baseline-to-Build15 migration preservation in a dedicated test DB."""
 from decimal import Decimal
+from unittest import skipUnless
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
 from django.test import TransactionTestCase
 from django.utils import timezone
 
 
+@skipUnless(connection.vendor == 'postgresql', 'Populated immutable hiring-history migration uses PostgreSQL TRUNCATE cleanup; verified in its own PostgreSQL test database')
 class PopulatedMigrationPreservationTests(TransactionTestCase):
     available_apps = None
 
@@ -69,5 +71,12 @@ class PopulatedMigrationPreservationTests(TransactionTestCase):
             self.assertEqual(hiring.state,'approved');self.assertEqual(hiring.pay_minimum,Decimal('27.25'))
             self.assertEqual(hiring.pay_maximum,Decimal('32.75'));self.assertEqual(hiring.worker_quantity,2)
             self.assertEqual(new.get_model('customers','WorkforceNeed').objects.get(pk=ids['need']).effective_revision_id,ids['hiring'])
+            # The previous deployed code omits both new columns during rolling deployment
+            # and code rollback. Exercise its historical ORM against the upgraded schema.
+            legacy_search=Saved.objects.create(owner_id=actor.pk,name='SYNTHETIC old-code search after upgrade',criteria={'legacy':True})
+            self.assertFalse(new.get_model('participants','SavedParticipantView').objects.get(pk=legacy_search.pk).shared)
+            legacy_submission=Submission.objects.create(form_version_id=version.pk,participant_id=ids['person'],status='submitted',answers={'legacy':True})
+            legacy_review=Review.objects.create(source_submission=legacy_submission,source_participant_id=ids['person'],status='open',evidence={'legacy_insert':True})
+            self.assertFalse(new.get_model('events','ParticipantMatchReview').objects.get(pk=legacy_review.pk).established_person_review)
         finally:
             MigrationExecutor(connection).migrate(latest)

@@ -25,6 +25,21 @@ class FoundationTests(TestCase):
         self.org = CustomerOrganization.objects.create(name='SYNTHETIC company A')
         self.other_org = CustomerOrganization.objects.create(name='SYNTHETIC company B')
 
+    def test_classification_changes_retain_labels_and_reject_stale_edits(self):
+        from apps.core.models import AuditLog
+        row=Classification.objects.create(kind='employment',key='synthetic-stable',label='SYNTHETIC original label')
+        self.client.force_login(self.admin,backend='django.contrib.auth.backends.ModelBackend')
+        url=reverse('recruiting:classification-edit',args=[row.pk])
+        payload={'kind':row.kind,'key':row.key,'label':'SYNTHETIC clarified label','position':2,'is_active':'on',
+            'expected_revision':row.updated_at.isoformat(),'reason':'SYNTHETIC label clarification'}
+        self.assertEqual(self.client.post(url,payload).status_code,302)
+        row.refresh_from_db();self.assertEqual(row.key,'synthetic-stable')
+        event=AuditLog.objects.filter(action='recruiting.classification.saved',object_id=str(row.pk)).latest('timestamp')
+        self.assertEqual(event.old_data['label'],'SYNTHETIC original label');self.assertEqual(event.new_data['label'],'SYNTHETIC clarified label')
+        payload['label']='SYNTHETIC stale overwritten label'
+        response=self.client.post(url,payload);self.assertEqual(response.status_code,200);self.assertContains(response,'classification changed')
+        row.refresh_from_db();self.assertEqual(row.label,'SYNTHETIC clarified label')
+
     def test_staff_creation_uses_existing_person_duplicate_guard_and_lead_metadata(self):
         with self.assertRaises(ValidationError):
             create_person(actor=self.admin, data={'first_name': 'SYNTHETIC', 'last_name': 'Duplicate',

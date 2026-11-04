@@ -30,6 +30,8 @@ class ConsolidationForm(ReasonForm):
 
 
 class ClassificationForm(forms.ModelForm):
+    expected_revision=forms.CharField(widget=forms.HiddenInput)
+    reason=forms.CharField(max_length=500,widget=forms.Textarea(attrs={'rows':2}))
     class Meta:
         model = Classification
         fields = ['kind', 'key', 'label', 'position', 'is_active']
@@ -40,6 +42,15 @@ class CampaignPolicyForm(ReasonForm):
         help_text='Unconfigured is not zero days. No planned date is used as actual completion.')
     actual_completion = forms.DateTimeField(required=False, widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}))
     expected_revision = forms.IntegerField(initial=0, widget=forms.HiddenInput)
+
+
+class CampaignSourceForm(ReasonForm):
+    campaign=forms.ModelChoiceField(queryset=None)
+    exclusive=forms.BooleanField(required=False,initial=True,label='Exclusive when creating this new sourcing relationship')
+    def __init__(self,*args,actor,**kwargs):
+        super().__init__(*args,**kwargs)
+        from .foundation import visible_campaigns
+        self.fields['campaign'].queryset=visible_campaigns(actor,write=True)
 
 
 class OpportunityForm(forms.Form):
@@ -55,6 +66,7 @@ class OpportunityForm(forms.Form):
 
 
 class CriteriaForm(ReasonForm):
+    expected_need_revision=forms.UUIDField(widget=forms.HiddenInput)
     expected_revision=forms.IntegerField(widget=forms.HiddenInput)
     required_skills=forms.CharField(required=False,widget=forms.Textarea(attrs={'rows':2}),help_text='One explicit reported skill per line; gaps never automatically reject candidates.')
     preferred_skills=forms.CharField(required=False,widget=forms.Textarea(attrs={'rows':2}))
@@ -100,6 +112,7 @@ class CriteriaForm(ReasonForm):
 
 
 class CandidateSelectionForm(ReasonForm):
+    expected_need_revision=forms.UUIDField(widget=forms.HiddenInput)
     expected_conflicts=forms.CharField(widget=forms.HiddenInput)
     criteria_id=forms.UUIDField(required=False,widget=forms.HiddenInput)
     acknowledge_conflicts=forms.BooleanField(required=False,label='I reviewed the current other recruiting engagements and potential conflicts.')

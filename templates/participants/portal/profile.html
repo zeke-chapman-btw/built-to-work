@@ -3,7 +3,6 @@
 {% block title %}My Profile · Built to Work{% endblock %}
 {% block content %}
 <div class="profile-workspace">
-  <section class="card"><h2>Keep your profile current</h2><p>Confirm the information you reviewed and update availability or relocation preferences.</p><a href="{% url 'recruiting:portal-preferences' %}">Review recruiting preferences &amp; confirm profile</a></section>
   <header class="profile-identity">
     <span class="profile-avatar" aria-hidden="true">{{ profile_initials }}</span>
     <div class="profile-identity-copy">
@@ -13,6 +12,7 @@
       <p class="profile-guidance">Your experience, skills and next steps. Keep your story up to date.</p>
     </div>
   </header>
+  <section class="portal-card profile-section"><div class="section-heading"><h2>Keep your profile current</h2><a class="profile-edit-link" href="{% url 'recruiting:portal-preferences' %}">Review &amp; confirm</a></div><p class="profile-guidance">Confirm the information you reviewed and update availability or relocation preferences.</p></section>
   {% if request.portal_preview %}<p class="profile-preview-note">Synthetic preview profile · Identity and contact details stay protected.</p>{% endif %}
   <nav class="profile-section-links" aria-label="My Profile sections">
     <a href="#personal">Contact</a><a href="#skills">Skills</a><a href="#assessments">Assessment Results</a><a href="#work">Experience</a><a href="#training">Training</a><a href="#credentials">Credentials</a><a href="#preferences">Preferences</a><a href="#availability">Availability</a><a href="#documents">Documents</a>

@@ -3,7 +3,9 @@ from django import forms
 from django.contrib import messages
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q,Count,Exists,OuterRef,CharField,Value
+from django.db.models.functions import Cast,Replace
+from django.utils import timezone
 from django.shortcuts import redirect,get_object_or_404
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
@@ -13,7 +15,7 @@ from .views import staff,page
 from .access import fresh_staff,person
 from .foundation import readiness,audit,group_positions
 from .selection import opportunities_for,opportunity_for,conflict_set,candidate_gates
-from .models import (CandidateOpportunity,CandidateInterest,RecruitingStage,WorkforceRequest,IdentityConsolidation)
+from .models import (CandidateOpportunity,CandidateInterest,RecruitingStage,WorkforceRequest,IdentityConsolidation,EmployerCandidateFeedback,RecruitingTaskLink)
 from .workflow_forms import (StageChangeForm,ReassignmentForm,CollaborationForm,PublicationForm,
     OutreachForm,ReviewForm,FollowupForm,StageConfigurationForm)
 from . import workflow
@@ -29,9 +31,30 @@ def can_manage(actor,item):
 @require_http_methods(['GET'])
 def overview(request):
     items=opportunities_for(request.user).filter(archived_at__isnull=True)
+    from .employer import feedback_reviews
+    from apps.operations.models import Task
+    current=items.filter(need__status='active',need__effective_revision__state='approved')
+    candidates=CandidateOpportunity.objects.filter(opportunity__in=items)
+    responses=EmployerCandidateFeedback.objects.filter(disclosure__candidate__opportunity__in=items).select_related('disclosure__candidate__participant','disclosure__need__effective_revision')
+    # UUID columns are native on PostgreSQL and compact text on SQLite.
+    # Audit object IDs retain their original hyphenated representation.
+    reviews=feedback_reviews().annotate(review_id=Replace('object_id',Value('-'),Value(''))).filter(
+        review_id=Replace(Cast(OuterRef('pk'),output_field=CharField()),Value('-'),Value('')))
+    pending_responses=responses.annotate(staff_reviewed=Exists(reviews)).filter(staff_reviewed=False)
+    overdue=tasks_for(request.recruiting_actor).filter(
+        pk__in=RecruitingTaskLink.objects.filter(opportunity__in=items).values('task_id'),
+        archived_at__isnull=True,due_date__lt=timezone.localdate(),status__in=[Task.Status.TODO,Task.Status.PROGRESS])
+    outreach=candidates.filter(active=True,stage_id='contacting',outreach__isnull=True).select_related('participant','opportunity__need__effective_revision')
     return page(request,'recruiting/overview.html',page_title='Recruiting',
         opportunity_count=items.count(),interest_count=CandidateInterest.objects.filter(opportunity__in=items,active=True,status='received').count(),
-        active_count=CandidateOpportunity.objects.filter(opportunity__in=items,active=True).count(),opportunities=items[:8])
+        active_count=CandidateOpportunity.objects.filter(opportunity__in=items,active=True).count(),opportunities=items[:8],
+        open_position_count=current.count(),engagement_count=current.filter(candidates__active=True).distinct().count(),
+        request_count=WorkforceRequest.objects.filter(archived_at__isnull=True,positions__need__recruiting_opportunity__in=current).distinct().count(),
+        stage_counts=candidates.values('stage__key','stage__label','stage__position').annotate(total=Count('pk')).order_by('stage__position','stage__key'),
+        outreach_count=outreach.count(),outreach=outreach[:5],overdue_count=overdue.count(),overdue_tasks=overdue.order_by('due_date','pk')[:5],
+        interview_count=pending_responses.filter(kind='interview').count(),pending_response_count=pending_responses.count(),
+        pending_responses=pending_responses.order_by('-created_at')[:8],
+        employer_responses=responses.order_by('-created_at')[:8])
 
 
 @staff
@@ -60,8 +83,9 @@ def pipeline(request):
     # Bound each column; the complete filtered list remains available.
     columns=[{'stage':s,'count':rows.filter(stage=s).count(),'rows':rows.filter(stage=s)[:15]} for s in RecruitingStage.objects.filter(Q(is_active=True)|Q(candidateopportunity__in=rows)).distinct()] if view=='board' else []
     query=request.GET.copy();query.pop('page',None)
+    view_query=query.copy();view_query.pop('view',None)
     return page(request,'recruiting/pipeline.html',page_title='Recruiting Pipelines',rows=Paginator(rows,30).get_page(request.GET.get('page')),query_without_page=query.urlencode(),
-        columns=columns,view=view,q=q,opportunities=opportunities,filters=request.GET)
+        columns=columns,view=view,q=q,opportunities=opportunities,filters=request.GET,view_query=view_query.urlencode())
 
 
 @staff
@@ -97,7 +121,9 @@ def candidate_detail(request,candidate_id):
     return page(request,'recruiting/candidate_detail.html',page_title=str(row.participant)+' · '+row.opportunity.need.title,
         candidate=row,editable=editable,stage_form=stage,reassignment_form=reassignment,outreach_form=outreach,
         outreach=outreach_rows,history=history,policy_issues=candidate_gates(person(row.participant_id),row.opportunity.need.organization_id),
-        task_links=row.task_links.filter(task__in=permitted_tasks).select_related('task'))
+        task_links=row.task_links.filter(task__in=permitted_tasks).select_related('task'),
+        origin_interests=row.originating_interests.order_by('-created_at')[:10],
+        employer_feedback=EmployerCandidateFeedback.objects.filter(disclosure__candidate=row).order_by('-created_at')[:10])
 
 
 @staff
@@ -105,7 +131,7 @@ def candidate_detail(request,candidate_id):
 def opportunity_settings(request,opportunity_id):
     item=opportunity_for(request.user,opportunity_id,write=True)
     operation=request.POST.get('operation')
-    initial={'expected_revision':item.revision}
+    initial={'expected_revision':item.revision,'expected_need_revision':item.need.effective_revision_id}
     if item.publication:initial.update(item.publication.safe_details);initial['expires_at']=item.publication.expires_at
     else:initial.update({'title':item.need.effective_revision.title,'trade':item.need.effective_revision.trade})
     publication=PublicationForm(request.POST if operation=='publication' else None,initial=initial)
@@ -115,7 +141,7 @@ def opportunity_settings(request,opportunity_id):
         if form.is_valid():
             d=form.cleaned_data
             try:
-                if operation=='publication':workflow.publish(actor=request.user,opportunity_id=item.pk,expected_revision=d['expected_revision'],action=d['action'],details=form.details(),expires_at=d['expires_at'],why=d['reason'])
+                if operation=='publication':workflow.publish(actor=request.user,opportunity_id=item.pk,expected_revision=d['expected_revision'],expected_need_revision=d['expected_need_revision'],action=d['action'],details=form.details(),expires_at=d['expires_at'],why=d['reason'])
                 elif operation=='delegate':workflow.delegate(actor=request.user,opportunity_id=item.pk,user_id=d['user'],mode=d['mode'],expected_revision=d['expected_revision'],why=d['reason'])
                 else:raise PermissionDenied
             except ValidationError as exc:form.add_error(None,exc)
@@ -142,13 +168,13 @@ def interest_review(request,interest_id):
     item=opportunity_for(request.user,row.opportunity_id)
     participant=person(row.participant_id)
     conflicts=conflict_set(request.user,participant,excluding=item.pk)
-    form=ReviewForm(request.POST or None,actor=request.recruiting_actor,initial={'expected_revision':row.revision,'status':row.status,'expected_conflicts':conflicts['fingerprint']})
+    form=ReviewForm(request.POST or None,actor=request.recruiting_actor,initial={'expected_revision':row.revision,'status':row.status,'expected_conflicts':conflicts['fingerprint'],'expected_need_revision':item.need.effective_revision_id})
     editable=can_manage(request.user,item)
     if request.method=='POST':
         if not editable:raise PermissionDenied
         if form.is_valid():
             d=form.cleaned_data
-            try:workflow.review_interest(actor=request.user,interest_id=row.pk,status=d['status'],note=d['reason'],expected_revision=d['expected_revision'],operation_id=d['operation_id'],task_id=d['task'].pk if d['task'] else None,select=d['select_candidate'],expected_conflicts=d['expected_conflicts'],acknowledged=d['acknowledge_conflicts'])
+            try:workflow.review_interest(actor=request.user,interest_id=row.pk,status=d['status'],note=d['reason'],expected_revision=d['expected_revision'],operation_id=d['operation_id'],task_id=d['task'].pk if d['task'] else None,select=d['select_candidate'],expected_conflicts=d['expected_conflicts'],expected_need_revision=d['expected_need_revision'],acknowledged=d['acknowledge_conflicts'])
             except ValidationError as exc:form.add_error(None,exc)
             else:messages.success(request,'Interest review recorded. Employer disclosure remains a separate BTW decision.');return redirect('recruiting:interest-review',interest_id=row.pk)
     return page(request,'recruiting/interest_review.html',page_title='Review Job Interest',interest=row,

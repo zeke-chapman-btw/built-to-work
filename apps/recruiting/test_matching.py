@@ -33,12 +33,14 @@ class MatchingFixtures(CustomerFixtures):
         opportunity=opportunity or self.opportunity;opportunity.refresh_from_db()
         return selection.save_criteria(actor=self.admin,opportunity_id=opportunity.pk,
             rules=rules or [{'kind':'skill','label':'Welding','value':'welding','required':True}],
-            expected_revision=opportunity.revision,why='SYNTHETIC reviewed position criteria')
+            expected_revision=opportunity.revision,expected_need_revision=opportunity.need.effective_revision_id,why='SYNTHETIC reviewed position criteria')
     def select(self,opportunity=None,person=None,**changes):
         opportunity=opportunity or self.opportunity;person=person or self.person
+        opportunity.refresh_from_db()
         conflicts=selection.conflict_set(self.admin,person,excluding=opportunity.pk)
         data={'actor':self.admin,'opportunity_id':opportunity.pk,'participant_id':person.pk,
             'expected_conflicts':conflicts['fingerprint'],'acknowledged':conflicts['has_conflicts'],
+            'expected_need_revision':opportunity.need.effective_revision_id,
             'why':'SYNTHETIC staff selection after reviewing qualifications'}
         data.update(changes)
         return selection.select_candidate(**data)
@@ -118,9 +120,14 @@ class MatchingTests(MatchingFixtures,TestCase):
 
     def test_new_approved_revision_requires_criteria_review_and_manual_provenance(self):
         old=self.criteria()
+        old_need_revision=old.need_revision_id
         payload=self.payload(self.organization);payload['title']='SYNTHETIC approved new title'
         self.draft(self.organization,payload,need=self.need)
         for action in ['submit','review','approve']:self.transition(self.organization,self.need,action)
+        with self.assertRaises(ValidationError):self.select(expected_need_revision=old_need_revision)
+        self.opportunity.refresh_from_db()
+        with self.assertRaises(ValidationError):selection.save_criteria(actor=self.admin,opportunity_id=self.opportunity.pk,
+            rules=old.rules,expected_revision=self.opportunity.revision,expected_need_revision=old_need_revision,why='SYNTHETIC stale approved position preview')
         with self.assertRaises(ValidationError):matching.recommendations(self.admin,self.opportunity,{})
         with self.assertRaises(ValidationError):self.select(criteria_id=old.pk)
         selected=self.select()
@@ -209,6 +216,10 @@ class MatchingTests(MatchingFixtures,TestCase):
         questions=[{'key':'synthetic-one'},{'key':'synthetic-two'}]
         section=AssessmentSection.objects.create(attempt=attempt,category=category,question_set=question_set,position=1,
             category_name_snapshot=category.name,questions_snapshot=questions,status='complete',completed_at=stamp)
+        other_category=AssessmentCategory.objects.create(name='SYNTHETIC second finalized category')
+        other_set=QuestionSet.objects.create(category=other_category,name='SYNTHETIC second question set',version=1,status='published')
+        other_section=AssessmentSection.objects.create(attempt=attempt,category=other_category,question_set=other_set,position=2,
+            category_name_snapshot=other_category.name,questions_snapshot=questions,status='complete',completed_at=stamp)
         AssessmentResponse.objects.create(section=section,question_position=1,selected_choice_key='synthetic-choice',is_correct=True)
         digest=hashlib.sha256(json.dumps(questions,sort_keys=True,separators=(',',':')).encode()).hexdigest()
         rule={'kind':'assessment','label':'Pinned official quiz','assessment_type':'quiz','category':str(category.pk),'snapshot_hash':digest,'minimum':'50'}
@@ -216,5 +227,8 @@ class MatchingTests(MatchingFixtures,TestCase):
         self.assertEqual(result['components'][0]['status'],'strength');self.assertIn('1/2',result['components'][0]['detail'])
         rule['snapshot_hash']='b'*64;other=self.criteria([rule])
         self.assertEqual(matching.score_candidate(self.admin,self.person,other)['components'][0]['status'],'unknown')
+        other_section.status=AssessmentSection.Status.ACTIVE;other_section.completed_at=None;other_section.save()
+        self.assertEqual(matching.score_candidate(self.admin,self.person,criteria)['components'][0]['status'],'unknown')
+        other_section.status='complete';other_section.completed_at=stamp;other_section.save()
         attempt.status='void';attempt.voided_at=timezone.now();attempt.save()
         self.assertEqual(matching.score_candidate(self.admin,self.person,criteria)['components'][0]['status'],'unknown')

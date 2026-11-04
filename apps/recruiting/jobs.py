@@ -81,5 +81,8 @@ def withdraw_interest(*,actor,interest_id):
         if not row:raise PermissionDenied
         if row.active:
             row.active=False;row.status='withdrawn';row.revision+=1;row.save()
+            if row.candidate_id:
+                from .employer import revoke_for_interest
+                revoke_for_interest(actor,row.candidate_id)
             audit(actor,'interest.withdrawn',row,data={'interest':str(row.pk)})
         return row

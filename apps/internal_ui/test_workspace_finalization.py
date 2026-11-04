@@ -22,7 +22,7 @@ class WorkspaceFinalizationTests(TestCase):
         self.assertEqual(
             [(item["id"], item["label"]) for item in response.context["navigation"]],
             [("home", "HOME"), ("events", "EVENTS"), ("participants", "PARTICIPANTS"),
-             ("tasks", "TASKS"), ("operations", "OPERATIONS"), ("platform-tools", "PLATFORM TOOLS"), ("customers", "CUSTOMERS"), ("campaigns", "CAMPAIGNS"), ("approvals", "APPROVALS"), ("administration", "ADMIN")],
+             ("tasks", "TASKS"), ("operations", "OPERATIONS"), ("platform-tools", "PLATFORM TOOLS"), ("customers", "CUSTOMERS"), ("campaigns", "RECRUITING"), ("approvals", "APPROVALS"), ("administration", "ADMIN")],
         )
         self.assertEqual(response.context["settings_link"]["url"], reverse("internal:settings"))
         self.assertContains(response, 'aria-label="Personal settings"')

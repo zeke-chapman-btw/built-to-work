@@ -269,3 +269,66 @@ class RecruitingTaskLink(UUIDModel, TimestampedModel):
     added_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     class Meta:
         constraints = [models.UniqueConstraint(fields=['task','opportunity'], name='recruiting_task_opportunity')]
+
+
+class CandidateDisclosure(UUIDModel, TimestampedModel):
+    candidate = models.ForeignKey(CandidateOpportunity, on_delete=models.PROTECT, related_name='disclosures')
+    participant = models.ForeignKey('participants.Participant', on_delete=models.PROTECT, related_name='+')
+    organization = models.ForeignKey('customers.CustomerOrganization', on_delete=models.PROTECT, related_name='candidate_disclosures')
+    need = models.ForeignKey('customers.WorkforceNeed', on_delete=models.PROTECT, related_name='candidate_disclosures')
+    need_revision = models.ForeignKey('customers.WorkforceNeedRevision', on_delete=models.PROTECT, related_name='+')
+    workforce_request = models.ForeignKey(WorkforceRequest, null=True, blank=True, on_delete=models.PROTECT, related_name='+')
+    acceptance = models.ForeignKey('participants.ConsentAcceptance', on_delete=models.PROTECT, related_name='candidate_disclosures')
+    consent_hash = models.CharField(max_length=64)
+    categories = models.JSONField(default=list)
+    approved_projection = models.JSONField(default=dict)
+    projection_fingerprint = models.CharField(max_length=64)
+    purpose = models.CharField(max_length=500)
+    released_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')
+    released_at = models.DateTimeField()
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    revoked_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name='+')
+    revocation_reason = models.CharField(max_length=500, blank=True)
+    revision = models.PositiveIntegerField(default=0)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['candidate','organization','need'],condition=Q(revoked_at__isnull=True),name='recruiting_current_disclosure')]
+    def save(self,*args,**kwargs):
+        from django.core.exceptions import ValidationError
+        if self.pk:
+            old=type(self).objects.filter(pk=self.pk).first()
+            protected=('candidate_id','participant_id','organization_id','need_id','need_revision_id','workforce_request_id','acceptance_id','consent_hash','categories','approved_projection','projection_fingerprint','purpose','released_by_id','released_at')
+            if old and any(getattr(old,k)!=getattr(self,k) for k in protected):raise ValidationError('Disclosure approval is immutable. Revoke and explicitly approve a new release.')
+        return super().save(*args,**kwargs)
+
+
+class DisclosureMemberPermission(UUIDModel, TimestampedModel):
+    disclosure = models.ForeignKey(CandidateDisclosure, on_delete=models.PROTECT, related_name='member_permissions')
+    membership = models.ForeignKey('customers.CustomerMembership', on_delete=models.PROTECT, related_name='+')
+    can_respond = models.BooleanField(default=False)
+    granted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')
+    reason = models.CharField(max_length=500)
+    revision = models.PositiveIntegerField(default=0)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['disclosure','membership'],name='recruiting_disclosure_member')]
+
+
+class EmployerCandidateFeedback(UUIDModel, TimestampedModel):
+    disclosure = models.ForeignKey(CandidateDisclosure, on_delete=models.PROTECT, related_name='feedback')
+    membership = models.ForeignKey('customers.CustomerMembership', on_delete=models.PROTECT, related_name='+')
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')
+    kind = models.CharField(max_length=24,choices=[('interested','Interested'),('interview','Request Interview'),('not_interested','Not Interested'),('report_hired','Report Hired'),('feedback','Feedback')])
+    message = models.CharField(max_length=2000,blank=True)
+    operation_id = models.UUIDField(unique=True)
+    payload_fingerprint = models.CharField(max_length=64)
+    confirmed_by = models.ForeignKey(settings.AUTH_USER_MODEL,null=True,blank=True,on_delete=models.PROTECT,related_name='+')
+    confirmed_at = models.DateTimeField(null=True,blank=True)
+    confirmation_reason = models.CharField(max_length=500,blank=True)
+    class Meta:
+        constraints = [models.CheckConstraint(condition=Q(kind__in=['interested','interview','not_interested','report_hired','feedback']),name='recruiting_employer_feedback_kind')]
+    def save(self,*args,**kwargs):
+        from django.core.exceptions import ValidationError
+        if self.pk:
+            old=type(self).objects.filter(pk=self.pk).first()
+            if old and any(getattr(old,k)!=getattr(self,k) for k in ('disclosure_id','membership_id','actor_id','kind','message','operation_id','payload_fingerprint')):
+                raise ValidationError('Retain the original employer response. Record a new attributed response instead.')
+        return super().save(*args,**kwargs)

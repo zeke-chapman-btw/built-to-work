@@ -17,9 +17,9 @@ from .models import (RecruitingProfile, Classification, ProfileConfirmation, Pro
     WorkforceRequest, WorkforceRequestPosition)
 
 
-def audit(actor, action, instance, *, data=None, why=''):
+def audit(actor, action, instance, *, data=None, why='', before=None):
     return record_audit(actor=actor, action='recruiting.' + action, instance=instance,
-        source='build15_recruiting', new_data=data or {}, reason=why)
+        source='build15_recruiting', old_data=before, new_data=data or {}, reason=why)
 
 
 def profile_fingerprint(item):
@@ -210,16 +210,31 @@ def exclusive_sources(item, organization_id, *, at=None):
     return blocked
 
 
-def source_campaign(*, actor, campaign_id, participant_id, exclusive=True):
+def visible_campaigns(actor,*,write=False):
+    from apps.customers.models import Campaign
+    from .selection import opportunities_for
+    from .models import OpportunityCollaboration
+    actor=fresh_staff(actor)
+    if manager(actor):return Campaign.objects.all()
+    opportunities=opportunities_for(actor)
+    if write:
+        delegated=OpportunityCollaboration.objects.filter(user=actor,can_manage=True,revoked_at__isnull=True).values('opportunity_id')
+        opportunities=opportunities.filter(Q(owner=actor)|Q(pk__in=delegated))
+    return Campaign.objects.filter(workforce_needs__recruiting_opportunity__in=opportunities).distinct()
+
+
+def source_campaign(*, actor, campaign_id, participant_id, exclusive=True,why=''):
     from apps.customers.models import Campaign
     with policy_transaction():
         actor = fresh_staff(actor)
         item = person(participant_id, lock=True)
-        campaign = Campaign.objects.select_for_update().get(pk=campaign_id)
+        allowed=visible_campaigns(actor,write=True).order_by().values('pk')
+        campaign = Campaign.objects.select_for_update().filter(pk=campaign_id,pk__in=allowed).first()
+        if not campaign:raise PermissionDenied('This Campaign is outside your recruiting responsibility.')
         row, created = CampaignSource.objects.get_or_create(campaign=campaign, source_participant_id=participant_id,
             defaults={'participant': item, 'sourced_by': actor, 'exclusive': exclusive})
         if created:
-            audit(actor, 'campaign.sourced', row, data={'participant': item.pk, 'exclusive': exclusive})
+            audit(actor, 'campaign.sourced', row, data={'participant': item.pk, 'exclusive': exclusive},why=reason(why) if why else 'Explicit staff-recorded Campaign sourcing.')
         return row
 
 
@@ -272,6 +287,23 @@ def consolidation_preview(source_id, target_id):
             payload['recruiting'] = list(cls.objects.filter(participant_id__in=identity_members(source.pk) | identity_members(target.pk)).order_by('pk').values('pk', 'opportunity_id', 'revision', 'active'))
         except LookupError:
             payload['recruiting'] = []
+    summaries=[];provenance={}
+    catalogs=[('Event participation','events','EventRegistration'),('Qualifications','participants','ParticipantQualification'),
+        ('Documents','participants','ParticipantDocument'),('Consent acceptances','participants','ConsentAcceptance'),
+        ('Intake submissions','participants','RegistrationSubmission'),('Portal accounts','participants','ParticipantAccount'),
+        ('Quiz attempts','assessments','QuizAttempt'),('Simulator captures','simulators','SimulatorCapture'),
+        ('Candidate lists','recruiting','CandidateListEntry'),('Campaign sourcing','recruiting','CampaignSource'),
+        ('Recruiting records','recruiting','CandidateOpportunity'),('Job interests','recruiting','CandidateInterest'),
+        ('Employer releases','recruiting','CandidateDisclosure')]
+    for label,app_name,model_name in catalogs:
+        model=apps.get_model(app_name,model_name)
+        fields={field.name for field in model._meta.fields}
+        selected=['pk']+[field for field in ['updated_at','created_at','status','revision','is_active','active','accepted_at','completed_at','voided_at','revoked_at'] if field in fields]
+        sides={name:list(model.objects.filter(participant_id__in=identity_members(item.pk)).order_by('pk').values(*selected)) for name,item in [('source',source),('target',target)]}
+        summaries.append({'label':label,'source':len(sides['source']),'target':len(sides['target'])})
+        provenance[label]=sides
+    payload['history_summary']=summaries
+    payload['history_provenance']=hashlib.sha256(json.dumps(provenance,sort_keys=True,default=str).encode()).hexdigest()
     payload['fingerprint'] = hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
     return payload
 

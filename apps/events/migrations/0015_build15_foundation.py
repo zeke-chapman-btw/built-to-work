@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="participantmatchreview",
             name="established_person_review",
-            field=models.BooleanField(default=False, editable=False),
+            field=models.BooleanField(db_default=False, default=False, editable=False),
         ),
         migrations.AddConstraint(
             model_name="participantmatchreview",

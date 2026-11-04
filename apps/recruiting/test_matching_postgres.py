@@ -32,7 +32,7 @@ class MatchingConcurrencyTests(MatchingFixtures,TransactionTestCase):
     def test_duplicate_active_selection_is_idempotent(self):
         ack=selection.conflict_set(self.admin,self.person,excluding=self.opportunity.pk)['fingerprint']
         results=self.together(lambda user,index:selection.select_candidate(actor=user,opportunity_id=self.opportunity.pk,
-            participant_id=self.person.pk,expected_conflicts=ack,acknowledged=False,why='SYNTHETIC concurrent selection').pk)
+            participant_id=self.person.pk,expected_conflicts=ack,expected_need_revision=self.need.effective_revision_id,acknowledged=False,why='SYNTHETIC concurrent selection').pk)
         self.assertEqual(len({r['value'] for r in results}),1)
         self.assertEqual(CandidateOpportunity.objects.filter(opportunity=self.opportunity,active=True).count(),1)
 
@@ -40,9 +40,10 @@ class MatchingConcurrencyTests(MatchingFixtures,TransactionTestCase):
         second=self.approved_need(self.organization)
         opportunity=selection.create_opportunity(actor=self.admin,need_id=second.pk,owner_id=self.admin.pk)
         ids=[self.opportunity.pk,opportunity.pk]
+        revisions=[self.need.effective_revision_id,second.effective_revision_id]
         ack=selection.conflict_set(self.admin,self.person)['fingerprint']
         results=self.together(lambda user,index:selection.select_candidate(actor=user,opportunity_id=ids[index],
-            participant_id=self.person.pk,expected_conflicts=ack,acknowledged=True,why='SYNTHETIC concurrent engagements').pk)
+            participant_id=self.person.pk,expected_conflicts=ack,expected_need_revision=revisions[index],acknowledged=True,why='SYNTHETIC concurrent engagements').pk)
         self.assertEqual(sum('value' in r for r in results),1)
         self.assertEqual(sum('rejected' in r for r in results),1)
         self.assertEqual(CandidateOpportunity.objects.filter(participant=self.person,active=True).count(),1)
@@ -56,7 +57,7 @@ class MatchingConcurrencyTests(MatchingFixtures,TransactionTestCase):
                 return foundation.consolidate(actor=user,source_id=source.pk,target_id=self.person.pk,
                     expected_fingerprint=comparison['fingerprint'],confirmed=True,why='SYNTHETIC concurrent identity review').pk
             return selection.select_candidate(actor=user,opportunity_id=self.opportunity.pk,participant_id=source.pk,
-                expected_conflicts=ack,acknowledged=False,why='SYNTHETIC concurrent manual selection').pk
+                expected_conflicts=ack,expected_need_revision=self.need.effective_revision_id,acknowledged=False,why='SYNTHETIC concurrent manual selection').pk
         self.together(action)
         rows=list(CandidateOpportunity.objects.filter(opportunity=self.opportunity,active=True))
         self.assertEqual(len(rows),1)

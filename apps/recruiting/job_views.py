@@ -19,8 +19,11 @@ def directory_content(request):
     rows=jobs.browse(request.user,query=request.GET.get('q',''),trade=request.GET.get('trade',''),
         location=request.GET.get('location',''),employment_type=request.GET.get('employment_type',''))
     query=request.GET.copy();query.pop('page',None)
+    view='interests' if request.GET.get('view')=='interests' else 'jobs'
+    own=jobs.own_interests(request.user)
+    history=Paginator(own,20).get_page(request.GET.get('interest_page')) if view=='interests' else None
     return render(request,'recruiting/portal/jobs.html',{'section':'jobs','jobs':Paginator(rows,20).get_page(request.GET.get('page')),'query_without_page':query.urlencode(),
-        'interests':[jobs.interest_projection(r) for r in jobs.own_interests(request.user)[:30]],'filters':request.GET})
+        'interests':[jobs.interest_projection(r) for r in (history if history else own[:5])],'interest_page':history,'view':view,'filters':request.GET})
 
 
 @participant_view(allow_identity_review=True)
@@ -38,9 +41,11 @@ def detail(request,opportunity_id):
             messages.success(request,'Your interest was received. BTW will review your information; no employer submission has been made.')
             return redirect('recruiting:portal-job',opportunity_id=item.pk)
     interest=jobs.own_interests(request.user).filter(opportunity_id=item.pk,active=True).first()
+    interest_data=jobs.interest_projection(interest) if interest else None
+    if interest_data:interest_data['job_updated']=interest.publication_id!=item.publication_id
     from .foundation import readiness
     return render(request,'recruiting/portal/job.html',{'section':'jobs','job':job,'form':form,
-        'interest':jobs.interest_projection(interest) if interest else None,
+        'interest':interest_data,
         'intake_ready':readiness(request.portal_account.participant)['eligible']})
 
 

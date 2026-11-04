@@ -99,6 +99,9 @@ def assessment_evidence(actor,item,rule):
     from apps.assessments.models import AssessmentSection
     records=AssessmentSection.objects.filter(attempt__in=source['finished_quizzes'].filter(participant_id__in=ids),category_id=rule['category'],status='complete',completed_at__isnull=False).select_related('attempt').order_by('-attempt__completed_at','pk')
     for section in records:
+        complete_sections=list(section.attempt.sections.all())
+        if len(complete_sections)!=2 or any(s.status!='complete' or not s.completed_at or not s.questions_snapshot for s in complete_sections):
+            continue
         snapshot=section.questions_snapshot or []
         digest=hashlib.sha256(json.dumps(snapshot,sort_keys=True,separators=(',',':'),default=str).encode()).hexdigest()
         if digest!=rule['snapshot_hash'] or not snapshot:

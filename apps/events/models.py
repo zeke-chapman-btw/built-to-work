@@ -454,7 +454,7 @@ class TicketDelivery(models.Model):
 
 
 class ParticipantMatchReview(models.Model):
-    established_person_review = models.BooleanField(default=False, editable=False)
+    established_person_review = models.BooleanField(default=False, db_default=False, editable=False)
     class Status(models.TextChoices):
         OPEN = "open", "Open"
         LATER = "later", "Review later"

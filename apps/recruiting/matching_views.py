@@ -30,11 +30,11 @@ def matching_directory(request):
 @require_http_methods(['GET','POST'])
 def criteria_editor(request,opportunity_id):
     item=selection.opportunity_for(request.user,opportunity_id,write=True)
-    initial={'expected_revision':item.revision}
+    initial={'expected_revision':item.revision,'expected_need_revision':item.need.effective_revision_id}
     form=CriteriaForm(request.POST or None,actor=request.recruiting_actor,initial=initial)
     if request.method=='POST' and form.is_valid():
         try:selection.save_criteria(actor=request.user,opportunity_id=item.pk,rules=form.rules(),
-            expected_revision=form.cleaned_data['expected_revision'],why=form.cleaned_data['reason'])
+            expected_revision=form.cleaned_data['expected_revision'],expected_need_revision=form.cleaned_data['expected_need_revision'],why=form.cleaned_data['reason'])
         except ValidationError as exc:form.add_error(None,exc)
         else:return redirect('recruiting:matching',opportunity_id=item.pk)
     return page(request,'recruiting/criteria.html',page_title='Matching criteria · '+item.need.title,form=form,
@@ -61,11 +61,11 @@ def select_candidate(request,opportunity_id,participant_id):
     candidate=person(participant_id)
     conflicts=selection.conflict_set(request.user,candidate,excluding=item.pk)
     current_score=matching.score_candidate(request.recruiting_actor,candidate,item.criteria) if item.criteria and item.criteria.need_revision_id==item.need.effective_revision_id else None
-    form=CandidateSelectionForm(request.POST or None,initial={'expected_conflicts':conflicts['fingerprint'],
+    form=CandidateSelectionForm(request.POST or None,initial={'expected_conflicts':conflicts['fingerprint'],'expected_need_revision':item.need.effective_revision_id,
         'criteria_id':item.criteria_id if item.criteria and item.criteria.need_revision_id==item.need.effective_revision_id else None})
     if request.method=='POST' and form.is_valid():
         try:selection.select_candidate(actor=request.user,opportunity_id=item.pk,participant_id=candidate.pk,
-            expected_conflicts=form.cleaned_data['expected_conflicts'],acknowledged=form.cleaned_data['acknowledge_conflicts'],
+            expected_conflicts=form.cleaned_data['expected_conflicts'],expected_need_revision=form.cleaned_data['expected_need_revision'],acknowledged=form.cleaned_data['acknowledge_conflicts'],
             why=form.cleaned_data['reason'],criteria_id=form.cleaned_data['criteria_id'])
         except ValidationError as exc:form.add_error(None,exc)
         else:

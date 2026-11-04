@@ -24,7 +24,11 @@ def opportunities_for(actor):
 def opportunity_for(actor,opportunity_id,*,write=False,lock=False):
     actor=fresh_staff(actor)
     query=opportunities_for(actor)
-    if lock:query=query.select_for_update(of=('self',))
+    if lock:
+        # Keep the authorization DISTINCT inside a subquery; PostgreSQL cannot
+        # lock a DISTINCT result. The outer query locks only the opportunity.
+        allowed=query.order_by().values('pk')
+        query=RecruitingOpportunity.objects.filter(pk__in=allowed).select_related('need__organization','need__effective_revision','owner','criteria').select_for_update(of=('self',))
     item=query.filter(pk=opportunity_id,archived_at__isnull=True).first()
     if not item:raise PermissionDenied('This recruiting opportunity is unavailable to your account.')
     if write and not (manager(actor) or item.owner_id==actor.pk or OpportunityCollaboration.objects.filter(opportunity=item,user=actor,revoked_at__isnull=True,can_manage=True).exists()):
@@ -47,7 +51,7 @@ def create_opportunity(*,actor,need_id,owner_id):
         return item
 
 
-def save_criteria(*,actor,opportunity_id,rules,expected_revision,why):
+def save_criteria(*,actor,opportunity_id,rules,expected_revision,expected_need_revision,why):
     rules=validate_rules(rules)
     with policy_transaction():
         actor=fresh_staff(actor)
@@ -65,6 +69,7 @@ def save_criteria(*,actor,opportunity_id,rules,expected_revision,why):
         item=opportunity_for(actor,opportunity_id,write=True,lock=True)
         if item.revision!=expected_revision:raise ValidationError('The opportunity changed. Reload the approved position and criteria.')
         need=item.need
+        if str(need.effective_revision_id)!=str(expected_need_revision):raise ValidationError('The approved position changed. Review its current revision before saving criteria.')
         if need.status!='active' or not need.effective_revision_id or need.effective_revision.state!='approved':
             raise ValidationError('Matching requires an approved active position revision.')
         number=(item.criteria_versions.aggregate(n=Max('number'))['n'] or 0)+1
@@ -110,11 +115,12 @@ def conflict_set(actor,item,*,excluding=None):
         'has_conflicts':bool(raw),'visible':visible,'restricted_activity':any(r.opportunity_id not in visible_ids for r in records)}
 
 
-def select_candidate(*,actor,opportunity_id,participant_id,expected_conflicts,acknowledged,why,assignee_id=None,criteria_id=None):
+def select_candidate(*,actor,opportunity_id,participant_id,expected_conflicts,expected_need_revision,acknowledged,why,assignee_id=None,criteria_id=None):
     from django.contrib.auth import get_user_model
     with policy_transaction():
         actor=fresh_staff(actor)
         opportunity=opportunity_for(actor,opportunity_id,write=True,lock=True)
+        if str(opportunity.need.effective_revision_id)!=str(expected_need_revision):raise ValidationError('The approved position changed. Review its current revision before selecting a candidate.')
         item=person(participant_id,lock=True)
         # Canonicalization and the duplicate check share the same reviewed identity lock.
         existing=CandidateOpportunity.objects.filter(opportunity=opportunity,participant_id__in=identity_members(item.pk),active=True).first()
@@ -144,6 +150,9 @@ def select_candidate(*,actor,opportunity_id,participant_id,expected_conflicts,ac
 def reconcile_consolidation(source,target,actor):
     """Called under the shared identity lock; preserve collisions as historical records."""
     result=[]
+    affected=list(CandidateOpportunity.objects.filter(participant__in=[source,target]).values_list('pk',flat=True))
+    from .employer import revoke_for_identity
+    revoke_for_identity(actor,affected)
     for row in CandidateOpportunity.objects.select_for_update().filter(participant=source).order_by('pk'):
         winner=CandidateOpportunity.objects.filter(opportunity=row.opportunity,participant=target,active=True).first() if row.active else None
         if winner:

@@ -53,7 +53,9 @@ class PortalProfileExpansionTests(TestCase):
         self.assertNotContains(response, '<input type="text"')
         self.assertNotContains(response, '<textarea')
         jobs = self.client.get(self.path('portal-jobs'))
-        self.assertContains(jobs, 'Coming soon')
+        self.assertContains(jobs, 'Job Opportunities')
+        self.assertContains(jobs, 'Browse opportunities')
+        self.assertNotContains(jobs, 'Coming soon')
         self.assertRegex(jobs.content.decode(), r'<a\b(?=[^>]*href="' + re.escape(self.path('portal-jobs')) + r'")(?=[^>]*aria-current="page")[^>]*>')
         self.assertNotContains(self.client.get(self.path('portal-events')), '<h2>Job Opportunities</h2>')
 

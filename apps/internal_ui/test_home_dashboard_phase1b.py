@@ -42,7 +42,7 @@ class HomeDashboardPolishTests(TestCase):
         nav = self.markup.with_class('workspace-nav')[0]
         links = [n for n in nav['children'] if n['tag'] == 'a']
         labels = [''.join(next(child for child in n['children'] if 'nav-label' in child['attrs'].get('class', '').split())['text']).strip() for n in links]
-        self.assertEqual(labels, ['Home', 'Tasks', 'Participants', 'Customers', 'Campaigns', 'Approvals', 'Events', 'Operations', 'Reports & Analytics', 'Settings & Administration'])
+        self.assertEqual(labels, ['Home', 'Tasks', 'Participants', 'Customers', 'Recruiting', 'Approvals', 'Events', 'Operations', 'Reports & Analytics', 'Settings & Administration'])
         self.assertEqual(len(self.markup.with_class('nav-planned')), 1)
         for link in links:
             self.assertTrue(any(child['tag'] == 'svg' and child['attrs'].get('aria-hidden') == 'true' for child in link['children']))

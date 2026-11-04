@@ -11,6 +11,7 @@ class ParticipantIdentityMigrationTests(TransactionTestCase):
 
     def test_existing_rows_receive_distinct_uuids_without_changing_primary_keys(self):
         executor = MigrationExecutor(connection)
+        latest = executor.loader.graph.leaf_nodes()
         executor.migrate(self.migrate_from)
         old_apps = executor.loader.project_state(self.migrate_from).apps
         OldParticipant = old_apps.get_model("participants", "Participant")
@@ -29,4 +30,4 @@ class ParticipantIdentityMigrationTests(TransactionTestCase):
             self.assertEqual(migrated_first.pk, first.pk)
             self.assertEqual(migrated_second.pk, second.pk)
         finally:
-            MigrationExecutor(connection).migrate(self.migrate_to)
+            MigrationExecutor(connection).migrate(latest)
