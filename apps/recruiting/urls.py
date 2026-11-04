@@ -1,8 +1,12 @@
 from django.urls import path
-from . import views
+from . import views, matching_views
 
 app_name = 'recruiting'
 urlpatterns = [
+    path('matching/',matching_views.matching_directory,name='matching-directory'),
+    path('matching/<uuid:opportunity_id>/',matching_views.matching_results,name='matching'),
+    path('matching/<uuid:opportunity_id>/criteria/',matching_views.criteria_editor,name='criteria'),
+    path('matching/<uuid:opportunity_id>/select/<int:participant_id>/',matching_views.select_candidate,name='select-candidate'),
     path('portal/profile/', views.portal_preferences, name='portal-preferences'),
     path('lists/', views.lists, name='lists'),
     path('lists/<uuid:list_id>/', views.candidate_list, name='list'),

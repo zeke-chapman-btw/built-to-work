@@ -124,3 +124,116 @@ class WorkforceRequestPosition(UUIDModel, TimestampedModel):
     request = models.ForeignKey(WorkforceRequest, on_delete=models.PROTECT, related_name='positions')
     need = models.OneToOneField('customers.WorkforceNeed', on_delete=models.PROTECT, related_name='request_position')
     added_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')
+
+
+class RecruitingStage(TimestampedModel):
+    key = models.SlugField(max_length=80, primary_key=True)
+    label = models.CharField(max_length=100)
+    position = models.PositiveSmallIntegerField(default=0)
+    semantic = models.CharField(max_length=16, default='active', choices=[('active', 'Active'), ('hired', 'Hired'), ('not_selected', 'Not selected'), ('withdrawn', 'Withdrawn')])
+    is_active = models.BooleanField(default=True)
+    revision = models.PositiveIntegerField(default=0)
+    class Meta:
+        ordering = ['position', 'key']
+        constraints = [models.CheckConstraint(condition=(Q(key='hired',semantic='hired') | Q(key='not_selected',semantic='not_selected') | Q(key='withdrawn',semantic='withdrawn') | (~Q(key__in=['hired','not_selected','withdrawn']) & Q(semantic='active'))), name='recruiting_stage_outcome_semantics')]
+
+
+class RecruitingOpportunity(UUIDModel, TimestampedModel, ArchivableModel):
+    need = models.OneToOneField('customers.WorkforceNeed', on_delete=models.PROTECT, related_name='recruiting_opportunity')
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='owned_recruiting_opportunities')
+    criteria = models.ForeignKey('MatchCriteriaVersion', null=True, blank=True, on_delete=models.PROTECT, related_name='+')
+    publication = models.ForeignKey('OpportunityPublication', null=True, blank=True, on_delete=models.PROTECT, related_name='+')
+    publication_state = models.CharField(max_length=16, default='unpublished', choices=[('unpublished', 'Unpublished'), ('published', 'Published'), ('closed', 'Closed to new interest')])
+    revision = models.PositiveIntegerField(default=0)
+    class Meta:
+        ordering = ['-updated_at', 'pk']
+    def __str__(self):
+        return str(self.need)
+
+
+class OpportunityCollaboration(UUIDModel, TimestampedModel):
+    opportunity = models.ForeignKey(RecruitingOpportunity, on_delete=models.PROTECT, related_name='collaborations')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')
+    can_manage = models.BooleanField(default=False)
+    granted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['opportunity', 'user'], condition=Q(revoked_at__isnull=True), name='recruiting_active_collaborator')]
+
+
+class MatchCriteriaVersion(UUIDModel, TimestampedModel):
+    opportunity = models.ForeignKey(RecruitingOpportunity, on_delete=models.PROTECT, related_name='criteria_versions')
+    need_revision = models.ForeignKey('customers.WorkforceNeedRevision', on_delete=models.PROTECT, related_name='matching_criteria')
+    number = models.PositiveIntegerField()
+    rules = models.JSONField(default=list)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')
+    reason = models.CharField(max_length=500)
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['opportunity', 'number'], name='recruiting_criteria_version')]
+    def save(self, *args, **kwargs):
+        from django.core.exceptions import ValidationError
+        if self.pk and type(self).objects.filter(pk=self.pk).exists():
+            raise ValidationError('Matching criteria history is immutable. Create a new version.')
+        return super().save(*args, **kwargs)
+    def delete(self, *args, **kwargs):
+        from django.core.exceptions import ValidationError
+        raise ValidationError('Retain matching criteria history.')
+
+
+class CandidateOpportunity(UUIDModel, TimestampedModel):
+    opportunity = models.ForeignKey(RecruitingOpportunity, on_delete=models.PROTECT, related_name='candidates')
+    participant = models.ForeignKey('participants.Participant', on_delete=models.PROTECT, related_name='recruiting_candidates')
+    source_participant = models.ForeignKey('participants.Participant', on_delete=models.PROTECT, related_name='+')
+    selected_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')
+    assignee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='assigned_recruiting_candidates')
+    stage = models.ForeignKey(RecruitingStage, on_delete=models.PROTECT, default='identified')
+    active = models.BooleanField(default=True)
+    outcome = models.CharField(max_length=24, blank=True)
+    revision = models.PositiveIntegerField(default=0)
+    selection_criteria = models.ForeignKey(MatchCriteriaVersion, null=True, blank=True, on_delete=models.PROTECT)
+    selected_need_revision = models.ForeignKey('customers.WorkforceNeedRevision', on_delete=models.PROTECT, related_name='selected_recruiting_candidates')
+    selection_rationale = models.CharField(max_length=500)
+    merged_into = models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT, related_name='historical_alias_records')
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['opportunity', 'participant'], condition=Q(active=True), name='recruiting_active_candidate_position'),
+            models.CheckConstraint(condition=Q(active=True,outcome='') | Q(active=False,outcome__in=['hired','not_selected','withdrawn','identity_collision']), name='recruiting_candidate_outcome_state')]
+
+
+class OpportunityPublication(UUIDModel, TimestampedModel):
+    opportunity = models.ForeignKey(RecruitingOpportunity, on_delete=models.PROTECT, related_name='publications')
+    need_revision = models.ForeignKey('customers.WorkforceNeedRevision', on_delete=models.PROTECT)
+    number = models.PositiveIntegerField()
+    safe_details = models.JSONField(default=dict)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    published_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['opportunity', 'number'], name='recruiting_publication_version')]
+    def save(self, *args, **kwargs):
+        from django.core.exceptions import ValidationError
+        if self.pk and type(self).objects.filter(pk=self.pk).exists():
+            raise ValidationError('Job publication history is immutable. Publish a new reviewed version.')
+        return super().save(*args, **kwargs)
+
+
+class CandidateInterest(UUIDModel, TimestampedModel):
+    opportunity = models.ForeignKey(RecruitingOpportunity, on_delete=models.PROTECT, related_name='interests')
+    publication = models.ForeignKey(OpportunityPublication, on_delete=models.PROTECT, related_name='interests')
+    participant = models.ForeignKey('participants.Participant', on_delete=models.PROTECT, related_name='job_interests')
+    source_participant = models.ForeignKey('participants.Participant', on_delete=models.PROTECT, related_name='+')
+    submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')
+    source = models.CharField(max_length=24, default='participant_portal', editable=False)
+    active = models.BooleanField(default=True)
+    status = models.CharField(max_length=24, default='received', choices=[('received', 'Interest Received'), ('review', 'Under Review'), ('information', 'Additional Information Needed'), ('not_selected', 'No Longer Under Consideration'), ('withdrawn', 'Withdrawn')])
+    revision = models.PositiveIntegerField(default=0)
+    candidate = models.ForeignKey(CandidateOpportunity, null=True, blank=True, on_delete=models.PROTECT, related_name='originating_interests')
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=['opportunity', 'participant'], condition=Q(active=True), name='recruiting_active_participant_interest'),
+            models.CheckConstraint(condition=Q(status__in=['received','review','information','not_selected','withdrawn']), name='recruiting_interest_status_valid')]
+
+
+class ConsentWithdrawal(UUIDModel, TimestampedModel):
+    """Restriction event over existing consent evidence; never a second acceptance form."""
+    participant = models.ForeignKey('participants.Participant', on_delete=models.PROTECT, related_name='employer_sharing_withdrawals')
+    acceptance = models.ForeignKey('participants.ConsentAcceptance', null=True, blank=True, on_delete=models.PROTECT, related_name='recruiting_withdrawals')
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')
+    reason = models.CharField(max_length=500)

@@ -39,6 +39,8 @@ def readiness(item):
     from apps.participants.portal_accounts import identity_clear
     from apps.participants.intake_contracts import validate_answers
     from apps.participants.intake_lifecycle import verify_published
+    if item.kind != 'person' or item.archived_at:
+        return {'eligible': False, 'issues': ['Only an active person can enter recruiting. Historical records remain retained.'], 'submission': None}
     item = person(item.pk)
     issues = []
     if not identity_clear(item):
@@ -308,12 +310,8 @@ def consolidate(*, actor, source_id, target_id, expected_fingerprint, confirmed,
                 entry.save()
                 if not entry.removed_at:
                     collision_history.append({'list_entry': str(entry.pk), 'action': 'canonical_reference_changed'})
-            try:
-                from .selection import reconcile_consolidation
-            except ImportError:
-                pass
-            else:
-                collision_history += reconcile_consolidation(source, target, actor)
+            from .selection import reconcile_consolidation
+            collision_history += reconcile_consolidation(source, target, actor)
         row = IdentityConsolidation.objects.create(review=review, source=source, target=target, actor=actor,
             reason=why, fingerprint=expected_fingerprint, collision_history=collision_history)
         audit(actor, 'identity.consolidated', row, data={'source': source.pk, 'target': target.pk, 'history_preserved': True}, why=why)

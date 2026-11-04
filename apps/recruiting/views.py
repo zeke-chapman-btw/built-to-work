@@ -97,6 +97,10 @@ def candidate_foundation(request, participant_id):
                 service.request_update(actor=request.user, participant_id=item.pk, message=request.POST.get('reason'))
             elif action == 'add_list':
                 service.change_list_member(actor=request.user, list_id=request.POST.get('list_id'), participant_id=item.pk)
+            elif action == 'review_selection':
+                from .selection import opportunity_for
+                opportunity = opportunity_for(request.user, request.POST.get('opportunity_id'), write=True)
+                return redirect('recruiting:select-candidate', opportunity_id=opportunity.pk, participant_id=item.pk)
             elif action != 'preferences':
                 raise ValidationError('Choose an available action.')
             else:
@@ -107,10 +111,11 @@ def candidate_foundation(request, participant_id):
             messages.success(request, 'Recruiting information saved with attribution.')
             return redirect('recruiting:candidate', participant_id=item.pk)
     duplicates = participant_candidates(email=item.contact_email, phone=item.contact_phone).exclude(pk=item.pk)
+    from .selection import opportunities_for
     return page(request, 'recruiting/candidate.html', participant=item, recruiting_profile=row, readiness=service.readiness(item),
         freshness=service.freshness(item), fingerprint=service.profile_fingerprint(item), form=form,
         candidate_lists=service.visible_lists(request.user).filter(owner=request.user, archived_at__isnull=True),
-        possible_duplicates=duplicates[:20], page_title='Recruiting · ' + str(item), administrator=request.recruiting_actor.is_superuser)
+        possible_duplicates=duplicates[:20], available_opportunities=opportunities_for(request.user).filter(need__status='active',archived_at__isnull=True), page_title='Recruiting · ' + str(item), administrator=request.recruiting_actor.is_superuser)
 
 
 @staff
