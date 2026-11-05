@@ -21,7 +21,7 @@ from .models import (CustomerOrganization as Org, CustomerContact, CustomerLocat
 
 TABS = (("overview", "Overview"), ("company", "Company Profile"), ("needs", "Workforce Needs"),
         ("campaigns", "Campaigns"), ("matches", "Matches"), ("users", "Users & Contacts"),
-        ("access", "Access & Plan"), ("history", "History"))
+        ("crm", "Relationship"), ("access", "Access & Plan"), ("history", "History"))
 
 
 def staff_view(view):
@@ -94,6 +94,10 @@ def workspace(request, org_id, tab="overview"):
     data = context(request, org, tab, seats=s.seat_usage(org))
     if tab == "overview":
         data.update(needs=org.workforce_needs.filter(status__in=["active", "hold"]).select_related("effective_revision", "working_revision")[:5], campaigns=org.campaigns.exclude(status__in=["completed", "cancelled"])[:5], recent=activity(org)[:5], pending_count=org.workforce_needs.filter(working_revision__state__in=["submitted", "review"]).count())
+    elif tab == "crm":
+        from apps.crm.presentation import history_context
+        data.update(history_context(request, organization=org))
+        data["crm_contacts"] = org.contacts.select_related("crm_relationship").all()
     elif tab == "company":
         data.update(locations=org.locations.all(), relationships=CustomerRelationship.objects.filter(Q(source=org) | Q(target=org)).select_related("source", "target"))
     elif tab in {"needs", "campaigns"}:

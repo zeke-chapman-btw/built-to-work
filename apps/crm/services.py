@@ -11,7 +11,8 @@ from django.utils import timezone
 from apps.core.audit import record_audit
 from apps.customers.access import require_manager
 from apps.customers.models import Campaign, CustomerContact, CustomerOrganization, WorkforceNeed
-from apps.participants.identity import identity_members
+from apps.participants.identity import canonical_id, identity_members
+from apps.participants.models import Participant
 from apps.recruiting.access import person, policy_transaction, reason
 from apps.recruiting.employer import customer_grant, may_respond
 from apps.recruiting.models import CandidateOpportunity, WorkforceRequest, WorkforceRequestPosition
@@ -97,7 +98,7 @@ def internal_associations(actor, *, participant_id=None, organization_id=None, c
     if participant and participant.archived_at or organization and organization.status == "archived":
         raise ValidationError("Archived relationship records are read-only.")
     contact = CustomerContact.objects.get(pk=contact_id, organization=organization) if contact_id else None
-    campaign = Campaign.objects.get(pk=campaign_id, organization=organization, archived_at__isnull=True) if campaign_id else None
+    campaign = Campaign.objects.get(pk=campaign_id, organization=organization) if campaign_id else None
     request = WorkforceRequest.objects.get(pk=workforce_request_id, organization=organization, archived_at__isnull=True) if workforce_request_id else None
     if request and need and not WorkforceRequestPosition.objects.filter(request=request, need=need).exists():
         raise ValidationError("The Workforce Request must include this position.")
@@ -202,7 +203,9 @@ def staff_history(actor, *, audience, participant_id=None, organization_id=None,
             raise PermissionDenied
         person_ids = None
         if participant_id:
-            item = person(participant_id)
+            # Archived profiles retain their authorized read-only history.
+            # Recruiting's write/selection helper intentionally excludes them.
+            item = Participant.objects.get(pk=canonical_id(participant_id), kind=Participant.Kind.PERSON)
             if audience == "btw":
                 access.internal_context(actor, participant=item)
             else:
@@ -261,6 +264,8 @@ def create_followup(*, actor, interaction_id, data, operation_id):
     with policy_transaction():
         row = Interaction.objects.select_for_update().get(pk=interaction_id)
         actor = access.internal_record(actor, row)
+        if row.archived_at or (row.participant and row.participant.archived_at) or (row.organization and row.organization.status == "archived"):
+            raise ValidationError("Restore the relationship and interaction before creating a follow-up.")
         fingerprint = digest({"interaction": str(row.pk), "actor": str(actor.pk), "data": data})
         existing = Task.objects.filter(pk=operation_id).first()
         if existing:
@@ -291,6 +296,8 @@ def link_task(*, actor, interaction_id, task_id):
     with policy_transaction():
         row = Interaction.objects.select_for_update().get(pk=interaction_id)
         actor = access.internal_record(actor, row)
+        if row.archived_at or (row.participant and row.participant.archived_at) or (row.organization and row.organization.status == "archived"):
+            raise ValidationError("Restore the relationship and interaction before linking a Task.")
         task = Task.objects.select_for_update().get(pk=task_id)
         require_task_access(actor, task)
         link, created = InteractionTaskLink.objects.get_or_create(interaction=row, task=task, defaults={"added_by": actor})
@@ -308,6 +315,8 @@ def save_contact_relationship(*, actor, contact_id, data, expected_revision, why
         actor = require_manager(access.fresh_staff(actor))
         contact = CustomerContact.objects.select_for_update().get(pk=contact_id)
         organization = CustomerOrganization.objects.select_for_update().get(pk=contact.organization_id)
+        if organization.status == "archived":
+            raise ValidationError("Archived customer contact settings are read-only.")
         if set(data) - set(CONTACT_FIELDS):
             raise ValidationError("Contact relationship settings cannot create users or change company membership.")
         row = ContactRelationship.objects.select_for_update().filter(contact=contact).first()
