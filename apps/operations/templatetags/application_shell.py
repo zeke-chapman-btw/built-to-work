@@ -3,7 +3,7 @@ from django import template
 from django.urls import reverse
 
 register = template.Library()
-CUSTOMER_ICONS = {'overview':'home','company':'customers','needs':'people',
+CUSTOMER_ICONS = {'overview':'home','recruiting':'campaigns','company':'customers','needs':'people',
                   'campaigns':'campaigns','candidates':'people','users':'staff','access':'settings','history':'clock'}
 PARTICIPANT_LINKS = (
     ('profile','My Profile','people','participants:profile'),
@@ -64,7 +64,7 @@ def application_shell(context):
     if audience == 'customer':
         member = getattr(request, 'customer_member', None)
         company = context.get('company') or {}
-        active = context.get('active_tab', 'overview')
+        active = context.get('navigation_tab', context.get('active_tab', 'overview'))
         preview = bool(customer_guard and context.get('customer_admin_preview'))
         authorized = authenticated and customer_guard and member is not None
         items = [dict(id=key,label=label,icon=CUSTOMER_ICONS.get(key,'overview'),
@@ -78,8 +78,9 @@ def application_shell(context):
             account_label='Administrator preview' if preview else 'Customer account',
             logout_url='' if preview or not authenticated else reverse('customer_portal:logout'),
             return_url=reverse('customer_portal:logout') if preview else '',
-            account_url=reverse('customer_portal:workspace',args=['company']) if authorized and not preview else '',
-            account_link_label='Company information',account_active=active == 'company')
+            account_url=reverse('customer_portal:workspace',args=['account']) if authorized and not preview else '',
+            account_link_label='Account & Security',account_active=active == 'account',
+            utility_links=[{'label':'Help', 'url':reverse('customer_portal:workspace',args=['account'])+'#help'}] if authorized else [])
         if authorized and not preview:
             identity = member.identity
             shell['account_label'] = (' '.join(filter(None,[identity.first_name,identity.last_name])).strip()

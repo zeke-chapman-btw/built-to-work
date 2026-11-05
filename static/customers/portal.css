@@ -41,3 +41,13 @@
 .portal-workspace .company-switch select{max-width:200px}}
 .portal-workspace .portal-preview-content{border:0;padding:0;margin:0;min-width:0}
 .portal-workspace .portal-preview-content .sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* Customer recruiting overview: scoped, shared body/header conventions. */
+.has-customer-shell .customer-overview-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:16px 0}
+.has-customer-shell .customer-overview-metrics>a{border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;text-decoration:none;gap:8px;min-height:44px}
+.has-customer-shell .customer-overview-metrics strong{font-size:24px;line-height:32px;color:var(--ink)}
+.has-customer-shell .customer-request-group{margin:20px 0;border-top:1px solid var(--line);padding-top:16px}
+.has-customer-shell .customer-request-group h3{font-size:15px;line-height:22px;font-weight:600;margin:0 0 12px}
+.has-customer-shell .application-utility-link{display:flex;align-items:center;min-height:44px;color:#d8dce1;padding:8px 10px;text-decoration:none}
+.has-customer-shell .ux-local-nav{margin-bottom:16px}
+@media(max-width:639px){.has-customer-shell .customer-overview-metrics{grid-template-columns:1fr;gap:10px}.has-customer-shell .customer-overview-metrics>a{flex-direction:row;align-items:center;gap:16px}body.btw-platform.has-customer-shell #main-content .portal-workspace form :is(input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select,textarea){font-size:16px;min-height:44px}.has-customer-shell .ux-local-nav>a{display:inline-flex;align-items:center;min-height:44px}}

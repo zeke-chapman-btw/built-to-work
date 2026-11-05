@@ -16,6 +16,9 @@ from . import employer
 
 def directory_content(request):
     data=employer.list_candidates(request.user,request.customer_member.organization_id)
+    position = request.GET.get('position', '')
+    if position:
+        data = [item for item in data if item['position_id'] == position]
     return render(request,'recruiting/customer/candidates.html',context(request,'candidates',
         candidates=Paginator(data,20).get_page(request.GET.get('page'))))
 

@@ -1,4 +1,5 @@
 """Explicit customer-safe projections. Never serialize a model or raw audit payload."""
+from django.urls import reverse
 from .models import CustomerAuditScope, CustomerFeedback, WorkforceNeed, Campaign
 from .portal_policy import require_membership
 from .forms import HIRING_SECTIONS
@@ -29,7 +30,17 @@ def history(user, org_id, *, need_id=None, campaign_id=None):
         query = query.filter(workforce_need_id=need_id)
     if campaign_id:
         query = query.filter(campaign_id=campaign_id)
-    return [{'label': SAFE_ACTIVITY[action], 'at': at} for action, at in query.order_by('-audit__timestamp', '-pk').values_list('audit__action', 'audit__timestamp')[:50]]
+    rows = []
+    for item in query.select_related('audit', 'workforce_need__effective_revision', 'workforce_need__working_revision', 'campaign').order_by('-audit__timestamp', '-pk')[:50]:
+        subject, url = '', ''
+        if item.workforce_need_id and str(item.workforce_need.organization_id) == str(org_id):
+            subject = need_row(item.workforce_need)['title']
+            url = reverse('customer_portal:need', args=[item.workforce_need_id])
+        elif item.campaign_id and str(item.campaign.organization_id) == str(org_id):
+            subject, url = item.campaign.name, reverse('customer_portal:campaign', args=[item.campaign_id])
+        rows.append({'label':SAFE_ACTIVITY[item.audit.action], 'at':item.audit.timestamp,
+            'subject':subject, 'url':url})
+    return rows
 
 
 def feedback(user, org_id, *, need_id=None, campaign_id=None):

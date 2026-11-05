@@ -8,6 +8,7 @@ urlpatterns = [
     path('people/<int:participant_id>/sharing-withdrawal/',employer_views.withdrawal,name='sharing-withdrawal'),
     path('',workflow_views.overview,name='overview'),
     path('campaigns/',workflow_views.campaigns,name='campaigns'),
+    path('campaigns/<uuid:campaign_id>/',workflow_views.campaign_detail,name='campaign-detail'),
     path('requests/group/',workflow_views.request_group,name='request-group'),
     path('pipelines/',workflow_views.pipeline,name='pipeline'),
     path('candidates/<uuid:candidate_id>/',workflow_views.candidate_detail,name='candidate-detail'),

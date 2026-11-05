@@ -153,9 +153,19 @@ def customer_grant(actor,organization_id,disclosure_id,*,write=False):
 
 
 def safe_projection(row,member):
+    latest = row.feedback.order_by('-created_at', '-pk').first()
+    confirmed = row.feedback.filter(kind='report_hired', confirmed_at__isnull=False).exists()
+    labels = {'interested': 'Company expressed interest', 'interview': 'Company requested an interview',
+        'not_interested': 'Company reported not interested', 'report_hired': 'Company reported a hire · awaiting BTW confirmation',
+        'feedback': 'Company feedback recorded'}
+    progress = 'BTW confirmed the reported hire' if confirmed else labels.get(latest.kind, 'Company response recorded') if latest else 'Released for your review'
     return {'id':str(row.pk),'candidate':json.loads(json.dumps(row.approved_projection)),'position':row.need_revision.title,
         'request':row.workforce_request.name if row.workforce_request_id else '',
-        'released_at':row.released_at,'can_respond':may_respond(member,row)}
+        'released_at':row.released_at,'can_respond':may_respond(member,row),
+        'position_id':str(row.need_id),
+        'progress':progress, 'latest_response':({'label':latest.get_kind_display(), 'date':latest.created_at} if latest else None),
+        'btw_confirmed_hire':confirmed,
+        'next_action':('Review and respond' if not latest else 'View or record a company response') if may_respond(member,row) else 'View candidate · response permission required'}
 
 
 def list_candidates(actor,organization_id):

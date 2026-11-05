@@ -241,13 +241,15 @@ def employer_projection(row):
         "source": "Manually recorded · external action", "revision": row.revision, "archived": bool(row.archived_at)}
 
 
-def employer_history(actor, organization_id, disclosure_id, *, include_archived=False):
+def employer_history(actor, organization_id, disclosure_id, *, include_archived=False, limit=None):
     with policy_transaction():
         member, grant = customer_grant(actor, organization_id, disclosure_id)
         query = Interaction.objects.filter(audience="employer", owner_organization_id=organization_id,
             disclosure=grant).select_related("membership__identity")
         if not include_archived:
             query = query.filter(archived_at__isnull=True)
+        if limit is not None:
+            query = query[:max(1, min(int(limit), 50))]
         rows = []
         for row in query:
             access.employer_record(actor, organization_id, row)

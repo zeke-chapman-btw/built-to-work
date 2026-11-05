@@ -14,8 +14,10 @@ from .portal_presentation import effective_access, record_restriction, need_prer
 from .portal_policy import identity_for, eligible_memberships, require_membership
 from .models import WorkforceNeed as Need, WorkforceNeedRevision as Revision, Campaign, CustomerMembership as Membership, TERM_FIELD_NAMES
 
-TABS = [('overview', 'Overview'), ('company', 'Company Information'), ('needs', 'Workforce Needs'),
-        ('campaigns', 'Campaigns'), ('candidates', 'Candidates'), ('users', 'Users & Membership'), ('access', 'Access & Plan'), ('history', 'History & Feedback')]
+TABS = [('overview', 'Dashboard'), ('recruiting', 'Recruiting'), ('candidates', 'Candidates'), ('company', 'Company')]
+SECONDARY_TABS = {'needs':'Positions / Workforce Needs', 'campaigns':'Campaigns', 'users':'Team & Membership',
+    'access':'Company Access', 'history':'History & Feedback', 'account':'Account & Security'}
+TAB_GROUPS = {'needs':'recruiting', 'campaigns':'recruiting', 'users':'company', 'access':'company', 'history':'company', 'account':'account'}
 
 
 def customer_view(view):
@@ -50,7 +52,8 @@ def customer_view(view):
 def context(request, tab='overview', **extra):
     m = request.customer_member
     return {'customer_admin_preview': bool(getattr(request, 'customer_preview', False)), 'company': {'id': m.organization_id, 'name': m.organization.name}, 'companies': request.customer_companies,
-            'active_tab': tab, 'tabs': TABS, 'is_lead': m.role == 'lead',
+            'active_tab': tab, 'navigation_tab': TAB_GROUPS.get(tab, tab), 'tabs': TABS,
+            'title': SECONDARY_TABS.get(tab) or dict(TABS).get(tab), 'is_lead': m.role == 'lead',
             'effective_access': effective_access(request.user, m.organization_id, preview=bool(getattr(request, 'customer_preview', False))),
             'can_needs': (m.role == 'lead' or m.manage_needs) and m.organization.access_plan.workforce_need_creation is True,
             'can_campaigns': m.role == 'lead' or m.manage_campaigns, **extra}
@@ -74,13 +77,20 @@ def switch_company(request):
 @customer_view
 @require_http_methods(['GET'])
 def workspace(request, tab='overview'):
-    if tab not in dict(TABS):
+    if tab not in dict(TABS) and tab not in SECONDARY_TABS:
         raise Http404
     if tab=='candidates':
         from apps.recruiting.employer_views import directory_content
         return directory_content(request)
     org = organization(request)
     data = context(request, tab)
+    if tab in {'overview', 'recruiting'}:
+        from .portal_dashboard import recruiting_context
+        data.update(recruiting_context(request.user, org.pk, can_needs=data['can_needs'], can_campaigns=data['can_campaigns']))
+        return render(request, 'customers/portal/workspace.html', data)
+    if tab == 'account':
+        data.update(account_email=request.customer_member.identity.email,
+            account_role=request.customer_member.get_role_display())
     if tab == 'needs':
         data['need_setup'] = need_prerequisites(org)
     if tab in {'overview', 'needs'}:
@@ -89,28 +99,6 @@ def workspace(request, tab='overview'):
     if tab in {'overview', 'campaigns'}:
         rows = p.campaigns(request.user, org.pk)
         data['campaigns'] = rows[:5] if tab == 'overview' else Paginator(rows, 20).get_page(request.GET.get('page'))
-    if tab == 'overview':
-        attention = []
-        for kind, rows, allowed in [('need', p.needs(request.user, org.pk), data['can_needs']),
-                                    ('campaign', p.campaigns(request.user, org.pk), data['can_campaigns'])]:
-            visible_count = 0
-            for row in rows:
-                state = row['review_state']
-                if state not in {'draft', 'returned', 'submitted', 'review'} or row['record_status'] in {'closed', 'cancelled', 'completed'}:
-                    continue
-                action = {'draft': 'Continue draft' if allowed else 'View draft',
-                          'returned': 'Review BTW feedback', 'submitted': 'Awaiting BTW review', 'review': 'BTW review in progress'}[state]
-                if kind == 'need' and row.get('effective_number') and row['pending']:
-                    action = 'Review proposed revision'
-                visible_feedback = p.feedback(request.user, org.pk, **{kind + '_id': row['id']})
-                attention.append({'label': (row.get('title') or row.get('name')) + ' · ' + row['review'],
-                                  'action': action, 'url': reverse('customer_portal:' + kind, args=[row['id']]),
-                                  'feedback': visible_feedback[0] if visible_feedback else None})
-                visible_count += 1
-                if visible_count == 5:
-                    break
-        data['attention'] = attention[:10]
-        data['recent'] = p.history(request.user, org.pk)[:5]
     if tab == 'company':
         data['details'] = {key: getattr(org, key) for key in ('name', 'legal_name', 'industry', 'website', 'business_email', 'phone', 'description')}
         data['locations'] = list(org.locations.filter(is_active=True).values('name', 'kind', 'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country'))

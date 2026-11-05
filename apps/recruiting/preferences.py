@@ -4,6 +4,7 @@ Classification IDs are authoritative after the first explicit preference save.
 Missing classifications remain unknown, including after an explicit clear.
 Original submissions, intake ownership and historical text are never replayed.
 """
+from django.db import transaction
 from apps.participants.models import ParticipantCareerProfile
 from .models import RecruitingProfile
 
@@ -33,10 +34,13 @@ def current_preferences(participant):
         'historical_availability': career.work_availability if career else ''}
 
 
+@transaction.atomic
 def initial_preferences(participant):
     from .foundation import profile_fingerprint
     from .access import person
-    participant = person(participant.pk)
+    # All existing profile writers lock this parent; fields and fingerprint must
+    # describe the same snapshot, including when legacy profile editors save.
+    participant = person(participant.pk, lock=True)
     row = RecruitingProfile.objects.filter(participant=participant).first()
     career = ParticipantCareerProfile.objects.filter(participant=participant).first()
     def choice(value):

@@ -68,6 +68,16 @@ def campaigns(request):
 
 @staff
 @require_http_methods(['GET'])
+def campaign_detail(request, campaign_id):
+    from .foundation import visible_campaigns
+    item = get_object_or_404(visible_campaigns(request.user).select_related('organization'), pk=campaign_id)
+    positions = opportunities_for(request.user).filter(need__campaign=item, archived_at__isnull=True)
+    return page(request, 'recruiting/campaign_detail.html', page_title=item.name,
+        campaign=item, positions=positions, can_manage=manager(request.recruiting_actor))
+
+
+@staff
+@require_http_methods(['GET'])
 def pipeline(request):
     opportunities=opportunities_for(request.user).filter(archived_at__isnull=True)
     rows=CandidateOpportunity.objects.filter(opportunity__in=opportunities).select_related('participant','opportunity__need__effective_revision','stage','assignee')

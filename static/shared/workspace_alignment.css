@@ -117,3 +117,9 @@ body.internal-app.has-customer-shell #main-content .portal-workspace .portal-con
   body.internal-app.has-customer-shell #main-content .portal-workspace .member.row .actions { margin:0; }
 }
 }
+/* Post-Build 16: legible phone controls in guarded portals and recruiting only.
+   Override the desktop control shorthand without touching intake or kiosk CSS. */
+@media(max-width:639px){
+body.internal-app.btw-platform.has-portal-shell #main-content :is(.portal-workspace,.portal-page) form :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=submit]),select,textarea),
+body.internal-app.btw-platform #main-content .recruiting-workspace form :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=submit]),select,textarea){font-size:16px;min-height:44px}
+}
