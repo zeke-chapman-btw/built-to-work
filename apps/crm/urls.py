@@ -3,6 +3,7 @@ from . import views, portal_views
 
 app_name = "crm"
 urlpatterns = [
+    path("recent/", views.recent, name="recent"),
     path("employer/<uuid:disclosure_id>/new/", portal_views.create, name="employer-new"),
     path("employer/<uuid:disclosure_id>/<uuid:interaction_id>/", portal_views.detail, name="employer-detail"),
     path("employer/<uuid:disclosure_id>/<uuid:interaction_id>/correct/", portal_views.correct, name="employer-correct"),
@@ -13,5 +14,6 @@ urlpatterns = [
     path("interactions/<uuid:interaction_id>/", views.detail, name="detail"),
     path("interactions/<uuid:interaction_id>/correct/", views.correct, name="correct"),
     path("interactions/<uuid:interaction_id>/task/", views.followup, name="followup"),
+    path("interactions/<uuid:interaction_id>/link-task/", views.existing_task, name="link-task"),
     path("interactions/<uuid:interaction_id>/<str:action>/", views.archive, name="archive"),
 ]

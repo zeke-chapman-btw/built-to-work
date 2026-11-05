@@ -1,0 +1,8 @@
+{% extends 'internal/base.html' %}
+{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}{% endblock %}
+{% block page_heading %}{% endblock %}
+{% block content %}<div class="crm-workspace"><header class="crm-heading"><h1>Recent relationship activity</h1><p>Only records your current staff permissions allow. Open a Participant or Customer to record a touchpoint.</p></header>
+<div class="crm-actions"><a href="{% url 'internal:workspace' 'participants' %}">Participants</a><a href="{% url 'customers:directory' %}">Customers</a><a href="{% url 'operations:tasks' %}">Tasks</a></div>
+<form method="get" class="crm-actions crm-recent-filter" aria-label="Filter recent activity"><label for="recent-q">Find a summary</label><input id="recent-q" type="search" name="q" value="{{ request.GET.q }}"><button class="button secondary">Apply</button></form>
+<section class="card crm-card" id="btw-recent"><h2>BTW Interactions</h2>{% include 'crm/rows.html' with items=btw_items %}{% include 'crm/pagination.html' with page=btw_page query=btw_query audience='btw' anchor='btw-recent' %}</section>
+<section class="card crm-card" id="employer-recent"><h2>Employer Interactions</h2><p class="crm-help">Employer-authored records remain separate from BTW history.</p>{% include 'crm/rows.html' with items=employer_items %}{% include 'crm/pagination.html' with page=employer_page query=employer_query audience='employer' anchor='employer-recent' %}</section></div>{% endblock %}

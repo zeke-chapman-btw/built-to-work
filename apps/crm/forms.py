@@ -108,6 +108,15 @@ class FollowupForm(TaskForm):
     operation_id = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
 
 
+class LinkTaskForm(forms.Form):
+    task = forms.ModelChoiceField(queryset=None, label="Existing task")
+
+    def __init__(self, *args, actor, **kwargs):
+        super().__init__(*args, **kwargs)
+        from apps.operations.task_access import tasks_for
+        self.fields["task"].queryset = tasks_for(actor).filter(archived_at__isnull=True).order_by("title")
+
+
 class ContactForm(forms.Form):
     revision = forms.IntegerField(widget=forms.HiddenInput, min_value=0)
     role = forms.CharField(label="Relationship role", max_length=160, required=False)

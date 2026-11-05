@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
 from django.http import Http404
+from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
@@ -193,3 +194,42 @@ def contact(request, organization_id, contact_id):
     return render(request, "crm/form.html", {"form": form, "page_title": "Contact relationship",
         "subject": person, "back": reverse("customers:workspace", args=[organization.pk, "crm"]),
         "submit_label": "Save contact settings", "guidance": "Record this contact's role and preferred contact methods. Portal access is managed separately under Users & Contacts; preferences do not record consent."})
+
+
+@staff_view
+@require_http_methods(["GET", "POST"])
+def existing_task(request, interaction_id):
+    row = record_for(request, interaction_id)
+    access.internal_record(request.user, row)
+    if row.archived_at:
+        raise PermissionDenied("Restore the interaction before linking a Task.")
+    form = forms.LinkTaskForm(request.POST if request.method == "POST" else None, actor=request.user)
+    if request.method == "POST" and form.is_valid():
+        reject_extra(form, request.POST)
+        if not form.errors:
+            try:
+                services.link_task(actor=request.user, interaction_id=row.pk, task_id=form.cleaned_data["task"].pk)
+            except (ValidationError, ObjectDoesNotExist) as exc:
+                errors(form, exc)
+            else:
+                messages.success(request, "Existing Task linked; its workflow and permissions are unchanged.")
+                return redirect("crm:detail", interaction_id=row.pk)
+    return render(request, "crm/form.html", {"form": form, "page_title": "Link existing task",
+        "subject": row.summary, "back": reverse("crm:detail", args=[row.pk]), "submit_label": "Link task",
+        "guidance": "Choose an existing accessible Task. Linking does not grant access to private interaction details."})
+
+
+@staff_view
+@require_http_methods(["GET"])
+def recent(request):
+    data = {}
+    term = request.GET.get("q", "").strip()[:120].casefold()
+    for audience in ("btw", "employer"):
+        rows = services.staff_history(request.user, audience=audience)
+        rows = [row for row in rows if not term or term in row.summary.casefold()]
+        page = Paginator(rows, 10).get_page(request.GET.get("crm_" + audience + "_page"))
+        data[audience + "_items"] = [presentation.staff_item(request.user, row) for row in page.object_list]
+        data[audience + "_page"] = page
+        params = request.GET.copy(); params.pop("crm_" + audience + "_page", None)
+        data[audience + "_query"] = params.urlencode()
+    return render(request, "crm/recent.html", data)

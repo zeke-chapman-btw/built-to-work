@@ -81,4 +81,7 @@ def history_context(request, *, participant=None, organization=None):
     except PermissionDenied:
         result["crm_can_add"] = False
     result["crm_new_url"] = reverse("crm:participant-new", args=[participant.pk]) if participant else reverse("crm:customer-new", args=[organization.pk])
+    if result["crm_can_add"]:
+        from .communications import relationship_communications
+        result["crm_communications"] = relationship_communications(participant=participant, organization=organization)
     return result

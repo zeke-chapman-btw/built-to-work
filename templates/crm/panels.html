@@ -7,7 +7,8 @@
 <label class="crm-checkbox"><input type="checkbox" name="crm_archived" value="1"{% if request.GET.crm_archived == '1' %} checked{% endif %}>Include archived</label><button class="button secondary">Apply</button>
 </form>
 {% if crm_btw_allowed %}<section id="btw-interactions" class="card crm-card"><header class="crm-panel-heading"><div><h2>BTW Interactions</h2><p>Private staff touchpoints · separate from employer records.</p></div>{% if crm_can_add %}<a class="button button-primary" href="{{ crm_new_url }}">Log activity</a>{% endif %}</header>
-{% if crm_can_add %}<div class="crm-actions crm-quick"><a href="{{ crm_new_url }}?type=call">Log call</a><a href="{{ crm_new_url }}?type=email">Record email</a><a href="{{ crm_new_url }}?type=sms">Record text</a><a href="{{ crm_new_url }}?type=meeting">Log meeting</a><a href="{{ crm_new_url }}?type=note">Relationship note</a></div>{% endif %}
+{% if crm_can_add %}<div class="crm-actions crm-quick"><a href="{{ crm_new_url }}?type=call">Log call</a><a href="{{ crm_new_url }}?type=email">Record email</a><a href="{{ crm_new_url }}?type=sms">Record text</a><a href="{{ crm_new_url }}?type=meeting">Log meeting</a><a href="{{ crm_new_url }}?type=note">Relationship note</a></div>{% include 'crm/communications.html' %}{% endif %}
+<p class="crm-help"><a href="{% url 'crm:recent' %}">Recent relationship activity across authorized records</a></p>
 {% include 'crm/rows.html' with items=crm_btw_rows %}{% include 'crm/pagination.html' with page=crm_btw_page query=crm_btw_query audience='btw' anchor='btw-interactions' %}
 {% if participant %}<p class="crm-help">Existing sources remain in place: <a href="{% url 'participants:staff-profile' participant.pk %}?section=notes">Internal BTW notes</a>{% if can_recruiting %} · <a href="{% url 'recruiting:candidate' participant.pk %}">Recruiting outreach &amp; pipeline</a>{% endif %}. They are not copied into CRM.</p>{% endif %}
 </section>{% endif %}
