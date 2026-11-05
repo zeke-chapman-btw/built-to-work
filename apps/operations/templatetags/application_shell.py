@@ -6,15 +6,16 @@ register = template.Library()
 CUSTOMER_ICONS = {'overview':'home','recruiting':'campaigns','company':'customers','needs':'people',
                   'campaigns':'campaigns','candidates':'people','users':'staff','access':'settings','history':'clock'}
 PARTICIPANT_LINKS = (
+    ('home','Home','home','participants:portal-home'),
     ('profile','My Profile','people','participants:profile'),
     ('events','Events','calendar','participants:portal-events'),
     ('jobs','Job Opportunities','campaigns','participants:portal-jobs'),
     ('activity','My Activity','clock','participants:portal-activity'),
     ('account','Account','settings','participants:portal-account'),
 )
-PARTICIPANT_TITLES = {'profile':'My Profile','events':'Find your next event',
+PARTICIPANT_TITLES = {'home':'Home','profile':'My Profile','events':'Find your next event',
                       'jobs':'Job Opportunities','activity':'My Activity','account':'Account'}
-PARTICIPANT_SECTIONS = {'portal-ticket':'activity','portal-event':'events',
+PARTICIPANT_SECTIONS = {'portal-home':'home','portal-interest':'jobs','portal-ticket':'activity','portal-event':'events',
     'portal-profile-edit':'profile','portal-entry-add':'profile','portal-entry-edit':'profile',
     'portal-entry-archive':'profile','portal-document-add':'profile','portal-document-archive':'profile'}
 

@@ -1,4 +1,5 @@
 from functools import wraps
+from django import forms
 from django.forms import BaseForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -238,6 +239,8 @@ def portal_preferences(request):
     form = PreferencesForm(request.POST if request.method == 'POST' and request.POST.get('operation') == 'preferences' else None,
         initial={**initial_preferences(item),
                  'reason': 'Participant updated their recruiting preferences.'})
+    form.fields['reason'].widget = forms.HiddenInput()
+    form.fields['reason'].disabled = True
     if request.method == 'POST':
         if getattr(request, 'portal_preview', None):
             raise PermissionDenied('Return to Admin; recruiting confirmation requires the actual participant account.')

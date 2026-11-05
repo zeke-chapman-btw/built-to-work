@@ -184,7 +184,7 @@ def interest_review(request,interest_id):
         if not editable:raise PermissionDenied
         if form.is_valid():
             d=form.cleaned_data
-            try:workflow.review_interest(actor=request.user,interest_id=row.pk,status=d['status'],note=d['reason'],expected_revision=d['expected_revision'],operation_id=d['operation_id'],task_id=d['task'].pk if d['task'] else None,select=d['select_candidate'],expected_conflicts=d['expected_conflicts'],expected_need_revision=d['expected_need_revision'],acknowledged=d['acknowledge_conflicts'])
+            try:workflow.review_interest(actor=request.user,interest_id=row.pk,status=d['status'],note=d['reason'],participant_message=d['participant_message'],expected_revision=d['expected_revision'],operation_id=d['operation_id'],task_id=d['task'].pk if d['task'] else None,select=d['select_candidate'],expected_conflicts=d['expected_conflicts'],expected_need_revision=d['expected_need_revision'],acknowledged=d['acknowledge_conflicts'])
             except ValidationError as exc:form.add_error(None,exc)
             else:messages.success(request,'Interest review recorded. Employer disclosure remains a separate BTW decision.');return redirect('recruiting:interest-review',interest_id=row.pk)
     return page(request,'recruiting/interest_review.html',page_title='Review Job Interest',interest=row,

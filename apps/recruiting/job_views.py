@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.http import Http404
-from django.shortcuts import render,redirect
+from django.shortcuts import render,redirect,get_object_or_404
 from django.views.decorators.http import require_http_methods
 from apps.participants.portal_views import participant_view
 from . import jobs
@@ -44,9 +44,28 @@ def detail(request,opportunity_id):
     interest_data=jobs.interest_projection(interest) if interest else None
     if interest_data:interest_data['job_updated']=interest.publication_id!=item.publication_id
     from .foundation import readiness
+    from apps.participants.portal_accounts import active_account
     return render(request,'recruiting/portal/job.html',{'section':'jobs','job':job,'form':form,
         'interest':interest_data,
-        'intake_ready':readiness(request.portal_account.participant)['eligible']})
+        'intake_ready':readiness(request.portal_account.participant)['eligible'],
+        'profile_editable':not getattr(request, 'portal_preview', None) and active_account(request.user) is not None})
+
+
+@participant_view(allow_identity_review=True)
+@require_http_methods(['GET'])
+def interest_detail(request, interest_id):
+    row = get_object_or_404(jobs.own_interests(request.user), pk=interest_id)
+    from apps.participants.portal_accounts import active_account
+    from apps.participants.identity import identity_members
+    from .models import ProfileUpdateRequest
+    from .foundation import freshness
+    return render(request, 'recruiting/portal/interest.html', {'section': 'jobs',
+        'interest': jobs.interest_projection(row),
+        'current_job': jobs.published().filter(pk=row.opportunity_id).first(),
+        'freshness': freshness(request.portal_account.participant),
+        'profile_editable': not getattr(request, 'portal_preview', None) and active_account(request.user) is not None,
+        'update_requests': ProfileUpdateRequest.objects.filter(participant_id__in=identity_members(request.portal_account.participant_id),
+            fulfilled_by__isnull=True).order_by('-created_at', '-pk')[:5]})
 
 
 @participant_view(allow_identity_review=True)

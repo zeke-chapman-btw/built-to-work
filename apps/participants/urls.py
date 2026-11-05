@@ -6,7 +6,7 @@ from . import portal_views, portal_auth
 from . import portal_profile_views
 app_name = "participants"
 urlpatterns = [
-    path('portal/', portal_views.profile, name='portal-home'),
+    path('portal/', portal_views.home, name='portal-home'),
     path('portal/activate/<str:token>/', portal_views.activate_account, name='portal-activate'),
     path('portal/invitation/', portal_views.recover_invitation, name='portal-recover'),
     path('portal/events/', portal_views.events, name='portal-events'),

@@ -20,6 +20,7 @@ urlpatterns = [
     path('settings/stages/<slug:key>/',workflow_views.stages,name='stage-edit'),
     path('identity/history/',workflow_views.identity_history,name='identity-history'),
     path('portal/jobs/<uuid:opportunity_id>/',job_views.detail,name='portal-job'),
+    path('portal/interests/<uuid:interest_id>/',job_views.interest_detail,name='portal-interest'),
     path('portal/interests/<uuid:interest_id>/withdraw/',job_views.withdraw,name='portal-interest-withdraw'),
     path('matching/',matching_views.matching_directory,name='matching-directory'),
     path('matching/<uuid:opportunity_id>/',matching_views.matching_results,name='matching'),

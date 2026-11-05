@@ -50,7 +50,9 @@ def own_interests(actor):
 
 def interest_projection(row):
     return {'id':str(row.pk),'job':dict(row.publication.safe_details),'opportunity_id':str(row.opportunity_id),
-        'status':row.get_status_display(),'submitted_at':row.created_at,'active':row.active}
+        'status':row.get_status_display(),'status_key':row.status,'submitted_at':row.created_at,'active':row.active,
+        'snapshot_fields': [{'label': {'employment_type': 'Job type'}.get(k, k.replace('_', ' ').title()), 'value': v}
+            for k, v in row.publication.safe_details.items() if v and k not in {'title', 'summary'}]}
 
 
 def express_interest(*,actor,opportunity_id,publication_id):

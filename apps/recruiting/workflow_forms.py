@@ -75,6 +75,16 @@ class OutreachForm(VersionReasonForm):
 
 
 class ReviewForm(VersionReasonForm):
+    participant_message=forms.CharField(required=False,max_length=500,widget=forms.Textarea(attrs={'rows':3}),
+        label='Message for the Participant',help_text='Required for Information Needed. Visible to the Participant as a profile update request. Keep private review notes in Internal review note.')
+    def clean(self):
+        data=super().clean()
+        if data.get('status')=='information' and not data.get('participant_message'):
+            self.add_error('participant_message','Explain what the Participant should review or update.')
+        if data.get('participant_message') and data.get('status')!='information':
+            self.add_error('participant_message','Use a participant message only with Information Needed.')
+        return data
+
     expected_need_revision=forms.UUIDField(widget=forms.HiddenInput)
     operation_id=forms.UUIDField(widget=forms.HiddenInput,initial=uuid.uuid4)
     status=forms.ChoiceField(choices=[c for c in CandidateInterest._meta.get_field('status').choices if c[0]!='withdrawn'])

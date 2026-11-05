@@ -47,6 +47,15 @@ def participant_view(view=None, *, allow_identity_review=False):
 
 
 @participant_view
+@require_GET
+def home(request):
+    from .portal_home import home_context
+    return render(request, 'participants/portal/home.html', {
+        'account': request.portal_account, 'section': 'home',
+        **home_context(request.user, request.portal_account, preview=bool(getattr(request, 'portal_preview', None)))})
+
+
+@participant_view
 @require_http_methods(['GET', 'POST'])
 def profile(request):
     account = request.portal_account

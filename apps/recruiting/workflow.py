@@ -167,7 +167,7 @@ def record_outreach(*,actor,candidate_id,data,operation_id,expected_revision):
         return event
 
 
-def review_interest(*,actor,interest_id,status,note,expected_revision,operation_id,task_id=None,select=False,expected_conflicts='',expected_need_revision=None,acknowledged=False):
+def review_interest(*,actor,interest_id,status,note,expected_revision,operation_id,task_id=None,select=False,expected_conflicts='',expected_need_revision=None,acknowledged=False,participant_message=''):
     from apps.operations.models import Task
     from apps.operations.task_access import require_task_access
     with policy_transaction():
@@ -182,6 +182,9 @@ def review_interest(*,actor,interest_id,status,note,expected_revision,operation_
         if not row.active:raise ValidationError('This interest is historical.')
         if status not in {'received','review','information','not_selected'}:raise ValidationError('Choose a participant-safe review status.')
         if select and status=='not_selected':raise ValidationError('Selecting a pipeline candidate cannot be combined with No Longer Under Consideration.')
+        participant_message = str(participant_message or '').strip()
+        if participant_message and (status != 'information' or len(participant_message) > 500):
+            raise ValidationError('Use a concise participant-facing message with Information Needed.')
         task=Task.objects.get(pk=task_id) if task_id else None
         if task:require_task_access(actor,task);attach_task(actor=actor,opportunity_id=row.opportunity_id,task_id=task.pk,interest_id=row.pk)
         candidate=None
@@ -192,5 +195,8 @@ def review_interest(*,actor,interest_id,status,note,expected_revision,operation_
         row.status=status;row.revision+=1;row.save()
         event=InterestReview.objects.create(interest=row,actor=actor,status=status,note=reason(note),task=task,
             candidate=candidate,operation_id=operation_id)
+        if participant_message:
+            from .foundation import request_update
+            request_update(actor=actor, participant_id=row.participant_id, message=participant_message, task=task)
         audit(actor,'interest.reviewed',event,data={'interest':str(row.pk),'status':status,'selected':bool(candidate),'task':str(task.pk) if task else None},why=note)
         return event

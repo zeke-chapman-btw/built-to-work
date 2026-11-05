@@ -205,7 +205,7 @@ def establish(request, item, destination=''):
             record_audit(actor=user, action='customer.signed_in', instance=identity_for(user), source='customer_authentication', reason='Customer signed in through unified BTW login.')
             default = reverse('customer_portal:home')
         else:
-            default = reverse('participants:profile')
+            default = reverse('participants:portal-home')
         return safe_destination(request, destination, item['realm'], user) or default
 
 
