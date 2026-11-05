@@ -122,3 +122,12 @@ body.btw-platform{--red:var(--btw-brand);--brand-red:var(--btw-brand);background
 
 /* Compact account heading in the coordinated Settings composition. */
 body.internal-app.btw-platform #main-content .ux-account-summary #settings-heading{font-size:14px;line-height:20px;font-weight:600;letter-spacing:0;text-transform:none}
+
+/* Current preferences have one body owner in staff and participant profiles. */
+.btw-platform .current-preference-facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:0;padding:0}
+.btw-platform .current-preference-facts>div{min-width:0}
+.btw-platform .current-preference-facts dt{font-size:13px;font-weight:500;color:var(--muted);margin:0 0 4px}
+.btw-platform .current-preference-facts dd{margin:0;overflow-wrap:anywhere;line-height:1.5}
+.btw-platform .current-preference-facts .p2-source{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+.btw-platform :is(.p3-reading-section,.profile-section)> .current-preference-facts{padding:16px 20px}
+@media(max-width:639px){.btw-platform .current-preference-facts{grid-template-columns:1fr;gap:14px}.btw-platform :is(.p3-reading-section,.profile-section)> .current-preference-facts{padding:16px}}

@@ -1,5 +1,5 @@
 {% extends 'participants/portal/base.html' %}
-{% load tz %}
+{% load tz current_preferences %}{% current_preferences_for account.participant as preferences %}
 {% block title %}My Profile · Built to Work{% endblock %}
 {% block content %}
 <div class="profile-workspace">
@@ -70,13 +70,13 @@
 
   <section id="preferences" class="portal-card profile-section">
     <div class="section-heading"><h2>Career Interests &amp; Employment Preferences</h2><a class="profile-edit-link" href="{% url 'participants:portal-profile-edit' 'preferences' %}">Edit Career Interests</a></div>
-    <dl class="profile-facts"><div class="profile-wide"><dt>Industries and career interests</dt><dd>{{ current_interests|default:'Not added yet'|linebreaksbr }}</dd></div><div><dt>Employment status</dt><dd>{{ career.employment_status|default:'Not added yet' }}</dd></div><div><dt>Employment interest</dt><dd>{{ career.get_employment_interest_display|default:'Not added yet' }}</dd></div><div><dt>Work arrangement</dt><dd>{{ career.get_preferred_work_type_display|default:'Not added yet' }}</dd></div><div><dt>Preferred locations</dt><dd>{{ career.preferred_locations|default:'Not added yet' }}</dd></div><div><dt>Overall experience</dt><dd>{% if career.years_of_experience != None %}{{ career.years_of_experience }} years{% else %}Not added yet{% endif %}</dd></div></dl>
+    <dl class="profile-facts"><div class="profile-wide"><dt>Industries and career interests</dt><dd>{{ current_interests|default:'Not added yet'|linebreaksbr }}</dd></div><div><dt>Work arrangement</dt><dd>{{ career.get_preferred_work_type_display|default:'Not added yet' }}</dd></div><div><dt>Preferred locations</dt><dd>{{ career.preferred_locations|default:'Not added yet' }}</dd></div><div><dt>Overall experience</dt><dd>{% if career.years_of_experience != None %}{{ career.years_of_experience }} years{% else %}Not added yet{% endif %}</dd></div></dl>
     {% if not current_interests %}<p class="profile-section-note"><a href="{% url 'participants:portal-profile-edit' 'preferences' %}">Update Your Career Interests</a></p>{% endif %}
   </section>
 
   <section id="availability" class="portal-card profile-section">
-    <div class="section-heading"><h2>Availability &amp; Travel</h2><a class="profile-edit-link" href="{% url 'participants:portal-profile-edit' 'availability' %}">Edit Availability &amp; Travel</a></div>
-    <dl class="profile-facts"><div><dt>Availability</dt><dd>{{ career.work_availability|default:'Not added yet' }}</dd></div><div><dt>Willing to travel</dt><dd>{{ current_travel }}</dd></div></dl>
+    <div class="section-heading"><h2>Availability &amp; Travel</h2><a class="profile-edit-link" href="{% url 'recruiting:portal-preferences' %}">Edit Availability &amp; Travel</a></div>
+    {% include 'recruiting/current_preferences.html' with participant=account.participant %}
   </section>
 
   <section id="documents" class="portal-card profile-section">

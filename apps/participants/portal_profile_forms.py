@@ -6,7 +6,7 @@ from .workspace_models import ParticipantWorkExperience
 
 PERSONAL_FIELDS = ('first_name', 'last_name', 'preferred_name', 'contact_email', 'contact_phone', 'city', 'state', 'postal_code')
 CAREER_SECTIONS = {
-    'preferences': ('career_interests', 'employment_status', 'employment_interest', 'preferred_work_type', 'preferred_locations', 'years_of_experience'),
+    'preferences': ('career_interests', 'preferred_work_type', 'preferred_locations', 'years_of_experience'),
     'availability': ('work_availability', 'willing_to_travel'),
     'skills-summary': ('skills_interests',),
     'education-summary': ('education_training',),

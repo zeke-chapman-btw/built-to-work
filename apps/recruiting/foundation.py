@@ -102,16 +102,39 @@ def save_preferences(*, actor, participant_id, data, expected_revision, why, par
         row, _ = RecruitingProfile.objects.get_or_create(participant=item)
         if row.revision != expected_revision:
             raise ValidationError('These recruiting preferences changed. Reload and review them.')
+        # The rendered contract includes career facts too. Check before any write.
+        extended = {'willing_to_travel', 'employment_interest'} & data.keys()
+        if extended and data.get('fingerprint') != profile_fingerprint(item):
+            raise ValidationError('Your profile changed. Reload, review the current values and try again. Your entered answers are retained here.')
+        before = {'employment_classification': str(row.employment_classification_id or ''),
+            'availability_classification': str(row.availability_classification_id or ''),
+            'willing_to_relocate': row.willing_to_relocate}
         for field, kind in [('employment_classification', 'employment'), ('availability_classification', 'availability')]:
             choice = data.get(field)
+            if choice:
+                choice = Classification.objects.filter(pk=choice.pk).first()
+                if not choice:
+                    raise ValidationError('This classification is no longer available. Review the current choices.')
             if choice and (choice.kind != kind or (not choice.is_active and getattr(row, field + '_id') != choice.pk)):
                 raise ValidationError('Choose an active classification of the correct type.')
             setattr(row, field, choice)
+        if extended:
+            from apps.participants.identity import update_participant_profile
+            career = ParticipantCareerProfile.objects.select_for_update().filter(participant=item).first()
+            updates = {key: data[key] for key in extended}
+            if 'employment_interest' in updates:
+                valid = dict(ParticipantCareerProfile._meta.get_field('employment_interest').choices)
+                if updates['employment_interest'] not in valid:
+                    raise ValidationError('Choose a recorded employment-interest option.')
+            if 'willing_to_travel' in updates and updates['willing_to_travel'] not in (True, False, None):
+                raise ValidationError('Choose Yes, No or Not recorded for travel.')
+            before.update({key: getattr(career, key) if career else None for key in extended})
+            update_participant_profile(participant=item, updates=updates)
         row.willing_to_relocate = data.get('willing_to_relocate')
         row.revision += 1
         row.last_relevant_update_at = timezone.now()
         row.save()
-        audit(staff, 'preferences.updated', row, data={'participant': item.pk, 'revision': row.revision}, why=reason(why))
+        audit(staff, 'preferences.updated', row, data={'participant': item.pk, 'revision': row.revision, 'employment_classification': str(row.employment_classification_id or ''), 'availability_classification': str(row.availability_classification_id or ''), 'willing_to_relocate': row.willing_to_relocate, **{key: data[key] for key in extended}}, before=before, why=reason(why))
         return row
 
 

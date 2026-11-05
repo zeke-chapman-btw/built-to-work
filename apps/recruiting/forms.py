@@ -1,5 +1,6 @@
 from django import forms
 from .models import Classification, CandidateList, RecruitingProfile
+from apps.participants.models import ParticipantCareerProfile
 
 
 class ReasonForm(forms.Form):
@@ -8,10 +9,27 @@ class ReasonForm(forms.Form):
 
 class PreferencesForm(ReasonForm):
     revision = forms.IntegerField(widget=forms.HiddenInput)
+    fingerprint = forms.CharField(widget=forms.HiddenInput)
+    employment_interest = forms.ChoiceField(required=False,
+        choices=ParticipantCareerProfile._meta.get_field('employment_interest').choices)
+    willing_to_travel = forms.TypedChoiceField(choices=[('', 'Not recorded'), ('yes', 'Yes'), ('no', 'No')],
+        coerce=lambda v: {'yes': True, 'no': False}.get(v), required=False, empty_value=None)
     employment_classification = forms.ModelChoiceField(queryset=Classification.objects.filter(kind='employment'), required=False)
     availability_classification = forms.ModelChoiceField(queryset=Classification.objects.filter(kind='availability'), required=False)
     willing_to_relocate = forms.TypedChoiceField(choices=[('', 'Not recorded'), ('yes', 'Yes'), ('no', 'No')],
         coerce=lambda v: {'yes': True, 'no': False}.get(v), required=False, empty_value=None)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from django.db.models import Q
+        for field, kind in [('employment_classification', 'employment'), ('availability_classification', 'availability')]:
+            self.fields[field].queryset = Classification.objects.filter(kind=kind).filter(
+                Q(is_active=True) | Q(pk=self.initial.get(field)))
+            self.fields[field].empty_label = 'Not recorded'
+        self.fields['employment_classification'].label = 'Current employment situation'
+        self.fields['availability_classification'].label = 'Current availability'
+        self.order_fields(['employment_classification', 'availability_classification', 'employment_interest',
+            'willing_to_travel', 'willing_to_relocate', 'reason', 'revision', 'fingerprint'])
 
 
 class ListForm(forms.ModelForm):

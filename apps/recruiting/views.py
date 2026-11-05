@@ -11,6 +11,7 @@ from django.views.decorators.http import require_http_methods
 from apps.participants.models import Participant
 from apps.participants.identity import participant_candidates
 from .access import fresh_staff, person, policy_transaction
+from .preferences import initial_preferences
 from .models import CandidateList, RecruitingProfile, Classification, CampaignRecruitingPolicy
 from .forms import PreferencesForm, ListForm, ConsolidationForm, ClassificationForm, CampaignPolicyForm,CampaignSourceForm
 from . import foundation as service
@@ -92,10 +93,8 @@ def candidate_foundation(request, participant_id):
     except Participant.DoesNotExist:
         raise Http404
     row = RecruitingProfile.objects.filter(participant=item).first()
-    initial = {'revision': row.revision if row else 0,
-        'employment_classification': row.employment_classification_id if row else None,
-        'availability_classification': row.availability_classification_id if row else None,
-        'willing_to_relocate': '' if not row or row.willing_to_relocate is None else 'yes' if row.willing_to_relocate else 'no'}
+    from .preferences import initial_preferences
+    initial = initial_preferences(item)
     form = PreferencesForm(request.POST if request.method == 'POST' and request.POST.get('operation') == 'preferences' else None, initial=initial)
     source_form=CampaignSourceForm(request.POST if request.method=='POST' and request.POST.get('operation')=='source_campaign' else None,actor=request.recruiting_actor)
     if request.method == 'POST':
@@ -237,10 +236,7 @@ def portal_preferences(request):
     item = request.portal_account.participant
     row = RecruitingProfile.objects.filter(participant=item).first()
     form = PreferencesForm(request.POST if request.method == 'POST' and request.POST.get('operation') == 'preferences' else None,
-        initial={'revision': row.revision if row else 0,
-                 'employment_classification': row.employment_classification_id if row else None,
-                 'availability_classification': row.availability_classification_id if row else None,
-                 'willing_to_relocate': '' if not row or row.willing_to_relocate is None else 'yes' if row.willing_to_relocate else 'no',
+        initial={**initial_preferences(item),
                  'reason': 'Participant updated their recruiting preferences.'})
     if request.method == 'POST':
         if getattr(request, 'portal_preview', None):

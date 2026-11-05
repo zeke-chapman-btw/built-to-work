@@ -30,11 +30,8 @@ def profile_preferences(context):
     """Group current, already scoped facts for display; never replay intake."""
     career = context.get("career")
     definitions = [
-        ("Employment interest", career.get_employment_interest_display() if career else None),
         ("Work arrangement", career.get_preferred_work_type_display() if career else None),
         ("Preferred locations", career.preferred_locations if career else None),
-        ("Availability", career.work_availability if career else None),
-        ("Travel", context.get("current_travel")),
     ]
     known, missing = [], []
     for label, value in definitions:

@@ -210,11 +210,16 @@ def discover(user, params, *, strict=False):
             qs = qs.annotate(_phone=phone)
             lookup |= Q(_phone__contains=digits)
         qs = qs.filter(lookup)
-    qs = qs.annotate(_current_interest=current_interest_expression())
+    from django.db.models import Case, When, CharField
+    qs = qs.annotate(_current_interest=current_interest_expression(), _current_availability=Case(
+        When(recruiting_profile__availability_classification__isnull=False,
+            then=F('recruiting_profile__availability_classification__label')),
+        When(recruiting_profile__revision__gt=0, then=Value('')),
+        default=F('career_profile__work_availability'), output_field=CharField()))
     for key, lookup in (("city", "city__icontains"), ("state", "state__icontains"),
                         ("trade_interest", "_current_interest__icontains"),
                         ("employment", "career_profile__employment_interest"),
-                        ("availability", "career_profile__work_availability__icontains"),
+                        ("availability", "_current_availability__icontains"),
                         ("preferred_location", "career_profile__preferred_locations__icontains"),
                         ("work_type", "career_profile__preferred_work_type")):
         if d.get(key):

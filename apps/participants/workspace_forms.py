@@ -26,6 +26,13 @@ class StaffProfileForm(forms.ModelForm):
 
 
 class CareerProfileForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in ['employment_status', 'work_availability']:
+            self.fields[name].disabled = True
+            self.fields[name].label = 'Previously recorded ' + name.replace('_', ' ')
+            self.fields[name].help_text = 'Retained evidence. Edit current classifications in Recruiting preferences.'
+
     class Meta:
         model = ParticipantCareerProfile
         fields = ("employment_status", "employment_interest", "career_interests", "skills_interests",

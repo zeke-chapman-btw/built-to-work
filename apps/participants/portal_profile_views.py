@@ -34,6 +34,8 @@ def _editor(request, form, title, section, **extra):
 def edit_section(request, section):
     if section not in SECTION_TITLES:
         raise Http404
+    if section == 'availability':
+        return redirect('recruiting:portal-preferences')
     person = request.portal_account.participant
     career = ParticipantCareerProfile.objects.filter(participant=person).first() or ParticipantCareerProfile(participant=person)
     from .intake_workspace import workspace_intake_context
