@@ -11,6 +11,7 @@ ALLOWED_HOSTS = [
 ]
 
 INSTALLED_APPS = [
+    "apps.crm.apps.CrmConfig",
     "apps.recruiting.apps.RecruitingConfig",
     "apps.trailer_control.apps.TrailerControlConfig",
     "apps.stations.apps.StationsConfig",
