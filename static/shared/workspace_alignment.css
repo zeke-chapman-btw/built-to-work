@@ -40,7 +40,7 @@ body.internal-app.has-settings-workspace .operations-page>.workdays-page {
 body.internal-app:is(.has-pass-a-events,:has([data-pass-a-event])) {
   --pass-a-frame:var(--btw-standard-frame); --pass-a-inner:var(--btw-content,920px);
 }
-body.internal-app:has([data-pass-a-event]) #main-content :is(.event-record-header,.event-page-context) { margin-inline:0; }
+body.btw-platform.internal-app:has([data-pass-a-event]) #main-content :is(.event-record-header,.event-page-context) { margin-inline:0; }
 body.internal-app:has([data-pass-a-event]) #main-content :is(.event-operations,.staffing-page,.operations-design),
 body.internal-app:has([data-pass-a-event]) #main-content .operations-page>:is(.workdays-page,.reports-page) {
   box-sizing:border-box; width:100%; max-width:var(--pass-a-frame); margin-inline:0;
