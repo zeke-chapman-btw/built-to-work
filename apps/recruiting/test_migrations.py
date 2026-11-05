@@ -18,9 +18,10 @@ class PopulatedMigrationPreservationTests(TransactionTestCase):
         try:
             executor.migrate(before)
             executor=MigrationExecutor(connection)
-            targets=[node for node in latest if node[0] not in {'recruiting','participants','events'}]
-            targets += [('participants','0020_participant_profile_entries'),('events','0014_participantmatchreview_candidates_and_more')]
-            old=executor.loader.project_state(targets).apps
+            # Project the schema actually left by migrate(before). A later app may
+            # depend on current recruiting/participant migrations; targeting its
+            # unapplied latest leaf would invent columns absent from this old DB.
+            old=executor.loader.project_state(list(executor.loader.applied_migrations)).apps
             User=old.get_model('accounts','User')
             actor=User.objects.create(username='synthetic15-migration',is_active=True,is_staff=True,is_superuser=True,password='!')
             Person=old.get_model('participants','Participant')

@@ -57,7 +57,8 @@ def authorized_record(request, disclosure_id, interaction_id, *, write=False):
 def create(request, disclosure_id):
     writable(request)
     organization_id, candidate = candidate_context(request, disclosure_id)
-    employer.customer_grant(request.user, organization_id, disclosure_id, write=True)
+    with policy_transaction():
+        employer.customer_grant(request.user, organization_id, disclosure_id, write=True)
     form = forms.ActivityForm(request.POST if request.method == "POST" else None, employer=True,
         initial={"activity_type": request.GET.get("type", "call")})
     if request.method == "POST":
@@ -83,8 +84,9 @@ def detail(request, disclosure_id, interaction_id):
     _, candidate = candidate_context(request, disclosure_id)
     row = authorized_record(request, disclosure_id, interaction_id)
     item = services.employer_projection(row)
-    member, grant = employer.customer_grant(request.user, request.customer_member.organization_id, disclosure_id)
-    item["can_correct"] = (member.role == "lead" or row.created_by_id == request.user.pk) and employer.may_respond(member, grant) and not getattr(request, "customer_preview", False)
+    with policy_transaction():
+        member, grant = employer.customer_grant(request.user, request.customer_member.organization_id, disclosure_id)
+        item["can_correct"] = (member.role == "lead" or row.created_by_id == request.user.pk) and employer.may_respond(member, grant) and not getattr(request, "customer_preview", False)
     # Explicit public fields only. Do not pass internal snapshots, Tasks or Participant models.
     revisions = []
     for revision in InteractionRevision.objects.filter(interaction=row).select_related("actor"):
