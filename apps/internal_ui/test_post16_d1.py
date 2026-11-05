@@ -91,3 +91,11 @@ class Post16D1Tests(EmployerFixtures, TestCase):
         self.assertContains(response, 'Resource configuration')
         self.assertNotContains(response, '<h2>Event Readiness</h2>')
         self.assertContains(response, 'Device and server observations belong in Trailer Control')
+
+    def test_home_does_not_repeat_unused_followup_task_scope_queries(self):
+        with patch('apps.recruiting.read_models.tasks_for') as unused:
+            self.attention(self.admin)
+        unused.assert_not_called()
+        with patch('apps.recruiting.read_models.staff_queues') as restricted:
+            self.assertEqual(home_data(self.worker)['home_recruiting_state'], 'restricted')
+        restricted.assert_not_called()

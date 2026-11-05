@@ -9,7 +9,7 @@ from django.utils import timezone
 
 class PortalDocumentCorrectionsTests(SimpleTestCase):
     def test_activity_empty_and_populated_title_does_not_include_history(self):
-        event=SimpleNamespace(name='SYNTHETIC activity history',pk=uuid.uuid4())
+        event=SimpleNamespace(name='SYNTHETIC activity history',pk=uuid.uuid4(),timezone_name='UTC')
         record=SimpleNamespace(event=event,started_at=timezone.now(),completed_at=None)
         for rows in ([],[record]):
             with self.subTest(populated=bool(rows)):
@@ -20,7 +20,7 @@ class PortalDocumentCorrectionsTests(SimpleTestCase):
                 if rows:self.assertEqual(body.count(event.name),1)
 
     def test_registered_event_card_retains_detail_and_registration_actions(self):
-        event=SimpleNamespace(pk=uuid.uuid4(),name='SYNTHETIC registered event',start_at=timezone.now(),
+        event=SimpleNamespace(pk=uuid.uuid4(),name='SYNTHETIC registered event',start_at=timezone.now(),end_at=timezone.now(),timezone_name='UTC',
             location_name='SYNTHETIC venue',city='',state='',event_type_label='Workforce event',my_registration=True,
             get_public_registration_status_display=lambda:'Open')
         body=render_to_string('participants/portal/events.html',{'events':[event]})
@@ -29,7 +29,7 @@ class PortalDocumentCorrectionsTests(SimpleTestCase):
         self.assertIn('View registration',body)
 
     def test_activity_does_not_link_to_no_longer_public_event(self):
-        event=SimpleNamespace(name='SYNTHETIC historical event',pk=uuid.uuid4(),start_at=timezone.now(),location_name='Example venue')
+        event=SimpleNamespace(name='SYNTHETIC historical event',pk=uuid.uuid4(),start_at=timezone.now(),end_at=timezone.now(),timezone_name='UTC',location_name='Example venue')
         registration=SimpleNamespace(event=event,event_detail_available=False,is_past=True,portal_ticket=None,
                                      get_status_display=lambda:'Active')
         body=render_to_string('participants/portal/activity.html',{'registrations':[registration]})

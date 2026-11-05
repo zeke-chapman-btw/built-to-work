@@ -189,7 +189,7 @@ class Portal12Tests(TestCase):
         self.assertEqual(self.client.post(reverse('participants:logout')).status_code, 302)
         self.assertEqual(self.client.get(reverse('participants:profile')).status_code, 302)
         response = self.client.post(reverse('participants:login'), {'email': account.login_email.upper(), 'password': PASSWORD})
-        self.assertRedirects(response, reverse('participants:profile'))
+        self.assertRedirects(response, reverse('participants:portal-home'))
 
     def test_staff_and_disabled_accounts_cannot_use_portal(self):
         account = self.account()

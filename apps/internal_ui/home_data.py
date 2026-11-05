@@ -110,7 +110,12 @@ def home_data(user):
     # as Recruiting Overview. No new queue or notification state is created.
     try:
         from apps.recruiting.read_models import staff_queues
-        recruiting = staff_queues(user)
+        # Fail closed before extra identity/role reads for a user who cannot
+        # access people at all. Eligible readers still receive the service's
+        # fresh role, identity and opportunity checks.
+        if not user.has_perm('participants.view_participant'):
+            raise PermissionDenied
+        recruiting = staff_queues(user, include_followup_tasks=False)
         incoming, responses = recruiting['incoming'].count(), recruiting['pending_responses'].count()
         result.update(home_recruiting_state='available')
         if incoming:

@@ -19,7 +19,8 @@ class SummaryFactsTests(SimpleTestCase):
         value = profile_preferences(dict(career=None, current_travel='Unknown',
             intake_profile_rows=[dict(label='Custom original heading', value='Retained custom value')]))
         self.assertEqual(value['profile_preference_rows'], [])
-        self.assertEqual(len(value['profile_missing_preferences']), 5)
+        self.assertEqual(value['profile_missing_preferences'], ['Work arrangement', 'Preferred locations'])
+        # Employment/availability/travel use the separate current-preferences contract.
         self.assertEqual(value['profile_intake_preferences'], [])
 
     def test_accepted_value_and_protection_are_preserved_for_display(self):

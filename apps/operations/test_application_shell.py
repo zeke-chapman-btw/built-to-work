@@ -57,7 +57,7 @@ class CustomerSharedShellTests(PortalFixtures,TestCase):
         self.assertContains(response,'data-structured-form');self.assertEqual(len(response.context['form'].groups),7)
         self.assertContains(response,'Number of workers needed');self.assertContains(response,'Save Draft')
         self.assertEqual([x['url'] for x in ShellLinks(response.content.decode()).links if x['active']],
-                         [reverse('customer_portal:workspace',args=['needs'])])
+                         [reverse('customer_portal:workspace',args=['recruiting'])])
 
     def test_member_flags_do_not_become_staff_or_lead_navigation(self):
         org,lead,lead_user=self.lead();self.plan(org,member_limit=4)
@@ -69,7 +69,7 @@ class CustomerSharedShellTests(PortalFixtures,TestCase):
                 self.client.logout();self.assertEqual(self.client.post(reverse('accounts:login'),
                     {'account_type':'customer','email':member.identity.email,'password':PASSWORD}).status_code,302)
                 response=self.client.get(reverse('customer_portal:home'));links=chrome(self,response)
-                self.assertEqual(len(links),8)
+                self.assertEqual(len(links),4)
                 self.assertFalse(any(x['url'].startswith(('/internal/','/operations/','/participants/')) for x in links))
                 self.assertEqual(self.client.get(reverse('customer_portal:need-create')).status_code,200 if needs else 403)
                 self.assertEqual(self.client.get(reverse('customer_portal:campaign-create')).status_code,200 if campaigns else 403)
@@ -134,9 +134,11 @@ class ParticipantSharedShellTests(TestCase):
         self.assertContains(activity,'Recorded participation',count=1)
 
     def test_independent_editor_retains_values_and_active_profile_navigation(self):
-        response=self.client.get(reverse('participants:portal-profile-edit',args=['availability']));links=chrome(self,response)
+        redirected=self.client.get(reverse('participants:portal-profile-edit',args=['availability']))
+        self.assertRedirects(redirected, reverse('recruiting:portal-preferences'), fetch_redirect_response=False)
+        response=self.client.get(reverse('recruiting:portal-preferences'));links=chrome(self,response)
         self.assertEqual([x['url'] for x in links if x['active']],[reverse('participants:profile')])
-        self.assertContains(response,'Work availability');self.assertContains(response,'Save changes')
+        self.assertContains(response,'Current availability');self.assertContains(response,'Save preferences')
 
     def test_no_staff_customer_links_and_cross_role_denial(self):
         response=self.client.get(reverse('participants:profile'));links=chrome(self,response)
@@ -184,14 +186,14 @@ class PreviewSharedShellTests(PortalFixtures,TestCase):
         self.client.force_login(self.admin,backend='django.contrib.auth.backends.ModelBackend')
         self.assertEqual(self.client.post(reverse('internal:portal-preview-customer-enter')).status_code,302)
         response=self.client.get(reverse('customer_portal:home'));links=chrome(self,response)
-        self.assertEqual(len(links),8);self.assertTrue(all(x['url'].startswith('/customer/') for x in links))
+        self.assertEqual(len(links),4);self.assertTrue(all(x['url'].startswith('/customer/') for x in links))
         self.assertContains(response,'View-only customer preview');self.assertContains(response,'Return to Admin',count=1)
         self.assertNotContains(response,'data-task-create');self.assertContains(response,'application-preview-notice')
         self.assertEqual(self.client.post(reverse('customer_portal:logout')).status_code,302)
         self.assertEqual(self.client.session['_auth_user_id'],str(self.admin.pk))
         self.assertEqual(self.client.post(reverse('internal:portal-preview-enter')).status_code,302)
         response=self.client.get(reverse('participants:profile'));links=chrome(self,response)
-        self.assertEqual(len(links),5);self.assertTrue(all(x['url'].startswith('/participants/') for x in links))
+        self.assertEqual(len(links),6);self.assertTrue(all(x['url'].startswith('/participants/') for x in links))
         self.assertContains(response,'Admin Preview — Participant Portal');self.assertContains(response,'Return to Admin',count=1)
         self.assertNotContains(response,'data-task-create');self.assertNotContains(response,'class="sign-out-form"')
         self.assertEqual(self.client.post(reverse('internal:portal-preview-exit')).status_code,302)

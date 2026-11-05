@@ -338,8 +338,10 @@ class CollaborationTests(PortalFixtures, TestCase):
         c = self.campaign(org); self.submit_campaign(org, c, user)
         self.customer_login(user)
         response = self.client.get(reverse('customer_portal:home'))
-        self.assertContains(response, 'Changes requested')
-        self.assertContains(response, 'Submitted')
+        self.assertContains(response, 'Review requested changes')
+        recruiting = self.client.get(reverse('customer_portal:workspace', args=['recruiting']))
+        self.assertContains(recruiting, 'Submitted')
+        self.assertNotContains(recruiting, WHY)
         self.assertNotContains(response, WHY)
 
     def test_closed_need_and_forged_campaign_approval_routes_stay_denied(self):

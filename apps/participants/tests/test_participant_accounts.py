@@ -69,7 +69,7 @@ class ParticipantIdentityTests(TestCase):
         self.assertIsNotNone(account.email_verified_at)
 
         response = self.client.post(reverse("participants:login"), {"email":"RAE@example.com", "password":"Long-random-passphrase-284!"})
-        self.assertRedirects(response, reverse("participants:profile"))
+        self.assertRedirects(response, reverse("participants:portal-home"))
         profile_response = self.client.get(reverse("participants:profile"))
         self.assertEqual(profile_response.status_code, 200)
         self.assertEqual(ParticipantAccount.objects.get(user=profile_response.wsgi_request.user).participant_id, person.pk)

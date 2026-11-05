@@ -10,7 +10,7 @@ from .selection import opportunities_for
 from .models import CandidateOpportunity, CandidateInterest, EmployerCandidateFeedback, RecruitingTaskLink
 
 
-def staff_queues(actor):
+def staff_queues(actor, *, include_followup_tasks=True):
     actor = fresh_staff(actor)
     items = opportunities_for(actor).filter(archived_at__isnull=True)
     from .employer import feedback_reviews
@@ -21,8 +21,9 @@ def staff_queues(actor):
     reviews = feedback_reviews().annotate(review_id=Replace('object_id', Value('-'), Value(''))).filter(
         review_id=Replace(Cast(OuterRef('pk'), output_field=CharField()), Value('-'), Value('')))
     pending = responses.annotate(staff_reviewed=Exists(reviews)).filter(staff_reviewed=False)
-    overdue = tasks_for(actor).filter(pk__in=RecruitingTaskLink.objects.filter(opportunity__in=items).values('task_id'),
+    overdue = (tasks_for(actor).filter(pk__in=RecruitingTaskLink.objects.filter(opportunity__in=items).values('task_id'),
         archived_at__isnull=True, due_date__lt=timezone.localdate(), status__in=[Task.Status.TODO, Task.Status.PROGRESS])
+        if include_followup_tasks else None)
     return {'items': items, 'current': items.filter(need__status='active', need__effective_revision__state='approved'),
         'candidates': candidates, 'responses': responses, 'pending_responses': pending, 'overdue': overdue,
         'incoming': CandidateInterest.objects.filter(opportunity__in=items, active=True, status='received'),

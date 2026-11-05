@@ -70,7 +70,7 @@ class UnifiedLoginTests(PortalFixtures,TestCase):
 
     def test_participant_email_uses_own_portal_and_backend(self):
         response=self.attempt(self.account.login_email,account_type='customer')
-        self.assertEqual(response.url,reverse('participants:profile'))
+        self.assertEqual(response.url,reverse('participants:portal-home'))
         self.assertEqual(self.client.session['_auth_user_backend'],auth.BACKENDS['participant'])
         self.assertEqual(self.client.get(response.url).status_code,200)
         self.assertEqual(self.client.get('/customer/').status_code,403)
@@ -126,7 +126,7 @@ class UnifiedLoginTests(PortalFixtures,TestCase):
         response=self.client.get(reverse('accounts:identity-choice'))
         self.assertContains(response,'Verified accounts');self.assertNotContains(response,str(self.customer.pk))
         index=next(n for n,x in enumerate(pending['identities']) if x['realm']=='participant')
-        self.assertEqual(self.pick(pending,index).url,reverse('participants:profile'))
+        self.assertEqual(self.pick(pending,index).url,reverse('participants:portal-home'))
         self.assertEqual(self.client.session['_auth_user_id'],str(self.participant.pk))
         self.assertEqual(len({self.customer.pk,self.admin.pk,self.participant.pk}),3)
         self.assertNotIn(auth.PENDING,self.client.session)
@@ -225,7 +225,7 @@ class UnifiedLoginTests(PortalFixtures,TestCase):
 
     def test_account_type_hint_never_authenticates_an_unrelated_identity(self):
         response=self.attempt(self.account.login_email,account_type='staff',next='/internal/')
-        self.assertEqual(response.url,reverse('participants:profile'))
+        self.assertEqual(response.url,reverse('participants:portal-home'))
         self.assertEqual(self.client.session['_auth_user_id'],str(self.participant.pk))
 
     @override_settings(**preview_fixtures.OPTIONS)

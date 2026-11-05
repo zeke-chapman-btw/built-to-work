@@ -60,15 +60,22 @@ class PortalProfileExpansionTests(TestCase):
         self.assertNotContains(self.client.get(self.path('portal-events')), '<h2>Job Opportunities</h2>')
 
     def test_each_current_section_updates_only_its_fields(self):
-        path = self.path('portal-profile-edit', 'availability')
+        from apps.recruiting.models import Classification, RecruitingProfile
+        legacy = self.path('portal-profile-edit', 'availability')
+        self.assertRedirects(self.client.get(legacy), reverse('recruiting:portal-preferences'), fetch_redirect_response=False)
+        path = reverse('recruiting:portal-preferences')
+        choice = Classification.objects.create(kind='availability', key='synthetic-weekends-expansion', label='Weekends')
         page = self.client.get(path)
-        data = {'revision': page.context['form']['revision'].value(), 'work_availability': 'Weekends', 'willing_to_travel': '3',
-                'career_interests': 'ATTACKED', 'date_of_birth': '1900-01-01', 'notes': 'ATTACKED'}
+        data = {'operation': 'preferences', 'revision': page.context['form']['revision'].value(),
+                'fingerprint': page.context['form']['fingerprint'].value(), 'availability_classification': choice.pk,
+                'willing_to_travel': 'no', 'career_interests': 'ATTACKED', 'date_of_birth': '1900-01-01', 'notes': 'ATTACKED'}
         self.assertEqual(self.client.post(path, data).status_code, 302)
         self.career.refresh_from_db(); self.person.refresh_from_db()
         self.assertEqual(self.career.career_interests, 'Original career interest')
         self.assertEqual(self.career.education_training, 'Original training summary')
-        self.assertEqual(self.career.work_availability, 'Weekends')
+        self.assertEqual(self.career.work_availability, '')  # Original source evidence retained.
+        self.assertEqual(RecruitingProfile.objects.get(participant=self.person).availability_classification, choice)
+        self.assertFalse(self.career.willing_to_travel)
         self.assertEqual(self.person.date_of_birth, date(1995, 1, 1))
         for section in ('personal', 'preferences', 'skills-summary', 'education-summary'):
             response = self.client.get(self.path('portal-profile-edit', section))
@@ -77,8 +84,10 @@ class PortalProfileExpansionTests(TestCase):
 
     def test_cancel_and_get_do_not_mutate_profile(self):
         before = (self.person.updated_at, self.career.updated_at)
-        for section in ('personal', 'preferences', 'availability', 'skills-summary', 'education-summary'):
+        for section in ('personal', 'preferences', 'skills-summary', 'education-summary'):
             self.assertEqual(self.client.get(self.path('portal-profile-edit', section)).status_code, 200)
+        self.assertRedirects(self.client.get(self.path('portal-profile-edit', 'availability')), reverse('recruiting:portal-preferences'), fetch_redirect_response=False)
+        self.assertEqual(self.client.get(reverse('recruiting:portal-preferences')).status_code, 200)
         self.person.refresh_from_db(); self.career.refresh_from_db()
         self.assertEqual(before, (self.person.updated_at, self.career.updated_at))
 

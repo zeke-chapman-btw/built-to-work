@@ -96,7 +96,7 @@ class OperationsReferenceRefinementTests(TestCase):
     def test_landing_is_compact_and_detailed_execution_stays_reachable(self):
         self.login();response=self.client.get(reverse('internal:workspace',args=['operations']))
         self.assertEqual(response.status_code,200)
-        self.assertContains(response,'Event Readiness');self.assertContains(response,'ops-resource-event-row')
+        self.assertContains(response,'Resource configuration');self.assertContains(response,'ops-resource-event-row')
         self.assertContains(response,'ops-resource-checks');self.assertContains(response,'About these statuses')
         self.assertNotContains(response,'ops-overview-progress');self.assertNotContains(response,'Tools &amp; configuration')
         self.assertNotContains(response,'>Ready<')

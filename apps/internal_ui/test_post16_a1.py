@@ -60,6 +60,11 @@ class Post16A1Tests(EmployerFixtures, TestCase):
         self.assertTemplateUsed(response, 'participants/portal/event_schedule.html')
         self.assertContains(response, 'Dec 31, 2026 · 9:30 PM')
         self.assertContains(response, 'Eastern (EST)')
+        self.staff_login()
+        for query in ({}, {'section': 'events'}):
+            staff = self.client.get(reverse('participants:staff-profile', args=[self.person.pk]), query)
+            self.assertContains(staff, 'Dec 31, 2026 · 9:30 PM')
+            self.assertContains(staff, 'Eastern (EST)')
         event.refresh_from_db()
         self.assertEqual((event.start_at, event.end_at), (start, end))
 
@@ -110,3 +115,11 @@ class Post16A1Tests(EmployerFixtures, TestCase):
         self.assertContains(response, 'All accessible tasks')
         self.assertEqual(response.context['summary']['open'], 1)
         self.assertEqual(response.context['tasks'].paginator.count, 0)
+
+    def test_actual_event_timestamp_uses_its_own_dst_instant_not_the_scheduled_start(self):
+        event = self.new_timezone_event(datetime(2027, 3, 14, 6, 30, tzinfo=utc.utc), datetime(2027, 3, 14, 7, 30, tzinfo=utc.utc))
+        actual = datetime(2027, 3, 14, 7, 45, tzinfo=utc.utc)
+        html = render_to_string('shared/event_timestamp.html', {'event': event, 'timestamp': actual})
+        self.assertIn('3:45 AM', html)
+        self.assertIn('Eastern (EDT)', html)
+        self.assertNotIn('1:30 AM', html)
