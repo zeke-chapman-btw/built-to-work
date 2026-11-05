@@ -16,3 +16,6 @@
 .recruiting-workspace button:disabled,.recruiting-portal button:disabled{opacity:.6;cursor:wait}
 .recruiting-portal .errorlist{color:#ad122b;margin:8px 0}
 @media(max-width:639px){.recruiting-workspace .btw-page-heading h1{font-size:20px;line-height:28px}}
+
+/* Post-Build 16: each existing position action retains its own target and focus. */
+.recruiting-workspace nav.recruiting-actions>a{display:inline-flex;align-items:center;min-height:44px;padding:8px 12px}

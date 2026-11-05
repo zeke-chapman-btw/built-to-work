@@ -1,6 +1,7 @@
 {% extends 'operations/task_base.html' %}{% load task_ui %}{% block operations_page_actions %}{% global_task_create_url as header_task_create_url %}{% if header_task_create_url %}<a class="button button-primary" data-task-create href="{{ header_task_create_url }}">New Task</a>{% endif %}{% endblock %}
 {% block task_content %}<section class="task-workspace" data-task-workspace>
 <p class="task-purpose">Your assignments and work you’ve delegated, in one place.</p>
+<h2 class="task-summary-label">All accessible tasks</h2>
 <div class="task-summary" aria-label="Accessible task summary"><div><span>Open tasks</span><strong>{{ summary.open }}</strong></div><div><span>Overdue</span><strong>{{ summary.overdue }}</strong></div><div><span>Completed</span><strong>{{ summary.completed }}</strong></div></div>
 <details class="task-summary-help"><summary>About these totals</summary><p>All non-archived tasks you can access, before view and search filters. Open and overdue include To Do and In Progress; overdue means the due date has passed.</p></details>
 <nav class="task-views task-workspace-views" aria-label="Task views">{% for tab in tabs %}<a href="{{ tab.url }}"{% if tab.active %} aria-current="page"{% endif %}>{{ tab.label }} <span>{{ tab.count }}</span></a>{% endfor %}</nav>
@@ -10,6 +11,6 @@
 <div class="field"><label for="task-priority">Priority</label><select id="task-priority" name="priority"><option value="">All priorities</option>{% for value,label in priorities %}<option value="{{ value }}"{% if filters.priority == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
 {% if managing %}<div class="field"><label for="task-assignee">Assignee</label><select id="task-assignee" name="assignee"><option value="">All staff</option>{% for p in people %}<option value="{{ p.pk }}"{% if filters.assignee == p.pk|stringformat:'s' %} selected{% endif %}>{{ p }}</option>{% endfor %}</select></div><div class="field"><label for="task-event">Event</label><select id="task-event" name="event"><option value="">All accessible Events</option>{% for e in events %}<option value="{{ e.pk }}"{% if filters.event == e.pk|stringformat:'s' %} selected{% endif %}>{{ e.name }}</option>{% endfor %}</select></div>{% endif %}
 </div></details></form></section>
-<div class="task-results-heading"><h2>{{ tasks.paginator.count }} task{{ tasks.paginator.count|pluralize }}</h2><p class="event-help">Open work first, then due date and priority. Archived tasks stay in Archived.</p></div><p class="task-workspace-status" role="status" data-task-status></p>
+<div class="task-results-heading"><h2>{% for tab in tabs %}{% if tab.active %}{{ tab.label }} · {% endif %}{% endfor %}{{ tasks.paginator.count }} task{{ tasks.paginator.count|pluralize }}</h2><p class="event-help">Open work first, then due date and priority. Archived tasks stay in Archived.</p></div><p class="task-workspace-status" role="status" data-task-status></p>
 <div class="task-grid task-workspace-list" aria-label="Task results">{% include 'operations/task_rows.html' %}</div>{% include 'operations/pages.html' with page=tasks %}
 </section>{% endblock %}

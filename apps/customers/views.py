@@ -3,7 +3,7 @@ from functools import wraps
 from urllib.parse import urlencode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.exceptions import ValidationError, ObjectDoesNotExist, PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
 from django.http import Http404
@@ -98,6 +98,15 @@ def workspace(request, org_id, tab="overview"):
         from apps.crm.presentation import history_context
         data.update(history_context(request, organization=org))
         data["crm_contacts"] = org.contacts.select_related("crm_relationship").all()
+    elif tab == "matches":
+        from apps.recruiting.selection import opportunities_for
+        try:
+            positions = opportunities_for(request.user).filter(
+                need__organization=org, archived_at__isnull=True).order_by("-created_at", "pk")
+        except PermissionDenied:
+            data.update(recruiting_available=False)
+        else:
+            data.update(recruiting_available=True, recruiting_positions=page(request, positions))
     elif tab == "company":
         data.update(locations=org.locations.all(), relationships=CustomerRelationship.objects.filter(Q(source=org) | Q(target=org)).select_related("source", "target"))
     elif tab in {"needs", "campaigns"}:
@@ -195,7 +204,7 @@ def relationship_editor(request, org_id):
 @require_http_methods(["GET", "POST"])
 def plan_editor(request, org_id):
     org = org_for(request, org_id)
-    return form_screen(request, org=org, tab="access", title="Configure Access & Plan", description="Future entitlements are configuration only. They do not expose participants or enable unfinished features.", form_class=f.AccessPlanForm, instance=org.access_plan, initial=initials(request, org, org.access_plan), save=lambda d: s.save_access_plan(actor=request.user, org_id=org.pk, expected_org_revision=d["org_revision"], expected_revision=d["record_revision"], data={k:d[k] for k in s.PLAN_FIELDS}, why=d["reason"]))
+    return form_screen(request, org=org, tab="access", title="Configure Access & Plan", description="Organization settings do not grant participant access. Recruiting uses approved positions, staff permissions and explicit candidate releases.", form_class=f.AccessPlanForm, instance=org.access_plan, initial=initials(request, org, org.access_plan), save=lambda d: s.save_access_plan(actor=request.user, org_id=org.pk, expected_org_revision=d["org_revision"], expected_revision=d["record_revision"], data={k:d[k] for k in s.PLAN_FIELDS}, why=d["reason"]))
 
 
 @staff_view

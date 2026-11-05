@@ -184,3 +184,11 @@
 .portal-page .profile-work-timeline li:not(.profile-empty){gap:4px}
 .portal-page .profile-result-count{margin-left:auto}
 .portal-page .profile-editor-page>h1{font-size:2rem}}
+
+/* Explicit body ownership: profile headings keep their separate existing inset. */
+.portal-page .profile-section>.profile-guidance{padding:0 18px 16px;margin:12px 0 0}
+.portal-page .profile-confirmation .ux-card-heading,.portal-page .profile-confirmation .ux-card-body{box-sizing:border-box}
+.portal-page .profile-confirmation details>summary{padding:16px 20px;min-height:44px;cursor:pointer}
+@media(max-width:639px){.portal-page .profile-section>.profile-guidance{padding:0 16px 16px}.portal-page .profile-confirmation details>summary{padding:16px}body.btw-platform #main-content .portal-page .profile-workspace.profile-confirmation .ux-form .ux-field :is(input,select,textarea){font-size:16px}}
+
+@media(max-width:639px){.portal-page .profile-section>.profile-guidance{font-size:14px;line-height:20px}}

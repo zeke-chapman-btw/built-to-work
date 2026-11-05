@@ -1,0 +1,1 @@
+{% load tz event_ui %}{% timezone event.timezone_name %}<time datetime="{{ event.start_at|date:'c' }}">{{ event.start_at|date:'M j, Y · g:i A' }} {{ event|event_timezone:event.start_at }}</time>{% if show_end %} – <time datetime="{{ event.end_at|date:'c' }}">{{ event.end_at|date:'M j, Y · g:i A' }} {{ event|event_timezone:event.end_at }}</time>{% endif %}{% endtimezone %}

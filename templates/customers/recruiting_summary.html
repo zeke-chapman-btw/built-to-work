@@ -1,0 +1,18 @@
+{% load customer_ui %}
+<section class="customer-card">
+  <h2>Recruiting for this customer</h2>
+  <p>Review the existing positions, matching recommendations and recruiting pipelines your staff account can access. Employers only see candidates explicitly released to their company.</p>
+  {% if recruiting_available %}
+    {% for position in recruiting_positions %}
+      <article class="customer-line">
+        <div><h3>{{ position.need.effective_revision.title|default:'Position awaiting approved details' }}</h3><p>{{ organization.name }} · {{ position.need.get_status_display }}</p></div>
+        <div class="customer-actions">
+          <a href="{% url 'recruiting:matching' position.pk %}">Review matching</a>
+          <a href="{% url 'recruiting:pipeline' %}?opportunity={{ position.pk }}">Recruiting pipeline</a>
+        </div>
+      </article>
+    {% empty %}<p>No recruiting positions are available to your account for this customer. Review the customer's Workforce Needs to see their current approved position details.</p>{% endfor %}
+  {% else %}<p>Your account can manage this customer but does not have recruiting access. A BTW administrator can review your role.</p>{% endif %}
+  <p><a href="{% customer_url 'customers:workspace' organization.pk 'needs' %}">View this customer's Workforce Needs</a></p>
+</section>
+{% if recruiting_positions.has_other_pages %}{% include 'customers/pagination.html' with rows=recruiting_positions %}{% endif %}
