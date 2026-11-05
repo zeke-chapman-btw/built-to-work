@@ -1,8 +1,12 @@
 from django.urls import path
-from . import views
+from . import views, portal_views
 
 app_name = "crm"
 urlpatterns = [
+    path("employer/<uuid:disclosure_id>/new/", portal_views.create, name="employer-new"),
+    path("employer/<uuid:disclosure_id>/<uuid:interaction_id>/", portal_views.detail, name="employer-detail"),
+    path("employer/<uuid:disclosure_id>/<uuid:interaction_id>/correct/", portal_views.correct, name="employer-correct"),
+    path("employer/<uuid:disclosure_id>/<uuid:interaction_id>/<str:action>/", portal_views.archive, name="employer-archive"),
     path("participants/<int:participant_id>/new/", views.create, name="participant-new"),
     path("customers/<uuid:organization_id>/new/", views.create, name="customer-new"),
     path("customers/<uuid:organization_id>/contacts/<uuid:contact_id>/", views.contact, name="contact"),

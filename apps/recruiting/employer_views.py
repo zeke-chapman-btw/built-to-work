@@ -33,7 +33,8 @@ def customer_candidate(request,record_id):
             try:employer.feedback(actor=request.user,organization_id=organization,disclosure_id=record_id,kind=d['kind'],message=d['message'],operation_id=d['operation_id'])
             except ValidationError as exc:form.add_error(None,exc)
             else:messages.success(request,'Your response was sent to BTW. Official recruiting decisions remain with BTW.');return redirect('customer_portal:recruiting-candidate',record_id=record_id)
-    return render(request,'recruiting/customer/candidate.html',context(request,'candidates',candidate=data,feedback_form=form))
+    from apps.crm.portal_views import interaction_context
+    return render(request,'recruiting/customer/candidate.html',context(request,'candidates',candidate=data,feedback_form=form,**interaction_context(request,record_id,data)))
 
 
 @staff
