@@ -23,7 +23,7 @@ class CoordinatedSettingsTests(TestCase):
         self.assertEqual(response.status_code,200)
         self.assertContains(response,'ux-stack')
         self.assertContains(response,'Your account')
-        self.assertContains(response,'Customer and Participant Portals')
+        self.assertContains(response,'Portal Preview')
         self.assertContains(response,'href="'+reverse('internal:portal-preview')+'"',count=1)
         for text in ['future home','home to be reviewed','empty-state card','Other destinations']:
             self.assertNotContains(response,text)

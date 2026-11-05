@@ -251,7 +251,7 @@ def staff_destinations(user, current_path=""):
     from .reporting import report_destinations
     entries.extend([
         dict(id="reports", label="Reports & Analytics", icon="reports", url=reverse("internal:reports"), active=False),
-        dict(id="settings", label="Settings & Administration", icon="settings", url=reverse("internal:settings"), active=False),
+        dict(id="settings", label="Settings", icon="settings", url=reverse("internal:settings"), active=False),
     ])
     if not report_destinations(user):entries=[entry for entry in entries if entry['id']!='reports']
     active = next((entry["id"] for entry in entries if entry["active"]), None)
@@ -291,5 +291,5 @@ def legacy_workspace_context(user, current_path=""):
     entry = next((entry for entry in visible_legacy_workspaces(user, current_path)
                   if entry["active"] and entry["id"] in ("administration", "platform-tools")), None)
     if current_path.startswith(("/accounts/staff/", "/workdays/compensation/", "/reports/categories/", "/internal/workspaces/administration/")):
-        return dict(id="settings", label="Settings & Administration", url=reverse("internal:settings"))
+        return dict(id="settings", label="Settings", url=reverse("internal:settings"))
     return entry

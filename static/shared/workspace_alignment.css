@@ -1,0 +1,119 @@
+/* Shared staff standard: 920px usable ordinary content, after the sidebar.
+   Scoped screen presentation only; no public intake, kiosk or native admin styles. */
+body.internal-app { --btw-standard-frame:var(--btw-frame,968px); }
+@media screen {
+body.internal-app:not(.has-portal-shell):not(.home-dashboard-page) .btw-standard-workspace:not(.btw-workspace-wide) {
+  max-width:var(--btw-standard-frame); margin-inline:0;
+}
+body.internal-app.has-shared-workspace:not(.has-portal-shell):not(.home-dashboard-page) #main-content>.page-header {
+  max-width:var(--btw-standard-frame); margin-inline:0;
+}
+body.internal-app.customer-app #main-content { width:100%; max-width:none; margin-inline:0; }
+body.internal-app.customer-app .customer-page { max-width:var(--btw-content,920px); margin-inline:0; }
+
+/* Settings tools share one visible family and the existing guarded routes. */
+body.internal-app.has-settings-workspace .settings-navigation-frame,
+body.internal-app.has-settings-workspace #main-content>.ux-frame,
+body.internal-app.has-settings-workspace #main-content>.staffing-page,
+body.internal-app.has-settings-workspace #main-content>.operations-page,
+body.internal-app.has-settings-workspace #main-content>.portal-preview-options {
+  box-sizing:border-box; width:100%; max-width:var(--btw-standard-frame);
+  margin-inline:0; padding-inline:var(--btw-standard-gutter); min-width:0;
+}
+body.internal-app.has-settings-workspace #main-content>.ux-surface {
+  width:calc(100% - 2 * var(--btw-standard-gutter)); max-width:var(--btw-content,920px);
+  margin:0 var(--btw-standard-gutter) 16px; min-width:0;
+}
+body.internal-app.has-settings-workspace .operations-page>.workdays-page {
+  max-width:none; margin:0; padding:0; width:100%; min-width:0;
+}
+.settings-navigation-frame { margin-bottom:20px; }
+.settings-tabs { display:flex; align-items:stretch; gap:4px; max-width:100%; min-width:0;
+  overflow-x:auto; overscroll-behavior-inline:contain; border-bottom:1px solid var(--line); scrollbar-width:thin; }
+.settings-tabs a { display:inline-flex; flex:0 0 auto; align-items:center; min-height:44px;
+  padding:10px 12px; border-bottom:2px solid transparent; color:var(--muted);
+  text-decoration:none; white-space:nowrap; font:500 13px/20px var(--font); }
+.settings-tabs a[aria-current] { color:var(--red); border-bottom-color:currentColor; }
+.settings-tabs a:focus-visible { outline:3px solid #1764ac; outline-offset:-3px; }
+
+/* Remove independent centering and duplicate outer gutters from ordinary Events. */
+body.internal-app:is(.has-pass-a-events,:has([data-pass-a-event])) {
+  --pass-a-frame:var(--btw-standard-frame); --pass-a-inner:var(--btw-content,920px);
+}
+body.internal-app:has([data-pass-a-event]) #main-content :is(.event-record-header,.event-page-context) { margin-inline:0; }
+body.internal-app:has([data-pass-a-event]) #main-content :is(.event-operations,.staffing-page,.operations-design),
+body.internal-app:has([data-pass-a-event]) #main-content .operations-page>:is(.workdays-page,.reports-page) {
+  box-sizing:border-box; width:100%; max-width:var(--pass-a-frame); margin-inline:0;
+  padding-inline:var(--pass-a-gutter);
+}
+body.internal-app:has([data-pass-a-event]) #main-content .event-workspace-stack:not(.operations-design)>.event-navigation-shell,
+body.internal-app:has([data-pass-a-event]) #main-content .btw-event-settings>.event-navigation-shell,
+body.internal-app:has([data-pass-a-event]) #main-content .operations-page>.event-navigation-shell,
+body.internal-app:has([data-pass-a-event]) #main-content .btw-event-content-frame>.event-navigation-shell { margin-inline:0; }
+body.internal-app:has([data-pass-a-event]) #main-content .operations-page>:is(.card,.ops-filter-grid,.btw-toolbar),
+body.internal-app:has([data-pass-a-event]) #main-content .btw-event-content-frame>.btw-tabs {
+  max-width:var(--btw-content,920px); margin-inline:var(--btw-standard-gutter);
+}
+body.internal-app.has-pass-a-events #main-content .event-form-page { margin-inline:0; }
+body.internal-app.has-wide-event-directory.has-pass-a-events #main-content>.page-header {
+  box-sizing:border-box; width:100%; max-width:var(--btw-standard-frame);
+  margin:16px 0; padding-inline:var(--btw-standard-gutter);
+}
+body.internal-app.has-wide-event-directory.has-pass-a-events #main-content .event-list-page {
+  max-width:var(--btw-standard-frame); margin-inline:0;
+}
+
+/* Customer pages use the staff content edge, type hierarchy and control sizing. */
+body.internal-app.has-customer-shell #main-content .portal-workspace,
+body.internal-app.has-customer-shell #main-content>.page-header,
+body.internal-app.has-customer-shell .application-notice-frame,
+body.internal-app.has-customer-shell #main-content>.messages {
+  box-sizing:border-box; width:100%; max-width:var(--btw-standard-frame); margin-inline:0;
+  padding-inline:var(--btw-standard-gutter); min-width:0;
+}
+body.internal-app.has-customer-shell #main-content .portal-workspace { font:400 13px/20px var(--font); padding-bottom:16px; }
+body.internal-app.has-customer-shell #main-content>.page-header h1,
+body.internal-app.has-customer-shell #main-content .portal-workspace :is(h1,.identity-title) {
+  font:600 20px/28px var(--font); letter-spacing:0; text-transform:none;
+}
+body.internal-app.has-customer-shell #main-content .portal-workspace h2 { font:600 14px/20px var(--font); }
+body.internal-app.has-customer-shell #main-content .portal-workspace .card {
+  padding:16px; border-radius:8px; border:1px solid var(--line); box-shadow:none; margin:0 0 16px;
+}
+body.internal-app.has-customer-shell #main-content .portal-workspace :is(button,.button) {
+  min-height:var(--btw-standard-control); padding:7px 12px; border-radius:6px; font:500 13px/20px var(--font);
+}
+body.internal-app.has-customer-shell #main-content .portal-workspace :is(.field,.ux-field) :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea) {
+  box-sizing:border-box; width:100%; min-width:0; max-width:100%; min-height:var(--portal-control-height,var(--btw-standard-control));
+  padding:7px 10px; border:1px solid var(--control-line); border-radius:6px; font:400 13px/20px var(--font);
+}
+body.internal-app.has-customer-shell #main-content .portal-workspace textarea { --portal-control-height:96px; resize:vertical; }
+body.internal-app.has-customer-shell #main-content .portal-workspace :is(button,input,select,textarea):disabled { cursor:not-allowed; }
+body.internal-app.has-customer-shell #main-content .portal-workspace button:disabled { opacity:.55; }
+body.internal-app.has-customer-shell #main-content .portal-workspace .member.row {
+  flex-direction:row; align-items:center; justify-content:space-between; gap:16px;
+}
+body.internal-app.has-customer-shell #main-content .portal-workspace .member.row>div { min-width:0; }
+.portal-context-tools { display:flex; align-items:flex-start; flex-wrap:wrap; gap:4px 16px; min-width:0; }
+.portal-context-tools:empty { display:none; }
+body.internal-app.has-customer-shell #main-content .portal-workspace .portal-context-help {
+  border:0; padding:0; margin:0 0 8px; background:transparent; box-shadow:none; min-width:0; max-width:100%;
+}
+body.internal-app.has-customer-shell #main-content .portal-workspace .portal-context-help>summary {
+  min-height:36px; padding:8px 0; font:500 12px/20px var(--font); color:var(--muted);
+}
+.portal-context-tools .portal-context-help[open] { flex-basis:100%; }
+body.internal-app.has-customer-shell #main-content .portal-workspace .portal-context-help[open] {
+  border-bottom:1px solid var(--line); padding-bottom:12px;
+}
+@media(max-width:1023px) {
+  body.internal-app.has-customer-shell #main-content .portal-workspace :is(button,.button),
+  body.internal-app.has-customer-shell #main-content .portal-workspace .portal-context-help>summary { min-height:44px; }
+  body.internal-app.has-customer-shell #main-content .portal-workspace :is(.field,.ux-field) :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]),select,textarea) { min-height:var(--portal-control-height,44px); }
+}
+@media(max-width:639px) {
+  .settings-navigation-frame { margin-bottom:16px; }
+  body.internal-app.has-customer-shell #main-content .portal-workspace .member.row { align-items:stretch; flex-direction:column; gap:8px; }
+  body.internal-app.has-customer-shell #main-content .portal-workspace .member.row .actions { margin:0; }
+}
+}

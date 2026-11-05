@@ -46,7 +46,8 @@ def application_shell(context):
         audience = 'staff'
     shell = dict(audience=audience, staff=audience == 'staff', portal=audience != 'staff',
                  items=[], preview=False, account_label='', context_label='', account_url='',
-                 account_link_label='', logout_url='', return_url='', switch_company=False)
+                 account_link_label='', logout_url='', return_url='', switch_company=False,
+                 settings_tabs=[], settings_workspace=False)
     if audience == 'staff':
         shell.update(home_url=reverse('internal:home'), utility='Internal workspace',
                      footer='Built to Work · Internal workspace', page_title=context.get('page_title') or 'Dashboard')
@@ -55,6 +56,10 @@ def application_shell(context):
                 account_url=reverse('internal:settings'), account_link_label='Personal settings',
                 account_active=bool((context.get('settings_link') or {}).get('active')),
                 logout_url=reverse('accounts:logout'))
+            from apps.internal_ui.settings_presentation import settings_context
+            presentation = context.get('settings_presentation') or settings_context(request)
+            if presentation:
+                shell.update(settings_tabs=presentation['tabs'], settings_workspace=True)
         return shell
     if audience == 'customer':
         member = getattr(request, 'customer_member', None)

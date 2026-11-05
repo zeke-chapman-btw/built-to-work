@@ -1,5 +1,5 @@
 {% extends 'customers/portal/base.html' %}{% block content %}
-{% include 'customers/portal/access_summary.html' %}{% include 'customers/portal/need_prerequisites.html' %}
+<div class="portal-context-tools">{% include 'customers/portal/access_summary.html' %}{% include 'customers/portal/need_prerequisites.html' %}</div>
 <section class="ux-surface"><div class="ux-card-body"><form class="ux-form" method="post" data-structured-form{% if form.groups %} data-sectioned-form{% endif %}{% if editor_mode %} data-unsaved-guard{% endif %} novalidate>{% csrf_token %}
 <a class="ux-back" data-leave-editor href="{{ cancel_url }}">← Back</a>{% if notice %}<p class="notice">{{ notice }}</p>{% endif %}
 {% for hidden in form.hidden_fields %}{{ hidden }}{{ hidden.errors }}{% endfor %}
