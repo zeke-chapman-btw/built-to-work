@@ -30,23 +30,12 @@ def can_manage(actor,item):
 @staff
 @require_http_methods(['GET'])
 def overview(request):
-    items=opportunities_for(request.user).filter(archived_at__isnull=True)
-    from .employer import feedback_reviews
-    from apps.operations.models import Task
-    current=items.filter(need__status='active',need__effective_revision__state='approved')
-    candidates=CandidateOpportunity.objects.filter(opportunity__in=items)
-    responses=EmployerCandidateFeedback.objects.filter(disclosure__candidate__opportunity__in=items).select_related('disclosure__candidate__participant','disclosure__need__effective_revision')
-    # UUID columns are native on PostgreSQL and compact text on SQLite.
-    # Audit object IDs retain their original hyphenated representation.
-    reviews=feedback_reviews().annotate(review_id=Replace('object_id',Value('-'),Value(''))).filter(
-        review_id=Replace(Cast(OuterRef('pk'),output_field=CharField()),Value('-'),Value('')))
-    pending_responses=responses.annotate(staff_reviewed=Exists(reviews)).filter(staff_reviewed=False)
-    overdue=tasks_for(request.recruiting_actor).filter(
-        pk__in=RecruitingTaskLink.objects.filter(opportunity__in=items).values('task_id'),
-        archived_at__isnull=True,due_date__lt=timezone.localdate(),status__in=[Task.Status.TODO,Task.Status.PROGRESS])
-    outreach=candidates.filter(active=True,stage_id='contacting',outreach__isnull=True).select_related('participant','opportunity__need__effective_revision')
+    from .read_models import staff_queues
+    queues=staff_queues(request.user)
+    items,current,candidates,responses,pending_responses,overdue,outreach=(queues[k] for k in
+        ('items','current','candidates','responses','pending_responses','overdue','outreach'))
     return page(request,'recruiting/overview.html',page_title='Recruiting',
-        opportunity_count=items.count(),interest_count=CandidateInterest.objects.filter(opportunity__in=items,active=True,status='received').count(),
+        opportunity_count=items.count(),interest_count=queues['incoming'].count(),
         active_count=CandidateOpportunity.objects.filter(opportunity__in=items,active=True).count(),opportunities=items[:8],
         open_position_count=current.count(),engagement_count=current.filter(candidates__active=True).distinct().count(),
         request_count=WorkforceRequest.objects.filter(archived_at__isnull=True,positions__need__recruiting_opportunity__in=current).distinct().count(),

@@ -106,6 +106,26 @@ def home_data(user):
                 url=reverse("operations:execution-index") + "?view=attention"))
     except DatabaseError:
         unavailable.append("Scheduled-end check unavailable")
+    # Use exactly the same responsibility, feedback-review and Task boundaries
+    # as Recruiting Overview. No new queue or notification state is created.
+    try:
+        from apps.recruiting.read_models import staff_queues
+        recruiting = staff_queues(user)
+        incoming, responses = recruiting['incoming'].count(), recruiting['pending_responses'].count()
+        result.update(home_recruiting_state='available')
+        if incoming:
+            attention.append(dict(id='recruiting-interest', count=incoming, label='Incoming job interests',
+                scope='Active, Interest Received · your accessible recruiting positions',
+                url=reverse('recruiting:interests')+'?status=received'))
+        if responses:
+            attention.append(dict(id='recruiting-response', count=responses, label='Employer responses to review',
+                scope='No recorded BTW review · your accessible recruiting positions',
+                url=reverse('recruiting:overview')+'#employer-responses'))
+    except PermissionDenied:
+        result.update(home_recruiting_state='restricted')
+    except DatabaseError:
+        result.update(home_recruiting_state='unavailable')
+        unavailable.append('Recruiting review check unavailable')
     result.update(home_attention=attention, home_attention_unavailable=unavailable)
     # Existing metrics keep their queries/meaning; only nonduplicated totals render here.
     result["home_summary_metrics"] = [m for m in result["home_metrics"]
