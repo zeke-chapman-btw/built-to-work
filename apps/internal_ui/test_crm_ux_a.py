@@ -132,3 +132,31 @@ class CrmUxProfileTests(TestCase):
         self.assertContains(response, 'No candidate-position records in your recruiting scope.')
         self.assertContains(response, 'official outcomes remain explicit BTW decisions.')
         self.assertNotContains(response, 'aria-label="BTW relationship summary"')
+
+    def test_profile_card_edit_replaces_jump_and_retains_authorized_return(self):
+        for user, can_edit in [(self.admin, True), (self.reader, False)]:
+            self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
+            response = self.client.get(self.url)
+            header = response.content.decode().split('<section id="profile-identity"', 1)[1].split('</header>', 1)[0]
+            self.assertNotIn('Jump to section', header)
+            self.assertEqual('aria-label="Edit profile details"' in header, can_edit)
+            if can_edit:
+                self.assertIn(reverse('participants:staff-edit', args=[self.person.pk]), header)
+                self.assertIn('return_to=', header)
+        self.client.force_login(self.admin, backend='django.contrib.auth.backends.ModelBackend')
+        self.person.archived_at = timezone.now()
+        self.person.save(update_fields=['archived_at'])
+        response = self.client.get(self.url)
+        header = response.content.decode().split('<section id="profile-identity"', 1)[1].split('</header>', 1)[0]
+        self.assertNotIn('aria-label="Edit profile details"', header)
+
+    def test_lighter_skill_rows_retain_zero_experience_source_and_expandable_evidence(self):
+        from apps.participants.qualification_models import ParticipantQualification
+        ParticipantQualification.objects.create(participant=self.person, custom_name='SYNTHETIC Review Skill', reported_kind='skill', years_of_experience=0, source='participant', is_self_reported=True, experience_details='SYNTHETIC retained qualification evidence')
+        response = self.client.get(self.url)
+        self.assertContains(response, 'SYNTHETIC Review Skill')
+        self.assertContains(response, '0.0 years')
+        self.assertContains(response, 'SYNTHETIC retained qualification evidence')
+        self.assertContains(response, 'Details &amp; evidence')
+        self.assertContains(response, 'Full qualification &amp; evidence')
+        self.assertContains(response, 'Self-reported')

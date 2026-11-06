@@ -79,3 +79,41 @@ body.internal-app.has-participant-workspace.has-participants-pass3.has-participa
 .has-crm-ux-profile .crm-profile-reading-tools { margin: 0; min-height: 0; }
 body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .crm-profile-history-heading h2 { margin: 0; font: 600 12px/18px var(--font); }
 body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .crm-profile-history-heading p { margin: 4px 0 0; font: 400 12px/18px var(--font); }
+
+/* Owner-approved final Preview corrections: same records, lighter participant presentation. */
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-profile-top,
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-profile-pair { align-items: stretch; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-profile-top > .p3-reading-section,
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-profile-pair > .p3-reading-section { align-self: stretch; height: auto; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content #profile-identity .p3-profile-facts { display: block; }
+.has-crm-ux-profile #profile-identity .p3-profile-fact { display: grid; grid-template-columns: minmax(84px,.8fr) minmax(0,1.6fr); gap: 12px; padding-block: 9px; border-bottom: 1px solid #eeeeef; }
+.has-crm-ux-profile #profile-identity .p3-profile-fact:last-child { border-bottom: 0; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content #profile-identity .p3-profile-fact > dt,
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content #profile-identity .p3-profile-fact > dd { margin: 0; padding: 0; border: 0; min-width: 0; overflow-wrap: anywhere; }
+.has-crm-ux-profile #profile-identity .p3-profile-fact > dt { color: #63636b; }
+.has-crm-ux-profile .crm-profile-navigation a { position: relative; isolation: isolate; font-size: 12px; line-height: 18px; border-bottom: 0; }
+.has-crm-ux-profile .crm-profile-navigation a[aria-current="page"],
+.has-crm-ux-profile .crm-profile-navigation a[aria-current="page"]:hover { background: transparent; border-color: transparent; }
+.has-crm-ux-profile .crm-profile-navigation a[aria-current="page"]::before { content: ""; position: absolute; inset: 8px 0; background: #191919; border-radius: 5px; z-index: -1; }
+.has-crm-ux-profile .crm-profile-navigation a[aria-current="page"]:hover::before { background: #303030; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content #profile-skills .p3-preview-row { padding-block: 10px; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content #profile-skills .p3-record-heading { align-items: center; gap: 4px 10px; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content #profile-skills .p3-record-heading h3 { min-width: 0; font-weight: 500; }
+.has-crm-ux-profile #profile-skills .p3-skill-evidence > summary { display: inline-flex; align-items: center; min-height: 32px; padding-block: 4px; color: #63636b; font: 400 12px/18px var(--font); cursor: pointer; }
+.has-crm-ux-profile #profile-skills .p3-skill-evidence > summary::before { content: "▸"; margin-right: 5px; }
+.has-crm-ux-profile #profile-skills .p3-skill-evidence[open] > summary::before { content: "▾"; }
+.has-crm-ux-profile #profile-skills .p3-skill-evidence p { margin: 3px 0; }
+.has-crm-ux-profile #profile-skills .p3-skill-evidence > a { display: inline-flex; align-items: center; min-height: 44px; font-size: 12px; }
+@media(width < 640px) {
+ .has-crm-ux-profile .crm-profile-navigation a { min-height: 44px; }
+ .has-crm-ux-profile #profile-skills .p3-skill-evidence > summary { min-height: 44px; }
+}
+
+/* Override inherited disclosure density only within participant Skills & Trades. */
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content #profile-skills .p3-skill-evidence { display: inline-block; vertical-align: middle; max-width: 100%; margin: 0; padding: 0; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content #profile-skills .p3-skill-evidence[open] { display: block; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content #profile-skills .p3-skill-row > p.p3-record-meta { display: inline-block; vertical-align: middle; margin: 0 12px 0 0; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content #profile-skills .p3-skill-evidence > summary { min-height: 32px; padding-block: 4px; font: 400 12px/18px var(--font); }
+@media(width < 640px) {
+ body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content #profile-skills .p3-skill-evidence > summary { min-height: 44px; }
+}
