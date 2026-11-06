@@ -255,20 +255,33 @@ def _followups(policy, subject, cursor, back):
 
 
 def directory_panel(request, subject):
+    if subject not in {'participants', 'customers'}:
+        raise ValueError('Unsupported directory subject')
     view = request.GET.get('rel_view', 'activity')
     view = view if view in {'activity', 'followups'} else 'activity'
     audience = request.GET.get('rel_audience', 'all') if view == 'activity' else 'all'
     audience = audience if audience in {'all', 'btw', 'employer'} else 'all'
     back = request.get_full_path() + '#' + ANCHOR
-    with policy_transaction():
-        policy = ReadPolicy(request.user, subject)
-        cursor, refreshed = _cursor(request.GET.get('rel_cursor', ''), actor=policy.actor,
+    # An empty history needs no identity graph, opportunity projection or row locks.
+    # This existence check exposes no IDs or counts. Fresh realm/directory gates
+    # still run before returning; populated reads keep the full transaction below.
+    if view == 'activity' and not Interaction.objects.filter(archived_at__isnull=True).exists():
+        actor = fresh_staff(request.user)
+        require_people(actor) if subject == 'participants' else require_manager(actor)
+        cursor, refreshed = _cursor(request.GET.get('rel_cursor', ''), actor=actor,
             subject=subject, view=view, audience=audience)
-        if view == 'activity':
-            rows, next_row, empty = _activity(policy, subject, audience, cursor, back)
-        else:
-            rows, next_row, empty = _followups(policy, subject, cursor, back)
-        token = _next(next_row, actor=policy.actor, subject=subject, view=view, audience=audience) if next_row else None
+        rows, token = [], None
+        empty = 'No more activity in this view.' if cursor else 'No activity in your accessible records.'
+    else:
+        with policy_transaction():
+            policy = ReadPolicy(request.user, subject)
+            cursor, refreshed = _cursor(request.GET.get('rel_cursor', ''), actor=policy.actor,
+                subject=subject, view=view, audience=audience)
+            if view == 'activity':
+                rows, next_row, empty = _activity(policy, subject, audience, cursor, back)
+            else:
+                rows, next_row, empty = _followups(policy, subject, cursor, back)
+            token = _next(next_row, actor=policy.actor, subject=subject, view=view, audience=audience) if next_row else None
     audience_labels = [('all', 'All'), ('btw', 'BTW Staff' if subject == 'participants' else 'BTW–Customer'),
                        ('employer', 'Employer' if subject == 'participants' else 'Employer–Participant')]
     return {'directory_panel': {'subject': subject, 'view': view, 'rows': rows, 'empty': empty,

@@ -43,7 +43,7 @@
 @media(width < 640px){.crm-icon-row {grid-template-columns:28px minmax(0,1fr);gap:8px}.crm-icon-row .crm-row-detail > summary,.crm-unified-history .crm-filter-tools > summary {min-height:44px}}
 
 /* One read-only panel family for Staff Participants and Customers directories. */
-#main-content #directory-relationships { padding:0; grid-column:1 / -1; margin-top:20px; border:1px solid #e4e4e7; border-radius:8px; background:#fff; min-width:0; overflow-wrap:anywhere; }
+#main-content #directory-relationships { padding:0; grid-column:1 / -1; margin-top:20px; scroll-margin-block-start:72px; border:1px solid #e4e4e7; border-radius:8px; background:#fff; min-width:0; overflow-wrap:anywhere; }
 #main-content #directory-relationships .crm-directory-heading { padding:14px 16px 10px; border-bottom:1px solid #e4e4e7; }
 #main-content #directory-relationships .crm-directory-heading h2 { margin:0; font:600 12px/18px var(--font); letter-spacing:.035em; text-transform:uppercase; color:#52525b; }
 #main-content #directory-relationships .crm-directory-heading p,#main-content #directory-relationships .crm-directory-help { margin:4px 0 0; color:#63636b; font:400 12px/18px var(--font); }
