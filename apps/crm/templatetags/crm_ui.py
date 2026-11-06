@@ -10,6 +10,18 @@ from apps.crm.communications import contact_compose
 register = template.Library()
 
 
+@register.filter
+def crm_back_label(url):
+    from urllib.parse import urlsplit
+    from django.urls import resolve, Resolver404
+    try:
+        name = resolve(urlsplit(url).path).view_name
+    except (Resolver404, ValueError, TypeError):
+        name = ''
+    return {'operations:task': 'Back to task', 'crm:recent': 'Back to recent activity',
+            'crm:detail': 'Back to interaction'}.get(name, 'Back to relationship')
+
+
 @register.simple_tag
 def crm_contact_email(contact):
     return contact_compose(contact)
@@ -56,10 +68,13 @@ def crm_task_return(actor, task, request):
             return None
         from urllib.parse import urlsplit
         match = resolve(urlsplit(target).path)
+        label = {'crm:detail': 'Return to interaction', 'crm:recent': 'Return to recent activity',
+                 'operations:task': 'Return to previous task'}.get(match.view_name, 'Return to relationship view')
+        destination = {'url': target, 'label': label}
         if match.view_name == 'participants:staff-profile':
             ids = identity_members(canonical_id(match.kwargs['participant_id']))
             if task.participant_links.filter(participant_id__in=ids).exists():
-                return {'url': target}
+                return destination
         for link in task.crm_links.select_related('interaction__participant', 'interaction__organization', 'interaction__engagement'):
             row = link.interaction
             try:
@@ -68,8 +83,9 @@ def crm_task_return(actor, task, request):
                 continue
             if (match.view_name == 'participants:staff-profile' and row.participant_id in ids
                     or match.view_name == 'customers:workspace' and str(row.organization_id) == str(match.kwargs['org_id'])
+                    or match.view_name == 'crm:detail' and str(row.pk) == str(match.kwargs['interaction_id'])
                     or match.view_name in {'crm:recent', 'operations:task'}):
-                return {'url': target}
+                return destination
     except PermissionDenied:
         pass
     return None

@@ -1,8 +1,8 @@
-{% extends 'internal/base.html' %}{% load static %}
+{% extends 'internal/base.html' %}{% load static crm_ui %}
 {% block body_class %}{{ block.super }} has-crm-editor{% endblock %}
 {% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<script src="{% static 'crm/editor.js' %}" defer></script>{% endblock %}
 {% block page_heading %}{% endblock %}
-{% block content %}<div class="crm-workspace"><a href="{{ back }}">← Back to relationship</a>
+{% block content %}<div class="crm-workspace"><a href="{{ back }}">← {{ back|crm_back_label }}</a>
 <header class="crm-heading"><h1>{{ page_title }}</h1><p>{{ subject }}</p></header>
 <section class="card crm-card"><p>{{ guidance }}</p>
 <form method="post" class="crm-form" data-crm-unsaved>{% csrf_token %}

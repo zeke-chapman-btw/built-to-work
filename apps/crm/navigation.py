@@ -36,6 +36,10 @@ def safe_return(request, value, fallback="", depth=0):
             keys = QUERY_KEYS; anchors = {"btw-interactions", "employer-interactions", "relationship-followups", "relationship-contacts"}
         elif name == "crm:recent":
             keys = RECENT_KEYS; anchors = {"btw-recent", "employer-recent"}
+        elif name == "crm:detail":
+            from .services import staff_record
+            staff_record(request.user, match.kwargs["interaction_id"])
+            keys = {"return_to"}
         elif name == "operations:task":
             from apps.operations.models import Task
             from apps.operations.task_access import require_task_access

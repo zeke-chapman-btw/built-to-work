@@ -101,6 +101,7 @@ class ConnectedCrmUxTests(EmployerFixtures, TestCase):
         request=self.request(url,reader)
         self.assertEqual(crm_task_contexts(reader,task,request),[])
         self.assertIsNone(crm_task_return(reader,task,request))
+        self.assertEqual(safe_return(request,reverse('crm:detail',args=[row.pk]),'fallback'),'fallback')
         self.client.force_login(reader,backend='django.contrib.auth.backends.ModelBackend')
         page=self.client.get(url);self.assertEqual(page.status_code,200)
         self.assertNotContains(page,row.summary);self.assertNotContains(page,'Return to relationship view')
@@ -130,3 +131,27 @@ class ConnectedCrmUxTests(EmployerFixtures, TestCase):
         result=safe_return(request,nested)
         self.assertNotIn('foreign.example',result)
         self.assertEqual(parse_qs(urlsplit(result).query),{'section':['relationship']})
+
+    def test_back_link_labels_identify_the_actual_validated_destination(self):
+        from .templatetags.crm_ui import crm_back_label
+        row=self.create()
+        task=Task.objects.create(title='SYNTHETIC label check',assigned_staff=self.staff_profile(),created_by=self.admin)
+        self.assertEqual(crm_back_label(reverse('operations:task',args=[task.pk])),'Back to task')
+        self.assertEqual(crm_back_label(self.recent),'Back to recent activity')
+        self.assertEqual(crm_back_label(reverse('crm:detail',args=[row.pk])),'Back to interaction')
+        url=reverse('crm:detail',args=[row.pk])+'?'+urlencode({'return_to':reverse('operations:task',args=[task.pk])})
+        self.assertContains(self.client.get(url),'← Back to task')
+
+    def test_existing_linked_task_retains_the_originating_interaction(self):
+        import re
+        from html import unescape
+        row=self.create();task=Task.objects.create(title='SYNTHETIC contextual link',assigned_staff=self.staff_profile(),created_by=self.admin)
+        InteractionTaskLink.objects.create(interaction=row,task=task,added_by=self.admin)
+        detail=reverse('crm:detail',args=[row.pk])+'?'+urlencode({'return_to':self.profile+'?section=relationship'})
+        response=self.client.get(detail)
+        prefix=reverse('operations:task',args=[task.pk])+'?crm_return_to='
+        links=[unescape(url) for url in re.findall(r'href="([^"]+)"',response.content.decode()) if url.startswith(prefix)]
+        self.assertEqual(len(links),1)
+        self.assertEqual(parse_qs(urlsplit(links[0]).query)['crm_return_to'],[detail])
+        page=self.client.get(links[0]);self.assertContains(page,'Return to interaction')
+        self.assertEqual(crm_task_return(self.admin,task,self.request(links[0]))['url'],detail)
