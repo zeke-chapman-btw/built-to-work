@@ -228,15 +228,6 @@ def profile(request, participant_id):
     ctx.update(workspace_intake_context(request.user, person, member_ids, ctx["career"]))
     from .ui_presentation import profile_preferences
     ctx.update(profile_preferences(ctx))
-    if section == "overview":
-        from apps.crm.presentation import history_context
-        ctx.update(history_context(request, participant=person))
-        if ctx['can_recruiting']:
-            from apps.recruiting.read_models import participant_context
-            ctx.update(participant_context(request.user, person, page=request.GET.get('recruiting_page')))
-            recruiting_query = request.GET.copy()
-            recruiting_query.pop('recruiting_page', None)
-            ctx['profile_recruiting_query'] = recruiting_query.urlencode()
     return render(request, "participants/staff_profile.html", ctx)
 
 

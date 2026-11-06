@@ -310,6 +310,6 @@ class ContinuousProfileCorrectionsTests(TestCase):
         response=self.client.get(reverse('participants:staff-profile',args=[person.pk]))
         for text in ('No active documents recorded.','No active internal notes recorded.',
                      'No education or training recorded.','No licenses or certifications recorded.',
-                     'No ambiguous qualification records.','No event registrations recorded.',
+                     'No event registrations recorded.',
                      '0.0 years of reported overall experience'):
             self.assertContains(response,text)

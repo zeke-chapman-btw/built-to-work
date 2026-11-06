@@ -117,3 +117,7 @@ body.internal-app.has-participant-workspace.has-participants-pass3.has-participa
 @media(width < 640px) {
  body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content #profile-skills .p3-skill-evidence > summary { min-height: 44px; }
 }
+
+/* Retired hashes remain usable without re-embedding private histories. */
+.has-crm-ux-profile .profile-legacy-destination { display:none; }
+.has-crm-ux-profile .profile-legacy-destination:target { display:block; padding:12px 16px; }
