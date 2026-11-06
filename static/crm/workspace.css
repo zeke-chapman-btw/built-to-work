@@ -22,3 +22,7 @@
 
 .crm-company-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.crm-candidate-heading .crm-actions{margin-top:12px}.crm-subject-name{overflow-wrap:anywhere}.crm-candidate-heading h1{overflow-wrap:anywhere}
 @media(max-width:639px){.crm-company-summary{grid-template-columns:minmax(0,1fr)}}
+
+/* CRM-UX-E: bounded controls keep timelines and record identity easy to scan. */
+.crm-filter-tools{margin-block:8px 12px;border-bottom:1px solid #e3e6eb}.crm-filter-tools>summary{cursor:pointer;min-height:44px;padding-block:10px;box-sizing:border-box;font-size:13px;color:#5b6472}.crm-filter-tools[open]>.crm-filters{margin-top:4px}.crm-previous{display:inline-flex;align-items:center;min-height:44px}.crm-row-subject{font-size:12px!important}.crm-row-subject a{font-weight:500}.crm-audience-nav a{min-width:0;overflow-wrap:anywhere}
+@media(max-width:639px){.crm-relationship-summary:not(.crm-company-summary){grid-template-columns:repeat(2,minmax(0,1fr))}.crm-relationship-summary:not(.crm-company-summary)>div{border-right:1px solid #e3e6eb;border-top:0}.crm-relationship-summary:not(.crm-company-summary)>div:nth-child(2n){border-right:0}.crm-relationship-summary:not(.crm-company-summary)>div:nth-child(n+3){border-top:1px solid #e3e6eb}.crm-row-subject a{display:inline-flex;align-items:center;min-height:44px}}

@@ -15,12 +15,12 @@ from apps.staffing.models import StaffProfile
 from . import services
 from .forms import ActivityForm
 from .models import ActivityType, Interaction, InteractionTaskLink
-from .test_staff import StaffCrmTests
+from . import test_staff
 
 
 class RelationshipUxTests(EmployerFixtures, TestCase):
-    data = StaffCrmTests.data
-    create = StaffCrmTests.create
+    data = test_staff.StaffCrmTests.data
+    create = test_staff.StaffCrmTests.create
 
     def setUp(self):
         self.employer_setup(); self.grant = self.release()

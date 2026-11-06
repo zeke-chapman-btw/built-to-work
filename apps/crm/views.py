@@ -17,7 +17,7 @@ from apps.participants.models import Participant
 
 from . import access, forms, presentation, services
 from .models import ContactRelationship, Interaction, InteractionRevision
-from .navigation import origin
+from .navigation import origin, with_context
 
 
 def staff_view(view):
@@ -90,8 +90,11 @@ def create(request, participant_id=None, organization_id=None):
 @require_http_methods(["GET"])
 def detail(request, interaction_id):
     row = record_for(request, interaction_id)
-    return render(request, "crm/detail.html", {"page_title": "Interaction", "item": presentation.staff_item(request.user, row),
-        "record": row, "back": origin(request, participant=row.participant, organization=row.organization, fallback=presentation.home_url(row)),
+    back = origin(request, participant=row.participant, organization=row.organization, fallback=presentation.home_url(row))
+    item = presentation.staff_item(request.user, row)
+    item["subject_url"] = with_context(item["subject_url"], back, "crm_return_to")
+    return render(request, "crm/detail.html", {"page_title": "Interaction", "item": item,
+        "record": row, "back": back,
         "revisions": InteractionRevision.objects.filter(interaction=row).select_related("actor")})
 
 
@@ -126,6 +129,7 @@ def archive(request, interaction_id, action):
         raise Http404
     row = record_for(request, interaction_id)
     access.internal_record(request.user, row, write=True)
+    back = origin(request, participant=row.participant, organization=row.organization, fallback=reverse("crm:detail", args=[row.pk]))
     form = forms.ArchiveForm(request.POST if request.method == "POST" else None, initial={"revision": row.revision})
     if request.method == "POST" and form.is_valid():
         reject_extra(form, request.POST)
@@ -136,9 +140,9 @@ def archive(request, interaction_id, action):
             except ValidationError as exc:
                 errors(form, exc)
             else:
-                return redirect("crm:detail", interaction_id=row.pk)
+                return redirect(back)
     return render(request, "crm/form.html", {"form": form, "page_title": action.title() + " interaction",
-        "subject": row.summary, "back": reverse("crm:detail", args=[row.pk]), "submit_label": action.title(),
+        "subject": row.summary, "back": back, "submit_label": action.title(),
         "guidance": "The entry and its revision history are retained."})
 
 
@@ -149,6 +153,7 @@ def followup(request, interaction_id):
     access.internal_record(request.user, row, write=True)
     if row.archived_at:
         raise PermissionDenied("Restore this interaction before adding a follow-up.")
+    back = origin(request, participant=row.participant, organization=row.organization, fallback=reverse("crm:detail", args=[row.pk]))
     form = forms.FollowupForm(request.POST if request.method == "POST" else None, actor=request.user,
         initial={"title": row.next_step or "Follow up: " + row.summary[:190], "due_date": row.follow_up_on,
                  "assigned_staff": row.responsible_staff_id})
@@ -162,10 +167,11 @@ def followup(request, interaction_id):
         else:
             if task:
                 messages.success(request, "Follow-up created in Tasks and linked to this interaction.")
-                return redirect("operations:task", task_id=task.pk)
+                target = reverse("operations:task", args=[task.pk])
+                return redirect(with_context(target, back, "crm_return_to") if request.GET.get("return_to") else target)
             errors(form, ValidationError(list(result_form.errors.values())))
     return render(request, "crm/form.html", {"form": form, "page_title": "Add follow-up task",
-        "subject": row.summary, "back": reverse("crm:detail", args=[row.pk]), "submit_label": "Create linked task",
+        "subject": row.summary, "back": back, "submit_label": "Create linked task",
         "guidance": "Choose who will follow up and when. The linked task will appear in the Tasks workspace."})
 
 
@@ -207,6 +213,7 @@ def existing_task(request, interaction_id):
     access.internal_record(request.user, row)
     if row.archived_at:
         raise PermissionDenied("Restore the interaction before linking a Task.")
+    back = origin(request, participant=row.participant, organization=row.organization, fallback=reverse("crm:detail", args=[row.pk]))
     form = forms.LinkTaskForm(request.POST if request.method == "POST" else None, actor=request.user)
     if request.method == "POST" and form.is_valid():
         reject_extra(form, request.POST)
@@ -217,22 +224,35 @@ def existing_task(request, interaction_id):
                 errors(form, exc)
             else:
                 messages.success(request, "Existing Task linked; its workflow and permissions are unchanged.")
-                return redirect("crm:detail", interaction_id=row.pk)
+                return redirect(back)
     return render(request, "crm/form.html", {"form": form, "page_title": "Link existing task",
-        "subject": row.summary, "back": reverse("crm:detail", args=[row.pk]), "submit_label": "Link task",
+        "subject": row.summary, "back": back, "submit_label": "Link task",
         "guidance": "Choose an existing accessible Task. Linking does not grant access to private interaction details."})
 
 
 @staff_view
 @require_http_methods(["GET"])
 def recent(request):
-    data = {}
+    from django.utils.dateparse import parse_date
+    from .models import ActivityType
+    data = {"crm_types": ActivityType.choices}
     term = request.GET.get("q", "").strip()[:120].casefold()
+    scope = request.GET.get("scope", "")
+    kind = request.GET.get("crm_type", "")
+    try:
+        since = parse_date(request.GET.get("crm_from", "")) if request.GET.get("crm_from") else None
+        until = parse_date(request.GET.get("crm_to", "")) if request.GET.get("crm_to") else None
+    except ValueError:
+        since = until = None
     for audience in ("btw", "employer"):
         rows = services.staff_history(request.user, audience=audience)
-        rows = [row for row in rows if not term or term in row.summary.casefold()]
+        rows = [row for row in rows if (not term or term in " ".join([row.summary, row.outcome, str(row.participant or row.organization or ""), str(row.need or "")]).casefold())
+            and (scope != "participant" or row.participant_id)
+            and (scope != "customer" or not row.participant_id)
+            and (not kind or row.activity_type == kind)
+            and (not since or row.occurred_at.date() >= since) and (not until or row.occurred_at.date() <= until)]
         page = Paginator(rows, 10).get_page(request.GET.get("crm_" + audience + "_page"))
-        data[audience + "_items"] = [presentation.staff_item(request.user, row) for row in page.object_list]
+        data[audience + "_items"] = [presentation.contextual_item(request, row) for row in page.object_list]
         data[audience + "_page"] = page
         params = request.GET.copy(); params.pop("crm_" + audience + "_page", None)
         data[audience + "_query"] = params.urlencode()

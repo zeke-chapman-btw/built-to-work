@@ -11,7 +11,7 @@ from apps.operations.task_access import tasks_for
 
 from . import access, services
 from .models import ActivityType
-from .navigation import with_origin
+from .navigation import with_origin, with_context, previous
 
 
 def participant_navigation(actor, participant):
@@ -59,6 +59,10 @@ def staff_item(actor, row):
         "correct_url": reverse("crm:correct", args=[row.pk]),
         "followup_url": reverse("crm:followup", args=[row.pk]),
         "link_task_url": reverse("crm:link-task", args=[row.pk]),
+        "record_type": "Participant interaction" if row.participant_id else "Customer interaction",
+        "subject_label": str(row.participant or row.organization),
+        "subject_url": (reverse("participants:staff-profile", args=[row.participant_id]) + "?section=relationship") if row.participant_id else reverse("customers:workspace", args=[row.organization_id, "crm"]),
+        "related": [],
     }
     if row.audience == "btw":
         try:
@@ -70,6 +74,42 @@ def staff_item(actor, row):
     else:
         identity = row.membership.identity
         item["author"] = (identity.first_name + " " + identity.last_name).strip() or "Employer user"
+    can_customer = False
+    try:
+        from apps.customers.access import require_manager
+        require_manager(actor)
+        can_customer = True
+    except PermissionDenied:
+        pass
+    if row.organization_id:
+        item["related"].append({"label": str(row.organization), "url": reverse("customers:workspace", args=[row.organization_id, "crm"]) if can_customer else "", "relationship": True})
+    if row.need_id:
+        item["related"].append({"label": str(row.need), "url": reverse("customers:need", args=[row.organization_id, row.need_id]) if can_customer and row.organization_id else ""})
+    if row.campaign_id:
+        item["related"].append({"label": str(row.campaign), "url": reverse("customers:campaign", args=[row.organization_id, row.campaign_id]) if can_customer and row.organization_id else ""})
+    if row.contact_id:
+        item["related"].append({"label": "Contact: " + str(row.contact)})
+    if row.workforce_request_id:
+        item["related"].append({"label": "Request: " + row.workforce_request.name})
+    if row.engagement_id:
+        try:
+            from apps.recruiting.selection import opportunity_for
+            opportunity_for(actor, row.engagement_id)
+            item["related"].append({"label": "Recruiting engagement", "url": reverse("recruiting:matching", args=[row.engagement_id])})
+        except PermissionDenied:
+            pass
+    return item
+
+
+def contextual_item(request, row):
+    item = staff_item(request.user, row); back = request.get_full_path()
+    item["url"] = with_origin(item["url"], back)
+    item["subject_url"] = with_context(item["subject_url"], back, "crm_return_to")
+    for key in ("correct_url", "followup_url", "link_task_url"):
+        item[key] = with_origin(item[key], back)
+    for related in item["related"]:
+        if related.get("url"):
+            related["url"] = with_context(related["url"], back, "crm_return_to" if related.get("relationship") else "return_to")
     return item
 
 
@@ -82,7 +122,7 @@ def followup_context(actor, rows, participant=None):
         condition |= Q(participant_links__participant_id__in=identity_members(participant.pk))
     query = tasks_for(actor).filter(condition, archived_at__isnull=True,
         status__in=[Task.Status.TODO, Task.Status.PROGRESS]).select_related("assigned_staff").distinct()
-    dated = query.filter(due_date__isnull=False).order_by("due_date", "-priority", "title", "pk")
+    dated = query.filter(due_date__isnull=False).order_by("due_date", "-created_at", "pk")
     return {"next": dated.first(), "dated": dated,
             "undated": query.filter(due_date__isnull=True).order_by("title", "pk")}
 
@@ -94,7 +134,7 @@ def view_url(request, value):
 
 
 def history_context(request, *, participant=None, organization=None):
-    result = {"crm_types": ActivityType.choices, "crm_subject_is_company": bool(organization)}
+    result = {"crm_types": ActivityType.choices, "crm_subject_is_company": bool(organization), "crm_previous_url": previous(request)}
     authorized = {}
     for audience in ("btw", "employer"):
         try:
@@ -122,11 +162,7 @@ def history_context(request, *, participant=None, organization=None):
                 and (not since or row.occurred_at.date() >= since)
                 and (not until or row.occurred_at.date() <= until)]
         page = Paginator(rows, 10).get_page(request.GET.get("crm_" + audience + "_page"))
-        items = [staff_item(request.user, row) for row in page.object_list]
-        for item in items:
-            item["url"] = with_origin(item["url"], request.get_full_path())
-            for key, route in (("correct_url", "correct"), ("followup_url", "followup"), ("link_task_url", "link-task")):
-                item[key] = with_origin(reverse("crm:" + route, args=[item["id"]]), request.get_full_path())
+        items = [contextual_item(request, row) for row in page.object_list]
         params = request.GET.copy()
         params.pop("crm_" + audience + "_page", None)
         result["crm_" + audience + "_rows"] = items
@@ -158,11 +194,11 @@ def history_context(request, *, participant=None, organization=None):
     if result.get("crm_btw_allowed"):
         # Reuse the single authorized history pass; summary is intentionally independent of timeline filters.
         active = [row for row in authorized["btw"] if not row.archived_at]
-        recent_since = timezone.now() - timedelta(days=14)
+        now = timezone.now(); recent_since = now - timedelta(days=14)
         followups = followup_context(request.user, active, participant)
         from .communications import participant_preferences
         result["crm_summary"] = {"last": active[0] if active else None,
-            "recent": sum(recent_since <= row.occurred_at <= timezone.now() for row in active),
+            "recent": sum(recent_since <= row.occurred_at <= now for row in active),
             "days": 14, "next": followups["next"],
             "contact": participant_preferences(participant)[1] if participant else "Business contact preferences below; Portal users are separate."}
         for key in ("dated", "undated"):

@@ -126,6 +126,8 @@ def profile(request, participant_id):
         raise PermissionDenied
     ctx = context(request, participant=person, display_name=person.preferred_name or person.first_name,
         page_title=str(person), section=section, alias_count=len(member_ids)-1, active_participant_tab="directory")
+    from apps.crm.navigation import previous
+    ctx["crm_previous_url"] = previous(request)
     from apps.crm.presentation import participant_navigation
     ctx.update(participant_navigation(request.user, person))
     if section == "relationship" and not (ctx["crm_btw_allowed"] or ctx["crm_employer_allowed"]):

@@ -19,6 +19,7 @@
 </section>{% endblock %}
 {% block people_content %}{% if participant.archived_at %}<p class="btw-inline-notice">Archived participant · staff profile management is read-only.</p>{% endif %}
 {% profile_sections %}
+{% include 'crm/previous.html' %}
 {% if section == 'overview' or section == 'relationship' or section == 'recruiting' %}{% include 'crm/summary.html' %}{% endif %}
 {% if section == 'overview' %}{% include 'participants/profile_jumps.html' %}{% include 'participants/profile_overview.html' %}
 {% if crm_btw_allowed or crm_employer_allowed %}<details class="crm-profile-history"><summary>Relationship history &amp; tools</summary><p><a href="{% people_section_url 'relationship' %}">Open Relationship</a></p>{% include 'crm/panels.html' with crm_legacy=True %}</details>{% endif %}

@@ -38,7 +38,10 @@ def directory_origin(request):
     return local_return(value,fallback=listing,allowed=people_lists())
 
 def profile_link(request,person,section='overview'):
-    return reverse('participants:staff-profile',args=[getattr(person,'pk',person)])+ '?'+urlencode(dict(section=section,**{'from':directory_origin(request)}))
+    from apps.crm.navigation import previous
+    params=dict(section=section,**{'from':directory_origin(request)})
+    if previous(request):params['crm_return_to']=previous(request)
+    return reverse('participants:staff-profile',args=[getattr(person,'pk',person)])+ '?'+urlencode(params)
 
 def people_return(request,person=None,fallback=None):
     listing=reverse('participants:staff-directory');fallback=fallback or listing
@@ -61,6 +64,10 @@ def people_return(request,person=None,fallback=None):
             if key=='section' and item not in SECTIONS:return default
             if key=='return_to':
                 item=clean(item,'',depth+1) if depth<2 else ''
+                if not item:continue
+            if key=='crm_return_to':
+                from apps.crm.navigation import safe_return
+                item=safe_return(request,item)
                 if not item:continue
             pairs.append((key,item))
         return parts.path+('?' + urlencode(pairs) if pairs else '')

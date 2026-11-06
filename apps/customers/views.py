@@ -51,7 +51,9 @@ def workspace_url(org, tab="overview", back=""):
 
 def context(request, org=None, tab="overview", **extra):
     back = local_return(request, request.GET.get("return_to") or request.POST.get("return_to"), reverse("customers:directory"))
-    return dict(organization=org, active_tab=tab, back_url=back, customer_tabs=[{"key": key, "label": label, "url": workspace_url(org, key, back)} for key, label in TABS] if org else [], **extra)
+    from apps.crm.navigation import previous, with_context
+    previous_url = previous(request)
+    return dict(organization=org, active_tab=tab, back_url=back, customer_tabs=[{"key": key, "label": label, "url": with_context(workspace_url(org, key, back), previous_url, "crm_return_to") if previous_url and key in {"overview", "crm"} else workspace_url(org, key, back)} for key, label in TABS] if org else [], **extra)
 
 
 def page(request, query):
@@ -96,7 +98,7 @@ def workspace(request, org_id, tab="overview"):
         data.update(needs=org.workforce_needs.filter(status__in=["active", "hold"]).select_related("effective_revision", "working_revision")[:5], campaigns=org.campaigns.exclude(status__in=["completed", "cancelled"])[:5], recent=activity(org)[:5], pending_count=org.workforce_needs.filter(working_revision__state__in=["submitted", "review"]).count())
         from apps.crm.presentation import history_context
         relationship = history_context(request, organization=org)
-        data.update({key: relationship[key] for key in ("crm_summary", "crm_subject_is_company") if key in relationship})
+        data.update({key: relationship[key] for key in ("crm_summary", "crm_subject_is_company", "crm_previous_url") if key in relationship})
     elif tab == "crm":
         from apps.crm.presentation import history_context
         data.update(history_context(request, organization=org))
