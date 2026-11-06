@@ -118,7 +118,7 @@ def profile(request, participant_id):
     permissions = {"documents": "participants.view_participantdocument", "qualifications": "participants.view_participantqualification",
                    "events": "events.view_eventregistration", "notes": "participants.view_participantnote",
                    "activity": "participants.view_participant_activity"}
-    if section not in ("overview", "career", "qualifications", "documents", "assessments", "events", "acquisition", "notes", "activity", "tasks"):
+    if section not in ("overview", "relationship", "recruiting", "career", "qualifications", "documents", "assessments", "events", "acquisition", "notes", "activity", "tasks"):
         raise Http404
     if section in permissions and not request.user.has_perm(permissions[section]):
         raise PermissionDenied
@@ -126,6 +126,27 @@ def profile(request, participant_id):
         raise PermissionDenied
     ctx = context(request, participant=person, display_name=person.preferred_name or person.first_name,
         page_title=str(person), section=section, alias_count=len(member_ids)-1, active_participant_tab="directory")
+    from apps.crm.presentation import participant_navigation
+    ctx.update(participant_navigation(request.user, person))
+    if section == "relationship" and not (ctx["crm_btw_allowed"] or ctx["crm_employer_allowed"]):
+        raise PermissionDenied
+    if section == "recruiting" and not ctx["can_recruiting"]:
+        raise PermissionDenied
+    if section in ("relationship", "recruiting"):
+        ctx["career"] = ParticipantCareerProfile.objects.filter(participant=person).first()
+        ctx["current_interests"] = getattr(ctx["career"], "career_interests", "")
+        from .ui_presentation import profile_preferences
+        ctx.update(profile_preferences(ctx))
+        if section == "relationship":
+            from apps.crm.presentation import history_context
+            ctx.update(history_context(request, participant=person))
+        else:
+            from apps.recruiting.read_models import participant_context
+            ctx.update(participant_context(request.user, person, page=request.GET.get('recruiting_page')))
+            recruiting_query = request.GET.copy()
+            recruiting_query.pop('recruiting_page', None)
+            ctx['profile_recruiting_query'] = recruiting_query.urlencode()
+        return render(request, "participants/staff_profile.html", ctx)
     if section == "assessments" and not any(ctx[key] for key in ("can_view_quiz_results", "can_view_game_results", "can_view_historical_scores", "can_view_simulator_results")):
         raise PermissionDenied
     registrations = EventRegistration.objects.filter(participant_id__in=member_ids).select_related("event", "group", "participant").order_by("-registered_at", "-pk") if ctx["can_view_registrations"] else EventRegistration.objects.none()
@@ -198,7 +219,7 @@ def profile(request, participant_id):
     if section == "activity":
         ctx["timeline"] = factual_timeline(request.user, person, member_ids, ctx)
     elif section == "overview" and ctx["can_view_activity"]:
-        ctx["profile_activity"] = factual_timeline(request.user, person, member_ids, ctx)[:10]
+        ctx["profile_activity"] = factual_timeline(request.user, person, member_ids, ctx)[:3]
     if section == "overview":
         ctx["profile_work_total"] = ctx["work_history"].count()
         ctx["profile_work_history"] = list(ctx["work_history"][:5])

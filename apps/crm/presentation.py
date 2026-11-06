@@ -9,6 +9,29 @@ from . import access, services
 from .models import ActivityType
 
 
+def participant_navigation(actor, participant):
+    """Affordances only: every destination still runs its existing fresh guard."""
+    result = {"crm_btw_allowed": False, "crm_employer_allowed": False,
+              "crm_can_add": False, "crm_new_url": reverse("crm:participant-new", args=[participant.pk])}
+    try:
+        access.internal_context(actor, participant=participant)
+        result["crm_btw_allowed"] = True
+    except PermissionDenied:
+        pass
+    try:
+        from apps.recruiting.access import fresh_staff
+        fresh_staff(actor)
+        result["crm_employer_allowed"] = True
+    except PermissionDenied:
+        pass
+    try:
+        access.internal_context(actor, participant=participant, write=True)
+        result["crm_can_add"] = not bool(participant.archived_at)
+    except PermissionDenied:
+        pass
+    return result
+
+
 def home_url(row):
     if row.participant_id:
         return reverse("participants:staff-profile", args=[row.participant_id]) + "#btw-interactions"

@@ -162,7 +162,7 @@ class ParticipantsPass3Tests(TestCase):
         for section in ('overview','career','qualifications','documents','assessments','events','notes','acquisition','activity','tasks'):
             self.assertIn('section='+section, html)
         hero = html[html.index('p3-profile-hero'):html.index('people-workspace event-workspace-stack')]
-        self.assertIn('More actions', hero)
+        self.assertIn('<summary>More', hero)
         self.assertIn('Participant portal invitation', hero)
         self.client.force_login(self.reader, backend='django.contrib.auth.backends.ModelBackend')
         response = self.client.get(url)
@@ -277,7 +277,9 @@ class ContinuousProfileCorrectionsTests(TestCase):
         base=reverse('participants:staff-profile',args=[self.person.pk])
         destinations={parse_qs(urlsplit(url).query).get('section',[''])[0] for url in parsed.links if urlsplit(url).path==base}
         self.assertTrue({'career','qualifications','documents','assessments','events','notes','acquisition','activity','tasks'}<=destinations)
-        self.assertNotContains(response,'Jump to section')
+        self.assertContains(response,'Jump to section')
+        self.assertContains(response,'aria-label="Participant areas"')
+        self.assertTrue({'relationship','recruiting'} <= destinations)
         self.assertNotContains(response,'Detailed management')
         self.assertNotContains(response,'p3-profile-jumps')
         self.assertContains(response,'Linked tasks')

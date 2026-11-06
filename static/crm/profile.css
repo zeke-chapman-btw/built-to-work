@@ -1,0 +1,31 @@
+/* CRM-UX-A: Staff Participant profile only; retain the established fluid rail. */
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-profile-actions { gap: 8px; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-reading-section > .btw-panel-heading { min-height: 48px; padding: 8px 16px; gap: 4px 12px; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-reading-section > .btw-panel-heading h2 { flex: 1; min-width: 0; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-reading-section > .btw-panel-heading a { flex: none; }
+.has-crm-ux-profile .crm-profile-navigation { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 0; border-bottom: 1px solid var(--line, #e4e4e7); }
+.has-crm-ux-profile .crm-profile-navigation a { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 14px; border-bottom: 2px solid transparent; color: var(--text, #202124); font: 500 13px/20px var(--font); text-decoration: none; box-sizing: border-box; }
+.has-crm-ux-profile .crm-profile-navigation a[aria-current="page"] { color: var(--red, #ac1929); border-color: currentColor; font-weight: 600; }
+.has-crm-ux-profile .crm-profile-navigation a:hover { background: #f4f4f5; }
+.has-crm-ux-profile .crm-profile-navigation a:focus-visible, .has-crm-ux-profile .crm-profile-reading-tools a:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.has-crm-ux-profile .crm-profile-reading-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; min-width: 0; }
+.has-crm-ux-profile .crm-profile-reading-tools > p { margin: 0; color: var(--muted, #5f6368); font: 400 12px/18px var(--font); }
+.has-crm-ux-profile .crm-profile-jumps { position: relative; flex: none; }
+.has-crm-ux-profile .crm-profile-jumps > summary { min-height: 44px; padding: 8px 0 8px 12px; box-sizing: border-box; cursor: pointer; align-content: center; font: 500 12px/20px var(--font); }
+.has-crm-ux-profile .crm-profile-jumps > div { position: absolute; right: 0; z-index: 30; width: 260px; max-width: calc(100vw - 32px); max-height: 65vh; overflow: auto; padding: 8px; border: 1px solid var(--line, #e4e4e7); border-radius: 6px; background: white; box-shadow: 0 8px 20px #0002; }
+.has-crm-ux-profile .crm-profile-jumps a { display: flex; align-items: center; min-height: 44px; padding: 6px 8px; box-sizing: border-box; color: var(--red, #ac1929); text-decoration: none; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .crm-profile-tools[open] > div { width: 280px; max-width: calc(100vw - 32px); max-height: 65vh; overflow: auto; }
+.has-crm-ux-profile .crm-profile-tools p { margin: 4px 8px; color: var(--muted, #5f6368); font: 600 11px/18px var(--font); text-transform: uppercase; }
+.has-crm-ux-profile .crm-profile-tool-current { font-weight: 400; }
+.has-crm-ux-profile .crm-profile-history { min-width: 0; padding: 0; border-top: 1px solid var(--line, #e4e4e7); }
+.has-crm-ux-profile .crm-profile-history > summary { min-height: 44px; padding: 10px 0; box-sizing: border-box; cursor: pointer; font: 500 13px/20px var(--font); }
+.has-crm-ux-profile .crm-profile-history > p { margin: 0 0 12px; }
+.has-crm-ux-profile .crm-profile-recruiting { display: grid; gap: 16px; min-width: 0; }
+.has-crm-ux-profile .crm-profile-recruiting > p { margin: 0; }
+.has-crm-ux-profile .crm-profile-history .p3-reading-section { margin-top: 12px; }
+@media (width < 640px) {
+  body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-profile-actions { width: 100%; margin-left: 0; }
+  .has-crm-ux-profile .crm-profile-navigation a { padding-inline: 12px; }
+  .has-crm-ux-profile .crm-profile-tool-current { display: none; }
+  .has-crm-ux-profile .crm-profile-reading-tools { flex-wrap: wrap; }
+}

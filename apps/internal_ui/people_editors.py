@@ -7,7 +7,7 @@ from .record_editors import local_return as shared_local_return,editor_response,
 from .section_editors import has_edit_conflict
 local_return=partial(shared_local_return,max_length=16384,max_fields=60)
 
-SECTIONS={'overview','career','qualifications','documents','assessments','events','acquisition','notes','activity','tasks'}
+SECTIONS={'overview','relationship','recruiting','career','qualifications','documents','assessments','events','acquisition','notes','activity','tasks'}
 def intake_queue_origin(request):
     queue=reverse('participants:intake-review-queue')
     return local_return(request.GET.get('from_queue',''),fallback=queue,allowed={queue:{'status','page'}})
