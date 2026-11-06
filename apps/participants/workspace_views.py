@@ -673,9 +673,11 @@ def _participant_explorer(request, *, include_analysis):
     alternative = request.GET.get("view") == "alternatives"
     data = build_intelligence(request.user, population, criteria, current_group=not alternative) if include_analysis and form.is_valid() else {}
     presentation = _explorer_presentation(request, form, population, criteria, data, page, include_analysis=include_analysis)
+    from apps.crm.directory_reads import directory_panel
+    panel = directory_panel(request, 'participants')
     return render(request, "participants/intelligence.html", context(request, page_title="Participants",
         active_participant_tab="analytics" if include_analysis else "directory", filter_form=form, criteria=criteria, page_obj=page,
         total_participants=page.paginator.count, query_without_page=query_string(criteria),
         directory_url=reverse("participants:staff-directory") + "?" + query_string(criteria),
-        explorer_details_open=request.GET.get("view") == "details", **presentation, **data),
+        explorer_details_open=request.GET.get("view") == "details", **presentation, **data, **panel),
         status=400 if form.errors else 200)

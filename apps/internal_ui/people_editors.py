@@ -18,7 +18,8 @@ def people_review_saved(request,review_id):
     return editor_success(request,destination)
 def directory_keys():
     from apps.participants.workspace_forms import DiscoveryForm
-    return set(DiscoveryForm.base_fields)|{'page','saved'}
+    from apps.crm.navigation import DIRECTORY_PANEL_KEYS
+    return set(DiscoveryForm.base_fields)|{'page','saved'}|DIRECTORY_PANEL_KEYS
 
 def people_lists():
     return {reverse('participants:staff-directory'):directory_keys(),reverse('participants:intelligence'):directory_keys()|{'view'},reverse('internal:workspace',args=['participants']):directory_keys(),reverse('participants:staff-document-directory'):{'q','page'},reverse('participants:staff-qualifications'):{'q'}}

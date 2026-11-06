@@ -1,0 +1,30 @@
+{% load tz %}
+<section id="{{ directory_panel.anchor }}" class="card crm-directory-panel" aria-labelledby="directory-relationships-heading" tabindex="-1">
+  <header class="crm-directory-heading"><h2 id="directory-relationships-heading">Recent Activity &amp; Follow-ups</h2><p>Across your authorized {{ directory_panel.subject }}. Search and filters above apply to directory results.</p></header>
+  <nav class="crm-directory-nav" aria-label="Directory relationship views">{% for view in directory_panel.views %}<a href="{{ view.url }}"{% if view.selected %} aria-current="page"{% endif %}>{{ view.label }}</a>{% endfor %}</nav>
+  {% if directory_panel.audiences %}<nav class="crm-directory-audience" aria-label="Activity audience">{% for audience in directory_panel.audiences %}<a href="{{ audience.url }}"{% if audience.selected %} aria-current="page"{% endif %}>{{ audience.label }}</a>{% endfor %}</nav>{% else %}<p class="crm-directory-help">Open Tasks you can access · due soon means the next three calendar days.</p>{% endif %}
+  {% if directory_panel.refreshed %}<p class="crm-directory-help" role="status">This page link expired or was invalid. Showing the latest entries.</p>{% endif %}
+  <div class="crm-directory-body">
+  {% if directory_panel.view == 'activity' %}
+    {% for item in directory_panel.rows %}<article class="crm-directory-row crm-icon-row">
+      {% include 'crm/channel_icon.html' with icon=item.icon %}
+      <div class="crm-row-content"><p class="crm-directory-subjects">{% for context in item.contexts %}<a href="{{ context.url }}">{{ context.label }}</a><span class="crm-directory-kind">{{ context.kind }}</span>{% if context.archived %}<span class="crm-directory-state">Archived</span>{% endif %}{% if not forloop.last %}<span aria-hidden="true"> · </span>{% endif %}{% endfor %}</p>
+        <a class="crm-directory-summary" href="{{ item.url }}">{{ item.summary }}</a>
+        <p class="crm-meta">{{ item.type }} · {{ item.author }} · {{ item.audience }}{% if item.company %} · {{ item.company }}{% endif %} · {{ item.source }}</p>
+      </div>
+      <time class="crm-directory-time" datetime="{{ item.at|utc|date:'c' }}" aria-label="{{ item.at|utc|date:'M j, Y · g:i:s A' }} UTC; {{ item.relative }}" title="{{ item.at|utc|date:'M j, Y · g:i:s A' }} UTC">{{ item.relative }}</time>
+    </article>{% empty %}<p class="crm-directory-empty">{{ directory_panel.empty }}</p>{% endfor %}
+  {% else %}
+    {% for item in directory_panel.rows %}{% ifchanged item.due_group %}<h3 class="crm-directory-due-group{% if item.due_group == 'Overdue' %} crm-directory-overdue{% endif %}">{{ item.due_group }}</h3>{% endifchanged %}
+    <article class="crm-directory-row crm-icon-row">
+      {% include 'crm/channel_icon.html' with icon='tasks' %}
+      <div class="crm-row-content"><a class="crm-directory-summary crm-directory-task-title" href="{{ item.url }}">{{ item.title }}</a>
+        <p class="crm-directory-subjects">{% for context in item.contexts %}<a href="{{ context.url }}">{{ context.label }}</a>{% if context.archived %}<span class="crm-directory-state">Archived</span>{% endif %}{% if not forloop.last %}<span aria-hidden="true"> · </span>{% endif %}{% endfor %}{% if item.more_context %}<span> · Additional authorized context in Task</span>{% endif %}</p>
+        <p class="crm-meta">Assigned to {{ item.assignee }} · {{ item.priority }} priority · <span class="crm-directory-state">{{ item.status }}</span></p>
+        <p class="crm-meta{% if item.due_group == 'Overdue' %} crm-directory-overdue{% endif %}">{% if item.due %}Due <time datetime="{{ item.due|date:'Y-m-d' }}">{{ item.due|date:'M j, Y' }}</time>{% else %}No due date{% endif %}</p>
+      </div>
+    </article>{% empty %}<p class="crm-directory-empty">{{ directory_panel.empty }}</p>{% endfor %}
+  {% endif %}
+  </div>
+  {% if directory_panel.next_url or directory_panel.has_cursor %}<nav class="crm-directory-pages" aria-label="Relationship panel pages">{% if directory_panel.has_cursor %}<a href="{{ directory_panel.latest_url }}">Latest entries</a>{% endif %}{% if directory_panel.next_url %}<a href="{{ directory_panel.next_url }}">View more</a>{% endif %}</nav>{% endif %}
+</section>

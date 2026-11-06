@@ -4,6 +4,8 @@ from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.urls import reverse, resolve, Resolver404
 from apps.internal_ui.record_editors import local_return
 
+DIRECTORY_PANEL_KEYS = frozenset({'rel_view', 'rel_audience', 'rel_cursor'})
+
 QUERY_KEYS = {"section", "from", "page", "archived", "recruiting_page", "crm_view", "crm_q", "crm_type", "crm_from", "crm_to", "crm_archived", "crm_btw_page", "crm_employer_page", "crm_tasks_page", "crm_undated_page", "return_to", "crm_return_to"}
 RECENT_KEYS = {"q", "scope", "crm_type", "crm_from", "crm_to", "crm_btw_page", "crm_employer_page"}
 PROFILE_ANCHORS = {"btw-interactions", "employer-interactions", "relationship-followups"} | {"profile-" + key for key in ("identity", "documents", "notes", "skills", "education", "credentials", "work", "preferences", "assessments", "events", "activity", "source", "recruiting")}
@@ -48,9 +50,10 @@ def safe_return(request, value, fallback="", depth=0):
         elif parts.path in people_lists():
             from apps.participants.workspace_access import require_people
             require_people(request.user); keys = people_lists()[parts.path]
+            if "rel_view" in keys: anchors = {"directory-relationships"}
         elif name == "customers:directory":
             from apps.customers.access import require_manager
-            require_manager(request.user); keys = {"q", "status", "provisioned", "page"}
+            require_manager(request.user); keys = {"q", "status", "provisioned", "page"} | DIRECTORY_PANEL_KEYS; anchors = {"directory-relationships"}
         else:
             return fallback
         if parts.fragment and parts.fragment not in anchors:
@@ -60,6 +63,12 @@ def safe_return(request, value, fallback="", depth=0):
             return fallback
         pairs = []
         for key, item in parse_qsl(urlsplit(checked).query, keep_blank_values=True, max_num_fields=60):
+            if key == "rel_view" and item not in {"activity", "followups"}:
+                return fallback
+            if key == "rel_audience" and item not in {"all", "btw", "employer"}:
+                return fallback
+            if key == "rel_cursor" and len(item) > 2048:
+                return fallback
             if key == "section" and item not in SECTIONS:
                 return fallback
             if key == "from":
