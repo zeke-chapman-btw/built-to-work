@@ -36,7 +36,7 @@ CONTEXT_SIZE = 3
 PANEL_KEYS = DIRECTORY_PANEL_KEYS
 ANCHOR = 'directory-relationships'
 ICONS = {'call': 'phone', 'voicemail': 'phone', 'attempt': 'phone',
-         'email': 'mail', 'sms': 'notes', 'meeting': 'people',
+         'email': 'mail', 'sms': 'message', 'meeting': 'people',
          'customer_meeting': 'customers', 'video': 'people',
          'interview': 'people', 'event': 'calendar', 'follow_up': 'tasks'}
 
@@ -174,7 +174,7 @@ def _activity(policy, subject, audience, cursor, back):
                              'archived': bool(person.archived_at)})
         items.append({'id': str(row.pk), 'summary': row.summary, 'type': row.get_activity_type_display(),
             'icon': ICONS.get(row.activity_type, 'notes'), 'at': row.occurred_at,
-            'relative': timesince(row.occurred_at, now) + ' ago' if row.occurred_at <= now else 'Future timestamp',
+            'relative': timesince(row.occurred_at, now).split(',')[0] + ' ago' if row.occurred_at <= now else 'Future timestamp',
             'author': author, 'audience': 'Employer' if employer else 'BTW Staff',
             'company': str(row.owner_organization) if employer else '',
             'source': 'Manually recorded' if row.source == 'manual' else 'Provider-confirmed',

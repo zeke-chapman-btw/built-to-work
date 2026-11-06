@@ -26,6 +26,7 @@ def ui_tabs(items, selected="", label="Sections", variant="primary"):
 
 
 ICON_PATHS = {
+    "message": ["M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-3 3V11.5A8.5 8.5 0 0 1 9.5 3h3A8.5 8.5 0 0 1 21 11.5Z"],
     "overview": [
         "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18",
         "M12 11v6",
