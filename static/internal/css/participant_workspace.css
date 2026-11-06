@@ -528,3 +528,15 @@ body.internal-app.has-participant-workspace.has-participants-pass3.has-participa
 
 body.internal-app.has-participant-profile #main-content .people-profile-name .p3-profile-home{font:inherit;color:inherit;text-decoration:none}
 body.internal-app.has-participant-profile #main-content .people-profile-name .p3-profile-home:hover{color:#ac1929;text-decoration:underline}
+
+/* Package D: neutral directory hierarchy; primary link and Details stay separate. */
+body.internal-app.has-participant-workspace #main-content .ex-result .ex-person-name {color:#202124;}
+body.internal-app.has-participant-workspace #main-content .ex-result .ex-person-name small,
+body.internal-app.has-participant-workspace #main-content .ex-result .ex-person-facts small,
+body.internal-app.has-participant-workspace #main-content .ex-result .ex-person-source small {color:#63636b;font-weight:400;}
+body.internal-app.has-participant-workspace #main-content .ex-result {border-color:#ececf0;}
+body.internal-app.has-participant-workspace #main-content .ex-result .btw-record-primary:hover .ex-person-name {color:#a1192a;}
+body.internal-app.has-participant-workspace #main-content .ex-result .btw-record-primary:focus-visible {outline:2px solid #2563eb;outline-offset:-2px;}
+body.internal-app.has-participant-workspace #main-content .ex-result > details > summary {color:#52525b;}
+body.internal-app.has-participant-workspace #main-content .ex-result > details > summary:hover {color:#a1192a;}
+@media(width < 640px){body.internal-app.has-participant-workspace #main-content .ex-result > details > summary {min-height:44px;align-content:center;}}
