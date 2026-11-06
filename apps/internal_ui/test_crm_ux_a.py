@@ -169,3 +169,21 @@ class CrmUxProfileTests(TestCase):
         self.assertContains(response, 'Details &amp; evidence')
         self.assertContains(response, 'Full qualification &amp; evidence')
         self.assertContains(response, 'Self-reported')
+
+    def test_relationship_has_one_primary_log_action_and_retains_all_shortcuts(self):
+        import uuid
+        from apps.crm.services import create_internal
+        create_internal(actor=self.admin, participant_id=self.person.pk, data={'activity_type':'call','summary':'SYNTHETIC retained contact','occurred_at':timezone.now()}, operation_id=uuid.uuid4())
+        response=self.client.get(self.url, {'section':'relationship'})
+        self.assertContains(response, '>Log interaction</a>', count=1)
+        self.assertContains(response, 'Interaction shortcuts')
+        for label in ['Log call','Record email','Record text','Log meeting','Relationship note']:
+            self.assertContains(response,label)
+        for label in ['Last BTW contact','Recent BTW activity','Next follow-up','Contact context']:
+            self.assertContains(response,label)
+        self.assertContains(response,'SYNTHETIC retained contact')
+        self.assertContains(response,'Manually recorded')
+        self.assertContains(response,'BTW staff')
+        self.assertContains(response,'datetime=')
+        self.assertContains(response,'crm-channel-icon')
+        self.assertContains(response,'UTC')

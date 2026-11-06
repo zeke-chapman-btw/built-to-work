@@ -46,6 +46,7 @@ def home_url(row):
 def staff_item(actor, row):
     item = {
         "id": row.pk, "type": row.get_activity_type_display(), "summary": row.summary,
+        "icon": {"call":"phone", "voicemail":"phone", "attempt":"phone", "email":"mail", "sms":"notes", "meeting":"people", "customer_meeting":"customers", "video":"people", "interview":"people", "event":"calendar", "follow_up":"tasks"}.get(row.activity_type, "notes"),
         "notes": row.notes, "outcome": row.outcome, "occurred_at": row.occurred_at,
         "created_at": row.created_at, "author": str(row.created_by), "organization": row.organization,
         "engagement": str(row.need) if row.need_id else "", "contact": row.contact,

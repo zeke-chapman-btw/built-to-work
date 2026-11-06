@@ -1,4 +1,4 @@
-{% if crm_btw_allowed or crm_employer_allowed %}<div class="crm-panels">
+{% if crm_btw_allowed or crm_employer_allowed %}<div class="crm-panels{% if participant and section == 'relationship' %} crm-unified-history{% endif %}">
 {% if participant and section == 'relationship' and not crm_legacy %}<header class="crm-profile-history-heading"><h2>Interaction History</h2><p>BTW staff and employer interactions remain separate histories.</p></header>{% endif %}
 {% if not crm_legacy %}<nav class="crm-audience-nav" aria-label="Relationship views">{% for view in crm_views %}<a href="{{ view.url }}"{% if view.selected %} aria-current="page"{% endif %}>{{ view.label }}</a>{% endfor %}</nav>{% endif %}
 {% if crm_view == 'followups' and not crm_legacy %}{% include 'crm/followups.html' %}{% else %}
@@ -15,13 +15,13 @@
 <label class="crm-checkbox"><input type="checkbox" name="crm_archived" value="1"{% if request.GET.crm_archived == '1' %} checked{% endif %}>Include archived</label><button class="button secondary">Apply</button>
 </form>
 </details>
-{% if crm_btw_allowed %}{% if crm_show_btw or crm_legacy %}<section id="btw-interactions" class="card crm-card"><header class="crm-panel-heading"><div><h2>BTW Interactions</h2><p>Private staff touchpoints · separate from employer records.</p></div>{% if crm_can_add %}<a class="button button-primary" href="{{ crm_new_url }}">Log interaction</a>{% endif %}</header>
+{% if crm_btw_allowed %}{% if crm_show_btw or crm_legacy %}<section id="btw-interactions" class="{% if section != 'relationship' %}card {% endif %}crm-card"><header class="crm-panel-heading"><div>{% if section != 'relationship' %}<h2>BTW Interactions</h2>{% endif %}<p>Private staff touchpoints · separate from employer records.</p></div>{% if crm_can_add and section != 'relationship' %}<a class="button button-primary" href="{{ crm_new_url }}">Log interaction</a>{% endif %}</header>
 {% if crm_can_add and section != 'relationship' %}<details class="crm-optional"><summary>Quick interaction actions</summary><div class="crm-actions crm-quick">{% for action in crm_quick_actions %}<a href="{{ action.url }}">{{ action.label }}</a>{% endfor %}</div>{% include 'crm/communications.html' %}</details>{% endif %}
 <p class="crm-help"><a href="{% url 'crm:recent' %}">Recent relationship activity across authorized records</a></p>
 {% include 'crm/rows.html' with items=crm_btw_rows %}{% include 'crm/pagination.html' with page=crm_btw_page query=crm_btw_query audience='btw' anchor='btw-interactions' %}
 {% if participant %}<p class="crm-help">Existing sources remain in place: <a href="{% url 'participants:staff-profile' participant.pk %}?section=notes">Internal BTW notes</a>{% if can_recruiting %} · <a href="{% url 'recruiting:candidate' participant.pk %}">Recruiting outreach &amp; pipeline</a>{% endif %}. They are not copied into CRM.</p>{% endif %}
 </section>{% endif %}{% endif %}
-{% if crm_employer_allowed %}{% if crm_show_employer or crm_legacy %}<section id="employer-interactions" class="card crm-card"><header class="crm-panel-heading"><div><h2>Employer Interactions</h2><p>Employer-authored records · scoped to authorized recruiting engagements. Staff access is read-only.</p></div></header>
+{% if crm_employer_allowed %}{% if crm_show_employer or crm_legacy %}<section id="employer-interactions" class="{% if section != 'relationship' %}card {% endif %}crm-card"><header class="crm-panel-heading"><div>{% if section != 'relationship' %}<h2>Employer Interactions</h2>{% endif %}<p>Employer-authored records · scoped to authorized recruiting engagements. Staff access is read-only.</p></div></header>
 {% include 'crm/rows.html' with items=crm_employer_rows %}{% include 'crm/pagination.html' with page=crm_employer_page query=crm_employer_query audience='employer' anchor='employer-interactions' %}
 </section>{% endif %}{% endif %}
 {% endif %}</div>{% endif %}
