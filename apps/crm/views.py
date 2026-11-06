@@ -17,6 +17,7 @@ from apps.participants.models import Participant
 
 from . import access, forms, presentation, services
 from .models import ContactRelationship, Interaction, InteractionRevision
+from .navigation import origin
 
 
 def staff_view(view):
@@ -59,6 +60,7 @@ def create(request, participant_id=None, organization_id=None):
     if participant and participant.archived_at or organization and organization.status == "archived":
         raise PermissionDenied("Archived relationships are read-only.")
     back = reverse("participants:staff-profile", args=[participant.pk]) + "#btw-interactions" if participant else reverse("customers:workspace", args=[organization.pk, "crm"])
+    back = origin(request, participant=participant, organization=organization, fallback=back)
     initial = {"activity_type": request.GET.get("type", "call")}
     form = forms.ActivityForm(request.POST if request.method == "POST" else None,
         actor=request.user, organization=organization, initial=initial)
@@ -78,7 +80,7 @@ def create(request, participant_id=None, organization_id=None):
             else:
                 messages.success(request, "Interaction recorded. No message was sent.")
                 return redirect(back)
-    return render(request, "crm/form.html", {"form": form, "page_title": "Log activity",
+    return render(request, "crm/form.html", {"form": form, "page_title": "Log interaction",
         "subject": participant or organization, "back": back,
         "guidance": "Record a touchpoint that already happened. Only authorized BTW staff can see this history.",
         "submit_label": "Save interaction"})
@@ -89,7 +91,7 @@ def create(request, participant_id=None, organization_id=None):
 def detail(request, interaction_id):
     row = record_for(request, interaction_id)
     return render(request, "crm/detail.html", {"page_title": "Interaction", "item": presentation.staff_item(request.user, row),
-        "record": row, "back": presentation.home_url(row),
+        "record": row, "back": origin(request, participant=row.participant, organization=row.organization, fallback=presentation.home_url(row)),
         "revisions": InteractionRevision.objects.filter(interaction=row).select_related("actor")})
 
 
@@ -98,6 +100,7 @@ def detail(request, interaction_id):
 def correct(request, interaction_id):
     row = record_for(request, interaction_id)
     access.internal_record(request.user, row, write=True)
+    back = origin(request, participant=row.participant, organization=row.organization, fallback=reverse("crm:detail", args=[row.pk]))
     form = forms.ActivityForm(request.POST if request.method == "POST" else None, actor=request.user, row=row)
     if request.method == "POST":
         valid = form.is_valid()
@@ -110,9 +113,9 @@ def correct(request, interaction_id):
                 errors(form, exc)
             else:
                 messages.success(request, "Correction saved; the original author and earlier versions are retained.")
-                return redirect("crm:detail", interaction_id=row.pk)
+                return redirect(back)
     return render(request, "crm/form.html", {"form": form, "page_title": "Correct interaction",
-        "subject": row.participant or row.organization, "back": reverse("crm:detail", args=[row.pk]),
+        "subject": row.participant or row.organization, "back": back,
         "submit_label": "Save correction", "guidance": "Explain the correction. Ownership and original authorship cannot change."})
 
 

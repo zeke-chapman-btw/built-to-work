@@ -68,6 +68,7 @@ class ActivityForm(forms.Form):
                 self.fields["contact"].label_from_instance = lambda obj: str(obj) + (" (inactive)" if not obj.is_active else "")
                 self.fields["campaign"].queryset = organization.campaigns.all()
                 self.fields["workforce_request"].queryset = WorkforceRequest.objects.filter(organization=organization, archived_at__isnull=True)
+                self.fields["workforce_request"].label_from_instance = lambda obj: obj.name
             else:
                 self.fields.pop("contact")
                 self.fields.pop("campaign")
@@ -97,6 +98,14 @@ class ActivityForm(forms.Form):
     @property
     def optional_fields(self):
         return [field for field in self.visible_fields() if field.name not in {"activity_type", "occurred_at", "summary", "outcome", "reason"}]
+
+    @property
+    def next_fields(self):
+        return [self[key] for key in ("next_step", "follow_up_on", "responsible_staff") if key in self.fields]
+
+    @property
+    def supporting_fields(self):
+        return [field for field in self.optional_fields if field.name not in {"next_step", "follow_up_on", "responsible_staff"}]
 
 
 class ArchiveForm(forms.Form):

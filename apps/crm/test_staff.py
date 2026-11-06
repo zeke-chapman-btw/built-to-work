@@ -38,7 +38,7 @@ class StaffCrmTests(EmployerFixtures, TestCase):
     def test_participant_form_saves_once_returns_to_profile_and_retains_original_sections(self):
         url = reverse("crm:participant-new", args=[self.person.pk])
         payload = self.data()
-        self.assertContains(self.client.get(url), "Log activity")
+        self.assertContains(self.client.get(url), "Log interaction")
         response = self.client.post(url, payload)
         self.assertRedirects(response, reverse("participants:staff-profile", args=[self.person.pk]) + "#btw-interactions")
         self.assertEqual(self.client.post(url, payload).status_code, 302)

@@ -47,7 +47,8 @@ def people_return(request,person=None,fallback=None):
         allowed[reverse('participants:'+name)]={'q','page','status','document','kind'}
     allowed[reverse('participants:saved-views')]=directory_keys()
     if person:
-        allowed[reverse('participants:staff-profile',args=[person.pk])]={'section','page','archived','from'}
+        from apps.crm.navigation import QUERY_KEYS
+        allowed[reverse('participants:staff-profile',args=[person.pk])]=QUERY_KEYS|{'archived'}
         for name in ['staff-participant-qualifications','staff-participant-documents','staff-participant-review']:
             allowed[reverse('participants:'+name,args=[person.pk])]={'page','q','status','state','from','return_to'}
     value=request.POST.get('return_to',request.GET.get('return_to',''))

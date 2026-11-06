@@ -1,0 +1,6 @@
+{% if crm_summary %}{% load tz %}<section class="crm-relationship-summary" aria-label="BTW relationship summary">
+<div><span>Last BTW interaction</span>{% if crm_summary.last %}<strong>{{ crm_summary.last.get_activity_type_display }}</strong><small>{{ crm_summary.last.occurred_at|utc|date:'M j, Y · g:i A' }} UTC · {{ crm_summary.last.created_by }}</small>{% else %}<strong>Not recorded</strong>{% endif %}</div>
+<div><span>Recent BTW interactions</span><strong>{{ crm_summary.recent }} in {{ crm_summary.days }} days</strong><small>Active BTW records · independent of filters</small></div>
+<div><span>Next accessible follow-up Task</span>{% if crm_summary.next %}<a href="{% url 'operations:task' crm_summary.next.pk %}">{{ crm_summary.next.title }}</a><small>{{ crm_summary.next.assigned_staff }} · Due {{ crm_summary.next.due_date|date:'M j, Y' }}</small>{% else %}<strong>No dated open Task</strong>{% endif %}</div>
+<div><span>Recorded contact context</span><p>{{ crm_summary.contact }}</p>{% if not crm_subject_is_company %}<small>This does not establish a preferred contact method.</small>{% endif %}</div>
+</section>{% endif %}

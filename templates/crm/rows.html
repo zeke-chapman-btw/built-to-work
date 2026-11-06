@@ -1,9 +1,8 @@
-{% for item in items %}<article class="crm-row">
+{% load tz %}{% for item in items %}<article class="crm-row">
 <div class="crm-row-heading"><a class="crm-summary" href="{{ item.url }}">{{ item.summary }}</a><span class="badge">{{ item.type }}</span>{% if item.archived %}<span class="badge">Archived</span>{% endif %}</div>
-<p class="crm-meta">{{ item.occurred_at|date:'M j, Y · g:i A T' }} · {{ item.author }} · {{ item.source }}{% if item.direction != 'Not specified' %} · {{ item.direction }}{% endif %}</p>
+<p class="crm-meta">{{ item.occurred_at|utc|date:'M j, Y · g:i A' }} UTC · {{ item.author }} · {{ item.source }} · {{ item.audience }}{% if item.direction != 'Not specified' %} · {{ item.direction }}{% endif %}</p>
 {% if item.organization or item.engagement or item.contact %}<p class="crm-meta">{{ item.organization|default:'' }}{% if item.engagement %} · {{ item.engagement }}{% endif %}{% if item.contact %} · {{ item.contact }}{% endif %}</p>{% endif %}
 {% if item.outcome %}<p><strong>Outcome:</strong> {{ item.outcome }}</p>{% endif %}
 {% if item.next_step %}<p><strong>Next step:</strong> {{ item.next_step }}{% if item.follow_up_on %} · {{ item.follow_up_on|date:'M j, Y' }}{% endif %}</p>{% elif item.follow_up_on %}<p>Follow-up date: {{ item.follow_up_on|date:'M j, Y' }}</p>{% endif %}
-{% if expanded and item.notes %}<div class="crm-notes">{{ item.notes|linebreaksbr }}</div>{% endif %}
-<div class="crm-actions"><a href="{{ item.url }}">Details &amp; history</a>{% if item.can_edit and not item.archived %}<a href="{% url 'crm:correct' item.id %}">Correct</a><a href="{% url 'crm:followup' item.id %}">Add follow-up task</a>{% endif %}{% for link in item.tasks %}<a href="{% url 'operations:task' link.task_id %}">{{ link.task.title }}</a>{% endfor %}</div>
+<details class="crm-row-detail"><summary>Details &amp; actions</summary>{% if item.notes %}<div class="crm-notes">{{ item.notes|linebreaksbr }}</div>{% endif %}<div class="crm-actions"><a href="{{ item.url }}">Details &amp; history</a>{% if item.can_edit and not item.archived %}<a href="{{ item.correct_url }}">Correct interaction</a><a href="{{ item.followup_url }}">Add follow-up task</a><a href="{{ item.link_task_url }}">Link existing task</a>{% endif %}{% for link in item.tasks %}<a href="{% url 'operations:task' link.task_id %}">{{ link.task.title }}</a>{% endfor %}</div></details>
 </article>{% empty %}<p class="crm-empty">No interactions match this view.</p>{% endfor %}

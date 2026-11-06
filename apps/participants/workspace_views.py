@@ -137,10 +137,9 @@ def profile(request, participant_id):
         ctx["current_interests"] = getattr(ctx["career"], "career_interests", "")
         from .ui_presentation import profile_preferences
         ctx.update(profile_preferences(ctx))
-        if section == "relationship":
-            from apps.crm.presentation import history_context
-            ctx.update(history_context(request, participant=person))
-        else:
+        from apps.crm.presentation import history_context
+        ctx.update(history_context(request, participant=person))
+        if section == "recruiting":
             from apps.recruiting.read_models import participant_context
             ctx.update(participant_context(request.user, person, page=request.GET.get('recruiting_page')))
             recruiting_query = request.GET.copy()

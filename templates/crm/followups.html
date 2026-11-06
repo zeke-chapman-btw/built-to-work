@@ -1,0 +1,3 @@
+<section class="card crm-card" id="relationship-followups"><h2>Follow-ups</h2><p class="crm-help">Accessible unfinished Tasks · completed, cancelled and archived Tasks are excluded. An interaction’s recorded follow-up date is descriptive until a Task is explicitly created or linked.</p>
+<h3>Dated Tasks</h3>{% include 'crm/task_rows.html' with tasks=crm_dated_tasks %}{% include 'crm/pagination.html' with page=crm_dated_tasks query=crm_dated_query audience='tasks' anchor='relationship-followups' %}
+<h3>Undated Tasks</h3>{% include 'crm/task_rows.html' with tasks=crm_undated_tasks %}{% include 'crm/pagination.html' with page=crm_undated_tasks query=crm_undated_query audience='undated' anchor='relationship-followups' %}</section>
