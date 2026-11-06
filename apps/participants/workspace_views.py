@@ -594,7 +594,7 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
                 attrs.update({"aria-invalid":"true", "aria-describedby":identifier + "-errors"})
             return dict(label={"trade_interest":"Trade / work interest"}.get(key, bound.label),
                         identifier=identifier, widget=bound.as_widget(attrs=attrs), errors=bound.errors)
-        common_panels[device] = [presentation_field(key) for key in ("trade_interest","city","state") if key in form.fields]
+        common_panels[device] = [presentation_field(key) for key in ("identifier","trade_interest","city","state") if key in form.fields]
         advanced = []
         for title, names in definitions:
             fields = []

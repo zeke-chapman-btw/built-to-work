@@ -151,11 +151,13 @@ def project_intake(*, submission, target=None, is_new=False, actor=None):
                       "duration": entry["duration"], "practiced_skills": entry.get("skills") or [],
                       "proficiency": entry.get("proficiency") or "", "description": entry.get("description") or "",
                       "definition_snapshot": definition})
+    from .identifier_services import project_identifier
+    identifier_result = project_identifier(person, submission, actor=actor if getattr(actor, "is_authenticated", False) else None)
     qualifications = process_frozen_intake_submission(submission)
     record_audit(actor=actor if getattr(actor, "is_authenticated", False) else None,
                  action="intake.profile_projected", instance=submission, source="smart_intake",
                  new_data={"target_id": person.pk, "eligible_destinations": changed,
-                           "protected_destinations": protected, "created_qualification_count": len(qualifications)})
+                           "protected_destinations": protected, "created_qualification_count": len(qualifications), "identifier_result": identifier_result})
     return {"updated": changed, "protected": protected}
 
 

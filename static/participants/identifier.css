@@ -1,0 +1,2 @@
+/* Identifier badge only: no participant portal, kiosk, intake or employer styling. */
+.has-participant-profile .people-profile-name .participant-identifier-badge{display:inline-block;margin-inline-start:8px;vertical-align:middle;font:500 11px/16px var(--font);letter-spacing:0;text-transform:none;background:#f3f4f6;color:#52525b;border:1px solid #e5e7eb;border-radius:4px;padding:2px 6px;max-width:100%;overflow-wrap:anywhere;}

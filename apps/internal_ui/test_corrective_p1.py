@@ -128,7 +128,7 @@ class CorrectivePassOneTests(TestCase):
         self.assertContains(self.client.get(reverse('events:event_detail',args=[self.event.pk])),reverse('staffing:event',args=[self.event.pk]))
 
 
-    def test_planned_pages_are_informational_and_self_highlighting(self):
+    def test_existing_workspaces_are_self_highlighting_and_approvals_uses_sources(self):
         for key in ('customers', 'campaigns', 'approvals'):
             with self.subTest(workspace=key):
                 url = reverse('internal:workspace', kwargs={'workspace_id': key})
@@ -140,14 +140,15 @@ class CorrectivePassOneTests(TestCase):
                     self.assertContains(response, 'class="customer-page"')
                     self.assertNotContains(response, 'planned-workspace')
                     continue
-                section = html.split('class="empty-state card planned-workspace"', 1)[1].split('</section>', 1)[0]
-                self.assertIn('Planned', section)
-                self.assertIn('Back to Home', section)
-                for unexpected in ('<form', '<input', '<table', 'metric', 'counter'):
-                    self.assertNotIn(unexpected, section)
-                self.assertContains(response, 'class="nav-planned">Planned</span>', count=1)
+                self.assertContains(response, 'id="approvals-workspace"')
+                for category in ('Events', 'Verification', 'Customer Approval', 'Job Postings'):
+                    self.assertContains(response, category)
+                self.assertContains(response, reverse('staffing:queue'))
+                self.assertNotContains(response, '<form method="post"')
+                self.assertNotContains(response, 'planned-workspace')
+                self.assertNotContains(response, 'class="nav-planned">Planned</span>')
 
-    def test_planned_pages_keep_existing_active_staff_boundary(self):
+    def test_approval_categories_preserve_domain_permission_boundaries(self):
         from django.test import Client
         participant = get_user_model().objects.create_user('synthetic-p1-participant')
         inactive = get_user_model().objects.create_user('synthetic-p1-inactive', is_staff=True, is_active=False)
@@ -156,7 +157,7 @@ class CorrectivePassOneTests(TestCase):
             client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
             for key in ('customers', 'campaigns', 'approvals'):
                 response = client.get(reverse('internal:workspace', kwargs={'workspace_id': key}))
-                expected = 200 if user == self.viewer and key == 'approvals' else 403 if user.is_active else 302
+                expected = 403 if user.is_active else 302
                 self.assertEqual(response.status_code, expected)
         for key in ('customers', 'campaigns', 'approvals'):
             self.assertEqual(Client().get(reverse('internal:workspace', kwargs={'workspace_id': key})).status_code, 302)

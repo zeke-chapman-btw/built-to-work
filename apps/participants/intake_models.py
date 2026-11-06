@@ -80,6 +80,7 @@ class IntakeFieldState(TimestampedModel):
     participant = models.ForeignKey("participants.Participant", on_delete=models.PROTECT, related_name="intake_field_states")
     destination = models.CharField(max_length=100)
     source_submission = models.ForeignKey("participants.RegistrationSubmission", null=True, blank=True, on_delete=models.PROTECT)
+    provenance = models.JSONField(default=dict, db_default=models.Value({}, output_field=models.JSONField()), blank=True, editable=False)
     last_value = models.JSONField(null=True, blank=True)
     value_hash = models.CharField(max_length=64)
     is_protected = models.BooleanField(default=False)

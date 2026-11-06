@@ -42,10 +42,17 @@ def authorize(user):
 @login_required(login_url="/admin/login/")
 @require_http_methods(["GET"])
 def trailer_list(request):
-    authorize(request.user)
+    from apps.crm.access import fresh_staff
+    from apps.trailer_control.navigation import local_control_entry
+    user = fresh_staff(request.user)
+    entry = local_control_entry(user)
+    if not user.is_superuser:
+        if not entry: raise PermissionDenied
+        return render(request, "operations/trailer_control_entry.html", {"page_title":"Trailers", "local_control":entry})
+    authorize(user)
     rows,filters=list_page(request,TrailerInstance.objects.order_by("display_name"),search_fields=("display_name","identity"),name_field="display_name",
         active_field="is_active",status_choices=(("active","Active"),("inactive","Inactive")))
-    return render(request,"operations/trailers.html",{"page_title":"Trailers","trailers":rows,**filters})
+    return render(request,"operations/trailers.html",{"page_title":"Trailers","trailers":rows,"local_control":entry,**filters})
 
 
 @login_required(login_url="/admin/login/")

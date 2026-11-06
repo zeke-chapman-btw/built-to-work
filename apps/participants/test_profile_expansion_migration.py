@@ -41,6 +41,9 @@ class ProfileExpansionMigrationTests(TransactionTestCase):
                     document.file.save('synthetic.pdf', ContentFile(b'%PDF-SYNTHETIC-PRESERVED'), save=True)
                     filename = document.file.name
                     executor = MigrationExecutor(connection); executor.migrate(new_target)
+                    # Current ORM models require the current additive schema after exercising 0020.
+                    executor = MigrationExecutor(connection)
+                    executor.migrate(executor.loader.graph.leaf_nodes())
                     from .models import Participant, ParticipantQualification, ParticipantDocument, ParticipantVerificationRecord
                     from .verification_services import qualification_verification_summary
                     current = ParticipantQualification.objects.get(pk=qualification.pk)

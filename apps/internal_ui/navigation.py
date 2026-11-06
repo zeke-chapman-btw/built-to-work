@@ -10,7 +10,7 @@ WORKSPACES = (
     {"id":"platform-tools","label":"PLATFORM TOOLS","icon":"operations","url_name":"internal:workspace","url_kwargs":{"workspace_id":"platform-tools"},"description":"Existing platform monitoring, reconciliation and recovery tools.","permissions":("events.view_syncoutboxitem","events.view_participantmatchreview","events.view_backuprecord")},
     {"id":"customers","label":"CUSTOMERS","icon":"customers","url_name":"customers:directory","description":"Customer organizations, users, Workforce Needs and customer activity.","permissions":()},
     {"id":"campaigns","label":"CAMPAIGNS","icon":"campaigns","url_name":"customers:campaign-directory","description":"Coordinated customer recruiting efforts and their Workforce Needs.","permissions":()},
-    {"id":"approvals","label":"APPROVALS","icon":"approvals","url_name":"internal:workspace","url_kwargs":{"workspace_id":"approvals"},"description":"A unified approvals workspace is planned; existing review queues remain in their current workspaces.","permissions":(),"planned":True},
+    {"id":"approvals","label":"APPROVALS","icon":"approvals","url_name":"internal:workspace","url_kwargs":{"workspace_id":"approvals"},"description":"Existing staffing, evidence, candidate release and position review workflows.","permissions":()},
     {"id":"administration","label":"ADMIN","icon":"settings","url_name":"internal:workspace","url_kwargs":{"workspace_id":"administration"},"description":"Authorized BTW configuration and staff administration.","permissions":("staffing.view_staffprofile","workdays.manage_workdays","auth.view_user","auth.change_user","participants.change_registrationform","participants.view_testparticipant","participants.change_testparticipant","workdays.manage_compensation","event_reports.manage_expense_categories")},
 )
 
@@ -62,7 +62,7 @@ WORKSPACE_LINKS = {'events': ({'label': 'My staff schedule',
                 {'label':'Form Builder','description':'Create and manage participant intake forms.','url_name':'participants:intake-config-index','permissions':()},
                 {'label':'Event Execution','description':'Event responsibilities, simple checklist progress and closeout.','url_name':'operations:execution-index','permissions':()},
                 {'label':'Master event checklist','description':'Administrator-controlled defaults for future event checklists.','url_name':'operations:master-checklist','permissions':('operations.manage_master_checklist',)},
-                {'label':'Trailers','description':'Existing trailer display settings; credentials remain in restricted administration.','url_name':'operations:trailers','permissions':('events.view_trailerinstance',)},
+                {'label':'Trailers','description':'Existing trailer display settings; credentials remain in restricted administration.','url_name':'operations:trailers','permissions':('events.view_trailerinstance','trailer_control.view_control_center')},
                 {'label': 'Operations Templates',
                  'description': 'Reusable published revisions and controlled event setup.',
                  'url_name': 'operations:templates',
@@ -141,6 +141,9 @@ def visible_legacy_workspaces(user,current_path=""):
     role_managed=managed(user)
     visible=[]
     for item in WORKSPACES:
+        if item['id']=='approvals':
+            from .approvals import can_open
+            if not can_open(user):continue
         if item['id']=='campaigns':
             if not (user.has_perm('participants.view_participant') and (manager(user) or has_role(user,'recruiter') or user.has_perm('recruiting.manage_recruiting'))):continue
         if item['id']=='customers':
@@ -222,7 +225,10 @@ def _destination_allowed(user, item):
         from apps.accounts.operational_access import limited_staff
         return not limited_staff(user)
     if route=="internal:portal-preview":return user.is_superuser
-    if route=="operations:trailers":return user.is_superuser
+    if route=="operations:trailers":
+        if user.is_superuser:return True
+        from apps.trailer_control.navigation import local_control_entry
+        return bool(local_control_entry(user))
     if route in ("workdays:index","workdays:reports"):
         from apps.workdays.services import manager
         return manager(user)

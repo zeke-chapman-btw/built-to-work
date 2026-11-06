@@ -195,7 +195,7 @@ def complete_session(*, session_id, actor=None):
         submitted_at=occurred_at, source="offline" if session.channel == "trailer" else "smart_intake",
         age_classification="minor" if age_on(date.fromisoformat(answers["dob"]), occurred_on) < 18 else "adult",
         idempotency_key="intake:" + str(session.pk), intake_operation_id=session.pk,
-        intake_metadata={"schema": "btw-intake-11b-v1", "channel": session.channel,
+        intake_metadata={"schema": version.snapshot["schema"], "channel": session.channel,
             "occurred_on": occurred_on.isoformat(), "timezone": session.context["timezone"],
             "form_version_uuid": str(version.stable_id), "contract_hash": session.contract_hash,
             "payload_hash": payload_hash, "answer_states": cleaned["states"],

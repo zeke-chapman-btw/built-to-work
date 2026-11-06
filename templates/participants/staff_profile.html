@@ -1,18 +1,19 @@
 {% extends 'participants/workspace_base.html' %}{% load static verification_status participant_workspace people_ui %}
 {% block body_class %}{{ block.super }} has-participant-profile has-crm-ux-profile{% endblock %}
-{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<link rel="stylesheet" href="{% static 'crm/profile.css' %}?v=crm-ux-visual-v1">{% endblock %}
+{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<link rel="stylesheet" href="{% static 'crm/profile.css' %}?v=crm-ux-visual-v1"><link rel="stylesheet" href="{% static 'participants/identifier.css' %}?v=identifier-1">{% endblock %}
 {% block page_heading %}
 <section class="people-profile-hero p3-profile-hero">
   <a class="event-back" href="{{ directory_origin }}">← {{ directory_origin_label }}</a>
   <div class="people-profile-heading">
     <span class="people-avatar" aria-hidden="true">{{ participant|people_initials }}</span>
-    <div class="people-profile-title"><h1 class="people-profile-name"><a class="p3-profile-home" href="{% people_section_url 'overview' %}" aria-label="{{ participant }} — profile overview">{{ participant }}</a></h1>
+    <div class="people-profile-title"><h1 class="people-profile-name"><a class="p3-profile-home" href="{% people_section_url 'overview' %}" aria-label="{{ participant }} — profile overview">{{ participant }}</a>{% if participant.primary_identifier %}<span class="badge participant-identifier-badge">{{ participant.get_primary_identifier_display }}</span>{% endif %}</h1>
       <p>{{ participant.city|default:'Location not recorded' }}{% if participant.state %}, {{ participant.state }}{% endif %}{% if current_interests %}<span class="p3-identity-interest"> · {{ current_interests|truncatechars:80 }}</span>{% endif %}</p>
 
     </div>
     <div class="p3-profile-actions">
       {% if crm_can_add %}<a class="button button-primary" href="{{ crm_new_url }}">Log interaction</a>{% endif %}
       {% if can_edit_profile and not participant.archived_at %}<a class="button secondary" href="{% url 'participants:staff-edit' participant.pk %}?return_to={{ request.get_full_path|urlencode }}">Edit profile</a>{% endif %}
+      {% if can_edit_profile and not participant.archived_at %}<a class="button secondary" data-record-editor href="{% url 'participants:identifier-edit' participant.pk %}?return_to={{ request.get_full_path|urlencode }}">Edit identifier</a>{% endif %}
       {% profile_tools %}
     </div>
   </div>

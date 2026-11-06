@@ -26,7 +26,7 @@ def intake_profile_write():
 
 
 def smart(snapshot):
-    return isinstance(snapshot, dict) and snapshot.get("schema") == "btw-intake-11b-v1"
+    return isinstance(snapshot, dict) and snapshot.get("schema") in {"btw-intake-11b-v1", "btw-intake-identifiers-v2"}
 
 
 def guard_version(instance):

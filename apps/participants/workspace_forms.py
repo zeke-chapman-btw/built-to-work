@@ -122,6 +122,8 @@ class ParticipantEventForm(forms.Form):
 
 
 class DiscoveryForm(forms.Form):
+    from .identifier_definitions import PrimaryIdentifier
+    identifier = forms.ChoiceField(required=False, label="Participant identifier", choices=[("", "Any identifier"), *PrimaryIdentifier.choices, ("unclassified", "Unclassified")])
     relocation = forms.ChoiceField(required=False, choices=[("", "Any relocation preference"), ("yes", "Willing to relocate"), ("no", "Not willing to relocate"), ("unknown", "Relocation preference unknown")])
     employment_classification = forms.CharField(required=False, max_length=80, label="Employment classification key")
     availability_classification = forms.CharField(required=False, max_length=80, label="Availability classification key")

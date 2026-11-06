@@ -7,6 +7,7 @@ from django.db.models import Q
 from django.db.models.functions import Lower
 from apps.core.models import ArchivableModel, TimestampedModel
 from .normalization import normalize_email, normalize_phone
+from .identifier_definitions import PrimaryIdentifier
 from .consent_storage import PrivateConsentStorage
 from .historical_storage import PrivateHistoricalStorage
 
@@ -29,12 +30,13 @@ class Participant(TimestampedModel, ArchivableModel):
     address_line_1 = models.CharField(max_length=200, blank=True)
     address_line_2 = models.CharField(max_length=200, blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
+    primary_identifier = models.CharField(max_length=24, choices=PrimaryIdentifier.choices, blank=True, default="", db_default="", editable=False, db_index=True)
     life_stage = models.CharField(max_length=64, blank=True)
     age_classification = models.CharField(max_length=16, blank=True)
 
     class Meta:
         permissions = [("view_participant_analytics", "Can view participant intelligence"), ("view_participant_activity", "Can view staff participant change history"), ("view_participant_dob", "Can view full participant birth dates")]
-        constraints = [models.UniqueConstraint(fields=("kind",), condition=Q(kind="system_test"), name="participants_one_system_test_identity")]
+        constraints = [models.CheckConstraint(condition=Q(primary_identifier__in=["", *PrimaryIdentifier.values]), name="participant_primary_identifier_valid"), models.UniqueConstraint(fields=("kind",), condition=Q(kind="system_test"), name="participants_one_system_test_identity")]
         ordering = ["last_name", "first_name", "id"]
     def save(self, *args, **kwargs):
         self.contact_email = normalize_email(self.contact_email)

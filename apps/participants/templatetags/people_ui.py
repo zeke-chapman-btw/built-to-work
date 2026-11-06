@@ -74,7 +74,7 @@ def people_label(value):return str(value).replace('_',' ').title()
 def people_filter_groups(context):
     form=context.get('filter_form')
     if form is None:return []
-    definitions=[('Interests & work',['trade_interest','skill','employment','experience_min','experience_data','availability','preferred_location','work_type','travel']),('Location',['city','state']),('Qualifications & evidence',['qualification','qualification_kind','qualification_status','document_status','assessment','assessment_category','score_min','score_max']),('Events & original source',['event','participation','channel','acquired_from','acquired_to']),('Profile records',['completeness','archived'])]
+    definitions=[('Interests & work',['trade_interest','skill','employment','experience_min','experience_data','availability','preferred_location','work_type','travel']),('Location',['city','state']),('Qualifications & evidence',['qualification','qualification_kind','qualification_status','document_status','assessment','assessment_category','score_min','score_max']),('Events & original source',['event','participation','channel','acquired_from','acquired_to']),('Profile records',['identifier','completeness','archived'])]
     used={'q','sort'};groups=[]
     for title,names in definitions:
         fields=[form[n] for n in names if n in form.fields];used.update(names)

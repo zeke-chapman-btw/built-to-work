@@ -180,6 +180,8 @@ def discover(user, params, *, strict=False):
     if not form.is_valid():
         return form, qs.none(), {}
     d = form.cleaned_data
+    if d.get("identifier"):
+        qs = qs.filter(primary_identifier="" if d["identifier"] == "unclassified" else d["identifier"])
     from apps.recruiting.models import RecruitingProfile
     extra = canonical_records(RecruitingProfile.objects.all())
     relocation = d.get("relocation")

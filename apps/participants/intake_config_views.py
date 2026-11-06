@@ -82,6 +82,11 @@ def detail(request, form_id):
                 draft = duplicate_form(actor=request.user, source_version_id=latest.pk,
                                        name=request.POST.get("name"))
                 return redirect("participants:intake-config-detail", form_id=draft.form_id)
+            if action == "prepare_identifiers":
+                from .identifier_contracts import prepare_identifier_draft
+                draft = prepare_identifier_draft(actor=request.user, form_id=model.pk, expected_revision=request.POST.get("revision"))
+                messages.success(request, "Compatible identifier draft prepared. Nothing was published or reassigned.")
+                return redirect("participants:intake-config-detail", form_id=draft.form_id)
             if action == "publish":
                 _confirmed(request)
                 publish(actor=request.user, version_id=latest.pk, expected_revision=request.POST.get("revision"))

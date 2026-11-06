@@ -47,6 +47,9 @@ def reports(request):
 @login_required
 def workspace(request,workspace_id):
     _require_staff(request)
+    if workspace_id == 'approvals':
+        from .approvals import workspace as approval_workspace
+        return approval_workspace(request)
     if workspace_id in ('customers','campaigns'):
         from apps.customers.views import directory, campaign_directory
         return (directory if workspace_id=='customers' else campaign_directory)(request)

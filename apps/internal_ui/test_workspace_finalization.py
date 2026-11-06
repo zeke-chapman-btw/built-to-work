@@ -60,7 +60,7 @@ class WorkspaceFinalizationTests(TestCase):
         staff = get_user_model().objects.create_user(username="limited-staff", password="test-only-password", is_staff=True)
         self.client.force_login(staff, backend="django.contrib.auth.backends.ModelBackend")
         nav = visible_workspaces(staff)
-        self.assertEqual([item["id"] for item in nav], ["home", "tasks", "approvals"])
+        self.assertEqual([item["id"] for item in nav], ["home", "tasks"])
         for key in ('customers', 'campaigns'):
             self.assertEqual(self.client.get(reverse('internal:workspace', kwargs={'workspace_id': key})).status_code, 403)
         self.assertEqual(self.client.get(reverse("internal:workspace", kwargs={"workspace_id": "participants"})).status_code, 403)

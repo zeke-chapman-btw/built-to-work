@@ -12,6 +12,8 @@ from django.core.validators import validate_email
 from .normalization import normalize_email, normalize_phone
 
 SCHEMA = "btw-intake-11b-v1"
+from .identifier_definitions import IDENTIFIER_SCHEMA
+SUPPORTED_SCHEMAS = {SCHEMA, IDENTIFIER_SCHEMA}
 KINDS = {"short_text", "long_text", "email", "phone", "date", "single_choice",
          "multiple_choice", "consent", "repeat_group"}
 SITUATIONS = ["high_school", "college", "trade_school", "employed_trade",
@@ -236,7 +238,7 @@ def _question(question, prior, destinations, *, child=False):
 
 def validate_contract(contract):
     if (not isinstance(contract, dict) or set(contract) != {"schema", "questions", "area_skills", "qualification_mappings"}
-            or contract["schema"] != SCHEMA or not isinstance(contract["questions"], list)):
+            or contract["schema"] not in SUPPORTED_SCHEMAS or not isinstance(contract["questions"], list)):
         _fail("Unsupported intake contract schema.")
     canonical_json(contract)
     prior, destinations, last_step = {}, set(), 1
@@ -255,7 +257,7 @@ def validate_contract(contract):
                 "travel_range", "desired_pay", "license_class", "certification_choices"):
         if key not in prior:
             _fail("Required intake structure is missing: " + key)
-    exact = {"current_situation": set(SITUATIONS), "travel_willingness": {"yes", "no", "maybe"}}
+    exact = {"current_situation": set(SITUATIONS) | ({"teacher_instructor", "job_seeker"} if contract["schema"] == IDENTIFIER_SCHEMA else set()), "travel_willingness": {"yes", "no", "maybe"}}
     for key, values in exact.items():
         if set(_options(prior[key])) != values:
             _fail("Protected choices changed: " + key)
