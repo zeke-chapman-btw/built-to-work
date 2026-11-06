@@ -1,6 +1,6 @@
 """Shared permission-scoped recruiting reads; never create Tasks or change stages."""
 from django.core.paginator import Paginator
-from django.db.models import Count, Exists, OuterRef, CharField, Value
+from django.db.models import Count, Exists, OuterRef, CharField, Value, Prefetch
 from django.db.models.functions import Cast, Replace
 from django.utils import timezone
 from apps.participants.identity import identity_members
@@ -35,8 +35,10 @@ def participant_context(actor, participant, *, page=None):
     items = opportunities_for(actor).filter(archived_at__isnull=True)
     members = identity_members(participant.pk)
     records = CandidateOpportunity.objects.filter(participant_id__in=members, opportunity__in=items).select_related(
-        'stage', 'opportunity__need__organization', 'opportunity__need__effective_revision').order_by('-active', '-created_at', '-pk')
+        'stage', 'opportunity__need__organization', 'opportunity__need__effective_revision', 'opportunity__need__campaign').prefetch_related(
+        Prefetch('originating_interests', queryset=CandidateInterest.objects.filter(active=True, participant_id__in=members, opportunity__in=items).select_related('publication').order_by('-created_at','-pk')[:1], to_attr='display_interests')).order_by('-active', '-created_at', '-pk')
     interests = CandidateInterest.objects.filter(participant_id__in=members, opportunity__in=items, active=True).select_related(
         'publication').order_by('-created_at', '-pk')[:3]
-    return {'profile_recruiting_records': Paginator(records, 6).get_page(page),
+    from apps.customers.access import is_manager
+    return {'profile_recruiting_customer_links': is_manager(actor), 'profile_recruiting_records': Paginator(records, 6).get_page(page),
         'profile_recruiting_interests': list(interests)}

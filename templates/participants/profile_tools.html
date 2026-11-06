@@ -3,7 +3,7 @@
   <div>
     <p>Profile details</p>
     {% for item in detail_items %}<a href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>{{ item.label }}</a>{% endfor %}
-    {% if can_recruiting %}<a href="{% url 'recruiting:candidate' participant.pk %}">Recruiting management</a>{% endif %}
+    {% if can_recruiting and section != 'recruiting' %}<a href="{% url 'recruiting:candidate' participant.pk %}">Recruiting management</a>{% endif %}
     {% if perms.participants.manage_portal_invitations %}<a href="{% url 'participants:portal-invitations' %}?participant={{ participant.pk }}">Participant portal invitation</a>{% endif %}
     {% if section == 'overview' %}{% include 'participants/profile_jumps.html' with in_profile_tools=True %}{% endif %}
   </div>

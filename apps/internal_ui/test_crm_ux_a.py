@@ -138,7 +138,7 @@ class CrmUxProfileTests(TestCase):
     def test_recruiting_remains_opportunity_scoped_without_relationship_summary(self):
         response = self.client.get(self.url, {'section': 'recruiting'})
         self.assertContains(response, 'Customer &amp; job connections')
-        self.assertContains(response, 'No candidate-position records in your recruiting scope.')
+        self.assertContains(response, 'No recruiting opportunities in your accessible records.')
         self.assertContains(response, 'official outcomes remain explicit BTW decisions.')
         self.assertNotContains(response, 'aria-label="BTW relationship summary"')
 
