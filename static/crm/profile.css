@@ -5,8 +5,9 @@ body.internal-app.has-participant-workspace.has-participants-pass3.has-participa
 body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-reading-section > .btw-panel-heading a { flex: none; }
 .has-crm-ux-profile .crm-profile-navigation { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 0; border-bottom: 1px solid var(--line, #e4e4e7); }
 .has-crm-ux-profile .crm-profile-navigation a { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 14px; border-bottom: 2px solid transparent; color: var(--text, #202124); font: 500 13px/20px var(--font); text-decoration: none; box-sizing: border-box; }
-.has-crm-ux-profile .crm-profile-navigation a[aria-current="page"] { color: var(--red, #ac1929); border-color: currentColor; font-weight: 600; }
+.has-crm-ux-profile .crm-profile-navigation a[aria-current="page"] { color: #fff; background: #191919; border-color: #191919; border-radius: 6px; font-weight: 600; }
 .has-crm-ux-profile .crm-profile-navigation a:hover { background: #f4f4f5; }
+.has-crm-ux-profile .crm-profile-navigation a[aria-current="page"]:hover { background: #303030; }
 .has-crm-ux-profile .crm-profile-navigation a:focus-visible, .has-crm-ux-profile .crm-profile-reading-tools a:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
 .has-crm-ux-profile .crm-profile-reading-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; min-width: 0; }
 .has-crm-ux-profile .crm-profile-reading-tools > p { margin: 0; color: var(--muted, #5f6368); font: 400 12px/18px var(--font); }
@@ -29,3 +30,52 @@ body.internal-app.has-participant-workspace.has-participants-pass3.has-participa
   .has-crm-ux-profile .crm-profile-tool-current { display: none; }
   .has-crm-ux-profile .crm-profile-reading-tools { flex-wrap: wrap; }
 }
+
+/* Final visual refinement: participant staff views only. No portal or directory scope. */
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-profile-hero { margin-bottom: 0; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-profile-hero .people-profile-heading { margin-top: 12px; align-items: flex-start; gap: 16px; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-profile-actions { align-self: flex-start; padding-top: 2px; }
+.has-crm-ux-profile .crm-profile-navigation { padding-bottom: 4px; gap: 4px; }
+.has-crm-ux-profile .crm-profile-navigation a { padding-inline: 12px; }
+.has-crm-ux-profile .crm-profile-reading-tools { justify-content: flex-end; margin-block: -12px -8px; min-height: 28px; }
+.has-crm-ux-profile .crm-profile-jumps > summary { min-height: 28px; padding-block: 4px; font-size: 11px; line-height: 20px; color: #52525b; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-reading-section > .btw-panel-heading { min-height: 48px; padding: 2px 16px; margin-bottom: 4px; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-reading-section > .btw-panel-heading h2 { font-size: 12px; line-height: 18px; color: #52525b; letter-spacing: .035em; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-reading-section .p3-compact-facts dt,
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-reading-section .p3-compact-facts dd { border-bottom: 1px solid #f0f0f2; padding-block: 8px; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-reading-section .p3-compact-facts dt:last-of-type,
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-reading-section .p3-compact-facts dd:last-of-type { border-bottom: 0; }
+.has-crm-ux-profile .p3-document-identity { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.has-crm-ux-profile .p3-document-identity h3 { min-width: 0; overflow-wrap: anywhere; }
+.has-crm-ux-profile .p3-document-symbol { flex: none; color: #707078; font: 400 26px/28px var(--font); }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-document-row h3 { font-size: 13px; line-height: 20px; font-weight: 500; }
+.has-crm-ux-profile .p3-document-row .p3-record-meta { padding-left: 30px; }
+.has-crm-ux-profile .p3-document-row .p3-record-action { display: inline-flex; align-items: center; min-height: 32px; margin-left: 8px; }
+.has-crm-ux-profile .p3-record-heading .badge { flex: none; max-width: 100%; white-space: normal; }
+.has-crm-ux-profile .crm-profile-summary-card .crm-relationship-summary { margin: 0; border: 0; }
+.has-crm-ux-profile .crm-profile-summary-card .crm-relationship-summary > div { padding: 12px 16px 12px 0; border-right: 0; }
+.has-crm-ux-profile .crm-profile-communication-actions { padding-top: 8px; border-top: 1px solid #f0f0f2; }
+.has-crm-ux-profile .crm-profile-communication-actions > .crm-actions { gap: 4px 16px; }
+.has-crm-ux-profile .crm-profile-history-heading { border-bottom: 1px solid #e4e4e7; padding: 12px 16px; background: #fff; border-radius: 8px 8px 0 0; }
+.has-crm-ux-profile .crm-profile-history-heading h2 { margin: 0; font: 600 12px/18px var(--font); text-transform: uppercase; letter-spacing: .035em; color: #52525b; }
+.has-crm-ux-profile .crm-profile-history-heading p { margin: 4px 0 0; font: 400 12px/18px var(--font); color: #5f6368; }
+.has-crm-ux-profile .crm-audience-nav { padding-block: 4px; }
+.has-crm-ux-profile .crm-audience-nav a[aria-current="page"] { color: #fff; background: #303030; border-color: #303030; border-radius: 6px; }
+.has-crm-ux-profile .p3-recruiting-connection .p3-compact-facts { margin-top: 8px; }
+.has-crm-ux-profile .p3-recruiting-connection > .p3-record-action { display: inline-flex; align-items: center; min-height: 44px; }
+@media (width < 640px) {
+  .has-crm-ux-profile .crm-profile-navigation a { min-height: 44px; padding-inline: 12px; }
+  .has-crm-ux-profile .crm-profile-reading-tools { margin-block: -12px -8px; }
+  .has-crm-ux-profile .crm-profile-jumps > summary { min-height: 44px; padding-block: 12px; }
+  body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-reading-section > .btw-panel-heading .p3-note-primary { min-height: 44px; }
+  .has-crm-ux-profile .p3-document-row .p3-record-action { min-height: 44px; margin-left: 0; }
+  .has-crm-ux-profile .crm-profile-summary-card .crm-relationship-summary > div { padding: 10px 8px; }
+  .has-crm-ux-profile .crm-profile-summary-card .crm-relationship-summary > div:nth-child(n+3) { border-top: 1px solid #f0f0f2; }
+  .has-crm-ux-profile .crm-audience-nav a { padding-inline: 8px; }
+}
+
+/* Keep the section jump in the Profile heading, without an extra reading band. */
+.has-crm-ux-profile .crm-profile-navigation { margin-top: 8px; }
+.has-crm-ux-profile .crm-profile-reading-tools { margin: 0; min-height: 0; }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .crm-profile-history-heading h2 { margin: 0; font: 600 12px/18px var(--font); }
+body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .crm-profile-history-heading p { margin: 4px 0 0; font: 400 12px/18px var(--font); }

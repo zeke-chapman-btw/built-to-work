@@ -104,3 +104,31 @@ class CrmUxProfileTests(TestCase):
             url = self.url + '?section=' + section
             self.assertEqual(people_return(factory.get('/', {'return_to': url}), self.person), url)
         self.assertEqual(people_return(factory.get('/', {'return_to': 'https://foreign.example/steal'}), self.person), reverse('participants:staff-directory'))
+
+    def test_full_relationship_summary_is_exclusive_to_relationship_destination(self):
+        for section in ['overview', 'recruiting']:
+            response = self.client.get(self.url, {'section': section})
+            self.assertEqual(response.status_code, 200)
+            self.assertNotContains(response, 'aria-label="BTW relationship summary"')
+        relationship = self.client.get(self.url, {'section': 'relationship'})
+        self.assertContains(relationship, 'aria-label="BTW relationship summary"', count=1)
+        self.assertContains(relationship, 'Relationship Summary')
+        self.assertContains(relationship, 'Interaction History')
+        self.assertContains(relationship, 'This does not establish a preferred contact method.')
+
+    def test_profile_leads_with_personal_facts_and_preserves_separate_reported_skills(self):
+        response = self.client.get(self.url)
+        html = response.content.decode()
+        self.assertLess(html.index('id="profile-identity"'), html.index('id="profile-skills"'))
+        self.assertContains(response, 'Reported skills')
+        self.assertContains(response, 'SYNTHETIC welding')
+        self.assertContains(response, '0.0 years of reported overall experience')
+        self.assertContains(response, 'Jump to section')
+        self.assertNotContains(response, 'Profile facts &amp; evidence')
+
+    def test_recruiting_remains_opportunity_scoped_without_relationship_summary(self):
+        response = self.client.get(self.url, {'section': 'recruiting'})
+        self.assertContains(response, 'Customer &amp; job connections')
+        self.assertContains(response, 'No candidate-position records in your recruiting scope.')
+        self.assertContains(response, 'official outcomes remain explicit BTW decisions.')
+        self.assertNotContains(response, 'aria-label="BTW relationship summary"')
