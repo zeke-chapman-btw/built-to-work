@@ -19,3 +19,6 @@
 .crm-card h3{font-size:14px;line-height:21px;font-weight:500}.crm-relationship-summary :focus-visible,.crm-audience-nav :focus-visible,.crm-form :focus-visible{outline:3px solid #3b6db0;outline-offset:3px}
 @media(max-width:1023px){.crm-relationship-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.crm-relationship-summary>div:nth-child(2){border-right:0}.crm-relationship-summary>div:nth-child(n+3){border-top:1px solid #e3e6eb}}
 @media(max-width:639px){.crm-relationship-summary{grid-template-columns:minmax(0,1fr)}.crm-relationship-summary>div{border-right:0}.crm-relationship-summary>div+div{border-top:1px solid #e3e6eb}.crm-audience-nav a{flex:1;justify-content:center;text-align:center;padding-inline:8px}.crm-relationship-summary a{min-height:44px;display:flex;align-items:center}}
+
+.crm-company-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.crm-candidate-heading .crm-actions{margin-top:12px}.crm-subject-name{overflow-wrap:anywhere}.crm-candidate-heading h1{overflow-wrap:anywhere}
+@media(max-width:639px){.crm-company-summary{grid-template-columns:minmax(0,1fr)}}

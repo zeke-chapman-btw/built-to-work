@@ -14,10 +14,17 @@ from apps.recruiting.access import policy_transaction
 from . import access, forms, services
 from .models import Interaction, InteractionRevision
 from .views import errors, reject_extra
+from apps.internal_ui.record_editors import local_return
 
 
 def candidate_url(disclosure_id):
     return reverse("customer_portal:recruiting-candidate", args=[disclosure_id])
+
+
+def candidate_origin(request, disclosure_id, fallback=None):
+    url = candidate_url(disclosure_id)
+    return local_return(request.GET.get("return_to", ""), fallback=fallback or url,
+        allowed={url: {"archived", "activity_page"}})
 
 
 def candidate_context(request, disclosure_id):
@@ -29,7 +36,12 @@ def candidate_context(request, disclosure_id):
 def interaction_context(request, disclosure_id, candidate):
     rows = services.employer_history(request.user, request.customer_member.organization_id,
         disclosure_id, include_archived=request.GET.get("archived") == "1")
+    active = [row for row in rows if not row["archived"]]
+    last = active[0] if active else None
+    next_record = next((row for row in active if row["next_step"] or row["follow_up_on"]), None)
     return {"crm_history": Paginator(rows, 10).get_page(request.GET.get("activity_page")),
+        "crm_company_last": last, "crm_company_next": next_record,
+        "crm_company_origin": request.get_full_path(),
         "crm_can_record": candidate["can_respond"] and not getattr(request, "customer_preview", False),
         "crm_disclosure_id": disclosure_id, "crm_include_archived": request.GET.get("archived") == "1"}
 
@@ -57,6 +69,7 @@ def authorized_record(request, disclosure_id, interaction_id, *, write=False):
 def create(request, disclosure_id):
     writable(request)
     organization_id, candidate = candidate_context(request, disclosure_id)
+    back = candidate_origin(request, disclosure_id)
     with policy_transaction():
         employer.customer_grant(request.user, organization_id, disclosure_id, write=True)
     form = forms.ActivityForm(request.POST if request.method == "POST" else None, employer=True,
@@ -72,9 +85,9 @@ def create(request, disclosure_id):
                 errors(form, exc)
             else:
                 messages.success(request, "Interaction recorded for your company. No message was sent and no recruiting decision changed.")
-                return redirect(candidate_url(disclosure_id) + "#company-interactions")
+                return redirect(back + "#company-interactions")
     return render(request, "crm/portal_form.html", context(request, "candidates", form=form,
-        page_title="Record candidate interaction", subject=candidate["position"], back=candidate_url(disclosure_id),
+        page_title="Log interaction", subject=candidate["position"], crm_candidate=candidate, back=back + "#company-interactions",
         guidance="Record an action your company performed outside BTW. These records are visible to authorized members of your company and BTW staff.", submit_label="Save interaction"))
 
 
@@ -97,7 +110,8 @@ def detail(request, disclosure_id, interaction_id):
             "notes": value.get("notes", ""), "next_step": value.get("next_step", ""),
             "occurred_at": value.get("occurred_at", "")})
     return render(request, "crm/portal_detail.html", context(request, "candidates", item=item,
-        crm_disclosure_id=disclosure_id, subject=candidate["position"], back=candidate_url(disclosure_id), revisions=revisions))
+        crm_disclosure_id=disclosure_id, subject=candidate["position"], crm_candidate=candidate,
+        back=candidate_origin(request, disclosure_id), revisions=revisions))
 
 
 @customer_view
@@ -106,6 +120,7 @@ def correct(request, disclosure_id, interaction_id):
     writable(request)
     organization_id, candidate = candidate_context(request, disclosure_id)
     row = authorized_record(request, disclosure_id, interaction_id, write=True)
+    back = candidate_origin(request, disclosure_id, reverse("crm:employer-detail", args=[disclosure_id, row.pk]))
     form = forms.ActivityForm(request.POST if request.method == "POST" else None, row=row, employer=True)
     if request.method == "POST":
         valid = form.is_valid()
@@ -118,10 +133,10 @@ def correct(request, disclosure_id, interaction_id):
                 errors(form, exc)
             else:
                 messages.success(request, "Correction saved. The original author and earlier versions are retained.")
-                return redirect("crm:employer-detail", disclosure_id=disclosure_id, interaction_id=row.pk)
+                return redirect(back)
     return render(request, "crm/portal_form.html", context(request, "candidates", form=form,
-        page_title="Correct company interaction", subject=candidate["position"],
-        back=reverse("crm:employer-detail", args=[disclosure_id, row.pk]),
+        page_title="Correct interaction", subject=candidate["position"], crm_candidate=candidate,
+        back=back,
         guidance="Explain your correction. The company, candidate, release and original author cannot change.", submit_label="Save correction"))
 
 
@@ -133,6 +148,7 @@ def archive(request, disclosure_id, interaction_id, action):
         raise Http404
     organization_id, candidate = candidate_context(request, disclosure_id)
     row = authorized_record(request, disclosure_id, interaction_id, write=True)
+    back = candidate_origin(request, disclosure_id, reverse("crm:employer-detail", args=[disclosure_id, row.pk]))
     form = forms.ArchiveForm(request.POST if request.method == "POST" else None, initial={"revision": row.revision})
     if request.method == "POST" and form.is_valid():
         reject_extra(form, request.POST)
@@ -143,8 +159,8 @@ def archive(request, disclosure_id, interaction_id, action):
             except (ValidationError, ObjectDoesNotExist) as exc:
                 errors(form, exc)
             else:
-                return redirect("crm:employer-detail", disclosure_id=disclosure_id, interaction_id=row.pk)
+                return redirect(back)
     return render(request, "crm/portal_form.html", context(request, "candidates", form=form,
-        page_title=action.title() + " company interaction", subject=candidate["position"],
-        back=reverse("crm:employer-detail", args=[disclosure_id, row.pk]),
+        page_title=action.title() + " company interaction", subject=candidate["position"], crm_candidate=candidate,
+        back=back,
         guidance="The entry and its correction history are retained.", submit_label=action.title()))

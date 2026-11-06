@@ -1,0 +1,1 @@
+{% if crm_candidate %}<p class="crm-subject-name"><strong>{{ crm_candidate.candidate.name|default:'Candidate profile' }}</strong></p><p>{{ crm_candidate.position }}{% if crm_candidate.request %} · {{ crm_candidate.request }}{% endif %}</p>{% else %}<p>{{ subject }}</p>{% endif %}

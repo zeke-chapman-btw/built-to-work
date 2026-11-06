@@ -1,13 +1,13 @@
-{% extends 'customers/portal/base.html' %}
-{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}{% endblock %}
+{% extends 'customers/portal/base.html' %}{% load static %}
+{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<script src="{% static 'crm/editor.js' %}" defer></script>{% endblock %}
 {% block page_heading %}{% endblock %}
 {% block content %}<div class="crm-workspace"><a href="{{ back }}">← Candidate interactions</a>
-<header class="crm-heading"><h1>{{ page_title }}</h1><p>{{ subject }}</p></header>
-<section class="card crm-card"><p>{{ guidance }}</p><form method="post" class="crm-form">{% csrf_token %}
-{% if form.errors %}<div class="crm-errors" role="alert"><h2>Review the highlighted details</h2>{{ form.non_field_errors }}</div>{% endif %}
+<header class="crm-heading"><h1>{{ page_title }}</h1>{% include 'crm/employer_subject.html' %}</header>
+<section class="card crm-card"><p>{{ guidance }}</p><form method="post" class="crm-form" data-crm-unsaved>{% csrf_token %}
+{% if form.errors %}<div class="crm-errors" role="alert" tabindex="-1" data-crm-errors><h2>Review the highlighted details</h2>{{ form.non_field_errors }}<ul>{% for field in form.visible_fields %}{% if field.errors %}<li><a href="#{{ field.id_for_label }}">{{ field.label }}: {{ field.errors|striptags }}</a></li>{% endif %}{% endfor %}</ul></div>{% endif %}
 {% for hidden in form.hidden_fields %}{{ hidden }}{{ hidden.errors }}{% endfor %}
 {% if form.core_fields %}{% for field in form.core_fields %}{% include 'crm/field.html' %}{% endfor %}
-<details class="crm-optional"{% if form.errors %} open{% endif %}><summary>More details (optional)</summary>{% for field in form.optional_fields %}{% include 'crm/field.html' %}{% endfor %}</details>
+<fieldset class="crm-next-fields"><legend>Next step (optional)</legend><p class="crm-help">This records information only. No reminder is scheduled.</p>{% for field in form.next_fields %}{% include 'crm/field.html' %}{% endfor %}</fieldset><details class="crm-optional"{% if form.errors %} open{% endif %}><summary>More details (optional)</summary>{% for field in form.supporting_fields %}{% include 'crm/field.html' %}{% endfor %}</details>
 {% else %}{% for field in form.visible_fields %}{% include 'crm/field.html' %}{% endfor %}{% endif %}
 <div class="crm-actions"><button type="submit" class="button button-primary">{{ submit_label }}</button><a href="{{ back }}">Cancel</a></div>
 </form></section></div>{% endblock %}

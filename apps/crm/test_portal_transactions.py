@@ -31,7 +31,7 @@ class EmployerRequestTransactionTests(EmployerFixtures, TransactionTestCase):
     def test_entry_detail_correction_and_archive_work_without_an_enclosing_test_transaction(self):
         self.assertFalse(connection.in_atomic_block)
         new = reverse("crm:employer-new", args=[self.grant.pk])
-        self.assertContains(self.client.get(new), "Record candidate interaction")
+        self.assertContains(self.client.get(new), "Log interaction")
         data = self.activity_payload()
         self.assertEqual(self.client.post(new, data).status_code, 302)
         self.assertEqual(self.client.post(new, data).status_code, 302)
