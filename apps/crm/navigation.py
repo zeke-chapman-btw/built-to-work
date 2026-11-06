@@ -22,8 +22,17 @@ def origin(request, *, participant=None, organization=None, fallback):
     allowed = {}
     if organization:
         for tab in ("overview", "crm"):
-            allowed[reverse("customers:workspace", args=[organization.pk, tab])] = QUERY_KEYS
-    return local_return(value, fallback=fallback, allowed=allowed, max_length=16384, max_fields=60)
+            allowed[reverse("customers:workspace", args=[organization.pk, tab])] = QUERY_KEYS | {"return_to"}
+    cleaned = local_return(value, fallback=fallback, allowed=allowed, max_length=16384, max_fields=60)
+    if organization:
+        parts = urlsplit(cleaned); pairs = []
+        directory = reverse("customers:directory")
+        for key, val in parse_qsl(parts.query, keep_blank_values=True):
+            if key == "return_to":
+                val = local_return(val, fallback=directory, allowed={directory: {"q", "status", "provisioned", "page"}})
+            pairs.append((key, val))
+        return parts.path + ("?" + urlencode(pairs) if pairs else "")
+    return cleaned
 
 
 def with_origin(url, destination):

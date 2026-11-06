@@ -94,10 +94,19 @@ def workspace(request, org_id, tab="overview"):
     data = context(request, org, tab, seats=s.seat_usage(org))
     if tab == "overview":
         data.update(needs=org.workforce_needs.filter(status__in=["active", "hold"]).select_related("effective_revision", "working_revision")[:5], campaigns=org.campaigns.exclude(status__in=["completed", "cancelled"])[:5], recent=activity(org)[:5], pending_count=org.workforce_needs.filter(working_revision__state__in=["submitted", "review"]).count())
+        from apps.crm.presentation import history_context
+        relationship = history_context(request, organization=org)
+        data.update({key: relationship[key] for key in ("crm_summary", "crm_subject_is_company") if key in relationship})
     elif tab == "crm":
         from apps.crm.presentation import history_context
         data.update(history_context(request, organization=org))
         data["crm_contacts"] = org.contacts.select_related("crm_relationship").all()
+        from apps.recruiting.selection import opportunities_for
+        try:
+            data.update(recruiting_available=True, recruiting_positions=opportunities_for(request.user).filter(
+                need__organization=org, archived_at__isnull=True).select_related("need__effective_revision").order_by("-created_at", "pk")[:5])
+        except PermissionDenied:
+            data.update(recruiting_available=False)
     elif tab == "matches":
         from apps.recruiting.selection import opportunities_for
         try:

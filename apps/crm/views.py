@@ -175,6 +175,7 @@ def contact(request, organization_id, contact_id):
     require_manager(request.user)
     person = get_object_or_404(CustomerContact.objects.select_related("organization"), pk=contact_id, organization_id=organization_id)
     organization = person.organization
+    back = origin(request, organization=organization, fallback=reverse("customers:workspace", args=[organization.pk, "crm"]))
     if organization.status == "archived":
         raise PermissionDenied("Archived customer contact settings are read-only.")
     row = ContactRelationship.objects.filter(contact=person).first()
@@ -193,9 +194,9 @@ def contact(request, organization_id, contact_id):
             except ValidationError as exc:
                 errors(form, exc)
             else:
-                return redirect("customers:workspace", org_id=organization.pk, tab="crm")
+                return redirect(back)
     return render(request, "crm/form.html", {"form": form, "page_title": "Contact relationship",
-        "subject": person, "back": reverse("customers:workspace", args=[organization.pk, "crm"]),
+        "subject": person, "back": back,
         "submit_label": "Save contact settings", "guidance": "Record this contact's role and preferred contact methods. Portal access is managed separately under Users & Contacts; preferences do not record consent."})
 
 

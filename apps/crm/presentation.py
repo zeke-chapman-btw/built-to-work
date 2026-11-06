@@ -142,6 +142,8 @@ def history_context(request, *, participant=None, organization=None):
     result["crm_new_url"] = with_origin(result["crm_new_url"], request.get_full_path())
     result["crm_quick_actions"] = [{"label": label, "url": result["crm_new_url"] + "&" + urlencode({"type": kind})}
         for kind, label in (("call", "Log call"), ("email", "Record email"), ("sms", "Record text"), ("meeting", "Log meeting"), ("note", "Relationship note"))]
+    result["crm_record_email_url"] = result["crm_new_url"] + "&type=email"
+    result["crm_record_text_url"] = result["crm_new_url"] + "&type=sms"
     choices = [("all", "All")] if organization else []
     if result.get("crm_btw_allowed"):
         choices.append(("btw", "BTW–Customer" if organization else "BTW Interactions"))

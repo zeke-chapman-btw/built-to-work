@@ -4,6 +4,7 @@
 <form method="get" class="crm-filters" aria-label="Filter relationship interactions">
 {% if section %}<input type="hidden" name="section" value="{{ section }}">{% endif %}
 {% if request.GET.from %}<input type="hidden" name="from" value="{{ request.GET.from }}">{% endif %}
+{% if crm_subject_is_company and request.GET.return_to %}<input type="hidden" name="return_to" value="{{ request.GET.return_to }}">{% endif %}
 <input type="hidden" name="crm_view" value="{{ crm_view }}">
 <div><label for="crm_q">Employer, engagement or summary</label><input id="crm_q" name="crm_q" value="{{ request.GET.crm_q }}" type="search"></div>
 <div><label for="crm_type">Interaction type</label><select id="crm_type" name="crm_type"><option value="">All types</option>{% for value,label in crm_types %}<option value="{{ value }}"{% if request.GET.crm_type == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
