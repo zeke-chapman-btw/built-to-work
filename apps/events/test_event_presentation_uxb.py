@@ -10,7 +10,7 @@ from .models import Event
 from .timezone_choices import event_timezone_label, timezone_choices
 
 
-class EventTimezonePresentationTests(SimpleTestCase):
+class EventTimezonePresentationTests(TestCase):
     def event(self, zone, start, end=None):
         return SimpleNamespace(timezone_name=zone, start_at=start, end_at=end or start)
 

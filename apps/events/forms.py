@@ -25,7 +25,7 @@ class EventForm(forms.ModelForm):
     revision = forms.CharField(required=False, widget=forms.HiddenInput)
 
     FIELD_GROUPS = (
-        ("Basic information", ("name", "event_type", "event_type_other", "description")),
+        ("Basic information", ("name", "event_type", "event_type_other", "description", "simulator_qualification_threshold")),
         ("Location", ("location_name", "address_line_1", "address_line_2", "city", "state", "postal_code", "country")),
         ("Schedule", ("timezone_name", "setup_date", "staff_arrival_time", "start_at", "end_at", "daily_start_time", "daily_end_time", "return_date")),
         ("Contact and logistics", ("contact_name", "contact_email", "contact_phone", "housing_information", "logistics_instructions")),
@@ -35,7 +35,7 @@ class EventForm(forms.ModelForm):
     class Meta:
         model = Event
         fields = tuple(name for title, names in (
-            ("basic", ("name", "event_type", "event_type_other", "description")),
+            ("basic", ("name", "event_type", "event_type_other", "description", "simulator_qualification_threshold")),
             ("location", ("location_name", "address_line_1", "address_line_2", "city", "state", "postal_code", "country")),
             ("schedule", ("timezone_name", "setup_date", "staff_arrival_time", "start_at", "end_at", "daily_start_time", "daily_end_time", "return_date")),
             ("logistics", ("contact_name", "contact_email", "contact_phone", "housing_information", "logistics_instructions")),
@@ -50,6 +50,8 @@ class EventForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["simulator_qualification_threshold"].required = False
+        self.fields["simulator_qualification_threshold"].help_text = "TOTAL SCORE percent; default 50. Finalized report versions retain their original threshold."
         self._original_timezone = self.instance.timezone_name
         self._original_datetimes = {name: getattr(self.instance, name) for name in ("start_at", "end_at", "registration_opens_at", "registration_closes_at", "registration_deadline_at")}
         self.fields["timezone_name"].widget = forms.Select(choices=timezone_choices(self.data.get("timezone_name") if self.is_bound else self.initial.get("timezone_name")))
@@ -87,6 +89,8 @@ class EventForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
+        if cleaned.get("simulator_qualification_threshold") is None:
+            cleaned["simulator_qualification_threshold"] = self.instance.simulator_qualification_threshold
         try:
             zone = ZoneInfo(cleaned.get("timezone_name") or "UTC")
         except (ZoneInfoNotFoundError, TypeError, ValueError):

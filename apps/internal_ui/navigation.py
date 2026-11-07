@@ -260,6 +260,9 @@ def staff_destinations(user, current_path=""):
         dict(id="settings", label="Settings", icon="settings", url=reverse("internal:settings"), active=False),
     ])
     if not report_destinations(user):entries=[entry for entry in entries if entry['id']!='reports']
+    from apps.staffing.models import StaffProfile
+    if StaffProfile.objects.filter(user=user,is_active=True).exists():
+        entries.append(dict(id="my-pay",label="My Pay",icon="reports",url=reverse("reporting:my-pay"),active=False))
     active = next((entry["id"] for entry in entries if entry["active"]), None)
     if any(legacy.get(key, {}).get("active") for key in ("administration", "platform-tools")):
         active = "settings"
@@ -267,6 +270,7 @@ def staff_destinations(user, current_path=""):
         active = "events" if current_path.startswith("/reports/events/") else "settings" if current_path.startswith("/reports/categories/") else "reports"
     if current_path.startswith(("/internal/settings/", "/workdays/mine/", "/internal/quick-actions/", "/accounts/staff/", "/workdays/compensation/")):
         active = "settings"
+    if current_path.startswith("/internal/reports/my-pay/"):active="my-pay"
     for entry in entries:
         entry["active"] = entry["id"] == active
     return entries

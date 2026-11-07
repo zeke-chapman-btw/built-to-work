@@ -17,7 +17,7 @@ from .roles import ROLE_GROUPS,roles_for,require_account_manager,require_target,
 INVITE_SALT='btw.staff.invitation.v1'
 
 def account_state(user):
-    return {'username':user.username,'email':user.email,'first_name':user.first_name,'last_name':user.last_name,'active':user.is_active,'staff':user.is_staff,'administrator':user.is_superuser,'roles':sorted(roles_for(user)),'groups':list(user.groups.order_by('pk').values_list('pk',flat=True)),'permissions':list(user.user_permissions.order_by('pk').values_list('pk',flat=True)),'security_revision':user.security_revision,'profile_id':str(StaffProfile.objects.filter(user=user).values_list('pk',flat=True).first() or '')}
+    return {'username':user.username,'email':user.email,'first_name':user.first_name,'last_name':user.last_name,'active':user.is_active,'staff':user.is_staff,'administrator':user.is_superuser,'roles':sorted(roles_for(user)),'groups':list(user.groups.order_by('pk').values_list('pk',flat=True)),'permissions':list(user.user_permissions.order_by('pk').values_list('pk',flat=True)),'security_revision':user.security_revision,'can_finalize_event_reports':user.can_finalize_event_reports,'can_approve_weekly_payroll':user.can_approve_weekly_payroll,'profile_id':str(StaffProfile.objects.filter(user=user).values_list('pk',flat=True).first() or '')}
 def revision(user):
     state=account_state(user)
     profile=StaffProfile.objects.filter(user=user).first()
@@ -57,6 +57,11 @@ def save_account(*,actor,data,user_id=None):
     if not selected or selected-allowed:raise PermissionDenied('Choose roles within your authority.')
     for role in selected-{'administrator'}:
         if not Group.objects.filter(name=ROLE_GROUPS[role]).exists():raise ValidationError('Staff roles must be configured by an Administrator before account changes.')
+    finalizer=bool(data.get("can_finalize_event_reports",getattr(target,"can_finalize_event_reports",False)))
+    payroll=bool(data.get("can_approve_weekly_payroll",getattr(target,"can_approve_weekly_payroll",False)))
+    if (finalizer or payroll) and not actor.is_superuser:raise PermissionDenied("Only an Administrator designates report authority.")
+    if finalizer and not (selected & {"administrator","manager"}):raise ValidationError("Event finalization requires an Administrator or Manager role.")
+    if payroll and "administrator" not in selected:raise ValidationError("Weekly payroll approval requires an Administrator role.")
     before=account_state(target) if target else None
     username=str(data.get('username','')).strip();email=str(data.get('email','')).strip().lower()
     if not username or not email:raise ValidationError('Username and email are required.')
@@ -72,6 +77,7 @@ def save_account(*,actor,data,user_id=None):
     target.username=username;target.email=email
     target.first_name=str(data.get('first_name','')).strip();target.last_name=str(data.get('last_name','')).strip()
     target.is_staff=True;target.is_superuser='administrator' in selected
+    target.can_finalize_event_reports=finalizer;target.can_approve_weekly_payroll=payroll
     if not new:target.is_active=bool(data.get('is_active',target.is_active))
     target.security_revision+=1
     if new:target.set_unusable_password()
@@ -80,6 +86,11 @@ def save_account(*,actor,data,user_id=None):
     # operate such a protected account; ordinary controls cannot edit grants.
     target.groups.remove(*Group.objects.filter(name__in=ROLE_GROUPS.values()))
     target.groups.add(*Group.objects.filter(name__in=[ROLE_GROUPS[x] for x in selected if x in ROLE_GROUPS]))
+    from django.contrib.auth.models import Permission
+    for codename,enabled in [("finalize_event_reports",finalizer),("approve_weekly_payroll",payroll)]:
+        permission=Permission.objects.get(content_type__app_label="reporting",codename=codename)
+        if enabled:target.user_permissions.add(permission)
+        else:target.user_permissions.remove(permission)
     profile_id=getattr(data.get('profile'),'pk',data.get('profile'))
     existing=StaffProfile.objects.select_for_update().filter(user=target).first()
     if profile_id:

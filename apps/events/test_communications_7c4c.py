@@ -4,7 +4,7 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.core.management import call_command
-from django.test import TestCase, override_settings
+from django.test import TransactionTestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -22,7 +22,8 @@ from .operations_views import central_connectivity_status
 from .ticket_renderer import ticket_png_bytes
 
 
-class CommunicationTests(TestCase):
+# Worker commands manage connections outside a per-test atomic wrapper.
+class CommunicationTests(TransactionTestCase):
     def setUp(self):
         now = timezone.now()
         self.event = Event.objects.create(name="Review event", start_at=now, end_at=now + timedelta(days=1), status=Event.Status.UPCOMING)

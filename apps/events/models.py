@@ -12,6 +12,8 @@ from django.utils import timezone
 from apps.participants.models import Participant
 
 
+from django.core.validators import MinValueValidator, MaxValueValidator
+
 class Event(models.Model):
     class Status(models.TextChoices):
         DRAFT = "draft", "Draft"
@@ -22,6 +24,7 @@ class Event(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200)
+    simulator_qualification_threshold = models.DecimalField(max_digits=5, decimal_places=2, default=50, db_default=50, validators=[MinValueValidator(0), MaxValueValidator(100)])
     code = models.CharField(max_length=40, unique=True, null=True, blank=True)
     description = models.TextField(blank=True)
     start_at = models.DateTimeField()
@@ -83,7 +86,7 @@ class Event(models.Model):
 
     class Meta:
         ordering = ("start_at", "name")
-        constraints = [models.CheckConstraint(condition=Q(end_at__gte=F("start_at")), name="event_end_at_or_after_start")]
+        constraints = [models.CheckConstraint(condition=Q(end_at__gte=F("start_at")), name="event_end_at_or_after_start"), models.CheckConstraint(condition=Q(simulator_qualification_threshold__gte=0, simulator_qualification_threshold__lte=100), name="event_sim_threshold_range")]
         indexes = [models.Index(fields=("status", "start_at"), name="event_status_start_idx")]
 
     def clean(self):

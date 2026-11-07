@@ -7,6 +7,8 @@ from unittest.mock import patch
 
 from cryptography.fernet import Fernet, InvalidToken
 from django.contrib.auth import get_user_model
+from unittest import skipUnless
+
 from django.db import connection
 from django.test import TestCase, TransactionTestCase
 
@@ -15,6 +17,7 @@ from apps.events.portable_recovery import restore_portable_backup
 from apps.events.models import BackupRecord, TrailerInstance
 
 
+@skipUnless(connection.vendor == 'sqlite', 'Trailer backup and restore currently support SQLite only.')
 class TrailerBackupTests(TransactionTestCase):
     reset_sequences = True
 

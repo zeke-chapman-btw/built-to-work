@@ -1,5 +1,6 @@
 """Permission-controlled Event editing and explicit lifecycle transitions."""
 from datetime import UTC, datetime
+from decimal import Decimal
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
@@ -27,7 +28,7 @@ def event_snapshot(event):
         value = getattr(event, name)
         if isinstance(value, datetime) and timezone.is_aware(value):
             value = value.astimezone(UTC)
-        result[name] = value.isoformat() if hasattr(value, "isoformat") else str(value) if name.endswith("_id") and value is not None else value
+        result[name] = value.isoformat() if hasattr(value, "isoformat") else str(value) if isinstance(value,Decimal) or (name.endswith("_id") and value is not None) else value
     return result
 
 def available_actions(event):

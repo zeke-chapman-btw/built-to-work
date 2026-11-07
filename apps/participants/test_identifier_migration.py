@@ -8,6 +8,7 @@ from .intake_contracts import contract_hash
 class IdentifierMigrationTests(TransactionTestCase):
     def test_existing_rows_and_frozen_contract_survive_additive_migration(self):
         executor=MigrationExecutor(connection)
+        latest=executor.loader.graph.leaf_nodes()
         old_target=[('participants','0021_build15_foundation')]
         target=[('participants','0022_primary_identifier_provenance')]
         executor.migrate(old_target)
@@ -31,4 +32,5 @@ class IdentifierMigrationTests(TransactionTestCase):
             legacy_owner=OldState.objects.create(participant_id=legacy_person.pk,destination='current_situation',is_protected=True,value_hash='a'*64,last_value='')
             self.assertEqual(new.get_model('participants','IntakeFieldState').objects.get(pk=legacy_owner.pk).provenance,{})
         finally:
-            MigrationExecutor(connection).migrate(target)
+            # Restore every current app leaf, including later dependent reporting migrations.
+            MigrationExecutor(connection).migrate(latest)

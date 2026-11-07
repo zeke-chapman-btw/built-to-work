@@ -39,7 +39,7 @@ def edit(request,user_id=None):
     if target:require_target(request.user,target)
     initial={}
     if target:
-        initial={name:getattr(target,name) for name in ['username','email','first_name','last_name','is_active']}
+        initial={name:getattr(target,name) for name in ['username','email','first_name','last_name','is_active','can_finalize_event_reports','can_approve_weekly_payroll']}
         initial.update(roles=sorted(roles_for(target)),revision=revision(target))
         from apps.staffing.models import StaffProfile
         profile=StaffProfile.objects.filter(user=target).first();initial['profile']=profile.pk if profile else None

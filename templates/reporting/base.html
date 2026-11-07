@@ -1,0 +1,4 @@
+{% extends 'internal/base.html' %}{% load static %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'reporting/reporting.css' %}"><script src="{% static 'reporting/reporting.js' %}" defer></script>{% endblock %}
+{% block content_start %}<div class="r17-workspace">{% if synthetic_review %}<p class="r17-review" role="status">LOCAL REVIEW · SYNTHETIC DATA · Build 17 is not deployed</p>{% endif %}{% endblock %}
+{% block content_end %}</div>{% endblock %}

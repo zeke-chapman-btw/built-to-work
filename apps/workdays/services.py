@@ -13,6 +13,7 @@ from apps.staffing.models import StaffProfile, AssignmentDay
 from apps.staffing.services import require_staff, revision
 from apps.staffing.calendar import event_days
 from .models import StaffRole, CompensationRate, EventMileage, MileageTrip, Workday
+from apps.reporting.locks import serialized_compensation
 from .forms import CheckinForm, WorkdayForm, RoleForm, RateForm, DistanceForm, TripForm, RevisionForm
 
 def manager(user):
@@ -60,6 +61,7 @@ def driving_trip(actor,event,staff,source='staff_declaration'):
     obj=MileageTrip(event=event,staff=staff,number=1,claim_date=event.local_start_at.date(),source=source,created_by=actor,updated_by=actor,reason='Driving declaration; manager review required.')
     obj.full_clean();obj.save();audit(actor,'trip.flagged',obj)
     return obj
+@serialized_compensation
 @transaction.atomic
 def checkin(*,actor,event_id,data):
     from apps.accounts.roles import has_role
@@ -82,6 +84,7 @@ def checkin(*,actor,event_id,data):
     if obj.drove:obj.trip=driving_trip(actor,event,staff)
     obj.full_clean();obj.save();audit(actor,'checkin.created',obj)
     return obj,form
+@serialized_compensation
 @transaction.atomic
 def save_workday(*,actor,event_id,data,record_id=None):
     require_manager(actor);event=Event.objects.select_for_update().get(pk=event_id)
@@ -104,6 +107,7 @@ def save_workday(*,actor,event_id,data,record_id=None):
     obj.updated_by=actor;snapshot_pay(obj);obj.trip=driving_trip(actor,event,staff,source='manager') if obj.drove else None
     obj.full_clean();obj.save();audit(actor,'workday.corrected' if before else 'workday.manual',obj,before)
     return obj,form
+@serialized_compensation
 @transaction.atomic
 def workday_action(*,actor,record_id,data,action):
     require_manager(actor);initial=Workday.objects.get(pk=record_id);Event.objects.select_for_update().get(pk=initial.event_id)
@@ -155,6 +159,7 @@ def save_distance(*,actor,event_id,data):
     obj.destination=destination(event);obj.one_way_miles=d['one_way_miles'];obj.reason=d['reason'];obj.verified_by=actor;obj.verified_at=timezone.now()
     obj.full_clean();obj.save();audit(actor,'distance.verified',obj,before)
     return obj,form
+@serialized_compensation
 @transaction.atomic
 def save_trip(*,actor,event_id,data,trip_id=None):
     require_manager(actor);event=Event.objects.select_for_update().get(pk=event_id)
@@ -172,6 +177,7 @@ def save_trip(*,actor,event_id,data,trip_id=None):
     obj.status='pending';obj.rate=None;obj.rate_amount=None;obj.amount=None;obj.one_way_miles=None;obj.round_trip_miles=None;obj.destination=''
     obj.full_clean();obj.save();audit(actor,'trip.corrected' if before else 'trip.manual',obj,before)
     return obj,form
+@serialized_compensation
 @transaction.atomic
 def trip_action(*,actor,trip_id,data,action):
     require_manager(actor);initial=MileageTrip.objects.get(pk=trip_id);Event.objects.select_for_update().get(pk=initial.event_id)
