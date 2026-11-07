@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from apps.internal_ui.people_editors import people_render as render, people_saved
 from django.views.decorators.http import require_http_methods, require_POST
-from .historical import (EXPORT_FIELDS, IMPORT_FIELDS, _read_rows, create_batch, export_participants,
+from .historical import (EXPORT_FIELDS, IMPORT_FIELDS, MAX_FILE_BYTES, MAX_ROWS, MAX_COLUMNS, _read_rows, create_batch, export_participants,
                          import_ready, preview_batch, resolve_review)
 from .models import (HistoricalImportBatch, HistoricalImportRow, HistoricalMappingTemplate, Participant)
 
@@ -30,7 +30,8 @@ def historical_index(request):
         except ValidationError as exc:
             error = "; ".join(exc.messages)
     batches = HistoricalImportBatch.objects.order_by("-created_at")[:50]
-    return render(request, "participants/historical_index.html", {"batches": batches, "error": error})
+    return render(request, "participants/historical_index.html", {"batches": batches, "error": error, "import_fields": IMPORT_FIELDS,
+        "import_max_mb": MAX_FILE_BYTES // (1024 * 1024), "import_max_rows": MAX_ROWS, "import_max_columns": MAX_COLUMNS})
 
 
 @login_required

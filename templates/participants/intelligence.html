@@ -1,7 +1,7 @@
 {% extends 'participants/workspace_base.html' %}{% load people_ui %}
 {% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}{% endblock %}
 {% block design_navigation %}{% endblock %}
-{% block design_actions %}{% if can_add_person %}<a class="button button-primary" href="{% url 'participants:staff-add' %}?return_to={{ request.get_full_path|urlencode }}">+ Add participant</a>{% endif %}{% endblock %}
+{% block design_actions %}{% if active_participant_tab == 'directory' and perms.participants.add_historicalimportbatch %}<a class="button secondary" href="{% url 'participants:historical-index' %}">Import participants</a>{% endif %}{% if can_add_person %}<a class="button button-primary" href="{% url 'participants:staff-add' %}?return_to={{ request.get_full_path|urlencode }}">+ Add participant</a>{% endif %}{% endblock %}
 {% block people_content %}<div class="people-explorer" id="people-directory">
 <form class="ex-search" method="get" role="search" aria-label="Find participants"><div><label for="id_q">Name, email, or phone</label>{{ filter_form.q }}</div><div><label for="id_sort">Sort</label>{{ filter_form.sort }}</div><input type="hidden" name="segments" value="{{ criteria.segments|default:'' }}"><input type="hidden" name="facet" value=""><input type="hidden" name="bucket" value="">{% for key,value in explorer_hidden %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}<button class="button button-primary" type="submit">Search</button></form>
 {% include 'internal/ui/form_errors.html' with form=filter_form %}

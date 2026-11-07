@@ -12,10 +12,11 @@ from . import portal_forms as f, services as s, invitations as invites, projecti
 from .collaboration import campaign_submission
 from .portal_presentation import effective_access, record_restriction, need_prerequisites
 from .portal_policy import identity_for, eligible_memberships, require_membership
+from .presentation import HIRING_LABELS
 from .models import WorkforceNeed as Need, WorkforceNeedRevision as Revision, Campaign, CustomerMembership as Membership, TERM_FIELD_NAMES
 
 TABS = [('overview', 'Dashboard'), ('recruiting', 'Recruiting'), ('candidates', 'Candidates'), ('company', 'Company')]
-SECONDARY_TABS = {'needs':'Positions / Workforce Needs', 'campaigns':'Campaigns', 'users':'Team & Membership',
+SECONDARY_TABS = {'needs':'Positions', 'campaigns':'Campaigns', 'users':'Team & Membership',
     'access':'Company Access', 'history':'History & Feedback', 'account':'Account & Security'}
 TAB_GROUPS = {'needs':'recruiting', 'campaigns':'recruiting', 'users':'company', 'access':'company', 'history':'company', 'account':'account'}
 
@@ -147,7 +148,11 @@ def add_error(form, error):
         form.add_error(None, 'This record is no longer available. Reload before continuing.')
     elif hasattr(error, 'message_dict'):
         for key, value in error.message_dict.items():
-            form.add_error(key if key in form.fields else None, value)
+            if key in form.fields or key == '__all__':
+                form.add_error(key if key in form.fields else None, value)
+            else:
+                label = HIRING_LABELS.get(key, key.replace('_', ' ').capitalize())
+                form.add_error(None, [f'{label}: {message}' for message in value])
     else:
         form.add_error(None, error.messages)
 
@@ -207,8 +212,8 @@ def need_editor(request, record_id=None):
     instance = working or Revision(organization=org, **({key: getattr(source, key) for key in TERM_FIELD_NAMES} if source else {}))
     form = f.NeedForm(request.POST if request.method == 'POST' else None, actor=request.user, org_id=org.pk, instance=instance,
         initial={'org_revision': org.revision, 'record_revision': need.revision if need else None, 'working_id': working.pk if working else None})
-    return form_page(request, 'Edit Workforce Need draft' if need else 'New Workforce Need', form, tab='needs',
-        notice='Save an incomplete draft at any time. Submit separately when every required hiring detail is ready. Approved details remain effective while proposed changes are reviewed.',
+    return form_page(request, 'Edit position draft' if need else 'Add a position', form, tab='needs',
+        notice='',
         save=lambda d: s.save_hiring_draft(actor=request.user, org_id=org.pk, expected_org_revision=d['org_revision'], need_id=record_id,
             expected_need_revision=d['record_revision'], expected_working_id=d['working_id'], data={k:d[k] for k in f.EDITABLE_TERM_FIELDS}, why='Customer saved hiring-term draft.'),
         success=lambda obj: reverse('customer_portal:need', args=[obj.pk]),
@@ -224,7 +229,7 @@ def need_action(request, record_id, action):
     require_membership(request.user, org.pk, action='needs')
     obj = get_object_or_404(Need, pk=record_id, organization=org)
     form = f.ActionForm(request.POST if request.method == 'POST' else None, initial={'org_revision': org.revision, 'record_revision': obj.revision, 'working_id': obj.working_revision_id})
-    return form_page(request, action.title() + ' Workforce Need', form, tab='needs', notice='Confirm this action on the current working revision. Submission does not approve your Need.',
+    return form_page(request, action.title() + ' position', form, tab='needs', notice='Confirm this action on the current working revision. Submission does not approve your position.',
         save=lambda d: s.revision_action(actor=request.user, org_id=org.pk, need_id=obj.pk, expected_org_revision=d['org_revision'], expected_need_revision=d['record_revision'], revision_id=d['working_id'], action=action, why='Customer explicitly ' + action + ' hiring revision.'),
         success=lambda obj: reverse('customer_portal:need', args=[obj.pk]))
 

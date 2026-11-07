@@ -6,12 +6,12 @@ from .forms import HIRING_SECTIONS
 from .presentation import HIRING_LABELS
 
 SAFE_ACTIVITY = {
-    'customer.need.draft_saved': 'Workforce Need draft saved',
-    'customer.need.revision_submit': 'Workforce Need submitted to BTW',
-    'customer.need.revision_review': 'BTW started reviewing a Workforce Need',
-    'customer.need.revision_approve': 'BTW approved a Workforce Need revision',
-    'customer.need.revision_return': 'BTW requested Workforce Need changes',
-    'customer.need.revision_withdraw': 'Workforce Need submission withdrawn',
+    'customer.need.draft_saved': 'Position draft saved',
+    'customer.need.revision_submit': 'Position submitted to BTW',
+    'customer.need.revision_review': 'BTW started reviewing a Position',
+    'customer.need.revision_approve': 'BTW approved a Position revision',
+    'customer.need.revision_return': 'BTW requested Position changes',
+    'customer.need.revision_withdraw': 'Position submission withdrawn',
     'customer.campaign.created': 'Campaign draft created',
     'customer.campaign.updated': 'Campaign planning updated',
     'customer.campaign.submit': 'Campaign submitted to BTW',
@@ -86,7 +86,7 @@ def terms(rev):
 def need_row(obj):
     latest = obj.working_revision or obj.revisions.order_by('-number').first()
     rev = obj.display_revision or latest
-    return {'id': obj.pk, 'title': rev.title if rev and rev.title else 'Untitled Workforce Need', 'status': obj.get_status_display(),
+    return {'id': obj.pk, 'title': rev.title if rev and rev.title else 'Untitled Position', 'status': obj.get_status_display(),
             'trade': rev.trade if rev else '', 'quantity': rev.worker_quantity if rev else None,
             'pending': bool(obj.working_revision_id), 'review_state': latest.state if latest else '',
             'review': 'Changes requested' if latest and latest.state == 'returned' else latest.get_state_display() if latest else '',

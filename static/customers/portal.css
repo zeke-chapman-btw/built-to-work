@@ -51,3 +51,11 @@
 .has-customer-shell .application-utility-link{display:flex;align-items:center;min-height:44px;color:#d8dce1;padding:8px 10px;text-decoration:none}
 .has-customer-shell .ux-local-nav{margin-bottom:16px}
 @media(max-width:639px){.has-customer-shell .customer-overview-metrics{grid-template-columns:1fr;gap:10px}.has-customer-shell .customer-overview-metrics>a{flex-direction:row;align-items:center;gap:16px}body.btw-platform.has-customer-shell #main-content .portal-workspace form :is(input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select,textarea){font-size:16px;min-height:44px}.has-customer-shell .ux-local-nav>a{display:inline-flex;align-items:center;min-height:44px}}
+
+/* Round 1: independent dashboard panels; form/detail frames retain their existing width. */
+body.internal-app.btw-platform.has-customer-shell #main-content .portal-workspace:has(.customer-dashboard){max-width:1280px}
+body.internal-app.btw-platform.has-customer-shell .customer-dashboard.ux-stack{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+body.internal-app.btw-platform.has-customer-shell .customer-dashboard.ux-stack>section{min-width:0;margin:0}
+.portal-position-setup{flex-basis:100%;min-width:0;margin:0 0 12px;font-size:13px;line-height:20px}
+.portal-position-setup>p{margin:0 0 4px}.portal-position-setup .portal-context-help{margin:0}
+@media(min-width:1024px){body.internal-app.btw-platform.has-customer-shell .customer-dashboard.ux-stack{grid-template-columns:repeat(2,minmax(0,1fr))}body.internal-app.btw-platform.has-customer-shell .customer-dashboard>section:first-child{grid-column:1/-1}}

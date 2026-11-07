@@ -15,9 +15,9 @@ def effective_access(user, organization_id, *, preview=False):
         else:
             allowed[action] = True
     lead = member.role == 'lead'
-    need_reason = ('Workforce Need collaboration is not enabled for your company.'
+    need_reason = ('Position collaboration is not enabled for your company.'
         if member.organization.access_plan.workforce_need_creation is not True else
-        'Your Lead has not enabled Workforce Need management for this membership.'
+        'Your Lead has not enabled Position management for this membership.'
         if not allowed['needs'] else 'You may prepare drafts and submit or withdraw revisions when their state allows it.')
     campaign_reason = ('You may prepare and submit Campaign planning when its state allows it.'
         if allowed['campaigns'] else 'Your Lead has not enabled Campaign management for this membership.')
@@ -30,11 +30,11 @@ def effective_access(user, organization_id, *, preview=False):
 def record_restriction(record, kind):
     if kind == 'need':
         if record.status in {'closed', 'cancelled'}:
-            return 'This Need is closed or cancelled. Its history remains available; editing is restricted by the existing workflow.'
+            return 'This position is closed or cancelled. Its history remains available; editing is restricted by the existing workflow.'
         working = record.working_revision
         if working and working.state != 'draft':
             return 'This proposed revision is frozen for BTW review. Use the available withdrawal action or wait for review; approved details remain effective.'
-        return 'Draft changes remain proposed until BTW review and approval. Only BTW may approve, close or cancel a Need.'
+        return 'Draft changes remain proposed until BTW review and approval. Only BTW may approve, close or cancel a position.'
     if record.status in {'completed', 'cancelled'}:
         return 'This Campaign is complete or cancelled. Its planning history is retained and direct editing is unavailable.'
     if record.review_state in {'submitted', 'review'}:

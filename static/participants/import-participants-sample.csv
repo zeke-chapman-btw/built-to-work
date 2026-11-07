@@ -1,0 +1,2 @@
+identity_uuid,first_name,last_name,preferred_name,email,phone,date_of_birth,city,state,postal_code,event_uuid,event_name,event_date,group_name,simulator_score,score_method,score_source,scored_at
+,SYNTHETIC,Example,,sample-participant@example.test,,,Example City,GA,,,SYNTHETIC past event,2026-10-01,SYNTHETIC example group,,,,

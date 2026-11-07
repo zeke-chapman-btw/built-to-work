@@ -76,7 +76,7 @@ class InviteForm(ScopedForm):
 
 class MemberForm(ScopedForm):
     state = forms.ChoiceField(choices=[('enabled', 'Enabled'), ('suspended', 'Suspended'), ('removed', 'Removed')])
-    manage_needs = forms.BooleanField(required=False, label='Manage Workforce Needs')
+    manage_needs = forms.BooleanField(required=False, label='Manage Positions')
     manage_campaigns = forms.BooleanField(required=False, label='Manage Campaigns')
 
 
