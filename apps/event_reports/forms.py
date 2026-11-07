@@ -100,6 +100,11 @@ class EventFilter(forms.Form):
         if d.get('start') and d.get('end') and d['end']<d['start']:self.add_error('end','End must follow start.')
         return d
 class ExpenseFilter(forms.Form):
+    def __init__(self, *args, **kwargs):
+        # The filter stays in the page while the expense drawer is open.
+        # Distinct IDs keep each label attached to its own control.
+        kwargs.setdefault('auto_id', 'expense_filter_%s')
+        super().__init__(*args, **kwargs)
     category=forms.ModelChoiceField(queryset=ExpenseCategory.objects.all(),required=False)
     start=forms.DateField(required=False,widget=forms.DateInput(attrs={'type':'date'}))
     end=forms.DateField(required=False,widget=forms.DateInput(attrs={'type':'date'}))

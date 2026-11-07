@@ -49,10 +49,28 @@ def customer_view(view):
             return response
     return guarded
 
+LOCAL_NAVIGATION = (
+    ('Recruiting tools', (('recruiting', 'Recruiting overview'), ('needs', 'Positions'), ('campaigns', 'Campaigns'), ('candidates', 'Candidates'))),
+    ('Company tools', (('company', 'Company information'), ('users', 'Team'), ('access', 'Access'), ('history', 'History & feedback'))),
+)
+
+
+def local_navigation(request, tab):
+    for label, items in LOCAL_NAVIGATION:
+        if tab in dict(items):
+            links = []
+            for key, title in items:
+                url = reverse('customer_portal:workspace', args=[key])
+                current = ('page' if request.path == url else 'location') if key == tab else ''
+                links.append({'url': url, 'label': title, 'current': current})
+            return {'label': label, 'links': links}
+    return None
+
+
 def context(request, tab='overview', **extra):
     m = request.customer_member
     return {'customer_admin_preview': bool(getattr(request, 'customer_preview', False)), 'company': {'id': m.organization_id, 'name': m.organization.name}, 'companies': request.customer_companies,
-            'active_tab': tab, 'navigation_tab': TAB_GROUPS.get(tab, tab), 'tabs': TABS,
+            'local_navigation': local_navigation(request, tab), 'active_tab': tab, 'navigation_tab': TAB_GROUPS.get(tab, tab), 'tabs': TABS,
             'title': SECONDARY_TABS.get(tab) or dict(TABS).get(tab), 'is_lead': m.role == 'lead',
             'effective_access': effective_access(request.user, m.organization_id, preview=bool(getattr(request, 'customer_preview', False))),
             'can_needs': (m.role == 'lead' or m.manage_needs) and m.organization.access_plan.workforce_need_creation is True,

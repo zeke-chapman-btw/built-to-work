@@ -1,0 +1,17 @@
+/* Shared workspace controls. Loaded after portal and feature styles. */
+:root{--btw-field-border:#75808c;--btw-field-size:14px;--btw-field-height:38px;--btw-field-focus:#155eb6;--btw-field-bg:#fff;--btw-field-text:#17202c}
+body.internal-app.btw-platform #main-content form :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=submit]):not([type=button]):not([type=range]):not([type=color]),select,textarea){
+  box-sizing:border-box;max-width:100%;min-width:0;min-height:var(--btw-field-height);font-size:var(--btw-field-size);
+  border:1px solid var(--btw-field-border);border-radius:6px;background-color:var(--btw-field-bg);color:var(--btw-field-text);
+}
+body.internal-app.btw-platform #main-content form :is(input,select,textarea):focus-visible{outline:2px solid var(--btw-field-focus);outline-offset:2px}
+body.internal-app.btw-platform #main-content form :is(input,select,textarea):is([aria-invalid=true],.invalid),
+body.internal-app.btw-platform #main-content form :is(.has-error,.field-error,.errors,.btw-field-invalid) :is(input,select,textarea){--btw-field-border:#b42332;border-color:var(--btw-field-border)}
+body.internal-app.btw-platform #main-content form :is(input,select,textarea):disabled{--btw-field-bg:#f1f3f5;--btw-field-text:#657080;--btw-field-border:#a6afb9;background-color:var(--btw-field-bg);color:var(--btw-field-text);cursor:not-allowed}
+body.internal-app.btw-platform .ux-local-nav a[aria-current]{background:#fff1f2;color:#a91429;border-color:#bc1b31;font-weight:600}
+body.internal-app.btw-platform .btw-ui .btw-editor-actions{position:static;flex-shrink:0;flex-wrap:wrap;gap:10px}
+body.internal-app.btw-platform .btw-ui .btw-editor-actions .button{min-height:44px}
+@media(max-width:767px){
+  :root{--btw-field-size:16px;--btw-field-height:44px}
+  body.internal-app.btw-platform #main-content form :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=submit]):not([type=button]):not([type=range]):not([type=color]),select,textarea){font-size:16px;min-height:44px}
+}

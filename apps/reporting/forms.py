@@ -46,6 +46,23 @@ class ReportFilter(forms.Form):
             for key in ("identifier","segments","travel","assessment","score_min","score_max"):self.fields.pop(key)
         if tab == "payroll":self.fields.pop("region")
         if tab not in ("opportunities","hires","customers"): self.fields.pop("campaign"); self.fields.pop("opportunity")
+    @property
+    def active_filters(self):
+        """Presentation only; count the existing bound controls, including drilldowns."""
+        result = []
+        for name, field in self.fields.items():
+            raw = self[name].value()
+            if raw not in (None, '', []):
+                value = self.cleaned_data.get(name)
+                if name in self.errors:
+                    value = 'Check selection'
+                elif field.widget.is_hidden:
+                    value = 'Applied'
+                elif isinstance(field, forms.ChoiceField):
+                    value = dict(field.choices).get(raw, value)
+                result.append({'label': field.label or name.replace('_', ' ').capitalize(), 'value': str(value)[:100]})
+        return result
+
     def clean(self):
         d = super().clean()
         for key in ("event","customer","identifier","campaign","opportunity","segments","travel","assessment","score_min","score_max"):
