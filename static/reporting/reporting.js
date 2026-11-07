@@ -15,3 +15,29 @@ document.querySelectorAll('[data-report-filters]').forEach(function(panel) {
     }
   });
 });
+
+// New overview disclosures use the same keyboard recovery as report filters.
+document.querySelectorAll('[data-report-disclosure]').forEach(function(panel) {
+  panel.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape' && panel.open) {
+      panel.open = false;
+      panel.querySelector('summary').focus();
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  });
+});
+// Print all original metric/context content, then restore each user's disclosure state.
+let reportPrintState = null;
+window.addEventListener('beforeprint', function() {
+  if (reportPrintState) return;
+  reportPrintState = Array.from(document.querySelectorAll('[data-report-print-expand]'), function(panel) {
+    const state = { panel: panel, open: panel.open };
+    panel.open = true;
+    return state;
+  });
+});
+window.addEventListener('afterprint', function() {
+  (reportPrintState || []).forEach(function(state) { state.panel.open = state.open; });
+  reportPrintState = null;
+});

@@ -25,3 +25,9 @@
 .content-admin .qr-card img { display: block; width: 100%; aspect-ratio: 1; }
 @media (max-width: 760px) { .content-admin .split { grid-template-columns: 1fr; } .content-admin .panel { padding: 16px; } .content-admin table { display: block; overflow-x: auto; } }
 @media print { .sidebar, .topbar, .content-admin .actions, .content-admin form { display: none !important; } .content-admin .qr-card { width: 330px; } }
+
+/* Staff identity, ordinary roles and exceptional designations remain distinct. */
+.staff-account-form-group{border:0;border-top:1px solid var(--line);min-width:0;margin:0 0 24px;padding:16px 0 0}
+.staff-account-form-group:first-of-type{border-top:0;padding-top:0}
+.staff-account-form-group>legend{font-size:15px;line-height:22px;font-weight:600;padding:0 8px 0 0;margin-bottom:8px}
+.staff-account-form-group>.help{margin:0 0 16px;color:var(--muted);font-size:13px;line-height:20px}

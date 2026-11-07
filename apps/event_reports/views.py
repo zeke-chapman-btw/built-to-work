@@ -95,7 +95,16 @@ def detail(request,event_id):
     if report_section not in ("expenses", "report"):
         report_section = "all"  # Existing URLs, anchors, filters and exports retain their combined view.
     title = "Expenses" if report_section == "expenses" else "Event Report" if report_section == "report" else "Event Cost & Performance"
-    return page(request,'detail',expense_return_base=expense_list_url(event,request.GET).split('#')[0],page_title=title,report_section=report_section,event=event,report=report,expense_filter=form,expenses=Paginator(expenses,30).get_page(request.GET.get('page')),incentives=Paginator(lines,30).get_page(request.GET.get('incentive_page')),review_form=review_form,notes=notes,notes_access=notes_access,definitions=reporting.METRIC_DEFINITIONS,category_totals=category_totals,metric_rows=metric_rows,status=200 if valid else 400)
+    versioned_report_url = ''
+    if report_section != 'expenses':
+        from apps.reporting.access import allowed_tabs
+        from django.core.exceptions import PermissionDenied as ReportingAccessDenied
+        try:
+            if 'events' in allowed_tabs(request.user):
+                versioned_report_url = reverse('reporting:event', args=[event.pk])
+        except ReportingAccessDenied:
+            pass
+    return page(request,'detail',versioned_report_url=versioned_report_url,expense_return_base=expense_list_url(event,request.GET).split('#')[0],page_title=title,report_section=report_section,event=event,report=report,expense_filter=form,expenses=Paginator(expenses,30).get_page(request.GET.get('page')),incentives=Paginator(lines,30).get_page(request.GET.get('incentive_page')),review_form=review_form,notes=notes,notes_access=notes_access,definitions=reporting.METRIC_DEFINITIONS,category_totals=category_totals,metric_rows=metric_rows,status=200 if valid else 400)
 
 @portal
 def entry(request,event_id=None,record_id=None,kind='expense'):

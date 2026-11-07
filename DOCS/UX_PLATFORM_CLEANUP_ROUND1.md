@@ -63,3 +63,39 @@ Games explicitly identifies advanced maintenance as restricted administration. G
 Before/after JPEGs are under `before/pass2-*` and `after/pass2-*`; measured metadata and interaction/provenance checks are in `tests/pass2-*.json`. Original audit screenshot references remain in the finding register. Screenshot encoding was checked and filenames normalized to `.jpg` without changing pixel data.
 
 Physical phone/soft-keyboard and full screen-reader checks remain unavailable. Native Ctrl+plus did not alter the measured viewport or pixel ratio; actual 200% zoom remains unverified. Responsive viewport checks are not described as zoom checks. These focused suites are not a claim of full platform regression coverage. No Production deployment, live financial action, real communication, real historical backfill or device command occurred.
+
+
+# Pass 3 — Reports, payroll and administration
+
+Implemented on ux-platform-cleanup-round1 from b765b2b84e545cc84067743982edfa7270a4f03a. This closes original audit IDs UX-001, UX-009, UX-013 and UX-014; the authorization's swapped topic/ID references were reconciled against the authoritative original findings.
+
+## Changes and preservation
+
+- UX-001: Highlights now presents eight key metrics first, with all eight additional metrics and financial context in a named disclosure. Two primary charts precede nine additional trends. All sixteen metric values and their original definitions remain in the DOM; CSV uses the original complete projection. Each summary card has a native About this metric disclosure. All disclosures expand for browser printing and restore afterward. Missing amounts remain Unavailable, never zero. Narrow financial cards use a readable single column. Other six tabs retain their calculations, charts, tables and authorized outputs.
+- UX-009: Live operational reports link to the versioned event report when existing permissions allow it. The versioned view identifies current operational sources separately from draft calculations and frozen finalized versions, and returns to the same event. Historical v1 remains read only and retains version/export labels.
+- UX-013: The staff account form groups existing fields under Account identity, Roles and staff profile, Exceptional financial authority, and Reason and confirmation. Ordinary roles and explicit finalizer/payroll-approver designations remain independent. No fields, defaults, permissions or validation rules were changed. Other account action forms retain the existing fallback rendering.
+- UX-014: Add/Edit manual business figures display the existing event name, period and time zone; Edit also names the figure. Save, Cancel and Back return to the same event's Manual business figures section. Source notes and attributable-business-only guidance remain. Calculated lead, score, qualification and cost totals cannot be replaced.
+
+No reporting/payroll service, model, migration, financial formula, approval authority, recruiting rule, export implementation or historical record was changed.
+
+## Verification
+
+- Final focused tests: PostgreSQL12/12 pass; SQLite12/12 pass, no skips or failures. Eight reporting presentation tests (including the three existing compact-filter tests) and four staff-grouping tests. S/pass3-{pg,sqlite}-focused-final2.log and pass3-focused-final2-results.json.
+- Broader17-module selection: PostgreSQL290 run,289 pass,1 expected skip; SQLite290 run,283 pass,7 expected skips; no failures/errors. Exact labels and outcomes: S/pass3-gate-labels.json, pass3-{pg,sqlite}-gates.log, pass3-gates-results.json; local tests/pass3-gate-summary.json. These subsets overlap earlier tests and are not a full regression total.
+- Node reporting UI harness5 cases pass: responsive Filters/error handling, nested disclosure Escape/focus, print expansion/restoration including repeated beforeprint, and the Print action. Node syntax and git diff whitespace checks pass.
+- Django system checks on both databases, migration drift --check --dry-run and applied synthetic review migrations all pass. No new migrations.
+- Full regression is separately running against proper config.settings.test defaults:167 explicit modules,2259 distinct IDs per database, PostgreSQL whole-suite and SQLite7 exact-coverage partitions. Do not treat this Pass3 report as proof that the full run finished.
+- Native Codex browser: all seven tabs at measured1440/768/390/320; table-local horizontal scrolling, no page-wide overflow. Captures are linked through tests/pass3-stable-{before,after}-browser.json. Final captures flush the compositor frame after viewport changes; earlier capture attempts remain separate.
+- Enter opens metric/context disclosures; Escape closes the active disclosure and restores summary focus. Native required validation focuses Reason. A whitespace Reason reaches server validation with event context retained; subsequent synthetic Save succeeds and retains12items. Save/Cancel return to #manual-business-figures. No financial totals changed.
+- Staff Create/Edit at all four widths: every applicable field appears once; Create financial authority flags unchecked; Edit retains EventStaff + account-active and no exceptional flags. Native confirmation requirement and server required-field errors checked. Cancel returned to the correct account/list. No new account or authority was granted.
+- Supplemental isolated read-only checks: eight roles use the matching server realm backend. Manager can administer ordinary staff but cannot finalize/approve without explicit designation; Recruiter/EventStaff/Customer/Participant boundaries retained. Another contractor's statement403. See tests/final-readonly-verification.json.
+- Nine finalized outputs succeeded: event/payroll/own-statement × CSV/XLSX/PDF. CSV/XLSX rows and extracted PDF text retain reporting period, status/version and USD metadata; private no-store headers present. Existing event export periods use explicit UTC offsets, while UI uses America/New_York. No new recipient template was introduced.
+- Frozen eventv1 and payrollv1 content hashes verify after the synthetic manual edit. Contractor UI shows100USD compensation +20USD reimbursements =120USD reported; approval is not payment confirmation. All such records exist only in the freshly seeded isolated review DB, never Preview.
+
+## Evidence and limits
+
+Matched before/after routes: Highlights, operational report, live/frozen versioned report, manual Add/Edit, staff Create; all four widths. Staff Edit, all six additional tabs, approved payroll and own contractor statement also captured. Manager Tasks/Approvals/Participants/Customers/Operations, Recruiter, EventStaff and Participant profile/preferences/events/jobs/activity were reviewed. All available role sessions use synthetic identities.
+
+Original audit screenshot references remain in reports/FINDINGS-CLOSURE.json. The original audit package is untouched. Local images are JPEGs with .jpg suffixes.
+
+Actual200% browser zoom could not be demonstrated (native zoom keys did not change measured viewport or ratio); physical phone/soft keyboard, full screen-reader and actual print-dialog operation remain unverified. These are verification limits, not claims of coverage. Browser print event behavior is covered by the Node harness; existing PDF outputs were independently generated and parsed. No live messages, financial approvals, payments, invitations or device commands were performed.

@@ -23,6 +23,11 @@ from .models import EventReport,EventReportVersion,PayrollPeriod,PayrollVersion,
 from . import metrics,services,payroll,exports
 from .presentation import TAB_LABELS,workspace_data,table
 
+HIGHLIGHT_SUMMARY_LABELS = frozenset({
+    'Events conducted', 'Unique event leads', 'Qualified leads', 'Qualification rate',
+    'Active participants', 'Active opportunities', 'Confirmed hires', 'Active customers',
+})
+
 PAY_COLUMNS=[("contractor","Contractor","text"),("event","Event","text"),("occurred_on","Work/trip date","text"),("source_kind","Source","text"),("base","Base USD","money"),("per_diem","Per diem USD","money"),("mileage","Mileage USD","money"),("incentives","Incentives USD","money"),("adjustments","Adjustments USD","money"),("total","Total USD","money")]
 
 
@@ -79,6 +84,14 @@ def workspace(request):
         return HttpResponseBadRequest("Correct the report filters before exporting.")
     from apps.internal_ui.reporting import report_destinations
     destinations=report_destinations(actor)
+    if tab == 'highlights':
+        cards, charts = context['cards'], context['charts']
+        primary = [card for card in cards if card['label'] in HIGHLIGHT_SUMMARY_LABELS]
+        additional = [card for card in cards if card['label'] not in HIGHLIGHT_SUMMARY_LABELS]
+        if not primary:
+            primary, additional = cards[:4], cards[4:]
+        context.update(highlight_cards=primary, additional_cards=additional,
+            highlight_charts=charts[:2], additional_charts=charts[2:])
     return page(request,"reporting/workspace.html",page_title="Reports & Analytics",report_tabs=tabs_for(actor,tab),selected_tab=tab,filters=form,
         definitions=METRICS,exports=export_links(request) if actor.has_perm("reporting.export_reports") else [],
         legacy_reports=destinations,report_destinations=destinations,**context)
@@ -164,6 +177,7 @@ def event_report(request,event_id):
     return page(request,"reporting/event_report.html",page_title="Event Report",event=event,snapshot=snapshot,metrics=data,cost=data['cost'],report_status=status,selected_version=selected,
         reason_form=form,report_state=state,can_finalize=can_finalize(actor),can_manage=can_manage(actor),versions=event.analytics_report_versions.select_related('finalized_by').all(),
         figures=ManualBusinessFigure.objects.filter(event=event,is_active=True),exports=export_links(request) if actor.has_perm('reporting.export_reports') else [],
+        operational_report_url=reverse('event_reports:detail',args=[event.pk])+'?section=report',
         live_detail_url=reverse('reporting:event-people',args=[event.pk]),financial_rows=table([('source_label','Source','text'),('contractor','Contractor','text'),('recorded_on','Recorded date','text'),('amount','Source amount USD','money'),('source_detail','Components / treatment','text'),('id','Record reference','text')],source_page.object_list),page=source_page)
 
 
@@ -200,8 +214,8 @@ def manual_figure(request,event_id,figure_id=None):
     if request.method=='POST' and form.is_valid():
         try:services.save_manual_figure(actor=actor,event_id=event.pk,data=form.cleaned_data,figure_id=figure_id)
         except ValidationError as exc:form.add_error(None,exc)
-        else:return redirect('reporting:event',event_id=event.pk)
-    return page(request,'reporting/form.html',page_title="Manual business figure",form=form,event=event,description="Attributable business figures only. Calculated leads, plays, qualifications and financial totals cannot be replaced.",back_url=reverse('reporting:event',args=[event.pk]))
+        else:return redirect(reverse('reporting:event',args=[event.pk])+'#manual-business-figures')
+    return page(request,'reporting/form.html',page_title="Manual business figure",form=form,event=event,manual_event_context=True,manual_figure=obj,figure_timezone=event.timezone_name or REPORT_TIMEZONE,back_label="Back to event report",description="Attributable business figures only. Calculated leads, plays, qualifications and financial totals cannot be replaced.",back_url=reverse('reporting:event',args=[event.pk])+'#manual-business-figures')
 
 
 @login_required(login_url="accounts:login")
