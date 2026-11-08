@@ -1,0 +1,8 @@
+{% extends 'internal/base.html' %}{% load static %}
+{% block body_class %}{{ block.super }} has-workspace-landing has-shared-workspace has-broad-workspace {% block workspace_body_class %}{% endblock %}{% endblock %}
+{% block workspace_layout_assets %}<link rel="stylesheet" href="{% static 'shared/workspace_landing.css' %}?v=landing-1">{% endblock %}
+{% block content_start %}<div class="btw-landing-frame {% block workspace_class %}{% endblock %}" id="{% block workspace_id %}workspace-landing{% endblock %}" data-workspace-landing {% block workspace_attributes %}{% endblock %}>{% block workspace_notice %}{% endblock %}{% endblock %}
+{% block page_heading %}<header class="page-header btw-landing-header" data-workspace-header><div class="btw-landing-identity"><h1 class="page-title">{% block workspace_title %}{{ page_title|default:shell.page_title }}{% endblock %}</h1>{% block workspace_description %}{% endblock %}</div><div class="btw-landing-actions">{% block workspace_actions %}{% endblock %}</div></header>{% endblock %}
+{% block workspace_tabs %}<div class="btw-landing-selection" data-workspace-selection="{% block workspace_selection_kind %}none{% endblock %}">{% block workspace_selection %}{% endblock %}</div>{% endblock %}
+{% block content %}<div class="btw-landing-filters" data-workspace-filters>{% block workspace_filters %}{% endblock %}</div><div class="btw-landing-content" data-workspace-content>{% block workspace_content %}{% endblock %}</div>{% endblock %}
+{% block content_end %}</div>{% endblock %}

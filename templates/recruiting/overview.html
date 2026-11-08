@@ -1,4 +1,10 @@
-{% extends 'recruiting/base.html' %}{% block recruiting_content %}
+{% extends 'shared/workspace_landing.html' %} {% load static %}
+{% block workspace_class %}btw-workspace recruiting-workspace{% endblock %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'recruiting/workspace.css' %}">{% endblock %}
+{% block workspace_description %}{% if description %}<p>{{ description }}</p>{% endif %}{% endblock %}
+{% block workspace_selection_kind %}sections{% endblock %}
+{% block workspace_selection %}{% include 'recruiting/navigation.html' %}{% endblock %}
+{% block workspace_content %}
 <div class="recruiting-grid">
 <section class="card"><h2>Open positions</h2><p>{{ open_position_count }} approved active positions · {{ request_count }} grouped workforce requests</p><a href="{% url 'recruiting:matching-directory' %}">Review matching</a></section>
 <section class="card"><h2>Incoming interest</h2><p>{{ interest_count }} new interests in your accessible positions</p><a href="{% url 'recruiting:interests' %}">Review interest</a></section>

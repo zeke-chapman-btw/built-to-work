@@ -162,7 +162,7 @@ class CorrectiveDWorkflowTests(TestCase):
         parser=NamedControls();parser.feed(response.content.decode())
         for name in ['view','q','status','due','priority']:self.assertEqual(parser.names.count(name),1)
         self.assertNotIn('assignee',parser.names);self.assertNotIn('event',parser.names)
-        self.assertContains(response,'class="filter-advanced" open')
+        self.assertRegex(response.content.decode(), r'<details\b[^>]*class="[^"]*\bfilter-advanced\b[^"]*"[^>]*\sopen(?:\s|>)')
         self.assertContains(response,self.task.title)
         self.assertContains(response,'priority%3Dhigh')
 

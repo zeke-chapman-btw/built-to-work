@@ -21,7 +21,9 @@ class CoordinatedSettingsTests(TestCase):
     def test_settings_composition_one_preview_and_no_planning_copy(self):
         self.login();response=self.client.get(reverse('internal:settings'))
         self.assertEqual(response.status_code,200)
-        self.assertContains(response,'ux-stack')
+        self.assertContains(response,'data-workspace-landing',count=1)
+        self.assertContains(response,'data-workspace-header',count=1)
+        self.assertContains(response,'data-workspace-content',count=1)
         self.assertContains(response,'Your account')
         self.assertContains(response,'Portal Preview')
         self.assertContains(response,'href="'+reverse('internal:portal-preview')+'"',count=1)

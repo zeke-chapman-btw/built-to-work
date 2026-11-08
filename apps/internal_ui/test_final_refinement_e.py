@@ -100,8 +100,8 @@ class FinalRefinementETests(TestCase):
     def test_active_secondary_filters_reopen_without_losing_values_or_clear(self):
         self.login()
         response = self.client.get(reverse('operations:tasks'), {'view': 'all', 'priority': 'high'})
-        self.assertContains(response, 'class="filter-advanced" open')
+        self.assertRegex(response.content.decode(), r'<details\b[^>]*class="[^"]*\bfilter-advanced\b[^"]*"[^>]*\sopen(?:\s|>)')
         self.assertContains(response, 'Filter tasks · Active filters')
         self.assertContains(response, 'value="high" selected')
         self.assertContains(response, 'Clear filters')
-        self.assertNotContains(self.client.get(reverse('operations:tasks')), 'class="filter-advanced" open')
+        self.assertNotRegex(self.client.get(reverse('operations:tasks')).content.decode(), r'<details\b[^>]*class="[^"]*\bfilter-advanced\b[^"]*"[^>]*\sopen(?:\s|>)')

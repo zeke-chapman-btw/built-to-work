@@ -40,7 +40,8 @@ class WorkspaceFinalizationTests(TestCase):
     def test_customers_workspace_has_real_directory_without_fake_matches(self):
         response = self.client.get(reverse("internal:workspace", kwargs={"workspace_id": "customers"}))
         self.assertEqual((response.status_code, response.get("Location"), response.wsgi_request.user.is_authenticated), (200, None, True))
-        self.assertContains(response, 'class="customer-page"')
+        self.assertRegex(response.content.decode(), r'class="[^"]*\bcustomer-page\b[^"]*"')
+        self.assertContains(response, 'data-workspace-landing', count=1)
         self.assertContains(response, 'No customers found')
         self.assertContains(response, reverse('customers:new'))
         self.assertNotContains(response, 'planned-workspace')

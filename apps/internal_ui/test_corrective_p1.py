@@ -137,7 +137,7 @@ class CorrectivePassOneTests(TestCase):
                 self.assertEqual([row['id'] for row in response.context['primary_navigation'] if row['active']], [key])
                 html = response.content.decode()
                 if key in ('customers', 'campaigns'):
-                    self.assertContains(response, 'class="customer-page"')
+                    self.assertRegex(response.content.decode(), r'class="[^"]*\bcustomer-page\b[^"]*"')
                     self.assertNotContains(response, 'planned-workspace')
                     continue
                 self.assertContains(response, 'id="approvals-workspace"')
