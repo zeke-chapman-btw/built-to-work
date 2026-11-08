@@ -487,18 +487,7 @@ body.internal-app.has-participants-explorer #main-content .ex-field input,body.i
 body.internal-app.has-participants-explorer #main-content .ex-advanced-form>.button{min-height:44px}
 }
 
-/* Existing Pass 3 gives all staff controls a 44px minimum. Compact only these desktop Explorer controls. */
-body.internal-app.has-participants-explorer #main-content .ex-field input,body.internal-app.has-participants-explorer #main-content .ex-field select{min-height:32px!important;padding:4px 8px!important}
-body.internal-app.has-participants-explorer #main-content .ex-filter-group>summary{min-height:32px!important;padding:7px 0!important}
-body.internal-app.has-participants-explorer #main-content .ex-desktop-filters>summary{min-height:36px!important;padding:8px 12px!important}
-body.internal-app.has-participants-explorer #main-content .ex-view-menu>summary{min-height:28px!important;padding:4px 8px!important}
-body.internal-app.has-participants-explorer #main-content .ex-advanced-form>.button{min-height:32px!important;padding:5px 10px!important}
-@media(width<640px){
-body.internal-app.has-participants-explorer #main-content .ex-field input,body.internal-app.has-participants-explorer #main-content .ex-field select{min-height:44px!important;padding:10px 8px!important}
-body.internal-app.has-participants-explorer #main-content .ex-filter-group>summary{min-height:44px!important;padding:12px 0!important}
-body.internal-app.has-participants-explorer #main-content .ex-view-menu>summary{min-height:44px!important;padding:12px 10px!important}
-body.internal-app.has-participants-explorer #main-content .ex-advanced-form>.button{min-height:44px!important}
-}
+/* Explorer control variants are defined by shared/workspace_round2.css. */
 
 /* Approved final profile refinement: continuous staff profile only. */
 body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile #main-content .p3-profile-hero{margin-bottom:8px}

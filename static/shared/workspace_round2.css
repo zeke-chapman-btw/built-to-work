@@ -1,0 +1,143 @@
+/* Explicit workspace components. Public intake, kiosks and native admin are excluded. */
+body.internal-app.btw-platform {
+  --btw-workspace-width:100%;
+  --btw-readable-editor-width:920px;
+  --btw-nav-height:44px;
+  --btw-editor-control-height:38px;
+  --btw-filter-control-height:36px;
+}
+body.internal-app.btw-platform #main-content :is(.btw-frame-workspace,.btw-frame-readable) {
+  box-sizing:border-box;width:100%;min-width:0;margin-inline:0;
+}
+body.internal-app.btw-platform #main-content .btw-frame-workspace {max-width:var(--btw-workspace-width)}
+body.internal-app.btw-platform #main-content .btw-frame-readable {max-width:var(--btw-readable-editor-width)}
+body.internal-app.btw-platform #main-content :is(.btw-frame-workspace,.btw-frame-readable)>.page-header {
+  box-sizing:border-box;width:100%;max-width:none;margin-inline:0;padding-inline:0;
+}
+body.internal-app.btw-platform #main-content .page-actions {display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;min-width:0}
+body.internal-app.btw-platform #main-content .page-actions:empty {display:none}
+
+/* Route links retain ordinary link keyboard behavior, not pretend tab semantics.
+   Repeated component selectors outrank older workspace-specific link classes,
+   keeping this opt-in component authoritative without !important overrides. */
+body.internal-app.btw-platform #main-content .btw-workspace-navigation {display:flex;align-items:flex-start;gap:8px;min-width:0;max-width:100%;margin-bottom:16px}
+body.internal-app.btw-platform #main-content .btw-workspace-nav.btw-workspace-nav {
+  display:flex;flex:1 1 auto;align-items:stretch;flex-wrap:nowrap;gap:4px;
+  box-sizing:border-box;min-width:0;max-width:100%;width:100%;padding:0;margin:0 0 16px;
+  border:0;border-bottom:1px solid var(--line,#dfe3e7);border-radius:0;
+  background:transparent;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin;
+}
+body.internal-app.btw-platform #main-content .btw-workspace-navigation>.btw-workspace-nav.btw-workspace-nav {margin-bottom:0}
+body.internal-app.btw-platform #main-content .btw-workspace-nav.btw-workspace-nav>a {
+  display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;box-sizing:border-box;
+  min-height:var(--btw-nav-height);width:auto;max-width:none;padding:10px 12px;margin:0;border:0;border-bottom:2px solid transparent;
+  border-radius:0;background:transparent;color:var(--muted,#59636e);box-shadow:none;
+  font:500 13px/20px var(--font);text-decoration:none;white-space:nowrap;
+}
+body.internal-app.btw-platform #main-content .btw-workspace-nav.btw-workspace-nav>a:is([aria-current],.active,.is-active) {
+  color:var(--red,#bc1b31);border-bottom-color:currentColor;background:transparent;font-weight:600;
+}
+body.internal-app.btw-platform #main-content .btw-workspace-nav.btw-workspace-nav>a:hover {color:var(--red,#bc1b31);background:#fff7f8}
+body.internal-app.btw-platform #main-content .btw-workspace-nav.btw-workspace-nav>a:is([aria-current],.active,.is-active):hover {color:var(--red,#bc1b31);background:#fff7f8;border-bottom-color:currentColor}
+body.internal-app.btw-platform #main-content :is(.btw-workspace-nav.btw-workspace-nav>a,.btw-workspace-menu>summary,.btw-inpage-nav>a):focus-visible {
+  outline:3px solid #1764ac;outline-offset:-3px;
+}
+/* Keep More outside the scrolling route strip so its menu cannot be clipped. */
+body.internal-app.btw-platform #main-content .btw-workspace-menu {position:relative;flex:0 0 auto;min-width:0;margin:0}
+body.internal-app.btw-platform #main-content .btw-workspace-menu>summary {
+  box-sizing:border-box;min-height:44px;padding:10px 12px;border:0;border-bottom:2px solid transparent;
+  border-radius:0;background:transparent;color:var(--muted,#59636e);font:500 13px/20px var(--font);cursor:pointer;
+}
+body.internal-app.btw-platform #main-content .btw-workspace-menu.has-active>summary,
+body.internal-app.btw-platform #main-content .btw-workspace-menu>summary:is(.is-active,[aria-current]) {color:var(--red,#bc1b31);border-bottom-color:currentColor}
+body.internal-app.btw-platform #main-content .btw-workspace-menu>:is(div,nav) {right:0;left:auto;max-width:min(320px,calc(100vw - 32px));max-height:60vh;overflow-y:auto;z-index:50}
+
+body.internal-app.btw-platform #main-content .btw-workspace-menu>:is(div,nav) {position:absolute;top:calc(100% + 4px);box-sizing:border-box;min-width:min(260px,calc(100vw - 32px));padding:8px;border:1px solid var(--line,#dfe3e7);border-radius:8px;background:#fff;box-shadow:0 8px 24px #17202c1a}
+body.internal-app.btw-platform #main-content .btw-workspace-menu :is(a,button) {display:flex;align-items:center;box-sizing:border-box;min-height:44px;padding:10px 12px;border-radius:4px;font:500 13px/20px var(--font);text-decoration:none}
+body.internal-app.btw-platform #main-content .btw-workspace-menu a[aria-current] {color:var(--red,#bc1b31);background:#fff1f2}
+body.internal-app.btw-platform #main-content .btw-workspace-menu a:focus-visible {outline:3px solid #1764ac;outline-offset:-3px}
+
+/* Query/status choices are chips; section jumps remain in-page navigation. */
+body.internal-app.btw-platform #main-content .btw-filter-nav.btw-filter-nav {display:flex;flex-wrap:wrap;gap:8px;min-width:0;margin:0 0 16px;padding:0;border:0;background:transparent}
+body.internal-app.btw-platform #main-content .btw-filter-nav.btw-filter-nav>a {display:inline-flex;align-items:center;box-sizing:border-box;min-height:36px;padding:7px 12px;border:1px solid #c5ccd3;border-radius:6px;background:#fff;color:#46515e;font:500 13px/20px var(--font);text-decoration:none}
+body.internal-app.btw-platform #main-content .btw-filter-nav.btw-filter-nav>a:is([aria-current],.active,.is-active) {border-color:#bc1b31;background:#fff1f2;color:#a91429;font-weight:600}
+body.internal-app.btw-platform #main-content .btw-filter-nav.btw-filter-nav>a:focus-visible {outline:3px solid #1764ac;outline-offset:2px}
+body.internal-app.btw-platform #main-content .btw-inpage-nav {display:flex;gap:4px;min-width:0;max-width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin}
+body.internal-app.btw-platform #main-content .btw-inpage-nav>a {display:inline-flex;align-items:center;flex:0 0 auto;box-sizing:border-box;min-height:44px;padding:10px 12px;white-space:nowrap}
+
+/* Filter and editor size variants share border/focus/error/disabled tokens. */
+body.internal-app.btw-platform #main-content form {--btw-field-height:var(--btw-editor-control-height)}
+body.internal-app.btw-platform #main-content form.btw-compact-filter {--btw-field-height:var(--btw-filter-control-height)}
+body.internal-app.btw-platform #main-content form :is(.ux-field,.field,.ex-field)>label {font-size:13px;line-height:20px;font-weight:600;margin-bottom:6px}
+body.internal-app.btw-platform #main-content form :is(.help,.helptext,.ux-help,.ex-help) {font-size:12px;line-height:18px}
+
+/* Participant results have one full workspace column, never a second filter rail. */
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-filter-workspace {display:grid;gap:12px;min-width:0}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-layout {display:grid;grid-template-columns:minmax(0,1fr);gap:16px;min-width:0}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-layout>:is(.ex-results,.ex-analysis,.crm-directory-panel) {grid-column:1;grid-row:auto;width:100%;min-width:0}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-inline-filters {width:100%;margin:0;grid-column:auto;grid-row:auto}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-filter-content {padding:12px 16px}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-quick-choices {display:flex;flex-wrap:wrap;gap:12px 24px;margin-bottom:12px}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-quick-choices>.ex-choice-group {flex:1 1 300px;margin:0;min-width:0}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-choice-options {display:flex;flex-wrap:wrap;gap:4px}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-choice {flex:0 1 auto;min-height:36px;padding:7px 10px}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-advanced-form {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-common-fields {grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-advanced-disclosure {min-width:0;border-top:1px solid var(--line,#dfe3e7)}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-advanced-disclosure>summary {min-height:36px;padding:7px 0}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-advanced-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px;min-width:0}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-advanced-grid>.ex-extra-filters {grid-column:1/-1}
+
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-layout>.ex-results {order:0}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-layout>.crm-directory-panel {order:1}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-layout>.ex-analysis {order:2}
+
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-common-fields>.ex-field {grid-column:auto}
+body.internal-app.btw-platform #main-content form.btw-compact-filter :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=submit]):not([type=button]):not([type=range]):not([type=color]),select,textarea) {min-height:var(--btw-filter-control-height);font-size:var(--btw-field-size,14px)}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer form.btw-compact-filter .ex-field :is(input,select) {min-height:var(--btw-filter-control-height);padding:7px 10px;font-size:var(--btw-field-size,14px)}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-advanced-form>.button {min-height:var(--btw-filter-control-height);margin-top:0;padding:7px 12px;font-size:13px}
+
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-advanced-form>.ex-quick-choices {grid-column:1/-1;margin-bottom:0}
+body.internal-app.btw-platform #main-content form.btw-compact-filter :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=submit]):not([type=button]):not([type=range]):not([type=color]),select:not([multiple]):not([size])) {height:var(--btw-filter-control-height)}
+@media(min-width:1100px) {
+  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-advanced-form {grid-template-columns:repeat(7,minmax(0,1fr))}
+  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-advanced-form>.ex-quick-choices {grid-column:1/4;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-common-fields {grid-column:4/-1;align-self:start}
+  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-advanced-disclosure {grid-column:1/7}
+  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-advanced-form>.button {grid-column:7}
+}
+
+/* One position editor surface; grouped sections have separators, not nested cards. */
+body.internal-app.btw-platform #main-content .portal-editor .portal-context-tools {margin-bottom:12px}
+body.internal-app.btw-platform #main-content .portal-editor form>.ux-back {display:inline-flex;align-items:center;min-height:44px;margin:0 0 8px}
+body.internal-app.btw-platform #main-content .portal-editor>.btw-editor-surface {padding:20px}
+body.internal-app.btw-platform #main-content .portal-editor .customer-form-nav {margin:0 0 12px;padding:0;border-bottom:1px solid var(--line,#dfe3e7)}
+body.internal-app.btw-platform #main-content .portal-editor .customer-form-nav>a {font-size:13px;line-height:20px;padding:10px 12px;text-decoration:none;border-bottom:2px solid transparent}
+body.internal-app.btw-platform #main-content .portal-editor .customer-form-nav>a[aria-current] {color:var(--red,#bc1b31);border-bottom-color:currentColor}
+body.internal-app.btw-platform #main-content .portal-editor .customer-form-group {padding:0;margin:0;border:0;border-top:1px solid var(--line,#dfe3e7);border-radius:0;background:transparent;box-shadow:none}
+body.internal-app.btw-platform #main-content .portal-editor .customer-form-group>summary {box-sizing:border-box;min-height:44px;padding:12px 0;font-size:14px;line-height:20px;cursor:pointer}
+body.internal-app.btw-platform #main-content .portal-editor .customer-form-group>summary:focus-visible {outline:3px solid #1764ac;outline-offset:2px}
+body.internal-app.btw-platform #main-content .portal-editor .customer-form-group>fieldset {padding:4px 0 16px;margin:0;border:0;min-width:0}
+body.internal-app.btw-platform #main-content .portal-editor .ux-actions {margin-top:16px;padding-top:16px;border-top:1px solid var(--line,#dfe3e7);gap:8px}
+
+@media(max-width:767px) {
+  body.internal-app.btw-platform {--btw-editor-control-height:44px;--btw-filter-control-height:44px}
+  body.internal-app.btw-platform #main-content :is(.btw-filter-nav.btw-filter-nav>a,.btw-workspace-menu>summary) {min-height:44px}
+  body.internal-app.btw-platform #main-content form :is(.help,.helptext,.ux-help,.ex-help) {font-size:14px;line-height:20px}
+  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-common-fields {grid-template-columns:repeat(2,minmax(0,1fr))}
+  body.internal-app.btw-platform #main-content .portal-editor>.btw-editor-surface {padding:16px}
+}
+@media(max-width:639px) {
+  body.internal-app.btw-platform #main-content .page-actions {justify-content:flex-start}
+  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-quick-choices {display:grid;gap:16px}
+  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-choice {min-height:44px}
+  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-advanced-form {display:block}
+  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-common-fields {grid-template-columns:minmax(0,1fr);margin-bottom:12px}
+  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-advanced-grid {grid-template-columns:minmax(0,1fr)}
+  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-advanced-form>button {width:100%;margin-top:12px}
+}
+
+/* Preserve the existing enhanced phone section picker without duplicate anchor navigation. */
+@media(max-width:639px) {
+  body.internal-app.btw-platform.btw-platform-enhanced #main-content .portal-editor [data-sectioned-form] .customer-form-nav.btw-inpage-nav {display:none}
+}
