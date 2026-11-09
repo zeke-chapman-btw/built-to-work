@@ -49,7 +49,9 @@ class HeaderDirectoryFollowupTests(ReportingFixtures):
             for key in ['employment','travel','channel','assessment','archived']:
                 controls = [n for n in doc.nodes if form in n['parents'] and n['tag'] in ['select','input'] and n['attrs'].get('name')==key]
                 self.assertEqual([n['tag'] for n in controls], ['select'], key)
-            self.assertFalse(any(n['tag']=='a' and form in n['parents'] for n in doc.nodes))
+            form_links=[n for n in doc.nodes if n['tag']=='a' and form in n['parents']]
+            self.assertEqual(len(form_links),1)
+            self.assertEqual(form_links[0]['attrs']['href'],response.context['explorer_reset'])
             fields = [n for n in doc.nodes if form in n['parents'] and n['tag']=='input' and n['attrs'].get('type')!='hidden']
             self.assertTrue(any(n['attrs'].get('name')=='location' for n in fields))
             self.assertFalse(any(n['attrs'].get('name') in ['trade_interest','city','state'] for n in fields))
@@ -69,10 +71,11 @@ class HeaderDirectoryFollowupTests(ReportingFixtures):
         self.assertEqual(response.status_code, 200)
         html = response.content.decode()
         article, = re.findall(r'<article class="ex-result ex-directory-record.*?</article>', html, re.S)
-        self.assertIn(str(self.person.identity_uuid), article)
+        self.assertNotIn(str(self.person.identity_uuid), article)
+        self.assertIn('No current code', article)
         self.assertIn('Seeking work', article)
         self.assertIn('>No</span>', article)
-        self.assertIn('Participant identifier', article)
+        self.assertIn('Type', article)
         for unwanted in ['SYNTHETIC_HIDDEN_TRADE','SYNTHETIC_HIDDEN_SKILLS','<details','<small']:
             self.assertNotIn(unwanted, article)
         doc = landing.Document(article)

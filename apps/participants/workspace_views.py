@@ -631,7 +631,8 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
     origin_values.pop("assessment_source", None)
     origin_query = origin_values.urlencode()
     directory_origin = request.path + ("?" + origin_query if origin_query else "")
-    return dict(explorer_chips=chips, explorer_groups=groups, explorer_panels=panels, explorer_common=common_panels,
+    reset_values = {key: criteria[key] for key in ("q", "sort") if criteria.get(key)}
+    return dict(explorer_reset=target(reset_values), explorer_chips=chips, explorer_groups=groups, explorer_panels=panels, explorer_common=common_panels,
                 explorer_hidden=hidden, explorer_filter_hidden=filter_hidden, explorer_charts=charts,
                 explorer_origin=directory_origin, explorer_clear=route,
                 explorer_unified=True, explorer_include_analysis=include_analysis,
@@ -664,12 +665,33 @@ def _participant_explorer(request, *, include_analysis):
         from .identity import canonical_records, member_ids
         ids = [p.pk for p in rows]
         counts = dict(canonical_records(EventRegistration.objects.filter(participant_id__in=member_ids(Participant.objects.filter(pk__in=ids)), status="active")).values("_canonical_person").annotate(n=Count("pk")).values_list("_canonical_person", "n"))
+    can_view_trailer_codes = request.user.has_perms(("events.view_eventregistration", "events.view_qrticket"))
+    trailer_codes, trailer_totals = {}, {}
+    if can_view_trailer_codes and rows:
+        from django.db.models import F, Window
+        from django.db.models.functions import RowNumber
+        # Two existing codes per visible canonical person; no ticket allocation or writes.
+        tickets = canonical_records(QrTicket.objects.filter(
+            registration__participant_id__in=member_ids(Participant.objects.filter(pk__in=ids)),
+            registration__status="active", is_current=True, revoked_at__isnull=True,
+            ticket_number__regex=r"^[0-9]{10}$"), field="registration__participant_id").annotate(
+                _directory_ticket_rank=Window(RowNumber(), partition_by=[F("_canonical_person")],
+                    order_by=[F("issued_at").desc(), F("pk").desc()]),
+                _directory_ticket_total=Window(Count("pk"), partition_by=[F("_canonical_person")])
+            ).filter(_directory_ticket_rank__lte=2).select_related("registration__event").order_by(
+                "_canonical_person", "_directory_ticket_rank")
+        for ticket in tickets:
+            trailer_codes.setdefault(ticket._canonical_person, []).append(
+                {"number": ticket.ticket_number, "event": ticket.registration.event.name})
+            trailer_totals[ticket._canonical_person] = ticket._directory_ticket_total
     from .models import IntakeFieldState
     from .intake_discovery import effective_travel
     travel_states = {row.participant_id:row for row in IntakeFieldState.objects.filter(
         participant_id__in=[p.pk for p in rows], destination="travel_willingness")}
     for person in rows:
         person.registration_count = counts.get(person.pk, 0)
+        person.explorer_trailer_codes = trailer_codes.get(person.pk, [])
+        person.explorer_more_trailer_codes = max(0, trailer_totals.get(person.pk, 0) - len(person.explorer_trailer_codes))
         career = getattr(person, "career_profile", None)
         person.explorer_interest = getattr(person, "_current_interest", "")
         person.explorer_skills = career.skills_interests if career else ""
@@ -687,5 +709,5 @@ def _participant_explorer(request, *, include_analysis):
         active_participant_tab="analytics" if include_analysis else "directory", filter_form=form, criteria=criteria, page_obj=page,
         total_participants=page.paginator.count, query_without_page=query_string(criteria),
         directory_url=reverse("participants:staff-directory") + "?" + query_string(criteria),
-        explorer_details_open=request.GET.get("view") == "details", **presentation, **data, **panel),
+        explorer_details_open=request.GET.get("view") == "details", explorer_can_view_trailer_codes=can_view_trailer_codes, **presentation, **data, **panel),
         status=400 if form.errors else 200)

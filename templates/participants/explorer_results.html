@@ -1,13 +1,13 @@
 {% load people_ui %}<section id="explorer-results" class="ex-results card" tabindex="-1" aria-labelledby="ex-results-heading">
 <h2 id="ex-results-heading" class="visually-hidden">Matching participants {{ total_participants }}</h2>
-<div class="ex-result-head" aria-hidden="true"><span>Name</span><span>Unique ID</span><span>Interest in work</span><span>Willing to travel</span><span>Participant identifier</span><span>Profile</span></div>
+<div class="ex-result-head" aria-hidden="true"><span>Name</span><span>Trailer code</span><span>Interest in work</span><span>Willing to travel</span><span>Type</span><span>Profile</span></div>
 {% for person in page_obj %}
 <article class="ex-result ex-directory-record p3-directory-row" aria-label="{{ person }}">
 <a class="ex-person-name" href="{% url 'participants:staff-profile' person.pk %}?from={{ explorer_origin|urlencode }}">{{ person }}</a>
-<div class="ex-record-field"><span class="ex-record-label">Unique ID</span><code>{{ person.identity_uuid }}</code></div>
+<div class="ex-record-field ex-code-reference"><span class="ex-record-label">Trailer code</span>{% if explorer_can_view_trailer_codes %}{% for ticket in person.explorer_trailer_codes %}<span class="ex-trailer-code"><code>{{ ticket.number }}</code><span class="ex-code-event">{{ ticket.event }}</span></span>{% empty %}<span>No current code</span>{% endfor %}{% if person.explorer_more_trailer_codes %}<span class="ex-code-event">+{{ person.explorer_more_trailer_codes }} more in profile</span>{% endif %}{% else %}<span>Restricted</span>{% endif %}</div>
 <div class="ex-record-field"><span class="ex-record-label">Interest in work</span><span>{{ person.explorer_employment }}</span></div>
 <div class="ex-record-field"><span class="ex-record-label">Willing to travel</span><span>{{ person.explorer_travel }}</span></div>
-<div class="ex-record-field"><span class="ex-record-label">Participant identifier</span><span>{{ person.get_primary_identifier_display|default:"Unclassified" }}</span></div>
+<div class="ex-record-field"><span class="ex-record-label">Type</span><span>{{ person.get_primary_identifier_display|default:"Unclassified" }}</span></div>
 <a class="button secondary ex-profile-action" aria-label="View profile for {{ person }}" href="{% url 'participants:staff-profile' person.pk %}?from={{ explorer_origin|urlencode }}">View profile</a>
 </article>
 {% empty %}<div class="ex-empty"><h3>No matching participants</h3><p>{% if filter_form.errors %}Correct the highlighted criteria before reviewing a group.{% else %}Try removing an attribute or clearing the search. Missing information is not an explicit No.{% endif %}</p><a class="button secondary" href="{{ explorer_clear }}">Clear all</a></div>{% endfor %}

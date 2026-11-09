@@ -573,3 +573,23 @@ body.internal-app.btw-platform.has-participants-explorer #main-content .people-e
  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-inline-filters .ex-advanced-form>.ex-quick-choices,
  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-inline-filters .ex-common-fields {grid-template-columns:minmax(0,1fr);margin-bottom:12px}
 }
+
+/* Participant filters sit directly on the workspace, without nested outlined cards. */
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-filter-workspace.btw-filter-panel,
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-inline-filters.card,
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-filter-content,
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-advanced-form {border:0;border-radius:0;box-shadow:none;background:transparent}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-filter-workspace.btw-filter-panel {padding:0}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-inline-filters .ex-filter-actions {grid-column:2;display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-filter-actions :is(button,a) {display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:36px;margin:0;padding:7px 12px;font-size:13px;line-height:20px;white-space:nowrap}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-trailer-code {display:block;margin:0 0 6px}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-trailer-code:last-child {margin-bottom:0}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-trailer-code code {font-size:13px;white-space:nowrap}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-code-event {display:block;color:#63636b;font-size:11px;line-height:16px;overflow-wrap:anywhere}
+@media(min-width:1024px) {
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-inline-filters .ex-filter-actions {grid-column:4}
+}
+@media(max-width:639px) {
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-inline-filters .ex-filter-actions {justify-content:flex-start;margin-top:12px}
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-filter-actions :is(button,a) {min-height:44px;padding:11px 14px;flex:1 1 0}
+}

@@ -277,7 +277,7 @@ class ParticipantExplorerTests(TestCase):
         response=self.client.get(reverse('participants:staff-directory'),{'employment':'seeking','state':'GA','travel':'yes'})
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.context['total_participants'],1)
-        self.assertEqual([field['label'] for field in response.context['explorer_common']['desktop']],['Participant identifier','City / state'])
+        self.assertEqual([field['label'] for field in response.context['explorer_common']['desktop']],['Type','City / state'])
         hidden=dict(response.context['explorer_filter_hidden'])
         self.assertEqual(hidden['state'],'GA')
         self.assertNotIn('employment',hidden)

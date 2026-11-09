@@ -18,8 +18,11 @@ Participant questions use native dropdown selectors. City / state is one text fi
 each comma- or space-separated term must match the recorded city or state. No
 geocoding or distance is inferred. Older city, state and trade-interest saved criteria
 remain supported and visible as removable active filters, without new input controls.
-Rows show name only in the first column, the stable identity UUID, employment interest,
-effective travel willingness and participant identifier, followed by View profile.
+Rows show name only in the first column, up to two existing current trailer codes with event names, employment interest,
+effective travel willingness and Type, followed by View profile. Trailer codes belong
+to event registrations; the stable identity UUID remains in the profile. Code display
+requires existing registration and ticket read permissions. Older or additional codes
+remain accessible through the profile. No codes are allocated by directory reads.
 Profile links preserve the directory origin. Trade and skill summaries and row-level
 Details disclosures are omitted. Changing assessment source clears source-specific
 score/category limits when the filter form is applied.
@@ -37,3 +40,7 @@ keyboard disclosure/focus behavior and role checks. Run
 `scripts/verify_workspace_geometry.py` against matched browser sidecars and
 `apps.internal_ui.test_landing_consistency` against both supported databases.
 These supplement visual review and the complete release regression gates.
+
+Participant filter menus have Apply and Reset actions. Reset removes all menu and chart
+criteria while preserving the main search and sort. The filter surface has no surrounding
+card outline; individual form controls retain visible boundaries and focus indicators.

@@ -142,7 +142,7 @@ class ParticipantsPass3Tests(TestCase):
         self.assertNotIn('<details', row)
         self.assertNotIn('data-ui-menu', row)
         self.assertNotIn('<small', row)
-        for label in ['Unique ID', 'Interest in work', 'Willing to travel', 'Participant identifier']:
+        for label in ['Trailer code', 'Interest in work', 'Willing to travel', 'Type']:
             self.assertIn(label, row)
 
     def test_filters_preserve_every_authorized_field_and_reader_restrictions(self):
