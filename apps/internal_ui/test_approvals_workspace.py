@@ -158,3 +158,15 @@ class DomainApprovalsHubTests(EmployerFixtures,TestCase):
         self.assertContains(response,'Unpublished')
         self.opportunity.refresh_from_db()
         self.assertEqual(before,(self.opportunity.publication_state,CandidateOpportunity.objects.count(),CandidateDisclosure.objects.count(),AuditLog.objects.count()))
+
+    def test_current_publication_selector_moves_completed_copy_to_secondary_history(self):
+        from unittest.mock import patch
+        from apps.recruiting.models import RecruitingOpportunity
+        before=AuditLog.objects.count()
+        current=RecruitingOpportunity.objects.filter(pk=self.opportunity.pk)
+        with patch('apps.recruiting.jobs.published',return_value=current):
+            pending=self.client.get(URL,{'tab':'jobs','state':'publication'})
+            history=self.client.get(URL,{'tab':'jobs','state':'publication_history'})
+        self.assertEqual(pending.context['page'].paginator.count,0)
+        self.assertEqual(history.context['page'].paginator.count,1)
+        self.assertEqual(AuditLog.objects.count(),before)

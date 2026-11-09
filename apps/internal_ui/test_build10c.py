@@ -125,8 +125,8 @@ class Build10CTests(TestCase):
         self.login();response=self.client.get(reverse('events:event_list'))
         html=response.content.decode()
         self.assertLess(html.index('event-primary-create'),html.index('name="q"'))
-        details=html.split('<details class="event-filter-popover"',1)[1].split('</details>',1)[0]
-        self.assertIn('Clear filters',details);self.assertEqual(html.count('>Clear filters</a>'),1)
+        form=html.split('aria-label="Find events"',1)[1].split('</form>',1)[0]
+        self.assertIn('Advanced filters',form);self.assertEqual(form.count('>Reset</a>'),1);self.assertEqual(form.count('>Apply</button>'),1)
 
     def test_status_filters_and_invalid_input_are_preserved(self):
         self.login();response=self.client.get(reverse('events:event_list'),{'q':'SYNTHETIC 10C','view':'upcoming'})
@@ -160,8 +160,8 @@ class Build10CTests(TestCase):
 
     def test_workdays_are_part_of_staff_without_changing_url_or_policy(self):
         self.login();response=self.client.get(reverse('workdays:event',args=[self.event.pk]))
-        self.assertEqual(response.status_code,200);self.assertContains(response,'aria-label="Staff sections"')
-        self.assertContains(response,'Assignments &amp; coverage');self.assertContains(response,'Workdays &amp; mileage')
+        self.assertEqual(response.status_code,200);self.assertNotContains(response,'aria-label="Staff sections"')
+        self.assertContains(response,reverse('workdays:event',args=[self.event.pk]));self.assertContains(response,'Clock')
         self.assertContains(response,reverse('staffing:event',args=[self.event.pk]))
 
     def test_workday_manager_does_not_gain_staffing_management(self):

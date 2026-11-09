@@ -8,7 +8,7 @@ from django.utils import timezone
 from . import task_access
 from .models import Task
 
-FILTER_KEYS = ('view','q','status','priority','due','assignee','event','page')
+FILTER_KEYS = ('view','q','status','priority','due','assignee','event','sort','page')
 
 def return_path(raw=''):
     fallback = reverse('operations:tasks')
@@ -41,7 +41,7 @@ def workspace(user, params, *, mine=False):
     view = 'mine' if mine else params.get('view','mine')
     if view not in ('mine','created','all','archived','open','completed','overdue'):
         view='mine'
-    filters = {k:params.get(k,'').strip()[:200] for k in ('q','status','priority','due','assignee','event')}
+    filters = {k:params.get(k,'').strip()[:200] for k in ('q','status','priority','due','assignee','event','sort')}
     # Existing deep links remain useful; their old view becomes an explicit filter.
     if view in ('open','completed','overdue'):
         if view=='completed':filters['status']='completed'
@@ -75,6 +75,10 @@ def workspace(user, params, *, mine=False):
     qs=qs.annotate(_action_rank=Case(When(status__in=('todo','in_progress'),then=Value(0)),default=Value(1),output_field=IntegerField()),
         _priority_rank=Case(When(priority='high',then=Value(0)),When(priority='normal',then=Value(1)),default=Value(2),output_field=IntegerField()))
     qs=qs.order_by('_action_rank',F('due_date').asc(nulls_last=True),'_priority_rank','-created_at','pk')
+    sort=filters.get('sort')
+    if sort=='title':qs=qs.order_by('title','pk')
+    elif sort=='priority':qs=qs.order_by('_priority_rank',F('due_date').asc(nulls_last=True),'pk')
+    elif sort=='newest':qs=qs.order_by('-created_at','pk')
     active=allowed.filter(archived_at__isnull=True)
     counts=allowed.aggregate(mine=Count('pk',filter=Q(archived_at__isnull=True,assigned_staff__user=user)),
         created=Count('pk',filter=Q(archived_at__isnull=True,created_by=user)),

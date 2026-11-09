@@ -172,7 +172,7 @@ class CorrectiveDWorkflowTests(TestCase):
         self.assertContains(response,self.task.title)
         parser=NamedControls();parser.feed(response.content.decode())
         for name in ['assignee','event','status','due','priority']:self.assertEqual(parser.names.count(name),1)
-        self.assertContains(response,'Active filters');self.assertContains(response,'Clear filters')
+        self.assertContains(response,'>Apply</button>');self.assertContains(response,'>Reset</a>')
 
     def test_operations_tools_stay_permission_aware_below_readiness(self):
         self.login()

@@ -1,5 +1,5 @@
 {% load people_ui %}<section id="explorer-results" class="ex-results card" tabindex="-1" aria-labelledby="ex-results-heading">
-<h2 id="ex-results-heading" class="visually-hidden">Matching participants {{ total_participants }}</h2>
+{% include 'shared/result_heading.html' with label='Matching participants' count=total_participants heading_id='ex-results-heading' %}
 <div class="ex-result-head" aria-hidden="true"><span>Name</span><span>ID</span><span>Interest in work</span><span>Willing to travel</span><span>Type</span><span>Profile</span></div>
 {% for person in page_obj %}{% with display_name=person|stringformat:"s" %}
 <article class="ex-result ex-directory-record p3-directory-row" aria-label="{% if display_name %}{{ display_name }}{% else %}ID {{ person.pk|stringformat:'d' }}{% endif %}">

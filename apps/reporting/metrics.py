@@ -34,6 +34,10 @@ def date_scope(qs, field, filters, *, date_field=False):
 
 def event_cohort(actor, filters):
     require_tab(actor,"events")
+    return _event_cohort(actor, filters)
+
+
+def _event_cohort(actor, filters):
     qs = date_scope(Event.objects.filter(admin_preview_fixture__isnull=True),"start_at",filters)
     if filters.get("event"): qs = qs.filter(pk=filters["event"].pk)
     if filters.get("region"): qs = qs.filter(state__iexact=filters["region"].strip())
@@ -123,10 +127,15 @@ def event_detail(actor,event):
     return row
 
 
-def participant_projection(actor,filters):
+def participant_projection(actor, filters):
     require_tab(actor,"participants")
-    from apps.participants.discovery import discover
     from apps.participants.intelligence import build_intelligence
+    population,criteria=_participant_population(actor,filters)
+    return population,build_intelligence(actor,population,criteria,current_group=True),criteria
+
+
+def _participant_population(actor,filters):
+    from apps.participants.discovery import discover
     criteria = {}
     for name,target in [("start","acquired_from"),("end","acquired_to"),("region","state"),("identifier","identifier"),("event","event")]:
         value = filters.get(name)
@@ -136,11 +145,15 @@ def participant_projection(actor,filters):
     form,population,criteria = discover(actor,criteria,strict=True)
     if not form.is_valid(): raise PermissionDenied("Participant report filters require their source permissions.")
     population=population.filter(admin_preview_fixture__isnull=True)
-    return population,build_intelligence(actor,population,criteria,current_group=True),criteria
+    return population,criteria
 
 
-def recruiting_cohort(actor,filters):
+def recruiting_cohort(actor, filters):
     require_tab(actor,"opportunities")
+    return _recruiting_cohort(actor, filters)
+
+
+def _recruiting_cohort(actor,filters):
     from apps.recruiting.selection import opportunities_for
     qs = date_scope(opportunities_for(actor),"created_at",filters)
     if filters.get("customer"): qs = qs.filter(need__organization=filters["customer"])
@@ -156,13 +169,18 @@ def candidates_for(actor,opportunities):
     return CandidateOpportunity.objects.filter(opportunity__in=opportunities,merged_into__isnull=True,participant__kind="person").select_related("participant","stage","opportunity__need__organization","opportunity__need__effective_revision","opportunity__need__campaign")
 
 
-def confirmed_hires(actor,filters):
+def confirmed_hires(actor, filters):
     require_tab(actor,"hires")
+    require_tab(actor,"opportunities")
+    return _confirmed_hires(actor, filters)
+
+
+def _confirmed_hires(actor,filters):
     from apps.core.models import AuditLog
     from django.contrib.contenttypes.models import ContentType
     from apps.recruiting.models import CandidateOpportunity
     # Filter hiring dates on the immutable explicit-confirmation audit, never on an arbitrary updated_at.
-    opportunities = recruiting_cohort(actor,{k:v for k,v in filters.items() if k not in ("start","end")})
+    opportunities = _recruiting_cohort(actor,{k:v for k,v in filters.items() if k not in ("start","end")})
     logs = AuditLog.objects.annotate(reporting_object_id=Replace("object_id",Value("-"),Value(""))).filter(content_type=ContentType.objects.get_for_model(CandidateOpportunity),reporting_object_id=Replace(Cast(OuterRef("pk"),CharField()),Value("-"),Value("")),
         action="recruiting.candidate.stage_changed",new_data__btw_hiring_confirmation=True,new_data__outcome="hired").order_by("-timestamp")
     qs = candidates_for(actor,opportunities).filter(outcome="hired").annotate(confirmed_on=Subquery(logs.values("timestamp")[:1]))
@@ -181,8 +199,12 @@ def recruiting_metrics(actor,filters):
     return qs,candidates,counts,stages,months
 
 
-def customer_projection(actor,filters):
+def customer_projection(actor, filters):
     require_tab(actor,"customers")
+    return _customer_projection(actor, filters)
+
+
+def _customer_projection(actor,filters):
     from apps.customers.access import organizations
     from apps.customers.models import WorkforceNeed,Campaign
     from apps.recruiting.models import WorkforceRequest

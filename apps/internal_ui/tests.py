@@ -37,7 +37,11 @@ class InternalShellTests(TestCase):
         self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
         home = self.client.get(reverse('internal:home'))
         self.assertContains(home, 'Home')
-        self.assertNotContains(home, 'Participants')
+        self.assertNotContains(home, 'href="'+reverse('participants:staff-directory')+'"')
+        metric=next(m for m in home.context['home_summary_metrics'] if m['label']=='Total Participants')
+        self.assertEqual(metric['state'],'restricted')
+        self.assertIsNone(metric['value'])
+        self.assertEqual(metric['url'],'')
         self.assertNotContains(home, 'Operations')
         self.assertEqual(self.client.get(reverse('internal:workspace', kwargs={'workspace_id': 'participants'})).status_code, 403)
 

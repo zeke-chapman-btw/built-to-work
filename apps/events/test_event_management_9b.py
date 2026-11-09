@@ -112,7 +112,7 @@ class EventManagement9BTests(TestCase):
         event=self.create(); self.client.force_login(self.viewer,backend='django.contrib.auth.backends.ModelBackend')
         for url in (reverse('events:event_create'),reverse('events:event_edit',args=[event.pk]),reverse('events:event_action',args=[event.pk,'publish'])):
             self.assertEqual(self.client.post(url,self.payload()).status_code,403)
-        self.assertContains(self.client.get(reverse('events:event_detail',args=[event.pk])),'Event information')
+        self.assertContains(self.client.get(reverse('events:event_detail',args=[event.pk])),'Event &amp; location')
     def test_add_only_user_can_draft_but_not_publish(self):
         self.client.force_login(self.creator,backend='django.contrib.auth.backends.ModelBackend')
         self.assertEqual(self.client.post(reverse('events:event_create'),self.payload(action='publish')).status_code,403)

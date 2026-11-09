@@ -157,9 +157,9 @@ class EventContactHousingPresentationTests(TestCase):
                      'logistics &amp; equipment<br>Keep route clear', 'mailto:contact@example.test', 'tel:+1-555-0100', 'id="housing-and-logistics"'):
             self.assertContains(response, text)
         links = self.structure(response).links
-        self.assertTrue(any(x.endswith('#event-contact-logistics') for x in links))
-        self.assertTrue(any(x.endswith('#event-housing') for x in links))
-        self.assertTrue(any(x.endswith('#event-logistics') for x in links))
+        self.assertTrue(any(urlsplit(x).path==reverse('events:section-edit',args=[self.event.pk,'contact']) for x in links))
+        self.assertTrue(any(urlsplit(x).path==reverse('events:section-edit',args=[self.event.pk,'housing']) for x in links))
+        self.assertTrue(any(urlsplit(x).path==reverse('events:section-edit',args=[self.event.pk,'logistics']) for x in links))
         self.assertNotContains(response, '<b>Example</b>')
 
     def test_invalid_contact_opens_its_section_and_retains_other_entries_without_a_write(self):

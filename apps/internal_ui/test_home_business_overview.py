@@ -85,7 +85,7 @@ class HomeBusinessOverviewTests(TestCase):
         self.assertNotContains(response, hidden.title)
         markup = Markup(); markup.feed(response.content.decode())
         task_area = markup.with_class('dashboard-tasks')[0]
-        self.assertNotIn('Accessible overdue tasks', ''.join(task_area['text']))
+        self.assertIn('Accessible overdue tasks', ''.join(task_area['text']))
 
     def test_intake_count_matches_default_queue_including_held_but_not_deferred(self):
         for state, held in [('open',False),('resolved',True),('rejected',True),
@@ -135,7 +135,8 @@ class HomeBusinessOverviewTests(TestCase):
         response = self.page()
         self.assertEqual(response.context['home_attention'], [])
         self.assertEqual(response.context['home_intake_count'], 0)
-        self.assertContains(response, 'No flagged items from these Home checks.')
+        self.assertEqual(response.context['home_unique_attention'],[])
+        self.assertNotContains(response,'id="home-review-queues"')
         self.assertNotContains(response, 'Everything is ready')
 
     def test_events_keep_existing_three_item_lifecycle_scope_and_local_dates(self):
@@ -234,7 +235,9 @@ class HomeBusinessOverviewTests(TestCase):
         with CaptureQueriesContext(connection) as large:data=home_data(self.admin)
         self.assertEqual(len(data['home_events']),3)
         self.assertLessEqual(len(large),len(small)+1)
-        self.assertLessEqual(len(large),25)
+        # Four canonical report metrics add a fixed set of authorized reads.
+        # The small/large assertion above still forbids per-record query growth.
+        self.assertLessEqual(len(large),55)
 
     def test_manager_destination_queries_are_bulk_not_per_event(self):
         first=self.event();EventExecution.objects.create(event=first,primary_manager=self.profiles[self.staff.pk])

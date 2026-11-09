@@ -5,7 +5,8 @@ from apps.events.models import Event
 from apps.participants.models import Participant
 from .forms import TaskRevisionForm
 from .task_access import events_for
-from .task_links import participants_for
+from .task_links import participants_for, customers_for, record_label
+from apps.customers.models import CustomerOrganization
 
 
 class TaskLinksForm(TaskRevisionForm):
@@ -14,7 +15,10 @@ class TaskLinksForm(TaskRevisionForm):
     participants = forms.ModelMultipleChoiceField(queryset=Participant.objects.none(), required=False,
         widget=forms.CheckboxSelectMultiple, label="Participants (up to 20 search results)")
 
-    def __init__(self, *args, actor, event_query="", participant_query="", include_selected=False, **kwargs):
+    customers=forms.ModelMultipleChoiceField(queryset=CustomerOrganization.objects.none(),required=False,
+        widget=forms.CheckboxSelectMultiple,label='Customers (up to 20 search results)')
+
+    def __init__(self, *args, actor, customer_query='', event_query="", participant_query="", include_selected=False, **kwargs):
         super().__init__(*args, **kwargs)
         events = events_for(actor).exclude(status="archived")
         if event_query:
@@ -27,6 +31,12 @@ class TaskLinksForm(TaskRevisionForm):
         ids = list(people.order_by("last_name", "first_name", "pk").values_list("pk", flat=True)[:20])
         self.fields["participants"].queryset = people.filter(pk__in=ids).order_by("last_name", "first_name", "pk")
         self.fields["participants"].label_from_instance = lambda person: str(person)
+        companies=customers_for(actor).exclude(status='archived')
+        if customer_query:companies=companies.filter(name__icontains=customer_query)
+        company_ids=list(companies.order_by('name','pk').values_list('pk',flat=True)[:20])
+        self.fields['customers'].queryset=companies.filter(pk__in=company_ids).order_by('name','pk')
+        for kind in ('events','participants','customers'):
+            self.fields[kind].label_from_instance=lambda obj,kind=kind:record_label(kind,obj)
         if include_selected and self.is_bound:
             def submitted(name):
                 raw=self.data.getlist(name) if hasattr(self.data,'getlist') else self.data.get(name,[])
@@ -41,10 +51,17 @@ class TaskLinksForm(TaskRevisionForm):
             current=list(self.fields['participants'].queryset.values_list('pk',flat=True))
             self.fields['participants'].queryset=participants_for(actor).filter(kind='person',archived_at__isnull=True,pk__in=current+person_ids).order_by('last_name','first_name','pk')
 
+            customer_ids=[]
+            for value in submitted('customers'):
+                try:customer_ids.append(uuid.UUID(str(value)))
+                except (ValueError,TypeError):pass
+            current=list(self.fields['customers'].queryset.values_list('pk',flat=True))
+            self.fields['customers'].queryset=customers_for(actor).exclude(status='archived').filter(pk__in=current+customer_ids).order_by('name','pk')
+
     def clean(self):
         data = super().clean()
-        if not data.get("events") and not data.get("participants"):
-            raise forms.ValidationError("Select at least one eligible Event or Participant. Search by name to find another record.")
+        if not data.get("events") and not data.get("participants") and not data.get("customers"):
+            raise forms.ValidationError("Select at least one eligible Event, Participant or Customer. Search by name to find another record.")
         return data
 
 

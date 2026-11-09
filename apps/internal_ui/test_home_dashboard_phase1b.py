@@ -55,9 +55,9 @@ class HomeDashboardPolishTests(TestCase):
 
     def test_business_panel_headings_and_real_secondary_actions(self):
         headers = self.markup.with_class('dashboard-section-header')
-        self.assertEqual(len(headers), 6)
+        self.assertEqual(len(headers), 5)
         headings = [''.join(h['children'][0]['text']).strip() for h in headers]
-        for actual, expected in zip(headings, ('Needs Attention', 'Quick Actions', 'Current & Upcoming Events', 'My Tasks', 'Updates', 'Operational Summary')):
+        for actual, expected in zip(headings, ('My Tasks', 'Updates', 'Quick Actions', 'Operational overview', 'Current & Upcoming Events')):
             self.assertIn(expected, actual)
         self.assertContains(self.response, reverse('operations:tasks') + '?view=mine')
         self.assertContains(self.response, reverse('operations:updates'))

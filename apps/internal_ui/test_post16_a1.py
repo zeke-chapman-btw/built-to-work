@@ -112,7 +112,7 @@ class Post16A1Tests(EmployerFixtures, TestCase):
         self.staff_login()
         response = self.client.get('/operations/tasks/?view=mine')
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'All accessible tasks')
+        self.assertContains(response, 'Accessible · before filters')
         self.assertEqual(response.context['summary']['open'], 1)
         self.assertEqual(response.context['tasks'].paginator.count, 0)
 

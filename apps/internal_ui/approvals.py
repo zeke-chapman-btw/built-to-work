@@ -170,7 +170,7 @@ def _jobs(actor, request, state, query):
     from apps.recruiting.jobs import published
     flags = access_flags(actor)
     customers = is_manager(actor)
-    choices = ([('positions','Position review'),('position_history','Position revision history')] if customers else []) + ([('publication','Publication')] if flags['customer'] else [])
+    choices = ([('positions','Position review'),('position_history','Position revision history')] if customers else []) + ([('publication','Publication review'),('publication_history','Publication history / all states')] if flags['customer'] else [])
     state = state if state in dict(choices) else choices[0][0]
     if state.startswith('position'):
         records = WorkforceNeedRevision.objects.select_related('organization','need','submitted_by','reviewed_by','approved_by')
@@ -186,6 +186,10 @@ def _jobs(actor, request, state, query):
             tone='success' if record.state=='approved' else 'warning' if record.state in ('submitted','review') else 'neutral')for record in page]
     else:
         allowed = _opportunities(actor)
+        if state == 'publication':
+            # Existing current-publication eligibility owns the classification.
+            # Closed/current copies are history, not pending approval requests.
+            allowed = allowed.exclude(publication_state='closed').exclude(pk__in=published().values('pk'))
         if query: allowed = allowed.filter(Q(need__effective_revision__title__icontains=query)|Q(need__organization__name__icontains=query))
         allowed = allowed.select_related('publication__published_by','need__effective_revision','need__working_revision','need__organization','owner')
         page = _page(allowed.order_by('-updated_at','-pk'),request)
@@ -193,7 +197,7 @@ def _jobs(actor, request, state, query):
         items=[]
         for record in page:
             status = record.get_publication_state_display()
-            if record.publication_state in ('published','closed') and record.pk not in current:status='Publication requires review'
+            if record.publication_state == 'published' and record.pk not in current:status='Publication requires review'
             can_manage=_can_manage(actor,record)
             items.append(_row(str(record.need),str(record.need.organization),status,
                 date=record.publication.created_at if record.publication_id else record.created_at,
@@ -216,6 +220,7 @@ def workspace(request):
     query = request.GET.get('q','').strip()[:120]
     adapter = {'events':_events,'verification':_verification,'customer':_customer,'jobs':_jobs}[selected]
     data=adapter(actor,request,request.GET.get('state',''),query)
+    data.update(primary_state=data['states'][0][0], current_state_label=dict(data['states'])[data['state']])
     data.update(approval_tabs=[{'label':label,'selected':key==selected,'url':url(request,tab=key,state=None,page=None)}for key,label in available],
         approval_states=[{'label':label,'selected':key==data['state'],'url':url(request,tab=selected,state=key,page=None)}for key,label in data['states']],
         query=query,selected=selected,previous_page_url=url(request,page=data['page'].previous_page_number())if data['page'].has_previous()else'',

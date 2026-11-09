@@ -137,7 +137,7 @@ class Build10ATests(TestCase):
         self.login(self.admin)
         response=self.client.get(reverse('events:event_list'),{'view':'upcoming','q':'Next Mixed','event_type':'','date_from':'','date_to':''})
         self.assertContains(response,self.next.name);self.assertNotContains(response,self.later.name)
-        self.assertContains(response,'Filters');self.assertContains(response,'Clear filters')
+        self.assertContains(response,'Advanced filters');self.assertContains(response,'>Reset</a>')
         self.assertContains(response,'name="q"');self.assertContains(response,'name="view"')
     def test_read_only_event_user_cannot_edit_or_change_lifecycle(self):
         self.grant('events.view_event');self.login()

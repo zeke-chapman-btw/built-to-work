@@ -40,6 +40,12 @@ class TaskParticipantLink(UUIDModel, TimestampedModel):
     class Meta:
         constraints = [models.UniqueConstraint(fields=("task", "participant"), name="operations_unique_task_participant_link")]
 
+class TaskCustomerLink(UUIDModel, TimestampedModel):
+    task = models.ForeignKey(Task,on_delete=models.CASCADE,related_name='customer_links')
+    organization = models.ForeignKey('customers.CustomerOrganization',on_delete=models.PROTECT,related_name='task_links')
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=('task','organization'),name='operations_unique_task_customer_link')]
+
 class TaskComment(UUIDModel, TimestampedModel):
     task = models.ForeignKey(Task, on_delete=models.PROTECT, related_name="comments")
     author = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="task_comments")

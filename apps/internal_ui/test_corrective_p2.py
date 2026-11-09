@@ -89,7 +89,8 @@ class CorrectiveP2Tests(TestCase):
     def test_home_more_shortcuts_preserves_all_personalized_choices(self):
         self.login();r=self.client.get(reverse('internal:home'))
         self.assertEqual(r.status_code,200)
-        self.assertContains(r,'More shortcuts')
+        self.assertNotContains(r,'More shortcuts')
+        self.assertNotContains(r,'dashboard-quick-more')
         self.assertContains(r,reverse('internal:quick-actions-edit'))
         for action in r.context['quick_actions']:
             self.assertContains(r,action['url'])

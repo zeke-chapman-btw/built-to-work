@@ -11,6 +11,21 @@
     const controller = new AbortController(), timeout = setTimeout(() => controller.abort(),15000);
     try { return await fetch(url,{...options,signal:controller.signal}); } finally { clearTimeout(timeout); }
   };
+  // Restore the originating action after a successful server-confirmed reload.
+  // This is tab-local, one-use UI state and never grants access to a record.
+  const returnFocusKey = 'btwRecordEditorReturn';
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(returnFocusKey) || 'null');
+    sessionStorage.removeItem(returnFocusKey);
+    if (saved && saved.path === location.pathname + location.search && Date.now() - saved.at < 60000) {
+      const action = [...document.querySelectorAll('a[data-record-editor]')].find(a => a.href === saved.opener);
+      if (action) requestAnimationFrame(() => { action.focus({preventScroll:true}); window.scrollTo(saved.x,saved.y); });
+    }
+  } catch { /* Browser storage can be disabled; ordinary navigation still works. */ }
+  const rememberReturnFocus = target => {
+    if (!opener?.isConnected) return;
+    try { sessionStorage.setItem(returnFocusKey,JSON.stringify({path:target.pathname+target.search,opener:opener.href,x:scrollX,y:scrollY,at:Date.now()})); } catch {}
+  };
   const activeForm = () => content?.querySelector('[data-editor-form]');
   const feedback = (text, error = false) => {
     let status = content?.querySelector('[data-editor-status]');
@@ -119,6 +134,7 @@
         if ([400,409].includes(response.status)) { render(await response.text()); dirty = true; return; }
         if (!response.ok || !(response.headers.get('Content-Type') || '').includes('application/json')) throw new Error('Save unavailable');
         const result = await response.json(), target = sameOrigin(result.url); if (!target) throw new Error('Invalid destination');
+        rememberReturnFocus(target);
         ownHistory = false; dirty = false; feedback('Saved. Returning to your list…');
         if (target.pathname === location.pathname && target.search === location.search) {
           const state = {...history.state}; delete state.btwRecordEditor; history.replaceState(state,'',target.href); location.reload();

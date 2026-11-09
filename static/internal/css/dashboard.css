@@ -127,12 +127,15 @@ body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-hom
 }
 @media(min-width:1024px) { body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home :is(a,button,summary) { min-height:36px; } }
 @media(min-width:1280px) {
-  body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home { grid-template-columns:minmax(0,1fr) 260px; grid-template-areas:'attention actions' 'events actions' 'personal actions' 'summary actions'; gap:16px 20px; }
+  body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home { grid-template-columns:minmax(0,1fr); grid-template-areas:none; gap:20px; }
   body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-attention-section { grid-area:attention; }
-  body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-shortcuts { grid-area:actions; align-self:start; }
-  body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-events { grid-area:events; }
-  body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-personal { grid-area:personal; }
-  body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-summary { grid-area:summary; }
-  body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-shortcuts .dashboard-actions { grid-template-columns:minmax(0,1fr); }
+  body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-shortcuts { grid-area:auto; align-self:start; }
+  body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-events { grid-area:auto; }
+  body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-personal { grid-area:auto; }
+  body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-summary { grid-area:auto; }
+  body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-shortcuts .dashboard-actions { grid-template-columns:repeat(3,minmax(0,1fr)); }
   body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-shortcuts .dashboard-action span { display:inline; }
 }
+
+body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-personal>.dashboard-section {border:1px solid #d7a3ac;border-top:3px solid #b71935}
+@media(max-width:600px){body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-actions {grid-template-columns:minmax(0,1fr)}}

@@ -1,4 +1,4 @@
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 from django import template
 from django.urls import reverse
 from apps.event_reports.services import can_report
@@ -10,11 +10,19 @@ def event_header(context, event):
     from apps.events.event_management import available_actions
     from apps.operations.templatetags.task_ui import global_task_create_url
     request=context["request"]; user=request.user
+    back_url=reverse("events:event_list") if user.has_perm("events.view_event") else reverse("staffing:schedule")
+    candidate=request.GET.get("return_to","")
+    # Only the existing authorized index can receive a directory return link.
+    try:
+        parsed=urlsplit(candidate)
+        if candidate.startswith("/") and not candidate.startswith("//") and not parsed.scheme and not parsed.netloc and parsed.path==back_url:
+            back_url=candidate
+    except ValueError:pass
     return dict(request=request,event=event,report_url=reverse("event_reports:detail",args=[event.pk]) if can_report(user) else None,
         edit_url=reverse("events:event_edit",args=[event.pk])+"?return_to="+quote(request.get_full_path(),safe="") if user.has_perm("events.change_event") and event.status!="archived" else None,
         management_actions=available_actions(event) if user.has_perm("events.change_event") else [],
         back_label="Events" if user.has_perm("events.view_event") else "My staff schedule",
-        back_url=reverse("events:event_list") if user.has_perm("events.view_event") else reverse("staffing:schedule"),
+        back_url=back_url,
         task_creation_enabled=context.get("task_creation_enabled",True),task_action_url=global_task_create_url(context) if context.get("task_action_in_event_header") else "")
 
 @register.inclusion_tag("events/event_tabs.html", takes_context=True)
@@ -99,7 +107,12 @@ def event_operational_tools(context,event):
 
 @register.inclusion_tag("events/staff_navigation.html", takes_context=True)
 def staff_navigation(context, event, active="workdays"):
-    return dict(staff_tabs=staff_tabs(context["request"].user, event), selected_staff_tab=active)
+    user=context['request'].user
+    # Staff and Clock are already primary Event routes. Retain any genuinely
+    # distinct future submenu destination without repeating those two routes.
+    primary={tab['url'] for tab in event_tabs(user,event)}
+    remaining=[tab for tab in staff_tabs(user,event) if tab['url'] not in primary]
+    return dict(staff_tabs=remaining, selected_staff_tab=active)
 
 
 @register.filter

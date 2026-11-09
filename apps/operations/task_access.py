@@ -70,7 +70,15 @@ def present_tasks(user, rows):
         people[task_id].add(participant_id)
     person_ids = set().union(*people.values()) if people else set()
     labels = {p.pk: str(p) for p in participants_for(user).filter(pk__in=person_ids, kind="person", archived_at__isnull=True)}
+    from .models import TaskCustomerLink
+    from .task_links import customers_for
+    companies={row.pk:set() for row in rows}
+    for task_id,company_id in TaskCustomerLink.objects.filter(task_id__in=companies).values_list('task_id','organization_id'):
+        companies[task_id].add(company_id)
+    company_ids=set().union(*companies.values()) if companies else set()
+    company_labels={company.pk:company.name for company in customers_for(user).filter(pk__in=company_ids)} if company_ids else {}
     for row in rows:
+        row.customer_label=' · '.join(company_labels.get(pk,'Associated customer (restricted)') for pk in sorted(companies[row.pk]))
         row.linked_event_count = len(grouped[row.pk])
         row.linked_participant_count = len(people[row.pk])
         row.participant_label = " · ".join(labels.get(pk, "Associated participant (restricted)") for pk in sorted(people[row.pk]))

@@ -15,17 +15,6 @@ def _work_data(user):
         {"label": "Accessible overdue tasks", "value": work["summary"]["overdue"],
          "scope": "Open tasks you can access · not archived", "url": reverse("operations:tasks") + "?view=all&due=overdue"},
     ]
-    # Global totals require the same destination permission. Never use an admin's
-    # wider task access to grant access to Events or the Participant directory.
-    if user.has_perm("events.view_event"):
-        from apps.events.models import Event
-        metrics.append({"label": "Upcoming events", "value": Event.objects.filter(
-            status=Event.Status.UPCOMING, start_at__gt=timezone.now()).count(),
-            "scope": "Published events starting in the future", "url": reverse("events:event_list") + "?view=upcoming"})
-    if user.has_perm("participants.view_participant"):
-        from apps.participants.models import Participant
-        metrics.append({"label": "Participant records", "value": Participant.objects.count(),
-                        "scope": "All records in your authorized directory", "url": reverse("participants:staff-directory")})
     return {"home_tasks": rows, "home_task_count": metrics[0]["value"], "home_metrics": metrics}
 
 
@@ -132,9 +121,10 @@ def home_data(user):
         result.update(home_recruiting_state='unavailable')
         unavailable.append('Recruiting review check unavailable')
     result.update(home_attention=attention, home_attention_unavailable=unavailable)
-    # Existing metrics keep their queries/meaning; only nonduplicated totals render here.
-    result["home_summary_metrics"] = [m for m in result["home_metrics"]
-                                      if m["label"] in ("Upcoming events", "Participant records")]
+    # Unique source signals remain links, not invented Tasks or replayed notices.
+    result['home_unique_attention'] = [item for item in attention if item['id'] != 'tasks']
+    result['home_overdue_attention'] = next((item for item in attention if item['id'] == 'tasks'), None)
+    result['home_summary_metrics'] = operational_metrics(user)
 
     try:
         events = list(task_access.events_for(user).filter(status=Event.Status.UPCOMING,
@@ -155,3 +145,46 @@ def home_data(user):
     for event in events:
         event.directory_registered = counts.get(event.pk, {}).get("registered")
     return result
+
+
+def operational_metrics(actor):
+    """One request-local tab resolution; unchanged canonical source predicates.
+
+    Public report APIs retain their fresh guards. Home authorizes all four reads
+    once, then uses their shared private builders and existing record selectors.
+    No permission decision or metric value is cached across requests.
+    """
+    from django.core.exceptions import PermissionDenied
+    from django.db import DatabaseError
+    from django.db.models import Count
+    from apps.reporting.access import allowed_tabs
+    from apps.reporting.metrics import _event_cohort, _customer_projection, _confirmed_hires, _participant_population
+    from apps.participants.identity import canonical_records
+    try:
+        tabs=set(allowed_tabs(actor));access_state='available'
+    except PermissionDenied:
+        tabs=set();access_state='restricted'
+    except DatabaseError:
+        tabs=set();access_state='unavailable'
+    metrics=[]
+    def metric(label,scope,loader,url,required):
+        value=None
+        if not set(required).issubset(tabs):
+            state='restricted' if access_state=='available' else access_state
+        else:
+            try:value=loader();state='available'
+            except PermissionDenied:state='restricted'
+            except DatabaseError:state='unavailable'
+        metrics.append(dict(label=label,scope=scope,value=value,state=state,url=url if state=='available' else ''))
+    metric('Total Participants','Canonical directory people · preview fixtures excluded',
+        lambda:_participant_population(actor,{})[0].count(),reverse('participants:staff-directory'),['participants'])
+    metric('Active Workforce Needs','Approved active position records · not requests or worker quantity',
+        lambda:_customer_projection(actor,{})[2]['active_positions'],reverse('internal:reports')+'?tab=customers',['customers'])
+    metric('Upcoming Events','Published, future start · preview fixtures excluded',
+        lambda:_event_cohort(actor,{}).filter(status='upcoming',start_at__gt=timezone.now()).count(),
+        reverse('events:event_list')+'?view=upcoming',['events'])
+    def placed():
+        return canonical_records(_confirmed_hires(actor,{})).aggregate(n=Count('_canonical_person',distinct=True))['n']
+    metric('Participants Placed','Unique canonical people · current explicitly confirmed hires · all time',
+        placed,reverse('internal:reports')+'?tab=hires',['hires','opportunities'])
+    return metrics

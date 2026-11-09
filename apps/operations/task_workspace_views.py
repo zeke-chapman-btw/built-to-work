@@ -9,7 +9,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from apps.staffing.models import StaffProfile
 from .views import staff_view
-from . import workspace, task_access, quick_create
+from . import workspace, task_access, quick_create, task_links
 from .collaboration_forms import TaskLinksForm
 from .models import Task
 
@@ -55,9 +55,9 @@ def quick_task(request,event_id=None,participant_id=None):
 def record_lookup(request):
     if request.method!='GET':raise PermissionDenied
     kind=request.GET.get('kind','')
-    if kind not in ('events','participants'):return JsonResponse({'results':[]},status=400)
+    if kind not in ('events','participants','customers'):return JsonResponse({'results':[]},status=400)
     q=request.GET.get('q','').strip()[:150]
-    form=TaskLinksForm(actor=request.user,event_query=q if kind=='events' else '',participant_query=q if kind=='participants' else '')
+    form=TaskLinksForm(actor=request.user,event_query=q if kind=='events' else '',participant_query=q if kind=='participants' else '',customer_query=q if kind=='customers' else '')
     records=form.fields[kind].queryset
-    response=JsonResponse({'results':[{'id':str(obj.pk),'label':obj.name if kind=='events' else str(obj)} for obj in records]})
+    response=JsonResponse({'results':[{'id':str(obj.pk),'label':task_links.record_label(kind,obj)} for obj in records]})
     response['Cache-Control']='no-store';return response

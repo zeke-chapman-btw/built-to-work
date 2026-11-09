@@ -32,11 +32,11 @@ class QuickTaskForm(TaskForm):
         self.fields['event'].widget=forms.HiddenInput()
         self.fields['reason'].widget=forms.HiddenInput()
         choices=TaskLinksForm(self.data if self.is_bound else None,actor=actor,include_selected=True)
-        for name in ('events','participants'):
+        for name in ('events','participants','customers'):
             self.fields[name]=deepcopy(choices.fields[name])
             self.fields[name].widget=forms.SelectMultiple(attrs={'size':4,'data-record-select':name})
             self.fields[name].widget.choices=self.fields[name].choices
-            self.fields[name].label='Linked Events (optional)' if name=='events' else 'Linked Participants (optional)'
+            self.fields[name].label=name.title()
             self.fields[name].help_text='Select multiple records with Ctrl/Command. Search by name to find more.'
         if not self.is_bound:self.initial['creation_token']=new_token(actor)
     def clean_creation_token(self):
@@ -50,7 +50,7 @@ class QuickTaskForm(TaskForm):
         return raw
     def clean(self):
         data=super().clean()
-        for key in ('events','participants'):
+        for key in ('events','participants','customers'):
             if len(data.get(key,()))>20:self.add_error(key,'Select up to 20 records of each type for quick creation. More can be linked afterward.')
         return data
 
@@ -84,10 +84,10 @@ def create(actor,form,*,event=None):
         with transaction.atomic():
             task,checked=services.save_task(actor=actor,data=payload,event_id=event.pk if event else None,creation_id=form.creation_id)
             if not task:raise ValidationError('Assignment or Event access changed. Review the form and try again.')
-            if data['events'] or data['participants']:
+            if data['events'] or data['participants'] or data['customers']:
                 linked,checked=collaboration.add_links(actor=actor,task_id=task.pk,include_selected=True,data={
                     'revision':task.updated_at.isoformat(),'events':[str(e.pk) for e in data['events']],
-                    'participants':[str(p.pk) for p in data['participants']]})
+                    'participants':[str(p.pk) for p in data['participants']], 'customers':[str(c.pk) for c in data['customers']]})
                 if not linked:raise ValidationError('Some linked records are no longer eligible. Review your selection.')
                 task=linked
             return task,False

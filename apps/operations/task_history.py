@@ -7,11 +7,11 @@ from django.urls import reverse
 from apps.staffing.models import StaffProfile
 from .models import Task, TaskComment
 from .task_access import events_for, require_task_access, task_admin
-from .task_links import participants_for
+from .task_links import participants_for, customers_for
 
 FIELDS = {"title":"Title", "description":"Description", "assigned_staff_id":"Assignee", "event_id":"Event",
           "due_date":"Due date", "priority":"Priority", "status":"Status", "archived_at":"Archived at",
-          "linked_event_ids":"Linked events", "linked_participant_ids":"Linked participants", "comment_text":"Comment"}
+          "linked_event_ids":"Linked events", "linked_participant_ids":"Linked participants", "linked_customer_ids":"Linked customers", "comment_text":"Comment"}
 ACTIONS = {"created":"Task created", "updated":"Task details updated", "reassigned":"Task reassigned",
            "status":"Status changed", "completed":"Task completed", "reopened":"Task reopened",
            "archived":"Task archived", "restored":"Task restored", "links.updated":"Linked records changed",
@@ -32,7 +32,7 @@ def valid_uuid(raw):
 
 def present_history(user, entries):
     entries = list(entries)
-    staff_ids, event_ids, participant_ids, comment_ids = set(), set(), set(), set()
+    staff_ids, event_ids, participant_ids, comment_ids, customer_ids = set(), set(), set(), set(), set()
     for entry in entries:
         for data in (entry.old_data or {}, entry.new_data or {}):
             for key, target in (("assigned_staff_id",staff_ids),("event_id",event_ids),("comment_id",comment_ids)):
@@ -43,12 +43,16 @@ def present_history(user, entries):
                 pk=valid_uuid(raw)
                 if pk:
                     event_ids.add(pk)
+            for raw in data.get("linked_customer_ids",[]):
+                pk=valid_uuid(raw)
+                if pk:customer_ids.add(pk)
             for raw in data.get("linked_participant_ids",[]):
                 if str(raw).isdigit():
                     participant_ids.add(int(raw))
     staff={str(p.pk):str(p) for p in StaffProfile.objects.filter(pk__in=staff_ids)}
     events={str(e.pk):e.name for e in events_for(user).filter(pk__in=event_ids)}
     people={str(p.pk):str(p) for p in participants_for(user).filter(pk__in=participant_ids)}
+    customers={str(c.pk):c.name for c in customers_for(user).filter(pk__in=customer_ids)} if customer_ids else {}
     comments={str(c.pk):c for c in TaskComment.objects.filter(pk__in=comment_ids,task_id__in=[e.object_id for e in entries]).select_related("task")}
 
     def value(key,raw):
@@ -62,6 +66,8 @@ def present_history(user, entries):
             return "; ".join(events.get(str(pk),"Restricted event") for pk in raw)
         if key=="linked_participant_ids":
             return "; ".join(people.get(str(pk),"Restricted participant") for pk in raw)
+        if key=="linked_customer_ids":
+            return "; ".join(customers.get(str(pk),"Restricted customer") for pk in raw)
         if key=="status":
             return dict(Task.Status.choices).get(raw,str(raw))
         if key=="priority":

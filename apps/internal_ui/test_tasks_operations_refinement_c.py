@@ -19,7 +19,7 @@ class PrimaryLinks(HTMLParser):
         super().__init__(); self.rows=[]; self.current=None; self.depth=0; self.nested=[]
     def handle_starttag(self, tag, attrs):
         attrs=dict(attrs)
-        if tag=='a' and 'task-row-primary' in attrs.get('class','').split():
+        if tag=='a' and 'record-title-link' in attrs.get('class','').split():
             self.current=attrs; self.rows.append(attrs); self.depth=1
         elif self.current is not None and tag in ('a','button','input','select','textarea'):
             self.nested.append(tag)
@@ -56,7 +56,7 @@ class TasksOperationsRefinementCTests(TestCase):
         self.assertContains(response,self.own.title); self.assertNotContains(response,self.private.title)
         parser=PrimaryLinks(); parser.feed(response.content.decode())
         self.assertEqual(len(parser.rows),1); self.assertEqual(parser.nested,[])
-        self.assertEqual(parser.rows[0]['aria-labelledby'],'task-title-'+str(self.own.pk))
+        self.assertEqual(parser.rows[0]['id'],'task-title-'+str(self.own.pk))
         self.assertIn('return_to=',parser.rows[0]['href']); self.assertIn('priority%3Dhigh',parser.rows[0]['href'])
         self.assertEqual(self.client.get(reverse('operations:task',args=[self.private.pk])).status_code,404)
 
@@ -64,7 +64,7 @@ class TasksOperationsRefinementCTests(TestCase):
         self.login(self.staff)
         response=self.client.get(reverse('operations:tasks'),{'q':'no matching title'})
         self.assertEqual(response.context['summary'],{'open':1,'overdue':1,'completed':0})
-        self.assertContains(response,'All non-archived tasks you can access, before view and search filters.')
+        self.assertContains(response,'Accessible · before filters')
         self.assertContains(response,'No tasks match this view')
         archived=self.client.get(reverse('operations:tasks'),{'view':'archived'})
         self.assertContains(archived,self.archived.title); self.assertNotContains(archived,self.own.title)

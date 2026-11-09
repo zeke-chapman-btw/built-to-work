@@ -5,7 +5,27 @@
   if (!dialog || typeof dialog.showModal !== 'function') return;
   const content = dialog.querySelector('[data-task-dialog-content]');
   const closeButton = dialog.querySelector('[data-task-close]');
-  let opener = null, busy = false, created = false, generation = 0;
+  let opener = null, busy = false, created = false, generation = 0, initialFormState = '';
+  const formState = () => {
+    const form=content.querySelector('form[data-task-form]'); if(!form)return '';
+    return JSON.stringify([...new FormData(form).entries()].filter(([key])=>!['csrfmiddlewaretoken','creation_token','return_to','revision'].includes(key)).sort((a,b)=>(a[0]+'='+a[1]).localeCompare(b[0]+'='+b[1])));
+  };
+  const hasUnsaved = () => !created && initialFormState && formState()!==initialFormState;
+  const requestClose = () => {
+    if(busy)return;
+    if(hasUnsaved()){
+      let panel=content.querySelector('[data-task-discard-panel]');
+      if(!panel){
+        panel=document.createElement('section');panel.className='task-discard-confirm';panel.dataset.taskDiscardPanel='';panel.setAttribute('role','alert');
+        const message=document.createElement('p');message.textContent='Discard your unsaved task changes?';
+        const stay=document.createElement('button');stay.type='button';stay.textContent='Keep editing';stay.addEventListener('click',()=>{panel.remove();focusForm();});
+        const discard=document.createElement('button');discard.type='button';discard.textContent='Discard changes';discard.addEventListener('click',()=>dialog.close());
+        panel.append(message,stay,discard);content.prepend(panel);stay.focus();
+      }
+      return;
+    }
+    dialog.close();
+  };
   const searches = new WeakMap();
   const focusable = () => [...dialog.querySelectorAll('a[href],button,input,select,textarea,[tabindex]')]
     .filter(el => !el.disabled && el.tabIndex >= 0 && el.getClientRects().length);
@@ -29,20 +49,21 @@
     if (url.origin !== window.location.origin || !url.pathname.startsWith('/operations/tasks/quick-create/')) return;
     event.preventDefault();
     if (dialog.open) return;
-    opener = trigger; created = false; const current = ++generation;
+    opener = trigger; created = false; initialFormState=''; const current = ++generation;
     content.textContent = 'Loading task form…'; dialog.showModal(); setBusy(false); closeButton.focus();
     try {
       const response = await fetch(url.href, {credentials:'same-origin',headers:{'X-Task-Modal':'1'}});
       const html = await response.text();
       if (!dialog.open || current !== generation) return;
       if (!response.ok) throw new Error('Form unavailable');
-      content.innerHTML = html; focusForm();
+      content.innerHTML = html; initialFormState=formState(); focusForm();
     } catch (_) {
       if (dialog.open && current === generation) errorMessage('The task form could not be loaded. Use the full-page form or try again.',url.href);
     }
   });
   dialog.addEventListener('cancel', event => {
-    if (busy) event.preventDefault();
+    if(busy)event.preventDefault();
+    else if(hasUnsaved()){event.preventDefault();requestClose();}
   });
   dialog.addEventListener('keydown', event => {
     if (event.key !== 'Tab') return;
@@ -54,7 +75,7 @@
   dialog.addEventListener('click', event => {
     if (event.target.closest('[data-task-close],[data-task-cancel]')) {
       event.preventDefault();
-      if (!busy) dialog.close();
+      requestClose();
     }
   });
   dialog.addEventListener('close', async () => {

@@ -13,6 +13,21 @@ def participants_for(user):
     return Participant.objects.all() if user.has_perm("participants.view_participant") else Participant.objects.none()
 
 
+def customers_for(user):
+    require_task_staff(user)
+    from apps.customers.access import organizations
+    from apps.customers.models import CustomerOrganization
+    from django.core.exceptions import PermissionDenied
+    try:return organizations(user)
+    except PermissionDenied:return CustomerOrganization.objects.none()
+
+
+def record_label(kind, obj):
+    if kind=='participants':return f'{obj} · ID {obj.pk}'
+    if kind=='customers':return f'{obj.name} · {str(obj.pk)[:8]}'
+    return f'{obj.name} · {obj.local_start_at.date().isoformat()} · {obj.code or str(obj.pk)[:8]}'
+
+
 def effective_event_ids(task):
     ids = set(task.event_links.values_list("event_id", flat=True))
     if task.event_id:
@@ -22,7 +37,8 @@ def effective_event_ids(task):
 
 def snapshot(task):
     return {"linked_event_ids": sorted(str(pk) for pk in effective_event_ids(task)),
-            "linked_participant_ids": sorted(str(pk) for pk in task.participant_links.values_list("participant_id", flat=True))}
+            "linked_participant_ids": sorted(str(pk) for pk in task.participant_links.values_list("participant_id", flat=True)),
+            "linked_customer_ids": sorted(str(pk) for pk in task.customer_links.values_list("organization_id",flat=True))}
 
 
 def event_tasks(queryset, event):
@@ -60,4 +76,12 @@ def display_links(user, task):
         participants.append({"label":str(person) if person else "Restricted participant",
             "url":reverse("participants:staff-profile", args=[person.pk]) if person else None,
             "kind":"participant", "link_id":link.pk})
-    return {"events":events, "participants":participants}
+    customers=[]
+    links=list(task.customer_links.order_by('created_at','pk'))
+    visible={row.pk:row for row in customers_for(user).filter(pk__in=[link.organization_id for link in links])}
+    for link in links:
+        company=visible.get(link.organization_id)
+        customers.append({'label':record_label('customers',company) if company else 'Restricted customer',
+          'url':reverse('customers:workspace',args=[company.pk,'overview']) if company else None,
+          'kind':'customer','link_id':link.pk})
+    return {"events":events, "participants":participants,'customers':customers}

@@ -4,8 +4,10 @@ from . import offline_views
 from . import sync_views
 from . import downsync_views
 from . import public_views
+from . import section_editors
 app_name = "events"
 urlpatterns = [
+ path("<uuid:event_id>/edit-section/<str:section>/", section_editors.edit, name="section-edit"),
  path("offline/", offline_views.offline_preparations, name="offline-preparations"),
  path("offline/<uuid:preparation_id>/", offline_views.offline_preparation_detail, name="offline-preparation-detail"),
  path("offline/<uuid:preparation_id>/activate/", offline_views.offline_activate, name="offline-activate"),

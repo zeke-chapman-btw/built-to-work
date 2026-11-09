@@ -52,8 +52,10 @@ class FinalRefinementTests(TestCase):
     def test_home_labels_and_central_analytics_destination(self):
         response = self.client.get(reverse('internal:home'))
         self.assertContains(response, '>Notifications</h2>')
-        self.assertContains(response, '>Operational Summary</h2>')
-        self.assertContains(response, 'View all notifications')
+        self.assertContains(response, '>Operational overview</h2>')
+        self.assertContains(response, 'aria-label="Notifications, 0 unread notifications"')
+        self.assertContains(response, 'href="'+reverse('operations:updates')+'"')
+        self.assertNotContains(response,'Open notifications')
         self.assertContains(response, 'href="'+reverse('internal:reports')+'">Reports &amp; Analytics</a>')
         self.assertNotContains(response, 'Recent Updates')
         self.assertNotContains(response, 'At a Glance')
@@ -115,10 +117,10 @@ class FinalRefinementTests(TestCase):
                 response = self.client.get(reverse(route))
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, 'data-global-task-create', count=1)
-                self.assertContains(response, '>+ Add Task</a>', count=1)
+                self.assertRegex(response.content.decode(),r'data-global-task-create[^>]*>\+ Task</a>')
         for workspace in ('operations', 'customers', 'administration'):
             self.assertContains(self.client.get(reverse('internal:workspace', args=[workspace])), 'data-global-task-create', count=1)
-        self.assertContains(self.client.get(reverse('operations:tasks')), '+ Add Task', count=1)
+        self.assertContains(self.client.get(reverse('operations:tasks')), 'data-global-task-create', count=1)
 
     def test_excluded_users_cannot_render_global_action_even_with_override(self):
         users = [AnonymousUser(), get_user_model()(is_active=True, is_staff=False), get_user_model()(is_active=False, is_staff=True)]

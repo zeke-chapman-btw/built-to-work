@@ -59,7 +59,16 @@ def save_task(*, actor, data, task_id=None, event_id=None, creation_id=None):
             ids.append(uuid.UUID(str(value)))
         except (ValueError, TypeError, AttributeError):
             pass
+    if data.get('linked_records'):
+        raw=data.getlist('events') if hasattr(data,'getlist') else data.get('events',[])
+        if isinstance(raw,str):raw=[raw]
+        for value in list(raw)[:50]:
+            try:ids.append(uuid.UUID(str(value)))
+            except (ValueError,TypeError,AttributeError):pass
     list(Event.objects.select_for_update().filter(pk__in=sorted(set(ids))).order_by("pk"))
+    if data.get('linked_records'):
+        from .task_record_editing import lock_records
+        lock_records(data)
     obj = Task.objects.select_for_update().get(pk=task_id) if task_id else (Task(pk=creation_id) if creation_id else Task())
     if task_id:
         from .execution_services import guard_managed_task
@@ -85,13 +94,23 @@ def save_task(*, actor, data, task_id=None, event_id=None, creation_id=None):
         obj.created_by = actor
     obj.full_clean()
     meaningful = ("title", "description", "assigned_staff_id", "event_id", "due_date", "priority")
+    link_changes=[]
+    if data.get('linked_records'):
+        from .task_record_editing import plan
+        if event and event not in form.cleaned_data['events']:
+            form.cleaned_data['events']=[*form.cleaned_data['events'],event]
+        primary,link_changes=plan(actor,obj,form.cleaned_data)
+        obj.event_id=primary
     after = snap(obj)
-    if before and all(before[key] == after[key] for key in meaningful):
+    if before and not link_changes and all(before[key] == after[key] for key in meaningful):
         return obj, form
     obj.save()
     if obj.event_id:
         from .models import TaskEventLink
         TaskEventLink.objects.filter(task=obj,event_id=obj.event_id).delete()
+    if link_changes:
+        from .task_record_editing import apply
+        apply(obj,link_changes)
     action = "task.created" if not before else ("task.reassigned" if before["assigned_staff_id"] != str(obj.assigned_staff_id) else "task.updated")
     audit(actor, action, obj, before, form.cleaned_data["reason"])
     return obj, form

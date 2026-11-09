@@ -102,7 +102,7 @@ class CorrectivePassOneTests(TestCase):
         self.event.save()
         response=self.client.get(url)
         self.assertContains(response,'SYNTHETIC accommodation<br>Second line')
-        self.assertContains(response,'#event-contact-logistics')
+        self.assertContains(response,reverse('events:section-edit',args=[self.event.pk,'housing']))
 
     def test_foundation_is_opt_in_and_expense_editor_unchanged(self):
         self.assertContains(self.client.get(reverse('events:event_detail',args=[self.event.pk])),'has-corrective-events')

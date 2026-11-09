@@ -1,0 +1,1 @@
+<div class="btw-result-heading"><h2{% if heading_id %} id="{{ heading_id }}"{% endif %}><span class="btw-result-label">{{ label }}</span>: <strong>{{ count|default_if_none:"Unavailable" }}</strong></h2>{% if scope %}<span class="btw-result-scope">{{ scope }}</span>{% endif %}</div>

@@ -5,9 +5,9 @@ from apps.events.models import Event
 from apps.events.services import audit_action
 from apps.participants.models import Participant
 from apps.staffing.services import revision
-from .models import Task, TaskEventLink, TaskParticipantLink, TaskComment
+from .models import Task, TaskEventLink, TaskParticipantLink, TaskComment, TaskCustomerLink
 from .task_access import require_task_staff, require_task_access, task_admin, events_for
-from .task_links import snapshot, participants_for
+from .task_links import snapshot, participants_for, customers_for
 from .collaboration_forms import TaskLinksForm, TaskCommentForm
 
 
@@ -27,8 +27,11 @@ def add_links(*, actor, task_id, data, event_query="", participant_query="", inc
         return None, form
     events = list(form.cleaned_data["events"])
     people = list(form.cleaned_data["participants"])
+    companies=list(form.cleaned_data["customers"])
     list(Event.objects.select_for_update().filter(pk__in=[e.pk for e in events]).order_by("pk"))
     list(Participant.objects.select_for_update().filter(pk__in=[p.pk for p in people]).order_by("pk"))
+    from apps.customers.models import CustomerOrganization
+    list(CustomerOrganization.objects.select_for_update().filter(pk__in=[c.pk for c in companies]).order_by('pk'))
     task = Task.objects.select_for_update().get(pk=task_id)
     require_task_access(actor, task)
     revision(task, form.cleaned_data["revision"])
@@ -36,7 +39,9 @@ def add_links(*, actor, task_id, data, event_query="", participant_query="", inc
         raise PermissionDenied
     if participants_for(actor).filter(kind="person",archived_at__isnull=True,pk__in=[p.pk for p in people]).count()!=len(people):
         raise PermissionDenied
+    if customers_for(actor).exclude(status='archived').filter(pk__in=[c.pk for c in companies]).count()!=len(companies):raise PermissionDenied
     before = snapshot(task)
+    for company in companies:TaskCustomerLink.objects.get_or_create(task=task,organization=company)
     for event in events:
         if event.pk != task.event_id:
             TaskEventLink.objects.get_or_create(task=task, event=event)
@@ -65,8 +70,8 @@ def remove_link(*, actor, task_id, kind, link_id, data):
     if kind == "primary" and str(link_id)==str(task.pk) and task.event_id:
         TaskEventLink.objects.filter(task=task, event_id=task.event_id).delete()
         task.event = None  # Explicit authorized unlink only; never a migration backfill.
-    elif kind in ("event", "participant"):
-        model = TaskEventLink if kind=="event" else TaskParticipantLink
+    elif kind in ("event", "participant", "customer"):
+        model = TaskEventLink if kind=="event" else TaskParticipantLink if kind=="participant" else TaskCustomerLink
         link = model.objects.filter(task=task, pk=link_id).first()
         if not link:
             raise PermissionDenied

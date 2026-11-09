@@ -138,6 +138,10 @@ class EventFilterForm(forms.Form):
     date_from = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}), label="From date (UTC)")
     date_to = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}), label="Through date (UTC)")
 
+    location = forms.CharField(required=False,max_length=100,label='Location')
+    details = forms.ChoiceField(required=False,label='Event details',choices=(('', 'Any details'),('progress','Details in progress'),('finalized','Details finalized')))
+    sort = forms.ChoiceField(required=False,label='Sort',choices=(('date','Date'),('name','Name A–Z'),('-name','Name Z–A')))
+
     def clean(self):
         data = super().clean()
         if data.get("date_from") and data.get("date_to") and data["date_to"] < data["date_from"]:

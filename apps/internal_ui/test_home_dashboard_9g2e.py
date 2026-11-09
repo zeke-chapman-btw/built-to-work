@@ -51,7 +51,7 @@ class HomeDashboard9G2ETests(TestCase):
         self.task()
         response = self.client.get(self.home)
         html = response.content.decode()
-        headings = ['id="dashboard-attention-title"', 'id="dashboard-actions-title"', 'id="dashboard-events-title"', 'id="dashboard-tasks-title"', 'id="dashboard-updates-title"', 'id="dashboard-summary-title"']
+        headings = ['id="dashboard-tasks-title"', 'id="dashboard-updates-title"', 'id="dashboard-actions-title"', 'id="dashboard-summary-title"', 'id="dashboard-events-title"']
         self.assertEqual(sorted(html.index(h) for h in headings), [html.index(h) for h in headings])
         self.assertEqual(html.count('<h1'), 1)
         self.assertEqual(response.context['home_task_count'], 1)
@@ -115,9 +115,19 @@ class HomeDashboard9G2ETests(TestCase):
         self.event(start_at=timezone.now()-timedelta(hours=1), end_at=timezone.now()+timedelta(hours=1))
         Participant.objects.create(first_name='SYNTHETIC', last_name='E metric')
         response = self.client.get(self.home)
-        metrics = {m['label']: m for m in response.context['home_metrics']}
-        self.assertEqual(metrics['Upcoming events']['value'], 1)
-        self.assertEqual(metrics['Participant records']['value'], 1)
+        metrics = {m['label']: m for m in response.context['home_summary_metrics']}
+        for label in ('Upcoming Events','Total Participants'):
+            self.assertEqual(metrics[label]['state'],'restricted')
+            self.assertIsNone(metrics[label]['value'])
+            self.assertEqual(metrics[label]['url'],'')
+        from apps.event_reports.services import REPORT_PERMS
+        for permission in REPORT_PERMS:
+            app,codename=permission.split('.',1);self.grant(self.staff,app,codename)
+        self.grant(self.staff,'participants','view_participant_analytics')
+        response=self.client.get(self.home)
+        metrics={m['label']:m for m in response.context['home_summary_metrics']}
+        self.assertEqual(metrics['Upcoming Events']['value'],1)
+        self.assertEqual(metrics['Total Participants']['value'],1)
         self.assertTrue(all(m['scope'] for m in metrics.values()))
         self.staff.user_permissions.clear()
         self.assertEqual(len(self.client.get(self.home).context['home_metrics']), 2)
@@ -177,7 +187,8 @@ class HomeDashboard9G2ETests(TestCase):
         with CaptureQueriesContext(connection) as large:
             response = self.client.get(self.home)
         self.assertLessEqual(len(large), len(small)+1)
-        self.assertLessEqual(len(large), 35)
+        # Includes four canonical report metrics; retain the growth bound above.
+        self.assertLessEqual(len(large), 55)
         self.assertEqual(len(response.context['home_tasks']), 4)
 
     def test_event_staffing_summary_requires_management_permission(self):
@@ -201,9 +212,9 @@ class HomeDashboard9G2ETests(TestCase):
         self.grant(self.staff, 'events', 'view_event')
         response = self.client.get(reverse('events:event_list'), {'view':'all','date_from':'not-a-date'})
         self.assertEqual(response.status_code, 400)
-        self.assertContains(response, '<details class="event-filter-popover" data-ui-menu open>', status_code=400)
-        response = self.client.get(reverse('events:event_list'), {'view':'all','event_type':'rodeo'})
-        self.assertContains(response, '<details class="event-filter-popover" data-ui-menu open>')
+        self.assertContains(response, '<details class="filter-advanced" open>', status_code=400)
+        response = self.client.get(reverse('events:event_list'), {'view':'all','date_from':'2030-07-01','event_type':'rodeo'})
+        self.assertContains(response, '<details class="filter-advanced" open>')
         self.assertContains(response, 'UTC calendar dates')
 
     def test_pass_b_promotes_attention_and_events_without_widening_task_scope(self):
@@ -219,38 +230,42 @@ class HomeDashboard9G2ETests(TestCase):
         self.assertEqual(response.context['home_attention_count'], 2)
         markup = Markup(); markup.feed(response.content.decode())
         areas = {n['attrs'].get('aria-labelledby'): n for n in markup.with_class('dashboard-section')}
-        self.assertEqual(list(areas), ['dashboard-attention-title', 'dashboard-actions-title',
-            'dashboard-events-title', 'dashboard-tasks-title', 'dashboard-updates-title', 'dashboard-summary-title'])
-        attention = ' '.join(''.join(areas['dashboard-attention-title']['text']).split())
+        self.assertEqual(list(areas), ['dashboard-tasks-title', 'dashboard-updates-title', 'dashboard-actions-title', 'dashboard-summary-title', 'dashboard-events-title'])
+        self.assertNotIn('dashboard-attention-title',areas)
         tasks = ' '.join(''.join(areas['dashboard-tasks-title']['text']).split())
         events = ' '.join(''.join(areas['dashboard-events-title']['text']).split())
         self.assertEqual(response.context['home_attention'][0]['count'], 2)
-        self.assertIn('Accessible overdue tasks', attention)
-        self.assertIn('may be assigned to someone else', attention)
-        self.assertNotIn('Accessible overdue tasks', tasks)
+        self.assertIn('Accessible overdue tasks', tasks)
+        self.assertContains(response,reverse('operations:tasks')+'?view=all&amp;due=overdue')
+        self.assertEqual(response.context['home_unique_attention'],[])
         self.assertNotContains(response, 'SYNTHETIC B colleague overdue')
         self.assertIn(event.name, events)
         self.assertNotIn(event.name, tasks)
 
     def test_pass_b_stored_record_label_keeps_archived_rows_and_permission_boundary(self):
-        self.grant(self.staff, 'participants', 'view_participant')
-        Participant.objects.create(first_name='SYNTHETIC', last_name='B current')
-        Participant.objects.create(first_name='SYNTHETIC', last_name='B archived', archived_at=timezone.now())
-        response = self.client.get(self.home)
-        metric = next(m for m in response.context['home_metrics'] if m['label']=='Participant records')
-        self.assertEqual(metric['value'], 2)
-        self.assertContains(response, 'Stored records; a person may have more than one.')
+        from apps.reporting.metrics import participant_projection
+        self.grant(self.staff,'participants','view_participant')
+        self.grant(self.staff,'participants','view_participant_analytics')
+        Participant.objects.create(first_name='SYNTHETIC',last_name='B current')
+        Participant.objects.create(first_name='SYNTHETIC',last_name='B archived',archived_at=timezone.now())
+        response=self.client.get(self.home)
+        metric=next(m for m in response.context['home_summary_metrics'] if m['label']=='Total Participants')
+        self.assertEqual(metric['state'],'available')
+        self.assertEqual(metric['value'],participant_projection(self.staff,{})[0].count())
+        self.assertContains(response,'Canonical directory people')
         self.staff.user_permissions.clear()
-        response = self.client.get(self.home)
-        self.assertNotContains(response, 'Participant records')
-        self.assertNotContains(response, 'Stored records; a person may have more than one.')
+        response=self.client.get(self.home)
+        metric=next(m for m in response.context['home_summary_metrics'] if m['label']=='Total Participants')
+        self.assertEqual(metric['state'],'restricted')
+        self.assertIsNone(metric['value'])
+        self.assertEqual(metric['url'],'')
 
     def test_pass_b_failed_reads_render_unavailable_without_false_empty_claims(self):
         with patch('apps.internal_ui.home_data._work_data', side_effect=DatabaseError('synthetic work failure')), \
              patch('apps.internal_ui.home_data.task_access.events_for', side_effect=DatabaseError('synthetic event failure')):
             response = self.client.get(self.home)
         self.assertEqual(response.status_code, 200)
-        for text in ('Assigned work unavailable', 'Operational counts unavailable', 'Events unavailable'):
+        for text in ('Assigned work unavailable', 'Events unavailable'):
             self.assertContains(response, text)
         for text in ('No open tasks assigned to you', 'No accessible overdue tasks',
                      'No current or upcoming events in your scope'):

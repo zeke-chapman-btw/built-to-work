@@ -93,6 +93,10 @@ def event_list(request):
         if values["q"]:
             q = values["q"]
             events = events.filter(Q(name__icontains=q) | Q(code__icontains=q) | Q(location_name__icontains=q) | Q(city__icontains=q) | Q(event_type_other__icontains=q))
+        if values['location']:
+            for part in values['location'].replace(',', ' ').split():
+                events=events.filter(Q(city__icontains=part)|Q(state__icontains=part))
+        if values['details']:events=events.filter(details_finalized_at__isnull=values['details']=='progress')
         if values["event_type"]:
             events = events.filter(event_type=values["event_type"])
         if values["date_from"]:
@@ -102,6 +106,8 @@ def event_list(request):
     else:
         events = events.none()
     events = events.order_by("-start_at" if selected in ("completed", "cancelled", "archived") else "start_at", "name", "pk")
+    if valid and values.get('sort') in ('name','-name'):
+        events=events.order_by(values['sort'],'start_at','pk')
     can_view_staffing = request.user.has_perm("staffing.manage_event_staffing")
     if can_view_staffing:
         from django.db.models import Count
@@ -123,7 +129,7 @@ def event_list(request):
         tabs.append({"id": value, "label": label, "url": "?" + query.urlencode()})
     active_filters=[]
     if valid:
-        for key,label in (("q","Search"),("event_type","Type"),("date_from","From (UTC)"),("date_to","Through (UTC)")):
+        for key,label in (("q","Search"),("event_type","Type"),("date_from","From (UTC)"),("date_to","Through (UTC)"),("location","Location"),("details","Details")):
             value=filters[key].value()
             if value:
                 query=parameters.copy();query.pop(key,None)
