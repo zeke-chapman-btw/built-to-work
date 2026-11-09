@@ -135,12 +135,15 @@ class ParticipantsPass3Tests(TestCase):
         html = response.content.decode()
         start = html.index('p3-directory-row')
         row = html[start:html.index('</article>', start)]
-        self.assertIn('class="btw-record-primary"', row)
-        self.assertLess(row.index('</a>'), row.index('<details'))
+        self.assertIn('class="ex-person-name"', row)
+        self.assertIn('View profile', row)
+        self.assertEqual(row.count('</a>'), 2)
         self.assertNotIn('onclick=', row)
-        self.assertIn('data-ui-menu', row)
-        self.assertContains(response, 'Registrations')
-        self.assertContains(response, 'Attendance recorded separately')
+        self.assertNotIn('<details', row)
+        self.assertNotIn('data-ui-menu', row)
+        self.assertNotIn('<small', row)
+        for label in ['Unique ID', 'Interest in work', 'Willing to travel', 'Participant identifier']:
+            self.assertIn(label, row)
 
     def test_filters_preserve_every_authorized_field_and_reader_restrictions(self):
         url = reverse('participants:staff-directory')

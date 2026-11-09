@@ -277,10 +277,14 @@ class ParticipantExplorerTests(TestCase):
         response=self.client.get(reverse('participants:staff-directory'),{'employment':'seeking','state':'GA','travel':'yes'})
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.context['total_participants'],1)
-        self.assertEqual([field['label'] for field in response.context['explorer_common']['desktop']],['Participant identifier','Trade / work interest','City','State'])
+        self.assertEqual([field['label'] for field in response.context['explorer_common']['desktop']],['Participant identifier','City / state'])
         hidden=dict(response.context['explorer_filter_hidden'])
-        self.assertEqual(hidden['employment'],'seeking')
-        self.assertEqual(hidden['travel'],'yes')
+        self.assertEqual(hidden['state'],'GA')
+        self.assertNotIn('employment',hidden)
+        self.assertNotIn('travel',hidden)
+        groups={row['key']:row for row in response.context['explorer_groups']}
+        self.assertEqual([o['value'] for o in groups['employment']['options'] if o['selected']],['seeking'])
+        self.assertEqual([o['value'] for o in groups['travel']['options'] if o['selected']],['yes'])
         chip=next(row for row in response.context['explorer_chips'] if row['label']=='Travel')
         self.assertEqual(chip['value'],'Yes')
 

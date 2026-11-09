@@ -2,7 +2,6 @@
 {% block workspace_body_class %}has-approvals-workspace{% endblock %}
 {% block workspace_id %}approvals-workspace{% endblock %}
 {% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/approvals.css' %}">{% endblock %}
-{% block workspace_description %}{% if description %}<p>{{ description }}</p>{% endif %}{% endblock %}
 {% block workspace_selection_kind %}sections{% endblock %}
 {% block workspace_selection %}<nav class="approval-tabs btw-workspace-nav" aria-label="Approval categories">{% for tab in approval_tabs %}<a href="{{ tab.url }}"{% if tab.selected %} aria-current="page"{% endif %}>{{ tab.label }}</a>{% endfor %}</nav>{% endblock %}
 {% block workspace_filters %}<div class="btw-filter-panel"><nav class="approval-states btw-filter-nav" aria-label="Source state">{% for state in approval_states %}<a href="{{ state.url }}"{% if state.selected %} aria-current="page"{% endif %}>{{ state.label }}</a>{% endfor %}</nav><form method="get" role="search" aria-label="Search approval records" class="approval-search btw-compact-filter btw-filter-form"><input type="hidden" name="tab" value="{{ selected }}"><input type="hidden" name="state" value="{{ state }}"><label for="approval-query">Search this category</label><div class="btw-filter-fields"><input id="approval-query" type="search" name="q" value="{{ query }}" maxlength="120"><button type="submit" class="button secondary">Search</button>{% if query %}<a class="btw-filter-clear" href="{{ clear_url }}">Clear search</a>{% endif %}</div></form></div>{% endblock %}
@@ -10,6 +9,7 @@
 
 <section class="card approval-card" aria-labelledby="approval-records-heading">
 <header class="approval-card-heading"><h2 id="approval-records-heading">Matching records <span>{{ page.paginator.count }}</span></h2>{% if source_url %}<a href="{{ source_url }}">{{ source_label }}</a>{% endif %}</header>
+{% if description %}<p class="approval-help">{{ description }}</p>{% endif %}
 
 
 <div class="approval-records">{% for row in rows %}<article class="approval-row"><div class="approval-row-heading"><h3>{{ row.title }}</h3><span class="approval-status approval-status-{{ row.tone }}">{{ row.status }}</span></div><p class="approval-context">{{ row.context }}</p><p class="approval-meta">{% if row.date %}{{ row.date_label }} <time datetime="{{ row.date|utc|date:'c' }}">{{ row.date|utc|date:'M j, Y · g:i A' }} UTC</time>{% endif %}{% if row.actor %} · {{ row.actor_label }} {{ row.actor }}{% endif %}{% if row.secondary_date %} · {{ row.secondary_date_label }} <time datetime="{{ row.secondary_date|utc|date:'c' }}">{{ row.secondary_date|utc|date:'M j, Y · g:i A' }} UTC</time>{% endif %}</p><p class="approval-detail">{{ row.detail }}</p><a class="approval-review" href="{{ row.link }}">{{ row.action }} <span aria-hidden="true">→</span></a></article>{% empty %}<p class="approval-empty">{{ empty }}</p>{% endfor %}</div>

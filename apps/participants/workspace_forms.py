@@ -133,6 +133,7 @@ class DiscoveryForm(forms.Form):
     q = forms.CharField(required=False, max_length=150, label="Name, email, or phone")
     trade_interest = forms.CharField(required=False, max_length=120, label="Trade / career interest")
     skill = forms.CharField(required=False, max_length=120, label="Recorded skill / qualification text")
+    location = forms.CharField(required=False, max_length=200, label="City / state", widget=forms.TextInput(attrs={"placeholder": "City, state, or both"}))
     city = forms.CharField(required=False, max_length=100)
     state = forms.CharField(required=False, max_length=100)
     employment = forms.ChoiceField(required=False, choices=[("", "Any employment interest")] + list(ParticipantCareerProfile._meta.get_field("employment_interest").choices[1:]))

@@ -3,7 +3,6 @@
 {% block workspace_class %}task-landing{% endblock %}
 {% block workspace_attributes %}data-task-workspace{% endblock %}
 {% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/event_management.css' %}"><link rel="stylesheet" href="{% static 'internal/css/operations.css' %}?v=9d"><link rel="stylesheet" href="{% static 'internal/css/tasks.css' %}">{% endblock %}
-{% block workspace_description %}<p>Your assignments and work you’ve delegated, in one place.</p>{% endblock %}
 {% block workspace_actions %}{% global_task_create_url as header_task_create_url %}{% if header_task_create_url %}<a class="button button-primary" data-task-create href="{{ header_task_create_url }}">New Task</a>{% endif %}{% endblock %}
 {% block workspace_selection_kind %}filters{% endblock %}
 {% block workspace_selection %}<nav class="task-views task-workspace-views btw-filter-nav" aria-label="Task views">{% for tab in tabs %}<a href="{{ tab.url }}"{% if tab.active %} aria-current="page"{% endif %}>{{ tab.label }} <span>{{ tab.count }}</span></a>{% endfor %}</nav>{% endblock %}

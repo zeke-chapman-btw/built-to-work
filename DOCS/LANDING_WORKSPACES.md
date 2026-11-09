@@ -7,10 +7,22 @@ main width, title/actions, optional selection, filter surface and result transit
 Use 24px desktop and 16px phone gutters, a 20px/28px title, a 16px header transition
 and 24px section transitions. A stable main scrollbar gutter prevents lateral jumps.
 
-Route selections use underlined links and `aria-current`. Task/Event view choices
-remain filters with their existing counts and queries. Overflow belongs to the
+All primary selections use underlined links and `aria-current`. Task/Event view choices
+retain filter semantics with their existing counts and queries. Overflow belongs to the
 selection row; the main page must not overflow horizontally. Pages without sections
-have no fabricated Overview tab. Existing descriptions remain optional.
+have no fabricated Overview tab. All nine main-page title headers omit subtitles.
+Keep meaningful explanations in the relevant content area, including the staffing
+approval explanation.
+
+Participant questions use native dropdown selectors. City / state is one text field;
+each comma- or space-separated term must match the recorded city or state. No
+geocoding or distance is inferred. Older city, state and trade-interest saved criteria
+remain supported and visible as removable active filters, without new input controls.
+Rows show name only in the first column, the stable identity UUID, employment interest,
+effective travel willingness and participant identifier, followed by View profile.
+Profile links preserve the directory origin. Trade and skill summaries and row-level
+Details disclosures are omitted. Changing assessment source clears source-specific
+score/category limits when the filter form is applied.
 
 Only these landing pages load `workspace_landing.css`. Record editors, reporting
 forms and portals retain their established frames and assets. Keep controller hooks

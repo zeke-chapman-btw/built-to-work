@@ -82,6 +82,10 @@ def person_for(pk, *, editing=False):
 
 def _criteria_from_request(request):
     values = request.GET.copy()
+    previous_source = values.pop("assessment_source", None)
+    if previous_source is not None and values.get("assessment", "") != previous_source[-1]:
+        for key in ("score_min", "score_max", "assessment_category"):
+            values.pop(key, None)
     saved_id = values.get("saved")
     if saved_id:
         try:
@@ -578,8 +582,8 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
                              "channel":{"":"All", "online":"Online", "event":"Event", "unknown":"Unknown"},
                              "assessment":{"":"Any", "quiz":"Quiz", "simulator":"Simulator", "game":"Game"},
                              "archived":{"":"Active", "active":"Active", "all":"All", "archived":"Archived"}}.get(key, {}).get(str(value), label)
-            options.append(dict(label=display_label, selected=selected, url=change(key, None if selected else value)))
-        groups.append(dict(key=key, title=title, options=options))
+            options.append(dict(value=str(value), label=display_label, selected=selected, url=change(key, None if selected else value)))
+        groups.append(dict(key=key, title=title, options=options, errors=form[key].errors))
     definitions = [("Skills & qualifications", ["skill","qualification","qualification_kind","qualification_status","document_status"]),
                    ("Experience & work preferences", ["experience_min","experience_data","availability","preferred_location","work_type","relocation","employment_classification","availability_classification"]),
                    ("Assessment limits", ["assessment_category","score_min","score_max"]),
@@ -594,7 +598,7 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
                 attrs.update({"aria-invalid":"true", "aria-describedby":identifier + "-errors"})
             return dict(label={"trade_interest":"Trade / work interest"}.get(key, bound.label),
                         identifier=identifier, widget=bound.as_widget(attrs=attrs), errors=bound.errors)
-        common_panels[device] = [presentation_field(key) for key in ("identifier","trade_interest","city","state") if key in form.fields]
+        common_panels[device] = [presentation_field(key) for key in ("identifier","location") if key in form.fields]
         advanced = []
         for title, names in definitions:
             fields = []
@@ -607,7 +611,7 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
         panels[device] = advanced
     hidden = [(key, value) for key, value in criteria.items() if key not in {"q","sort","segments"}]
     filter_hidden = [(key, criteria.get(key, "")) for key in
-                     ("q","sort","segments","employment","travel","channel","assessment","archived")
+                     ("q","sort","segments","trade_interest","city","state")
                      if key in form.fields]
     colors = ["#d02030", "#0ea5e9", "#f59e0b", "#10b981", "#8b5cf6", "#a1a1aa"]
     total = page.paginator.count
@@ -623,9 +627,13 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
             position = end
         if chart["dimension"] in {"employment","travel","channel","experience","completeness"} and total and sum(r["count"] for r in chart["rows"]) == total:
             chart["gradient"] = ",".join(stops)
+    origin_values = request.GET.copy()
+    origin_values.pop("assessment_source", None)
+    origin_query = origin_values.urlencode()
+    directory_origin = request.path + ("?" + origin_query if origin_query else "")
     return dict(explorer_chips=chips, explorer_groups=groups, explorer_panels=panels, explorer_common=common_panels,
                 explorer_hidden=hidden, explorer_filter_hidden=filter_hidden, explorer_charts=charts,
-                explorer_origin=request.get_full_path(), explorer_clear=route,
+                explorer_origin=directory_origin, explorer_clear=route,
                 explorer_unified=True, explorer_include_analysis=include_analysis,
                 explorer_analysis_url=reverse("participants:intelligence") + "?" + query_string(criteria) + "#explorer-analysis",
                 explorer_alternatives=target(dict(criteria, view="alternatives")) + "#explorer-analysis",

@@ -212,6 +212,9 @@ def discover(user, params, *, strict=False):
             qs = qs.annotate(_phone=phone)
             lookup |= Q(_phone__contains=digits)
         qs = qs.filter(lookup)
+    # Each location term may match either recorded city or state. No radius is inferred.
+    for term in d.get("location", "").replace(",", " ").split():
+        qs = qs.filter(Q(city__icontains=term) | Q(state__icontains=term))
     from django.db.models import Case, When, CharField
     qs = qs.annotate(_current_interest=current_interest_expression(), _current_availability=Case(
         When(recruiting_profile__availability_classification__isnull=False,
