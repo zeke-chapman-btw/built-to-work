@@ -5,8 +5,9 @@ from . import intake_views, intake_config_views, intake_trailer_views, consent_v
 from . import portal_views, portal_auth
 from . import portal_profile_views
 app_name = "participants"
-from . import identifier_views
+from . import identifier_views, card_editors
 urlpatterns = [
+    path('staff/<int:participant_id>/cards/<str:card>/', card_editors.edit, name='profile-card-edit'),
     path("staff/<int:participant_id>/identifier/", identifier_views.edit, name="identifier-edit"),
     path('portal/', portal_views.home, name='portal-home'),
     path('portal/activate/<str:token>/', portal_views.activate_account, name='portal-activate'),

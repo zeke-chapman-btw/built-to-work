@@ -47,7 +47,7 @@ def profile_revision(person):
 @transaction.atomic
 def save_profile(*, actor, participant_id, person_data, career_data, revision, reason):
     require_people(actor, "participants.change_participant")
-    reason = require_reason(reason)
+    reason = (reason or "").strip() or "Staff updated profile"
     person = lock_person(participant_id)
     career = ParticipantCareerProfile.objects.select_for_update().filter(participant=person).first()
     if revision != person.updated_at.isoformat() + "|" + (career.updated_at.isoformat() if career else "none"):
@@ -143,7 +143,7 @@ def save_work(*, actor, participant_id, data, object_id=None):
     record.full_clean()
     record.save()
     audit(actor, "work.updated" if object_id else "work.created", record, before=before,
-          after=snapshot(record, fields), reason=require_reason(data["audit_reason"]))
+          after=snapshot(record, fields), reason=((data.get("audit_reason") or "").strip() or "Staff updated work history"))
     return record
 
 
@@ -181,7 +181,8 @@ def save_note(*, actor, participant_id, data, object_id=None):
     note.full_clean()
     note.save()
     audit(actor, "note.edited" if object_id else "note.created", note, before=before,
-          after={"content": note.content, "audience": "btw_internal"}, reason=require_reason(data["audit_reason"]))
+          after={"content": note.content, "audience": "btw_internal"},
+          reason=(data.get("audit_reason") or "").strip() or ("Staff edited internal note" if object_id else "Staff added internal note"))
     return note
 
 

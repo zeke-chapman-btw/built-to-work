@@ -134,6 +134,8 @@ def profile(request, participant_id):
     ctx["crm_previous_url"] = previous(request)
     from apps.crm.presentation import participant_navigation
     ctx.update(participant_navigation(request.user, person))
+    from apps.crm.navigation import with_origin
+    ctx['crm_new_url'] = with_origin(ctx['crm_new_url'], request.get_full_path())
     if section == "relationship" and not (ctx["crm_btw_allowed"] or ctx["crm_employer_allowed"]):
         raise PermissionDenied
     if section == "recruiting" and not ctx["can_recruiting"]:
@@ -184,7 +186,7 @@ def profile(request, participant_id):
     if section == "acquisition":
         acq = ctx["acquisition_record"]
         if acq:
-            ctx["acquisition_changes"] = AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(ParticipantAcquisition), object_id=str(acq.pk)).select_related("actor")
+            ctx["acquisition_changes"] = AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(ParticipantAcquisition), object_id=str(acq.pk)).select_related("actor", "actor__staff_profile")
         ctx["submissions"] = person.registration_submissions.select_related("event", "form_version").order_by("-submitted_at")[:50]
     source = activity_sources()
     if ctx["can_view_registrations"] and section in ("overview", "events"):
@@ -208,7 +210,7 @@ def profile(request, participant_id):
         ctx["historical_scores"] = HistoricalSimulatorScore.objects.filter(participant_id__in=member_ids).select_related("event_record").order_by("-scored_at", "-pk")[:assessment_limit]
         ctx["historical_events"] = HistoricalEventRecord.objects.filter(participant_id__in=member_ids).select_related("event").order_by("-event_date", "-pk")[:assessment_limit]
     if ctx["can_view_notes"]:
-        notes = ParticipantNote.objects.filter(participant_id__in=member_ids, audience="btw_internal").select_related("author", "edited_by")
+        notes = ParticipantNote.objects.filter(participant_id__in=member_ids, audience="btw_internal").select_related("author", "author__staff_profile", "edited_by", "edited_by__staff_profile")
         if request.GET.get("archived") != "1":
             notes = notes.filter(archived_at__isnull=True)
         note_page = Paginator(notes, PAGE_SIZE).get_page(request.GET.get("page"))
@@ -220,6 +222,8 @@ def profile(request, participant_id):
             active_notes = notes.filter(archived_at__isnull=True)
             ctx["profile_note_total"] = active_notes.count()
             ctx["profile_notes"] = list(active_notes[:3])
+            for note in ctx['profile_notes']:
+                note.can_edit = can_edit_note(request.user, note)
     ctx["related_tasks"] = TaskParticipantLink.objects.filter(participant_id__in=member_ids, task__in=tasks_for(request.user)).select_related("task", "task__assigned_staff").order_by("-created_at")[:25]
     if section == "activity":
         ctx["timeline"] = factual_timeline(request.user, person, member_ids, ctx)
@@ -237,6 +241,7 @@ def profile(request, participant_id):
 
 def factual_timeline(user, person, member_ids, ctx):
     """Bounded factual chronology; no copied activity store or invented attendance."""
+    from apps.crm.actor_names import compact_actor
     rows = []
     def add(at, label, detail, source, key, source_action=""):
         if at:
@@ -277,10 +282,10 @@ def factual_timeline(user, person, member_ids, ctx):
     if ctx["can_view_notes"]:
         types.append((ParticipantNote, ParticipantNote.objects.filter(participant_id__in=member_ids).values_list("pk", flat=True)))
     for model, ids in types:
-        logs = AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(model), object_id__in=[str(pk) for pk in ids]).select_related("actor").order_by("-timestamp")[:100]
+        logs = AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(model), object_id__in=[str(pk) for pk in ids]).select_related("actor", "actor__staff_profile").order_by("-timestamp")[:100]
         for row in logs:
             add(row.timestamp, row.action.replace("participant.workspace.", "").replace(".", " ").title(),
-                f"{row.actor or 'System'} · {row.reason}", "Audited staff change", row.pk, source_action=row.action)
+                f"{compact_actor(row.actor) if row.actor else 'System'} · {row.reason}", "Audited staff change", row.pk, source_action=row.action)
     return sorted(rows, key=lambda r: (r["at"], r["source"], r["key"]), reverse=True)[:200]
 
 
@@ -411,7 +416,7 @@ def note_history(request, participant_id, object_id):
     if not can_notes(request.user):
         raise PermissionDenied
     note = get_object_or_404(ParticipantNote, pk=object_id, participant_id__in=identity_members(person.pk))
-    rows = AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(ParticipantNote), object_id=str(note.pk)).select_related("actor").order_by("-timestamp")
+    rows = AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(ParticipantNote), object_id=str(note.pk)).select_related("actor", "actor__staff_profile").order_by("-timestamp")
     return render(request, "participants/note_history.html", context(request, participant=person, note=note, history=rows, page_title="Internal note history"))
 
 
@@ -545,7 +550,7 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
         return target(values)
     chips = []
     for key, value in criteria.items():
-        if key in {"q", "sort", "segments"} or key not in form.fields or value in (None, ""):
+        if key in {"q", "sort", "segments", "page_size"} or key not in form.fields or value in (None, ""):
             continue
         field = form[key]
         selected = form.cleaned_data.get(key, value)
@@ -577,7 +582,7 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
         options = []
         for value, label in form.fields[key].choices:
             selected = str(criteria.get(key, "")) == str(value)
-            display_label = {"employment":{"":"Any", "seeking":"Seeking work", "open":"Open", "not_seeking":"Not seeking"},
+            display_label = {"employment":{"":"Any", "seeking":"Yes", "open":"Maybe", "not_seeking":"No", "unknown":"Unknown"},
                              "travel":{"":"Any", "yes":"Yes", "maybe":"Maybe", "no":"No", "unknown":"Unknown"},
                              "channel":{"":"All", "online":"Online", "event":"Event", "unknown":"Unknown"},
                              "assessment":{"":"Any", "quiz":"Quiz", "simulator":"Simulator", "game":"Game"},
@@ -627,9 +632,9 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
             position = end
         if chart["dimension"] in {"employment","travel","channel","experience","completeness"} and total and sum(r["count"] for r in chart["rows"]) == total:
             chart["gradient"] = ",".join(stops)
-    origin_values = request.GET.copy()
+    origin_values = {key: value for key, value in request.GET.items() if value}
     origin_values.pop("assessment_source", None)
-    origin_query = origin_values.urlencode()
+    origin_query = urlencode(origin_values)
     directory_origin = request.path + ("?" + origin_query if origin_query else "")
     return dict(explorer_reset=route, explorer_chips=chips, explorer_groups=groups, explorer_panels=panels, explorer_common=common_panels,
                 explorer_hidden=hidden, explorer_filter_hidden=filter_hidden, explorer_charts=charts,
@@ -652,12 +657,22 @@ def analytics(request):
 
 def _participant_explorer(request, *, include_analysis):
     """One discovery pipeline and presentation for the directory and opt-in analysis."""
+    # Dedicated activity sections use only the existing relationship selectors.
+    # Search criteria remain in their return links and do not gate these reads.
+    if not include_analysis and request.GET.get('listing') in {'activity', 'followups'}:
+        from apps.crm.directory_reads import directory_sections, directory_panel
+        return render(request, 'participants/intelligence.html', context(request,
+            page_title='Participants', active_participant_tab='directory', explorer_unified=True,
+            explorer_include_analysis=False, **directory_sections(request), **directory_panel(request, 'participants')))
     try:
         params = _criteria_from_request(request)
         form, population, criteria = discover(request.user, params, strict=bool(request.GET.get("saved")))
     except ValidationError as exc:
         return render(request, "participants/workspace_error.html", context(request, error="; ".join(exc.messages)), status=400)
-    page = Paginator(population, PAGE_SIZE).get_page(request.GET.get("page"))
+    from .travel_state import with_travel_preference
+    population = with_travel_preference(population)
+    page_size = int(form.cleaned_data.get("page_size") or 25) if form.is_valid() else 25
+    page = Paginator(population, page_size).get_page(request.GET.get("page"))
     rows = list(page.object_list)
     from .models import IntakeFieldState
     from .intake_discovery import effective_travel
@@ -669,17 +684,20 @@ def _participant_explorer(request, *, include_analysis):
         person.explorer_skills = career.skills_interests if career else ""
         person.explorer_employment = career.get_employment_interest_display() if career and career.employment_interest else "Not recorded"
         person.explorer_travel = {"yes":"Yes","maybe":"Maybe","no":"No"}.get(
-            effective_travel(career, travel_states.get(person.pk)), "Unknown")
+            effective_travel(career, travel_states.get(person.pk),
+                (person._travel_preference_id, person._travel_preference_at, person._travel_preference_value) if person._travel_preference_id else None), "Unknown")
     page.object_list = rows
     from .intelligence import build_intelligence
     alternative = request.GET.get("view") == "alternatives"
     data = build_intelligence(request.user, population, criteria, current_group=not alternative) if include_analysis and form.is_valid() else {}
     presentation = _explorer_presentation(request, form, population, criteria, data, page, include_analysis=include_analysis)
-    from apps.crm.directory_reads import directory_panel
-    panel = directory_panel(request, 'participants')
+    from apps.crm.directory_reads import directory_panel, directory_sections
+    panel = directory_sections(request)
+    if panel['directory_listing'] != 'search':
+        panel.update(directory_panel(request, 'participants'))
     return render(request, "participants/intelligence.html", context(request, page_title="Participants",
         active_participant_tab="analytics" if include_analysis else "directory", filter_form=form, criteria=criteria, page_obj=page,
-        total_participants=page.paginator.count, query_without_page=query_string(criteria),
+        total_participants=page.paginator.count, result_pages=page.paginator.get_elided_page_range(page.number, on_each_side=2, on_ends=1), query_without_page=query_string(criteria),
         directory_url=reverse("participants:staff-directory") + "?" + query_string(criteria),
         explorer_details_open=request.GET.get("view") == "details", **presentation, **data, **panel),
         status=400 if form.errors else 200)

@@ -84,8 +84,10 @@ def directory(request):
         query = query.filter(status=status)
     if prepared in {"yes", "no"}:
         query = query.filter(provisioned=prepared == "yes")
-    from apps.crm.directory_reads import directory_panel
-    panel = directory_panel(request, 'customers')
+    from apps.crm.directory_reads import directory_panel, directory_sections
+    panel = directory_sections(request)
+    if panel['directory_listing'] != 'search':
+        panel.update(directory_panel(request, 'customers'))
     return render(request, "customers/directory.html", context(request, rows=page(request, query), q=term, status=status, provisioned=prepared, statuses=Org.Status.choices, directory_context=request.get_full_path(), **panel))
 
 

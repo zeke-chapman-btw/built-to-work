@@ -233,7 +233,6 @@ def discover(user, params, *, strict=False):
         default=F('career_profile__work_availability'), output_field=CharField()))
     for key, lookup in (("city", "city__icontains"), ("state", "state__icontains"),
                         ("trade_interest", "_current_interest__icontains"),
-                        ("employment", "career_profile__employment_interest"),
                         ("availability", "_current_availability__icontains"),
                         ("preferred_location", "career_profile__preferred_locations__icontains"),
                         ("work_type", "career_profile__preferred_work_type")):
@@ -243,6 +242,8 @@ def discover(user, params, *, strict=False):
         qs = qs.filter(career_profile__years_of_experience__gte=d["experience_min"])
     if d.get("experience_data"):
         qs = qs.filter(career_profile__years_of_experience__isnull=d["experience_data"] == "unknown")
+    if d.get("employment"):
+        qs = apply_facet(qs, "employment", d["employment"], user)
     if d.get("travel"):
         qs = filter_travel(qs, d["travel"])
     if d.get("channel"):

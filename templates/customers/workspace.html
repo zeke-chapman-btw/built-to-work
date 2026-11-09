@@ -1,5 +1,5 @@
-{% extends 'customers/base.html' %}{% load customer_ui crm_ui %}
-{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}{% endblock %}
+{% extends 'customers/base.html' %}{% load static customer_ui crm_ui %}
+{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=uxcd-1">{% endblock %}
 {% block customer_content %}
 {% include 'crm/previous.html' %}
 {% if active_tab == 'overview' %}
@@ -35,4 +35,4 @@
 <section class="customer-card"><div class="customer-section-heading"><h2>Access & Plan</h2>{% if organization.status != 'archived' %}<a class="customer-button" href="{% customer_url 'customers:plan' organization.pk %}">Configure</a>{% endif %}</div><dl class="customer-facts"><div><dt>Lead allowance</dt><dd>{{ seats.lead }} prepared / {{ plan.lead_limit|default_if_none:'Unconfigured' }}{% if plan.lead_limit != None and seats.lead > plan.lead_limit %}<span class="customer-warning">Over allowance — existing users retained</span>{% endif %}</dd></div><div><dt>Member allowance</dt><dd>{{ seats.member }} prepared / {{ plan.member_limit|default_if_none:'Unconfigured' }}{% if plan.member_limit != None and seats.member > plan.member_limit %}<span class="customer-warning">Over allowance — existing users retained</span>{% endif %}</dd></div>{% for label,value in capabilities %}<div><dt>{{ label|capfirst }}</dt><dd>{{ value }}</dd></div>{% endfor %}</dl><p class="customer-notice">Organization settings do not grant access to individual participants. Candidate matching and employer collaboration use existing Recruiting permissions, approved positions and explicit candidate releases. These settings do not provide unrestricted participant search or contact access.</p><p class="customer-muted">No commercial tiers, billing, unlimited defaults or individual directory-search-user limits are configured. Participant privacy and consent rules remain separate.</p></section><details class="customer-card"><summary>Access & Plan change history</summary>{% include 'customers/history.html' %}</details>
 {% elif active_tab == 'history' %}
 <h2>Customer History</h2>{% include 'customers/filter.html' %}<section class="customer-card">{% include 'customers/history.html' with recent=rows %}</section>{% include 'customers/pagination.html' %}
-{% endif %}{% endblock %}
+{% endif %}{% if active_tab == 'crm' %}{% include 'internal/ui/event_editor_assets.html' %}{% endif %}{% endblock %}

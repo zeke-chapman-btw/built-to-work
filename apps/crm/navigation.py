@@ -4,7 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.urls import reverse, resolve, Resolver404
 from apps.internal_ui.record_editors import local_return
 
-DIRECTORY_PANEL_KEYS = frozenset({'rel_view', 'rel_audience', 'rel_cursor'})
+DIRECTORY_PANEL_KEYS = frozenset({'rel_view', 'rel_audience', 'rel_cursor', 'listing'})
 
 QUERY_KEYS = {"section", "from", "page", "archived", "recruiting_page", "crm_view", "crm_q", "crm_type", "crm_from", "crm_to", "crm_archived", "crm_btw_page", "crm_employer_page", "crm_tasks_page", "crm_undated_page", "return_to", "crm_return_to"}
 RECENT_KEYS = {"q", "scope", "crm_type", "crm_from", "crm_to", "crm_btw_page", "crm_employer_page"}
@@ -84,7 +84,7 @@ def safe_return(request, value, fallback="", depth=0):
 
 
 def origin(request, *, participant=None, organization=None, fallback):
-    return safe_return(request, request.GET.get("return_to", ""), fallback)
+    return safe_return(request, request.POST.get("return_to", request.GET.get("return_to", "")), fallback)
 
 
 def previous(request):

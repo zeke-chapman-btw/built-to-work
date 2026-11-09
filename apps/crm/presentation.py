@@ -14,6 +14,9 @@ from .models import ActivityType
 from .navigation import with_origin, with_context, previous
 
 
+from .actor_names import compact_actor
+
+
 def participant_navigation(actor, participant):
     """Affordances only: every destination still runs its existing fresh guard."""
     result = {"crm_btw_allowed": False, "crm_employer_allowed": False,
@@ -48,7 +51,7 @@ def staff_item(actor, row):
         "id": row.pk, "type": row.get_activity_type_display(), "summary": row.summary,
         "icon": {"call":"phone", "voicemail":"phone", "attempt":"phone", "email":"mail", "sms":"message", "meeting":"people", "customer_meeting":"customers", "video":"people", "interview":"people", "event":"calendar", "follow_up":"tasks"}.get(row.activity_type, "notes"),
         "notes": row.notes, "outcome": row.outcome, "occurred_at": row.occurred_at,
-        "created_at": row.created_at, "author": str(row.created_by), "organization": row.organization,
+        "created_at": row.created_at, "author": compact_actor(row.created_by), "organization": row.organization,
         "engagement": str(row.need) if row.need_id else "", "contact": row.contact,
         "participant": row.participant, "direction": row.get_direction_display(),
         "next_step": row.next_step, "follow_up_on": row.follow_up_on,
@@ -74,7 +77,7 @@ def staff_item(actor, row):
         item["tasks"] = list(row.task_links.filter(task__in=tasks_for(actor)).select_related("task"))
     else:
         identity = row.membership.identity
-        item["author"] = (identity.first_name + " " + identity.last_name).strip() or "Employer user"
+        item["author"] = compact_actor(identity)
     can_customer = False
     try:
         from apps.customers.access import require_manager
@@ -210,4 +213,14 @@ def history_context(request, *, participant=None, organization=None):
     if result["crm_can_add"]:
         from .communications import relationship_communications
         result["crm_communications"] = relationship_communications(participant=participant, organization=organization)
+    summary = result.setdefault('crm_summary', {})
+    summary['btw_allowed'] = bool(result.get('crm_btw_allowed'))
+    summary['btw_customer_count'] = sum(not row.archived_at and bool(row.organization_id) for row in authorized.get('btw', [])) if result.get('crm_btw_allowed') else None
+    summary['employer_count'] = sum(not row.archived_at for row in authorized.get('employer', [])) if result.get('crm_employer_allowed') else None
+    if summary.get('last'):
+        summary['last_author'] = compact_actor(summary['last'].created_by)
+    params = request.GET.copy()
+    for key in ('crm_type', 'crm_q', 'crm_from', 'crm_to', 'crm_archived', 'crm_btw_page', 'crm_employer_page'):
+        params.pop(key, None)
+    result['crm_reset_url'] = request.path + ('?' + params.urlencode() if params else '')
     return result

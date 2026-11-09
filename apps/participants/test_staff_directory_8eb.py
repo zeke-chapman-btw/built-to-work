@@ -40,7 +40,7 @@ class StaffParticipantDirectoryTests(TestCase):
             with self.subTest(query=query):
                 response = self.client.get(url, {"q": query})
                 self.assertEqual(response.status_code, 200, getattr(response, "url", None))
-                self.assertContains(response, "Jordy")
+                self.assertContains(response, "Jordan Rivers")
                 self.assertContains(response, "Rivers")
                 self.assertEqual(response.context["total_participants"], 1)
                 self.assertEqual(list(response.context["page_obj"]), [self.person])

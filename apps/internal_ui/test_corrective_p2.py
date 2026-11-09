@@ -52,12 +52,12 @@ class CorrectiveP2Tests(TestCase):
     def test_directory_native_primary_and_independent_details_retain_query(self):
         self.login();r=self.client.get(reverse('participants:staff-directory'),{'q':'Synthetic','state':'GA'})
         self.assertEqual(r.status_code,200)
-        self.assertContains(r,'btw-record-primary')
-        self.assertContains(r,'p2-record-details')
+        self.assertContains(r,'ex-person-name')
+        self.assertNotContains(r,'p2-record-details')
         import re
         from html import unescape
         from urllib.parse import urlsplit, parse_qs
-        link = re.search(r'class="btw-record-primary" href="([^"]+)"', r.content.decode()).group(1)
+        link = re.search(r'class="ex-person-name" href="([^"]+)"', r.content.decode()).group(1)
         origin = parse_qs(urlsplit(unescape(link)).query)['from'][0]
         self.assertEqual(origin, reverse('participants:staff-directory')+'?q=Synthetic&state=GA')
         self.assertNotContains(r,'onclick=')

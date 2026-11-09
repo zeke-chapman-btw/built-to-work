@@ -25,9 +25,12 @@ def current_preferences(participant):
         return {'value': 'Not recorded', 'source': 'Current preference', 'id': None}
     def yes_no(value):
         return 'Not recorded' if value is None else 'Yes' if value else 'No'
+    from apps.participants.intake_discovery import effective_travel
+    from apps.participants.models import IntakeFieldState
+    travel_state = IntakeFieldState.objects.filter(participant=participant, destination='travel_willingness').first()
     return {'employment': classified('employment_classification', 'employment_status'),
         'availability': classified('availability_classification', 'work_availability'),
-        'travel': yes_no(career.willing_to_travel if career else None),
+        'travel': {'yes': 'Yes', 'maybe': 'Maybe', 'no': 'No'}.get(effective_travel(career, travel_state), 'Not recorded'),
         'relocation': yes_no(row.willing_to_relocate if row else None),
         'interest': career.get_employment_interest_display() if career and career.employment_interest else 'Not recorded',
         'historical_employment': career.employment_status if career else '',
@@ -45,10 +48,15 @@ def initial_preferences(participant):
     career = ParticipantCareerProfile.objects.filter(participant=participant).first()
     def choice(value):
         return '' if value is None else 'yes' if value else 'no'
+    from apps.participants.intake_discovery import effective_travel
+    from apps.participants.models import IntakeFieldState
+    from apps.participants.workspace_services import profile_revision
+    travel_state = IntakeFieldState.objects.filter(participant=participant, destination='travel_willingness').first()
     return {'revision': row.revision if row else 0,
         'fingerprint': profile_fingerprint(participant),
+        'profile_revision': profile_revision(participant),
         'employment_classification': row.employment_classification_id if row else None,
         'availability_classification': row.availability_classification_id if row else None,
         'willing_to_relocate': choice(row.willing_to_relocate if row else None),
-        'willing_to_travel': choice(career.willing_to_travel if career else None),
+        'willing_to_travel': effective_travel(career, travel_state) or '',
         'employment_interest': career.employment_interest if career else ''}

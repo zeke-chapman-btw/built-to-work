@@ -15,7 +15,7 @@ DATE = forms.DateInput(attrs={"type": "date"})
 
 class StaffProfileForm(forms.ModelForm):
     revision = forms.CharField(widget=forms.HiddenInput)
-    audit_reason = forms.CharField(max_length=500, label="Reason for this change")
+    audit_reason = forms.CharField(required=False, max_length=500, label="Change note (optional)")
     class Meta:
         model = Participant
         fields = ("first_name", "last_name", "preferred_name", "contact_email", "contact_phone", "city", "state", "postal_code")
@@ -64,7 +64,7 @@ class WorkExperienceForm(forms.ModelForm):
             self.fields["employer"].required = True
             self.fields["role"].required = True
     revision = forms.CharField(required=False, widget=forms.HiddenInput)
-    audit_reason = forms.CharField(max_length=500, label="Reason / source for this change")
+    audit_reason = forms.CharField(required=False, max_length=500, label="Source / note (optional)")
     class Meta:
         model = ParticipantWorkExperience
         fields = ("employer", "role", "location", "started_on", "ended_on", "is_current", "description", "source_reference")
@@ -92,7 +92,7 @@ class AcquisitionForm(forms.ModelForm):
 class NoteForm(forms.ModelForm):
     revision = forms.CharField(required=False, widget=forms.HiddenInput)
     request_key = forms.UUIDField(initial=uuid.uuid4, widget=forms.HiddenInput)
-    audit_reason = forms.CharField(max_length=500, label="Reason for this entry or edit")
+    audit_reason = forms.CharField(required=False, max_length=500, label="Change note (optional)")
     class Meta:
         model = ParticipantNote
         fields = ("content",)
@@ -133,16 +133,17 @@ class DiscoveryForm(forms.Form):
     q = forms.CharField(required=False, max_length=150, label="Name, ID, email, or phone", widget=forms.TextInput(attrs={"aria-describedby": "participant-search-help"}))
     trade_interest = forms.CharField(required=False, max_length=120, label="Trade / career interest")
     skill = forms.CharField(required=False, max_length=120, label="Recorded skill / qualification text")
-    location = forms.CharField(required=False, max_length=200, label="City / state", widget=forms.TextInput(attrs={"placeholder": "City, state, or both"}))
+    page_size = forms.ChoiceField(required=False, choices=[("25", "25"), ("10", "10"), ("50", "50"), ("100", "100")], initial="25", label="Per page")
+    location = forms.CharField(required=False, max_length=200, label="Location", widget=forms.TextInput(attrs={"placeholder": "City, state, or both"}))
     city = forms.CharField(required=False, max_length=100)
     state = forms.CharField(required=False, max_length=100)
-    employment = forms.ChoiceField(required=False, choices=[("", "Any employment interest")] + list(ParticipantCareerProfile._meta.get_field("employment_interest").choices[1:]))
+    employment = forms.ChoiceField(required=False, choices=[("", "Any"), ("seeking", "Yes"), ("open", "Maybe"), ("not_seeking", "No"), ("unknown", "Unknown")])
     experience_min = forms.DecimalField(required=False, min_value=0, max_value=80, decimal_places=1, label="Minimum reported experience (years)")
     experience_data = forms.ChoiceField(required=False, choices=[("", "Any experience data"), ("known", "Reported overall experience"), ("unknown", "Overall experience unknown")])
     availability = forms.CharField(required=False, max_length=120, label="Availability text")
     preferred_location = forms.CharField(required=False, max_length=120, label="Preferred work geography")
     work_type = forms.ChoiceField(required=False, choices=[("", "Any work arrangement")] + list(ParticipantCareerProfile._meta.get_field("preferred_work_type").choices[1:]))
-    travel = forms.ChoiceField(required=False, choices=[("", "Any travel preference"), ("yes", "Willing to travel"), ("no", "Not willing to travel"), ("maybe", "May be willing to travel"), ("unknown", "Travel preference unknown")])
+    travel = forms.ChoiceField(required=False, choices=[("", "Any"), ("yes", "Yes"), ("maybe", "Maybe"), ("no", "No"), ("unknown", "Unknown")])
     channel = forms.ChoiceField(required=False, choices=[("", "Any original acquisition")] + list(ParticipantAcquisition.Channel.choices))
     acquired_from = forms.DateField(required=False, widget=DATE, label="Acquired from")
     acquired_to = forms.DateField(required=False, widget=DATE, label="Acquired through")

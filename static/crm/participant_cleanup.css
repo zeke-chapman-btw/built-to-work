@@ -1,0 +1,66 @@
+/* Compact shared directory, history and focused-editor presentation. */
+.cleanup-sections { display:flex; flex-wrap:wrap; gap:20px; margin:0 0 16px; border-bottom:1px solid #e4e4e7; }
+.cleanup-sections a { display:inline-flex; align-items:center; min-height:44px; padding:8px 0; box-sizing:border-box; border-bottom:2px solid transparent; color:#343439; text-decoration:none; font-weight:500; }
+.cleanup-sections a[aria-current=page] { border-color:#c9252c; color:#222; }
+.cleanup-sections a:focus-visible, .cleanup-edit-link:focus-visible { outline:2px solid #2563eb; outline-offset:3px; }
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form>.ex-search { grid-template-columns:minmax(0,3fr) minmax(140px,1fr) minmax(80px,.45fr); gap:10px; }
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-unified-filters .ex-filter-content { gap:10px; }
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .cleanup-filter-controls { display:flex; flex-direction:row-reverse; align-items:flex-start; justify-content:space-between; gap:10px; grid-column:1/-1; }
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .cleanup-filter-controls>.ex-advanced-disclosure { flex:1; min-width:0; }
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .cleanup-filter-controls>.ex-filter-actions { display:flex; align-items:center; gap:8px; margin:0; }
+.cleanup-saved-searches { display:flex; flex-wrap:wrap; gap:16px; padding:10px 0; }
+.cleanup-result-count { color:#62626b; font-size:12px; padding:10px 12px; margin:0; }
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-directory-record { padding:6px 12px; gap:12px; min-height:40px; margin:0; border-radius:0; border:0; border-bottom:1px solid #e4e4e7; box-shadow:none; background:transparent; }
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-directory-record .ex-profile-action { display:inline; min-height:0; padding:6px 0; border:0; background:transparent; box-shadow:none; color:#a51d24; text-decoration:none; font-weight:500; }
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-directory-record .ex-profile-action:hover { text-decoration:underline; }
+@media(min-width:801px) {
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-directory-record .ex-person-name { min-height:24px; }
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-directory-record .ex-profile-action { padding:4px 0; }
+}
+.ex-pagination { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.ex-pagination a, .ex-pagination span { min-width:28px; padding:8px; text-align:center; }
+.ex-pagination [aria-current=page] { border-bottom:2px solid #c9252c; font-weight:600; }
+.crm-filter-tools .crm-filters { display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px; padding:10px 0; }
+.crm-filter-tools .crm-filters>div { min-width:110px; flex:1 1 140px; }
+.crm-filter-tools .crm-filters .cleanup-filter-buttons { display:flex; gap:8px; flex:0 0 auto; }
+.crm-filter-tools .cleanup-secondary-filters { flex-basis:100%; }
+.cleanup-secondary-filters>div, .cleanup-secondary-filters>.crm-checkbox { margin:10px 0; max-width:500px; }
+.crm-row.crm-icon-row { padding:10px 0; border:0; border-bottom:1px solid #e4e4e7; border-radius:0; margin:0; box-shadow:none; }
+.crm-row .crm-row-content { display:grid; grid-template-columns:minmax(0,1fr) auto auto; column-gap:14px; align-items:start; }
+.crm-row .crm-row-heading { grid-column:1; margin:0; }
+.crm-row .crm-row-content>.crm-meta { grid-column:1; margin:4px 0 0; font-size:12px; }
+.crm-row .cleanup-edit-link { grid-column:2; grid-row:1; font-size:12px; padding:4px 0; }
+.crm-row .crm-row-detail { grid-column:3; grid-row:1/3; font-size:12px; min-width:0; }
+.crm-row .crm-row-detail[open] { grid-column:1/-1; grid-row:auto; margin-top:8px; }
+.crm-row .crm-row-subject { grid-column:1/-1; }
+.crm-row .crm-type-label { font-size:11px; }
+.crm-directory-panel .crm-directory-row { padding:10px 0; border:0; border-bottom:1px solid #e4e4e7; border-radius:0; margin:0; box-shadow:none; }
+.crm-directory-panel .crm-directory-heading { margin-bottom:10px; }
+.crm-relationship-summary { grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); }
+.btw-editor-body .crm-field { min-width:0; }
+.btw-editor-body .crm-field textarea { min-height:72px; }
+@media(max-width:800px) {
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form>.ex-search { grid-template-columns:minmax(0,1fr) minmax(80px,.45fr); }
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form>.ex-search>div:first-child { grid-column:1/-1; }
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-directory-record { padding:12px; gap:8px 16px; }
+ .crm-row .crm-row-content { column-gap:10px; }
+}
+@media(max-width:639px) {
+ .cleanup-sections { gap:16px; }
+ .cleanup-sections a { font-size:13px; }
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-unified-filters :is(.ex-quick-choices,.ex-common-fields) { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-directory-record { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-directory-record>.ex-person-name { grid-column:1/-1; }
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-directory-record .ex-profile-action { padding:10px 0; min-height:24px; }
+ .crm-row .crm-row-content { grid-template-columns:minmax(0,1fr) auto; }
+ .crm-row .cleanup-edit-link { grid-column:2; }
+ .crm-row .crm-row-detail { grid-column:1/-1; grid-row:auto; margin-top:6px; }
+ .crm-row .crm-row-heading { display:block; }
+ .crm-filter-tools .crm-filters>div { flex-basis:calc(50% - 10px); min-width:0; }
+ .crm-filter-tools .crm-filters>div:first-of-type { flex-basis:100%; }
+}
+
+body.internal-app.has-crm-ux-profile .crm-filter-tools form.crm-filters { margin:0; padding:10px 0; }
+body.internal-app.has-crm-ux-profile .crm-filter-tools .cleanup-secondary-filters { margin:0; padding:4px 0; }
+body.internal-app.has-crm-ux-profile .crm-unified-history .crm-panel-heading { padding:0; }
+.cleanup-work-edit { float:right; font-size:12px; }

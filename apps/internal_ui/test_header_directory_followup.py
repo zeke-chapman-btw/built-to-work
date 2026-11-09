@@ -50,8 +50,9 @@ class HeaderDirectoryFollowupTests(ReportingFixtures):
                 controls = [n for n in doc.nodes if form in n['parents'] and n['tag'] in ['select','input'] and n['attrs'].get('name')==key]
                 self.assertEqual([n['tag'] for n in controls], ['select'], key)
             form_links=[n for n in doc.nodes if n['tag']=='a' and form in n['parents']]
-            self.assertEqual(len(form_links),1)
-            self.assertEqual(form_links[0]['attrs']['href'],response.context['explorer_reset'])
+            self.assertIn(response.context['explorer_reset'],[n['attrs']['href'] for n in form_links])
+            self.assertContains(response,'Save current search')
+            self.assertContains(response,'Saved searches')
             fields = [n for n in doc.nodes if form in n['parents'] and n['tag']=='input' and n['attrs'].get('type')!='hidden']
             self.assertTrue(any(n['attrs'].get('name')=='location' for n in fields))
             self.assertFalse(any(n['attrs'].get('name') in ['trade_interest','city','state'] for n in fields))

@@ -106,6 +106,10 @@ def save_preferences(*, actor, participant_id, data, expected_revision, why, par
         extended = {'willing_to_travel', 'employment_interest'} & data.keys()
         if extended and data.get('fingerprint') != profile_fingerprint(item):
             raise ValidationError('Your profile changed. Reload, review the current values and try again. Your entered answers are retained here.')
+        if data.get('profile_revision'):
+            from apps.participants.workspace_services import profile_revision
+            if data['profile_revision'] != profile_revision(item):
+                raise ValidationError('Your profile changed. Reload and review the current values before saving.')
         before = {'employment_classification': str(row.employment_classification_id or ''),
             'availability_classification': str(row.availability_classification_id or ''),
             'willing_to_relocate': row.willing_to_relocate}
@@ -126,10 +130,16 @@ def save_preferences(*, actor, participant_id, data, expected_revision, why, par
                 valid = dict(ParticipantCareerProfile._meta.get_field('employment_interest').choices)
                 if updates['employment_interest'] not in valid:
                     raise ValidationError('Choose a recorded employment-interest option.')
-            if 'willing_to_travel' in updates and updates['willing_to_travel'] not in (True, False, None):
-                raise ValidationError('Choose Yes, No or Not recorded for travel.')
+            if 'willing_to_travel' in updates and updates['willing_to_travel'] not in (True, False, None, 'maybe'):
+                raise ValidationError('Choose Yes, Maybe, No or Not recorded for travel.')
             before.update({key: getattr(career, key) if career else None for key in extended})
-            update_participant_profile(participant=item, updates=updates)
+            if 'willing_to_travel' in updates:
+                value = updates.pop('willing_to_travel')
+                career, _ = ParticipantCareerProfile.objects.get_or_create(participant=item)
+                from apps.participants.travel_state import set_current_travel
+                set_current_travel(career, 'maybe' if value == 'maybe' else 'yes' if value == True else 'no' if value == False else None)
+            if updates:
+                update_participant_profile(participant=item, updates=updates)
         row.willing_to_relocate = data.get('willing_to_relocate')
         row.revision += 1
         row.last_relevant_update_at = timezone.now()

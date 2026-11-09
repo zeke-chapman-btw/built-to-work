@@ -123,7 +123,8 @@ class CrmUxProfileTests(TestCase):
         self.assertContains(relationship, 'aria-label="BTW relationship summary"', count=1)
         self.assertContains(relationship, 'Relationship Summary')
         self.assertContains(relationship, 'Interaction History')
-        self.assertContains(relationship, 'This does not establish a preferred contact method.')
+        self.assertContains(relationship, 'BTW-recorded customer activity')
+        self.assertContains(relationship, 'Employer-owned activity')
 
     def test_profile_leads_with_personal_facts_and_preserves_separate_reported_skills(self):
         response = self.client.get(self.url)
@@ -150,7 +151,7 @@ class CrmUxProfileTests(TestCase):
             self.assertNotIn('Jump to section', header)
             self.assertEqual('aria-label="Edit profile details"' in header, can_edit)
             if can_edit:
-                self.assertIn(reverse('participants:staff-edit', args=[self.person.pk]), header)
+                self.assertIn(reverse('participants:profile-card-edit', args=[self.person.pk, 'identity']), header)
                 self.assertIn('return_to=', header)
         self.client.force_login(self.admin, backend='django.contrib.auth.backends.ModelBackend')
         self.person.archived_at = timezone.now()
@@ -170,16 +171,17 @@ class CrmUxProfileTests(TestCase):
         self.assertContains(response, 'Full qualification &amp; evidence')
         self.assertContains(response, 'Self-reported')
 
-    def test_relationship_has_one_primary_log_action_and_retains_all_shortcuts(self):
+    def test_relationship_has_one_primary_modal_action_and_concise_summary(self):
         import uuid
         from apps.crm.services import create_internal
         create_internal(actor=self.admin, participant_id=self.person.pk, data={'activity_type':'call','summary':'SYNTHETIC retained contact','occurred_at':timezone.now()}, operation_id=uuid.uuid4())
         response=self.client.get(self.url, {'section':'relationship'})
-        self.assertContains(response, '>Log interaction</a>', count=1)
-        self.assertContains(response, 'Interaction shortcuts')
+        self.assertContains(response, '>+ Interaction</a>', count=1)
+        self.assertContains(response, 'data-record-editor')
+        self.assertNotContains(response, 'Interaction shortcuts')
         for label in ['Log call','Record email','Record text','Log meeting','Relationship note']:
-            self.assertContains(response,label)
-        for label in ['Last BTW contact','Recent BTW activity','Next follow-up','Contact context']:
+            self.assertNotContains(response,label)
+        for label in ['Last BTW contact','Recent BTW activity','Next follow-up','BTW-recorded customer activity']:
             self.assertContains(response,label)
         self.assertContains(response,'SYNTHETIC retained contact')
         self.assertContains(response,'Manually recorded')

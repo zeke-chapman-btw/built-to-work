@@ -191,7 +191,7 @@ def archive(*, actor, interaction_id, expected_revision, why, restore=False, org
 
 def staff_record(actor, interaction_id):
     with policy_transaction():
-        row = Interaction.objects.select_related("participant", "organization", "engagement", "created_by", "membership__identity").get(pk=interaction_id)
+        row = Interaction.objects.select_related("participant", "organization", "engagement", "created_by", "created_by__staff_profile", "membership__identity").get(pk=interaction_id)
         (access.internal_record if row.audience == "btw" else access.staff_employer_record)(actor, row)
         return row
 
@@ -214,7 +214,7 @@ def staff_history(actor, *, audience, participant_id=None, organization_id=None,
             person_ids = identity_members(item.pk)
         if organization_id:
             require_manager(actor)
-        query = Interaction.objects.filter(audience=audience).select_related("participant", "organization", "engagement", "created_by", "membership__identity")
+        query = Interaction.objects.filter(audience=audience).select_related("participant", "organization", "engagement", "created_by", "created_by__staff_profile", "membership__identity")
         if person_ids:
             query = query.filter(participant_id__in=person_ids)
         if organization_id:

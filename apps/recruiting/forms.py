@@ -10,10 +10,11 @@ class ReasonForm(forms.Form):
 class PreferencesForm(ReasonForm):
     revision = forms.IntegerField(widget=forms.HiddenInput)
     fingerprint = forms.CharField(widget=forms.HiddenInput)
+    profile_revision = forms.CharField(required=False, widget=forms.HiddenInput)
     employment_interest = forms.ChoiceField(required=False,
         choices=ParticipantCareerProfile._meta.get_field('employment_interest').choices)
-    willing_to_travel = forms.TypedChoiceField(choices=[('', 'Not recorded'), ('yes', 'Yes'), ('no', 'No')],
-        coerce=lambda v: {'yes': True, 'no': False}.get(v), required=False, empty_value=None)
+    willing_to_travel = forms.TypedChoiceField(choices=[('', 'Not recorded'), ('yes', 'Yes'), ('maybe', 'Maybe'), ('no', 'No')],
+        coerce=lambda v: {'yes': True, 'maybe': 'maybe', 'no': False}.get(v), required=False, empty_value=None)
     employment_classification = forms.ModelChoiceField(queryset=Classification.objects.filter(kind='employment'), required=False)
     availability_classification = forms.ModelChoiceField(queryset=Classification.objects.filter(kind='availability'), required=False)
     willing_to_relocate = forms.TypedChoiceField(choices=[('', 'Not recorded'), ('yes', 'Yes'), ('no', 'No')],

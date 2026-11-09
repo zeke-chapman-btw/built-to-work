@@ -188,9 +188,15 @@ def protect_manual_career(instance, destinations, *, legacy_values=None):
         value = instance.intake_data.get(destination)
         marker = ({"manual_legacy_field": LEGACY_GROUPS[destination], "manual_legacy_value": legacy_values[destination]}
                   if destination in legacy_values else {"manual_typed_value": value})
+        provenance = None
+        if destination == 'travel_willingness':
+            from .travel_state import observed_preference_anchor, ANCHOR
+            provenance = {ANCHOR: observed_preference_anchor(instance.participant_id)}
         state, created = IntakeFieldState.objects.get_or_create(participant=instance.participant, destination=destination,
             defaults={"source_submission": source, "last_value": marker,
-                      "value_hash": _digest(value), "is_protected": True})
+                      "value_hash": _digest(value), "is_protected": True, **({'provenance': provenance} if provenance else {})})
         if not created:
             state.last_value, state.value_hash, state.is_protected = marker, _digest(value), True
-            state.save(update_fields=["last_value", "value_hash", "is_protected", "updated_at"])
+            if provenance:
+                state.provenance = {**(state.provenance or {}), **provenance}
+            state.save(update_fields=["last_value", "value_hash", "is_protected", "provenance", "updated_at"])

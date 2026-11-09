@@ -1,5 +1,5 @@
 """Effective intake preferences alongside explicitly edited legacy profile fields."""
-from django.db.models import Q, Exists, OuterRef, Case, When, Value, TextField
+from django.db.models import Q, Exists, OuterRef, Case, When, Value, TextField, F, Subquery
 from django.db.models.functions import Coalesce, NullIf, Trim
 from django.db.models.fields.json import KeyTextTransform
 from .models import IntakeFieldState
@@ -23,6 +23,11 @@ def current_interest_expression():
 
 
 def filter_travel(qs, value):
+    from .travel_state import with_travel_preference
+    qs = with_travel_preference(qs)
+    state = IntakeFieldState.objects.filter(participant_id=OuterRef('pk'), destination='travel_willingness')
+    qs = qs.annotate(_travel_state_at=Subquery(state.values('updated_at')[:1]),
+        _travel_state_anchor=Subquery(state.annotate(anchor=KeyTextTransform('travel_preference_audit', 'provenance')).values('anchor')[:1]))
     qs = qs.annotate(_intake_travel_legacy=manual_field("travel_willingness", "manual_legacy_field"),
                      _intake_travel_typed=manual_field("travel_willingness", "manual_typed_value"))
     typed = Q(career_profile__intake_data__travel_willingness=value)
@@ -31,23 +36,19 @@ def filter_travel(qs, value):
                Q(career_profile__intake_data__travel_willingness__isnull=True) |
                Q(career_profile__intake_data__travel_willingness=None))
     if value == "unknown":
-        return qs.filter((Q(_intake_travel_typed=True) & missing) |
+        condition = ((Q(_intake_travel_typed=True) & missing) |
             (Q(_intake_travel_typed=False) & legacy_unknown & (Q(_intake_travel_legacy=True) | missing)) |
             Q(career_profile__isnull=True))
-    condition = Q(_intake_travel_typed=True) & typed
-    condition |= Q(_intake_travel_typed=False, _intake_travel_legacy=False) & legacy_unknown & typed
-    if value in {"yes", "no"}:
-        condition |= Q(_intake_travel_typed=False,
-                       career_profile__willing_to_travel=value == "yes")
-    return qs.filter(condition)
+    else:
+        condition = Q(_intake_travel_typed=True) & typed
+        condition |= Q(_intake_travel_typed=False, _intake_travel_legacy=False) & legacy_unknown & typed
+        if value in {"yes", "no"}:
+            condition |= Q(_intake_travel_typed=False, career_profile__willing_to_travel=value == "yes")
+    manual = Q(_intake_travel_typed=True) | Q(_intake_travel_legacy=True)
+    newer = manual & ((Q(_travel_state_anchor__isnull=False) & Q(_travel_state_anchor=F('_travel_preference_id'))) |
+        (Q(_travel_state_anchor__isnull=True) & Q(_travel_state_at__gt=F('_travel_preference_at'))))
+    override = Q(_travel_preference_id__isnull=False) & ~newer
+    return qs.filter((override & Q(_travel_preference_value=value)) | (~override & condition))
 
 
-def effective_travel(career, state):
-    if career is None:
-        return None
-    marker = state.last_value if state and isinstance(state.last_value, dict) else {}
-    if "manual_typed_value" in marker:
-        return career.intake_data.get("travel_willingness")
-    if "manual_legacy_field" in marker or career.willing_to_travel is not None:
-        return {True: "yes", False: "no", None: None}[career.willing_to_travel]
-    return career.intake_data.get("travel_willingness")
+from .travel_state import resolve_travel as effective_travel

@@ -135,7 +135,9 @@ class PortalFoundationTests(TestCase):
         participants_workspace = reverse("internal:workspace", kwargs={"workspace_id": "participants"})
         response = self.client.get(participants_workspace)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, reverse("participants:staff-qualification-approvals"))
+        self.assertContains(response, 'Directory sections')
+        self.assertContains(response, reverse('internal:workspace',args=['approvals']))
+        self.assertEqual(self.client.get(reverse('participants:staff-qualification-approvals')).status_code,200)
     def test_dashboard_has_one_primary_heading(self):
         self.client.force_login(self.staff_user("dashboard-heading-staff"))
         response = self.client.get(reverse("internal:home"))

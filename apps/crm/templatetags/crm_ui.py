@@ -89,3 +89,9 @@ def crm_task_return(actor, task, request):
     except PermissionDenied:
         pass
     return None
+
+
+@register.filter
+def crm_actor(actor):
+    from apps.crm.actor_names import compact_actor
+    return compact_actor(actor)

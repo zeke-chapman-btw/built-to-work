@@ -103,14 +103,14 @@ class ParticipantsPass3Tests(TestCase):
         reopened = self.client.get(url)
         self.assertEqual(reopened.context['career_form']['skills_interests'].value(), 'Blueprint reading')
 
-    def test_profile_save_still_requires_reason_and_retains_invalid_entries(self):
+    def test_profile_save_automatically_attributes_changes_and_retains_invalid_entries(self):
         url = reverse('participants:staff-edit', args=[self.person.pk])
         response = self.client.get(url)
         data = {field.html_name: (field.value() if field.value() is not None else '') for form in (response.context['form'], response.context['career_form']) for field in form}
-        data.update(first_name='SYNTHETIC retained draft', audit_reason='')
+        data.update(first_name='SYNTHETIC retained draft', contact_email='invalid email', audit_reason='')
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, 400)
-        self.assertTrue(response.context['form']['audit_reason'].errors)
+        self.assertTrue(response.context['form']['contact_email'].errors)
         self.assertContains(response, 'SYNTHETIC retained draft', status_code=400)
         self.person.refresh_from_db()
         self.assertEqual(self.person.first_name, 'SYNTHETIC Jordan')
@@ -222,7 +222,7 @@ class ContinuousProfileCorrectionsTests(TestCase):
             self.assertContains(response,text)
         self.assertContains(response,'Registration does not prove attendance.')
         self.assertContains(response,'No official experience sessions recorded.')
-        self.assertContains(response,'Add internal note')
+        self.assertContains(response,'+ Internal Note')
         self.assertContains(response,reverse('participants:staff-document-download',args=[self.document.uuid]))
 
     def test_old_categories_are_visible_independently_of_requested_page(self):
@@ -242,7 +242,7 @@ class ContinuousProfileCorrectionsTests(TestCase):
         self.assertEqual(response.status_code,200)
         timeline.assert_not_called()
         for text in (self.note.content,self.document.original_filename,self.credential.custom_name,
-                     self.event.name,'Download securely','Add internal note'):
+                     self.event.name,'Download securely','+ Internal Note'):
             self.assertNotContains(response,text)
         for key in ('profile_notes','profile_documents','profile_qualification_groups','profile_activity','recorded_sessions','legacy_attendance'):
             self.assertIsNone(response.context.get(key),key)

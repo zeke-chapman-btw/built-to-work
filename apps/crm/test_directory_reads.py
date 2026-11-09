@@ -290,7 +290,9 @@ class DirectoryProjectionTests(EmployerFixtures, TestCase):
                 for audience in (['all','btw','employer']if view=='activity'else['all']):
                     response=self.client.get(route,{'rel_view':view,'rel_audience':audience})
                     self.assertEqual(response.status_code,200)
-                    self.assertContains(response,'Directory relationship views')
+                    self.assertContains(response,'Directory sections')
+                    self.assertEqual(response.context['directory_listing'],view)
+                    self.assertEqual(response.context['directory_panel']['view'],view)
                     self.assertEqual('Activity audience'in response.content.decode(),view=='activity')
                     self.assertContains(response,'aria-current="page"')
         self.assertEqual(before,{m.__name__:m.objects.count()for m in tracked})

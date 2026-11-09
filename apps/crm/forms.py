@@ -14,6 +14,7 @@ from .models import ActivityType, ContactRelationship, Interaction
 
 
 class ActivityForm(forms.Form):
+    return_to = forms.CharField(required=False, max_length=16384, widget=forms.HiddenInput)
     operation_id = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
     revision = forms.IntegerField(widget=forms.HiddenInput, required=False, min_value=1)
     activity_type = forms.ChoiceField(label="Interaction", choices=ActivityType.choices)

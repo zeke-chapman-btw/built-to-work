@@ -159,3 +159,13 @@ body.internal-app.has-participant-workspace.has-participants-pass3.has-participa
 .has-crm-ux-profile .crm-connection-help {margin-top:12px;color:#63636b;font:400 12px/18px var(--font);}
 .has-crm-ux-profile .crm-connection-help > summary {min-height:32px;align-content:center;cursor:pointer;}
 @media(width < 640px){.has-crm-ux-profile .crm-connection-links a,.has-crm-ux-profile .crm-connection-help > summary {min-height:44px;}.has-crm-ux-profile .crm-field-label {min-width:72px;margin-right:8px;}}
+
+/* Use the shared underline treatment for profile sections and audience navigation. */
+.has-crm-ux-profile .crm-profile-navigation a[aria-current="page"],
+.has-crm-ux-profile .crm-profile-navigation a[aria-current="page"]:hover,
+.has-crm-ux-profile .crm-audience-nav a[aria-current="page"] {
+  color: var(--text, #202124); background: transparent; border-radius: 0;
+  border-bottom: 2px solid var(--btw-red, #c9252c);
+}
+.has-crm-ux-profile .crm-profile-navigation a[aria-current="page"]::before,
+.has-crm-ux-profile .crm-audience-nav a[aria-current="page"]::before { content: none; }

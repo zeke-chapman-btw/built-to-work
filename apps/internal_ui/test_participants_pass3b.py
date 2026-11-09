@@ -52,7 +52,7 @@ class ParticipantExplorerTests(TestCase):
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.context['total_participants'],5)
         self.assertEqual(response.context['page_title'],'Participants')
-        self.assertContains(response,'View matching participants')
+        self.assertContains(response,'matching participants')
         self.assertNotContains(response,'Must meet any criteria')
         self.assertNotContains(response,'Average Best Score')
         self.assertEqual(len(response.context['page_obj']),5)
@@ -257,7 +257,8 @@ class ParticipantExplorerTests(TestCase):
         response=self.client.get(reverse('participants:staff-directory'), {'state':'GA'})
         self.assertContains(response,'+ Add participant')
         self.assertNotContains(response,'aria-label="Participant workspace"')
-        self.assertContains(response,'Existing staff workflows')
+        self.assertNotContains(response,'Existing staff workflows')
+        self.assertContains(response,'Saved searches')
         target=response.context['explorer_analysis_url']
         result=self.client.get(target)
         self.assertEqual(result.context['total_participants'],4)
@@ -266,18 +267,18 @@ class ParticipantExplorerTests(TestCase):
 
     def test_compact_toolbar_retains_private_views_and_single_analysis_entry(self):
         response=self.client.get(reverse('participants:staff-directory'))
-        self.assertContains(response,'data-ui-menu')
-        self.assertContains(response,'Save current view')
-        self.assertContains(response,'Saved views')
+        self.assertNotContains(response,'Views &amp; analysis')
+        self.assertContains(response,'Save current search')
+        self.assertContains(response,'Saved searches')
         self.assertContains(response,'>Analysis</a>',count=1)
         self.assertNotContains(response,'>View analysis</a>')
-        self.assertContains(response,'View matching participants')
+        self.assertContains(response,'matching participants')
 
     def test_common_filters_apply_with_existing_discrete_criteria(self):
         response=self.client.get(reverse('participants:staff-directory'),{'employment':'seeking','state':'GA','travel':'yes'})
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.context['total_participants'],1)
-        self.assertEqual([field['label'] for field in response.context['explorer_common']['unified']],['Type','City / state'])
+        self.assertEqual([field['label'] for field in response.context['explorer_common']['unified']],['Type','Location'])
         hidden=dict(response.context['explorer_filter_hidden'])
         self.assertEqual(hidden['state'],'GA')
         self.assertNotIn('employment',hidden)
@@ -305,7 +306,7 @@ class ParticipantExplorerTests(TestCase):
         self.assertContains(response,'href="#profile-documents"')
         self.assertContains(response,'Linked tasks')
         self.assertContains(response,'Participant portal invitation')
-        self.assertContains(response,'Add internal note')
+        self.assertContains(response,'+ Internal Note')
 
     def test_profile_simplification_preserves_restricted_evidence_boundaries(self):
         self.client.force_login(self.reader,backend='django.contrib.auth.backends.ModelBackend')
@@ -315,5 +316,5 @@ class ParticipantExplorerTests(TestCase):
         self.assertNotContains(response,'Participant portal invitation')
         self.assertNotContains(response,'PRIVATE-NOTE-SENTINEL')
         self.assertNotContains(response,'PRIVATE-QUALIFICATION')
-        self.assertNotContains(response,'Add internal note')
+        self.assertNotContains(response,'+ Internal Note')
         self.assertNotContains(response,'Download securely')

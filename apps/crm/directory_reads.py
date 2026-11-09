@@ -31,6 +31,8 @@ from .access import fresh_staff
 from .models import Interaction
 from .navigation import with_context, with_origin, DIRECTORY_PANEL_KEYS
 
+from .actor_names import compact_actor
+
 PAGE_SIZE = 5
 CONTEXT_SIZE = 3
 PANEL_KEYS = DIRECTORY_PANEL_KEYS
@@ -126,6 +128,7 @@ def panel_url(request, *, view, audience='all', cursor=None):
     params = request.GET.copy()
     for key in PANEL_KEYS:
         params.pop(key, None)
+    params['listing'] = view
     params['rel_view'] = view
     if view == 'activity' and audience != 'all':
         params['rel_audience'] = audience
@@ -153,7 +156,7 @@ def _activity(policy, subject, audience, cursor, back):
             Q(occurred_at=cursor['at'], created_at__lt=cursor['created']) |
             Q(occurred_at=cursor['at'], created_at=cursor['created'], pk__lt=cursor['pk']))
     query = canonical_records(query).select_related(
-        'created_by', 'membership__identity', 'organization', 'owner_organization')
+        'created_by', 'created_by__staff_profile', 'membership__identity', 'organization', 'owner_organization')
     rows = list(query.order_by('-occurred_at', '-created_at', '-pk')[:PAGE_SIZE + 1])
     more = len(rows) > PAGE_SIZE
     rows = rows[:PAGE_SIZE]
@@ -165,7 +168,7 @@ def _activity(policy, subject, audience, cursor, back):
         person = people.get(row._canonical_person)
         employer = row.audience == 'employer'
         identity = row.membership.identity if employer else None
-        author = (' '.join([identity.first_name, identity.last_name]).strip() or 'Employer user') if employer else str(row.created_by)
+        author = compact_actor(identity if employer else row.created_by)
         contexts = []
         if subject == 'customers':
             contexts.append({'label': str(row.organization), 'kind': 'Customer', 'url': _subject_url(subject, row.organization_id, back)})
@@ -247,7 +250,7 @@ def _followups(policy, subject, cursor, back):
                     'archived': bool(record.archived_at) if subject == 'participants' else record.status == 'archived'})
         items.append({'id': str(row.pk), 'title': row.title, 'contexts': contexts,
             'more_context': getattr(row, '_subject' + str(CONTEXT_SIZE)) is not None,
-            'assignee': str(row.assigned_staff), 'due': row.due_date,
+            'assignee': compact_actor(row.assigned_staff), 'due': row.due_date,
             'due_group': ['Overdue', 'Due today', 'Due soon', 'Later', 'Undated'][row._due_group],
             'priority': row.get_priority_display(), 'status': row.get_status_display(),
             'url': with_context(reverse('operations:task', args=[row.pk]), back, 'crm_return_to')})
@@ -257,7 +260,7 @@ def _followups(policy, subject, cursor, back):
 def directory_panel(request, subject):
     if subject not in {'participants', 'customers'}:
         raise ValueError('Unsupported directory subject')
-    view = request.GET.get('rel_view', 'activity')
+    view = request.GET.get('listing') or request.GET.get('rel_view', 'activity')
     view = view if view in {'activity', 'followups'} else 'activity'
     audience = request.GET.get('rel_audience', 'all') if view == 'activity' else 'all'
     audience = audience if audience in {'all', 'btw', 'employer'} else 'all'
@@ -292,3 +295,20 @@ def directory_panel(request, subject):
                       for key, label in audience_labels] if view == 'activity' else [],
         'next_url': panel_url(request, view=view, audience=audience, cursor=token) if token else '',
         'latest_url': panel_url(request, view=view, audience=audience)}}
+
+
+def directory_sections(request):
+    """Navigation only: record selectors and audience guards remain unchanged."""
+    listing = request.GET.get('listing') or request.GET.get('rel_view', 'search')
+    if listing not in {'search', 'activity', 'followups'}:
+        listing = 'search'
+    links = []
+    for key, label in [('search', 'Search'), ('activity', 'Recent Activity'), ('followups', 'Follow-ups')]:
+        params = request.GET.copy()
+        for field in ('listing', 'rel_view', 'rel_cursor', 'rel_audience', 'page'):
+            params.pop(field, None)
+        if key != 'search':
+            params['listing'] = key
+        links.append(dict(label=label, selected=listing == key,
+            url=request.path + ('?' + params.urlencode() if params else '')))
+    return {'directory_listing': listing, 'directory_sections': links}

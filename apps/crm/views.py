@@ -18,6 +18,7 @@ from apps.participants.models import Participant
 from . import access, forms, presentation, services
 from .models import ContactRelationship, Interaction, InteractionRevision
 from .navigation import origin, with_context
+from apps.internal_ui.record_editors import editor_response, editor_success
 
 
 def staff_view(view):
@@ -61,7 +62,7 @@ def create(request, participant_id=None, organization_id=None):
         raise PermissionDenied("Archived relationships are read-only.")
     back = reverse("participants:staff-profile", args=[participant.pk]) + "#btw-interactions" if participant else reverse("customers:workspace", args=[organization.pk, "crm"])
     back = origin(request, participant=participant, organization=organization, fallback=back)
-    initial = {"activity_type": request.GET.get("type", "call")}
+    initial = {"activity_type": request.GET.get("type", "call"), "return_to": back}
     form = forms.ActivityForm(request.POST if request.method == "POST" else None,
         actor=request.user, organization=organization, initial=initial)
     if request.method == "POST":
@@ -79,8 +80,8 @@ def create(request, participant_id=None, organization_id=None):
                 errors(form, exc)
             else:
                 messages.success(request, "Interaction recorded. No message was sent.")
-                return redirect(back)
-    return render(request, "crm/form.html", {"form": form, "page_title": "Log interaction",
+                return editor_success(request, back)
+    return interaction_editor(request, {"form": form, "page_title": "Log interaction",
         "subject": participant or organization, "back": back,
         "guidance": "Record a touchpoint that already happened. Only authorized BTW staff can see this history.",
         "submit_label": "Save interaction"})
@@ -104,7 +105,7 @@ def correct(request, interaction_id):
     row = record_for(request, interaction_id)
     access.internal_record(request.user, row, write=True)
     back = origin(request, participant=row.participant, organization=row.organization, fallback=reverse("crm:detail", args=[row.pk]))
-    form = forms.ActivityForm(request.POST if request.method == "POST" else None, actor=request.user, row=row)
+    form = forms.ActivityForm(request.POST if request.method == "POST" else None, actor=request.user, row=row, initial={"return_to": back})
     if request.method == "POST":
         valid = form.is_valid()
         reject_extra(form, request.POST)
@@ -116,8 +117,8 @@ def correct(request, interaction_id):
                 errors(form, exc)
             else:
                 messages.success(request, "Correction saved; the original author and earlier versions are retained.")
-                return redirect(back)
-    return render(request, "crm/form.html", {"form": form, "page_title": "Correct interaction",
+                return editor_success(request, back)
+    return interaction_editor(request, {"form": form, "page_title": "Correct interaction",
         "subject": row.participant or row.organization, "back": back,
         "submit_label": "Save correction", "guidance": "Explain the correction. Ownership and original authorship cannot change."})
 
@@ -257,3 +258,14 @@ def recent(request):
         params = request.GET.copy(); params.pop("crm_" + audience + "_page", None)
         data[audience + "_query"] = params.urlencode()
     return render(request, "crm/recent.html", data)
+
+
+def interaction_editor(request, context):
+    form = context['form']
+    context.update(save_label=context.get('submit_label', 'Save interaction'), editor_has_return_field=True,
+        cautious_save=True, editor_return_label='previous page', fields_template='crm/editor_fields.html',
+        save_conflict=any('changed' in str(error).lower() or 'reload' in str(error).lower() for error in form.non_field_errors()),
+        full_page_editor=request.headers.get('X-BTW-Editor') != '1')
+    if request.headers.get('X-BTW-Editor') != '1':
+        return render(request, 'crm/form.html', context)
+    return editor_response(request, template='crm/form.html', panel='internal/ui/record_form_panel.html', context=context)

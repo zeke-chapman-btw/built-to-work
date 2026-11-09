@@ -83,7 +83,7 @@ class HomeDashboardPhaseOneTests(TestCase):
         self.assertEqual(directory.status_code, 200)
         self.assertContains(directory, 'role="search"')
         self.assertContains(directory, 'name="q"')
-        self.assertContains(directory, 'Name, email, or phone')
+        self.assertContains(directory, 'Name, ID, email, or phone')
         for response in (events, directory):
             self.assertNotContains(response, 'internal/css/dashboard.css')
             self.assertNotContains(response, 'home-dashboard-page')
