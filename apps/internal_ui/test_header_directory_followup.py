@@ -43,8 +43,8 @@ class HeaderDirectoryFollowupTests(ReportingFixtures):
         response = self.client.get(self.route, {'employment':'seeking', 'travel':'no', 'location':'New York, NY'})
         self.assertEqual(response.status_code, 200)
         doc = landing.Document(response.content.decode())
-        forms = [n for n in doc.nodes if n['tag']=='form' and 'ex-advanced-form' in n['attrs'].get('class', '')]
-        self.assertEqual(len(forms), 2)
+        forms = doc.marked('data-participant-query')
+        self.assertEqual(len(forms), 1)
         for form in forms:
             for key in ['employment','travel','channel','assessment','archived']:
                 controls = [n for n in doc.nodes if form in n['parents'] and n['tag'] in ['select','input'] and n['attrs'].get('name')==key]
@@ -72,7 +72,7 @@ class HeaderDirectoryFollowupTests(ReportingFixtures):
         html = response.content.decode()
         article, = re.findall(r'<article class="ex-result ex-directory-record.*?</article>', html, re.S)
         self.assertNotIn(str(self.person.identity_uuid), article)
-        self.assertIn('No current code', article)
+        self.assertIn('ex-person-id', article)
         self.assertIn('Seeking work', article)
         self.assertIn('>No</span>', article)
         self.assertIn('Type', article)
@@ -81,7 +81,7 @@ class HeaderDirectoryFollowupTests(ReportingFixtures):
         doc = landing.Document(article)
         links = [n for n in doc.nodes if n['tag']=='a']
         self.assertEqual(len(links), 2)
-        self.assertIn('View profile', article)
+        self.assertIn('>View</a>', article)
         self.assertEqual(links[0]['attrs']['href'],links[1]['attrs']['href'])
         origin = parse_qs(urlsplit(links[1]['attrs']['href']).query)['from'][0]
         self.assertIn('location=NY', origin)

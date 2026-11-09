@@ -536,7 +536,7 @@ body.internal-app.has-participants-explorer #main-content .ex-common-fields {gri
 body.internal-app.has-participants-explorer #main-content .ex-common-fields>.ex-field:first-child {grid-column:auto}
 body.internal-app.has-participants-explorer #main-content .ex-select-field {min-width:0;margin:0 0 8px}
 body.internal-app.has-participants-explorer #main-content .ex-select-field select {width:100%}
-body.internal-app.has-participants-explorer #main-content :is(.ex-directory-record,.ex-result-head) {display:grid;grid-template-columns:minmax(120px,1.1fr) minmax(150px,1.5fr) minmax(105px,1fr) minmax(90px,.8fr) minmax(115px,1fr) 104px;gap:16px;padding:12px 16px;align-items:center}
+body.internal-app.has-participants-explorer #main-content :is(.ex-directory-record,.ex-result-head) {display:grid;grid-template-columns:minmax(140px,1.5fr) minmax(64px,.55fr) minmax(110px,1.1fr) minmax(90px,.8fr) minmax(110px,1fr) 64px;gap:16px;padding:12px 16px;align-items:center}
 body.internal-app.has-participants-explorer #main-content .ex-directory-record>* {min-width:0;overflow-wrap:anywhere}
 body.internal-app.has-participants-explorer #main-content .ex-record-field {font-size:13px;line-height:20px}
 body.internal-app.has-participants-explorer #main-content .ex-record-field code {font-size:11px;white-space:normal}
@@ -592,4 +592,39 @@ body.internal-app.btw-platform.has-participants-explorer #main-content .people-e
 @media(max-width:639px) {
  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-inline-filters .ex-filter-actions {justify-content:flex-start;margin-top:12px}
  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-filter-actions :is(button,a) {min-height:44px;padding:11px 14px;flex:1 1 0}
+}
+
+/* One query form applies search, sort and menu selections together. */
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;border:0;padding:0;margin:0;background:transparent;box-shadow:none}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form>.ex-search {grid-column:1/-1;display:grid;grid-template-columns:minmax(0,3fr) minmax(180px,1fr);gap:12px;align-items:start;padding:0;border:0;background:transparent;box-shadow:none}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form .ex-search-help {margin:4px 0 0;font-size:12px;line-height:18px;color:#63636b}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-unified-filters {grid-column:1/-1;min-width:0;border:0;padding:0;margin:0;background:transparent;box-shadow:none}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-unified-filters>summary {display:none}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-unified-filters .ex-filter-content {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-unified-filters :is(.ex-quick-choices,.ex-common-fields) {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-unified-filters .ex-advanced-disclosure {grid-column:1/-1;margin:0}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form>.ex-filter-actions {grid-column:2;justify-content:flex-end;margin:0}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-directory-record .ex-profile-action {min-height:32px;padding:5px 10px;font-size:13px;line-height:20px}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-person-id {font-variant-numeric:tabular-nums}
+body.internal-app.has-participant-workspace #main-content .ex-empty-value {display:inline-block;color:#9298a1;font-size:13px;line-height:20px;font-weight:400}
+@media(max-width:1023px) {
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-unified-filters .ex-filter-content {grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:639px) {
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form>.ex-search {grid-template-columns:minmax(0,1fr)}
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form .ex-search>div:nth-child(2) {grid-column:1;grid-row:auto}
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-unified-filters>summary {display:list-item;min-height:44px;padding:10px 0}
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-unified-filters :is(.ex-quick-choices,.ex-common-fields) {grid-template-columns:minmax(0,1fr)}
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form>.ex-filter-actions {grid-column:1/-1;justify-content:flex-start}
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-directory-record .ex-profile-action {min-height:44px;padding:11px 10px;justify-self:start}
+}
+
+/* Override the inherited split-form grid for the single shared control set. */
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form>.ex-inline-filters.ex-unified-filters {grid-column:1/-1;grid-row:auto;width:auto}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-unified-filters .ex-filter-content>.ex-quick-choices,
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-unified-filters .ex-filter-content>.ex-common-fields {grid-column:auto;grid-row:auto}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-unified-filters .ex-select-field {margin:0}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form>.ex-filter-actions {display:flex;align-items:center;justify-content:flex-end;gap:8px;grid-column:2}
+@media(max-width:639px) {
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form>.ex-filter-actions {grid-column:1/-1;justify-content:flex-start}
 }

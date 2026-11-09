@@ -245,7 +245,7 @@ class ParticipantExplorerTests(TestCase):
         self.assertEqual(response.context['total_participants'],1)
         self.assertEqual(response.context['active_participant_tab'],'directory')
         self.assertContains(response,'aria-label="Participant filters"')
-        self.assertContains(response,'Advanced filters',count=2)
+        self.assertContains(response,'Advanced filters',count=1)
         self.assertContains(response,'p3-directory-row')
         self.assertContains(response,'Seeking work')
         self.assertContains(response,'Travel: Yes')
@@ -277,7 +277,7 @@ class ParticipantExplorerTests(TestCase):
         response=self.client.get(reverse('participants:staff-directory'),{'employment':'seeking','state':'GA','travel':'yes'})
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.context['total_participants'],1)
-        self.assertEqual([field['label'] for field in response.context['explorer_common']['desktop']],['Type','City / state'])
+        self.assertEqual([field['label'] for field in response.context['explorer_common']['unified']],['Type','City / state'])
         hidden=dict(response.context['explorer_filter_hidden'])
         self.assertEqual(hidden['state'],'GA')
         self.assertNotIn('employment',hidden)
@@ -293,7 +293,7 @@ class ParticipantExplorerTests(TestCase):
         self.assertEqual(response.status_code,400)
         self.assertEqual(response.context['total_participants'],0)
         self.assertContains(response,'aria-invalid="true"',status_code=400)
-        self.assertContains(response,'id="explorer-desktop-experience_min-errors"',status_code=400)
+        self.assertContains(response,'id="explorer-unified-experience_min-errors"',status_code=400)
 
     def test_simplified_profile_retains_unique_tools_and_filtered_return(self):
         origin=reverse('participants:staff-directory')+'?employment=seeking'

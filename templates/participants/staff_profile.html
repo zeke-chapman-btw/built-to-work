@@ -13,7 +13,7 @@
     <div class="p3-profile-actions">
       {% if crm_can_add %}<a class="button button-primary" href="{{ crm_new_url }}">Log interaction</a>{% endif %}
       {% if can_edit_profile and not participant.archived_at %}<a class="button secondary" href="{% url 'participants:staff-edit' participant.pk %}?return_to={{ request.get_full_path|urlencode }}">Edit profile</a>{% endif %}
-      {% if can_edit_profile and not participant.archived_at %}<a class="button secondary" data-record-editor href="{% url 'participants:identifier-edit' participant.pk %}?return_to={{ request.get_full_path|urlencode }}">Edit identifier</a>{% endif %}
+      {% if can_edit_profile and not participant.archived_at %}<a class="button secondary" data-record-editor href="{% url 'participants:identifier-edit' participant.pk %}?return_to={{ request.get_full_path|urlencode }}">Edit type</a>{% endif %}
       {% profile_tools %}
     </div>
   </div>

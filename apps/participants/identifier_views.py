@@ -12,13 +12,13 @@ from .identifier_services import revision, save_identifier
 from .models import IntakeFieldState
 
 class IdentifierForm(forms.Form):
-    identifier = forms.ChoiceField(required=False, choices=[('', 'Choose an identifier')] + list(PrimaryIdentifier.choices))
+    identifier = forms.ChoiceField(required=False, label='Type', choices=[('', 'Choose a type')] + list(PrimaryIdentifier.choices))
     revision = forms.CharField(widget=forms.HiddenInput)
     audit_reason = forms.CharField(max_length=500, label='Reason for this change', widget=forms.Textarea(attrs={'rows': 2}))
     def clean_identifier(self):
         value = self.cleaned_data['identifier']
         if not value and self.data.get('operation') != 'clear':
-            raise ValidationError('Choose an identifier, or use Clear identifier.')
+            raise ValidationError('Choose a type, or use Clear type.')
         return value
 
 @workspace
@@ -41,11 +41,11 @@ def edit(request, participant_id):
             form.add_error(None, exc)
             conflict = any('Reload' in message for message in exc.messages)
         else:
-            messages.success(request, 'Identifier cleared and protected.' if request.POST.get('operation') == 'clear' else 'Identifier saved and protected.')
+            messages.success(request, 'Type cleared and protected.' if request.POST.get('operation') == 'clear' else 'Type saved and protected.')
             return people_saved(request, 'participants:staff-profile', participant_id=person.pk)
     back = people_return(request, person)
     return editor_response(request, template='participants/identifier_editor.html',
         panel='participants/identifier_editor_panel.html', context=context(request,
-            participant=person, page_title='Participant identifier', form=form, back=back,
+            participant=person, page_title='Edit type', form=form, back=back,
             identifier_origin=ORIGIN_LABELS.get((state.provenance or {}).get('origin', 'unclassified'), 'Source requires review') if state else ORIGIN_LABELS['unclassified'],
             save_conflict=conflict, full_page_editor=request.headers.get('X-BTW-Editor') != '1'))

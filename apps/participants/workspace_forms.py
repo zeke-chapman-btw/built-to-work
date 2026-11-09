@@ -130,7 +130,7 @@ class DiscoveryForm(forms.Form):
     segments = forms.CharField(required=False, max_length=12000, widget=forms.HiddenInput)
     facet = forms.ChoiceField(required=False, choices=[("", "No chart segment")] + [(x, x.replace("_", " ").title()) for x in ("channel", "state", "employment", "experience", "interest", "qualification", "document", "verification", "participation", "assessment", "completeness", "acquisition_month")], widget=forms.HiddenInput)
     bucket = forms.CharField(required=False, max_length=240, widget=forms.HiddenInput)
-    q = forms.CharField(required=False, max_length=150, label="Name, email, or phone")
+    q = forms.CharField(required=False, max_length=150, label="Name, ID, email, or phone", widget=forms.TextInput(attrs={"aria-describedby": "participant-search-help"}))
     trade_interest = forms.CharField(required=False, max_length=120, label="Trade / career interest")
     skill = forms.CharField(required=False, max_length=120, label="Recorded skill / qualification text")
     location = forms.CharField(required=False, max_length=200, label="City / state", widget=forms.TextInput(attrs={"placeholder": "City, state, or both"}))

@@ -1,15 +1,15 @@
 {% load people_ui %}<section id="explorer-results" class="ex-results card" tabindex="-1" aria-labelledby="ex-results-heading">
 <h2 id="ex-results-heading" class="visually-hidden">Matching participants {{ total_participants }}</h2>
-<div class="ex-result-head" aria-hidden="true"><span>Name</span><span>Trailer code</span><span>Interest in work</span><span>Willing to travel</span><span>Type</span><span>Profile</span></div>
-{% for person in page_obj %}
-<article class="ex-result ex-directory-record p3-directory-row" aria-label="{{ person }}">
-<a class="ex-person-name" href="{% url 'participants:staff-profile' person.pk %}?from={{ explorer_origin|urlencode }}">{{ person }}</a>
-<div class="ex-record-field ex-code-reference"><span class="ex-record-label">Trailer code</span>{% if explorer_can_view_trailer_codes %}{% for ticket in person.explorer_trailer_codes %}<span class="ex-trailer-code"><code>{{ ticket.number }}</code><span class="ex-code-event">{{ ticket.event }}</span></span>{% empty %}<span>No current code</span>{% endfor %}{% if person.explorer_more_trailer_codes %}<span class="ex-code-event">+{{ person.explorer_more_trailer_codes }} more in profile</span>{% endif %}{% else %}<span>Restricted</span>{% endif %}</div>
-<div class="ex-record-field"><span class="ex-record-label">Interest in work</span><span>{{ person.explorer_employment }}</span></div>
-<div class="ex-record-field"><span class="ex-record-label">Willing to travel</span><span>{{ person.explorer_travel }}</span></div>
-<div class="ex-record-field"><span class="ex-record-label">Type</span><span>{{ person.get_primary_identifier_display|default:"Unclassified" }}</span></div>
-<a class="button secondary ex-profile-action" aria-label="View profile for {{ person }}" href="{% url 'participants:staff-profile' person.pk %}?from={{ explorer_origin|urlencode }}">View profile</a>
-</article>
+<div class="ex-result-head" aria-hidden="true"><span>Name</span><span>ID</span><span>Interest in work</span><span>Willing to travel</span><span>Type</span><span>Profile</span></div>
+{% for person in page_obj %}{% with display_name=person|stringformat:"s" %}
+<article class="ex-result ex-directory-record p3-directory-row" aria-label="{% if display_name %}{{ display_name }}{% else %}ID {{ person.pk|stringformat:'d' }}{% endif %}">
+<a class="ex-person-name" href="{% url 'participants:staff-profile' person.pk %}?from={{ explorer_origin|urlencode }}">{% if display_name %}{{ display_name }}{% else %}<span class="ex-empty-value" role="img" aria-label="Not recorded">—</span>{% endif %}</a>
+<div class="ex-record-field ex-person-id"><span class="ex-record-label">ID</span><span>{{ person.pk|stringformat:"d" }}</span></div>
+<div class="ex-record-field"><span class="ex-record-label">Interest in work</span>{% if person.explorer_employment != "Not recorded" %}<span>{{ person.explorer_employment }}</span>{% else %}<span class="ex-empty-value" role="img" aria-label="Not recorded">—</span>{% endif %}</div>
+<div class="ex-record-field"><span class="ex-record-label">Willing to travel</span>{% if person.explorer_travel != "Unknown" %}<span>{{ person.explorer_travel }}</span>{% else %}<span class="ex-empty-value" role="img" aria-label="Not recorded">—</span>{% endif %}</div>
+<div class="ex-record-field"><span class="ex-record-label">Type</span>{% if person.primary_identifier %}<span>{{ person.get_primary_identifier_display }}</span>{% else %}<span class="ex-empty-value" role="img" aria-label="Not recorded">—</span>{% endif %}</div>
+<a class="button secondary ex-profile-action" aria-label="View profile for {% if display_name %}{{ display_name }}{% else %}ID {{ person.pk|stringformat:'d' }}{% endif %}" href="{% url 'participants:staff-profile' person.pk %}?from={{ explorer_origin|urlencode }}">View</a>
+</article>{% endwith %}
 {% empty %}<div class="ex-empty"><h3>No matching participants</h3><p>{% if filter_form.errors %}Correct the highlighted criteria before reviewing a group.{% else %}Try removing an attribute or clearing the search. Missing information is not an explicit No.{% endif %}</p><a class="button secondary" href="{{ explorer_clear }}">Clear all</a></div>{% endfor %}
 {% if page_obj.paginator.num_pages > 1 %}<nav class="ex-pagination" aria-label="Explorer result pages">{% if page_obj.has_previous %}<a href="?{{ query_without_page }}&amp;page={{ page_obj.previous_page_number }}#explorer-results">Previous</a>{% endif %}<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a href="?{{ query_without_page }}&amp;page={{ page_obj.next_page_number }}#explorer-results">Next</a>{% endif %}</nav>{% endif %}
 </section>

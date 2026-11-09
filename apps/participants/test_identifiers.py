@@ -234,8 +234,9 @@ class ParticipantIdentifierTests(TestCase):
         self.client.force_login(self.admin,backend='django.contrib.auth.backends.ModelBackend')
         response=self.client.get(reverse('participants:staff-directory'))
         self.assertEqual(response.status_code,200)
-        self.assertContains(response,'explorer-desktop-identifier')
-        self.assertContains(response,'explorer-mobile-identifier')
+        self.assertContains(response,'id="explorer-unified-identifier"',count=1)
+        self.assertNotContains(response,'explorer-desktop-identifier')
+        self.assertNotContains(response,'explorer-mobile-identifier')
         self.assertContains(response,'Unclassified')
 
     def test_dry_run_reports_reliable_student_employee_without_assigning_them(self):

@@ -198,20 +198,30 @@ def discover(user, params, *, strict=False):
         qs = qs.filter(archived_at__isnull=True)
     q = d.get("q")
     if q:
-        from django.db.models.functions import Replace
-        terms = q.split()
-        lookup = Q(first_name__icontains=q) | Q(last_name__icontains=q) | Q(preferred_name__icontains=q) | Q(contact_email__icontains=q) | Q(contact_phone__icontains=q)
-        if len(terms) > 1:
-            lookup |= Q(first_name__icontains=terms[0], last_name__icontains=" ".join(terms[1:]))
-            lookup |= Q(first_name__icontains=" ".join(terms[:-1]), last_name__icontains=terms[-1])
-        digits = "".join(c for c in q if c.isdigit())
-        if digits:
-            phone = F("contact_phone")
-            for char in (" ", "-", "(", ")", ".", "+"):
-                phone = Replace(phone, Value(char), Value(""))
-            qs = qs.annotate(_phone=phone)
-            lookup |= Q(_phone__contains=digits)
-        qs = qs.filter(lookup)
+        # Existing numeric record IDs remain stable; reviewed alias IDs still resolve.
+        import re
+        match = re.fullmatch(r"#?([0-9]{1,19})", q)
+        number = int(match.group(1)) if match else None
+        target = canonical_id(number) if number and number <= 9223372036854775807 else None
+        if q.startswith("#"):
+            qs = qs.filter(pk=target) if target else qs.none()
+        elif target and people_for(user).filter(pk=target).exists():
+            qs = qs.filter(pk=target)
+        else:
+            from django.db.models.functions import Replace
+            terms = q.split()
+            lookup = Q(first_name__icontains=q) | Q(last_name__icontains=q) | Q(preferred_name__icontains=q) | Q(contact_email__icontains=q) | Q(contact_phone__icontains=q)
+            if len(terms) > 1:
+                lookup |= Q(first_name__icontains=terms[0], last_name__icontains=" ".join(terms[1:]))
+                lookup |= Q(first_name__icontains=" ".join(terms[:-1]), last_name__icontains=terms[-1])
+            digits = "".join(c for c in q if c.isdigit())
+            if digits:
+                phone = F("contact_phone")
+                for char in (" ", "-", "(", ")", ".", "+"):
+                    phone = Replace(phone, Value(char), Value(""))
+                qs = qs.annotate(_phone=phone)
+                lookup |= Q(_phone__contains=digits)
+            qs = qs.filter(lookup)
     # Each location term may match either recorded city or state. No radius is inferred.
     for term in d.get("location", "").replace(",", " ").split():
         qs = qs.filter(Q(city__icontains=term) | Q(state__icontains=term))
