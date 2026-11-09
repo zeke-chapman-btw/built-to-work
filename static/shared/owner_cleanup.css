@@ -72,4 +72,5 @@ body.btw-platform.internal-app.has-owner-detail-frame #main-content :is(.event-r
 .btw-platform.internal-app.has-owner-detail-frame #main-content>.customer-page{width:100%;max-width:none;margin-inline:0;padding-inline:0;box-sizing:border-box}
 body.btw-platform.internal-app.has-owner-detail-frame #main-content>.events-page.operations-page{padding:24px}
 @media(max-width:639px){body.btw-platform.internal-app.has-owner-detail-frame #main-content>.events-page.operations-page{padding:16px}}
+body.btw-platform.internal-app.has-owner-detail-frame #main-content>.people-profile-hero.p3-profile-hero{width:100%;max-width:none;margin-inline:0;box-sizing:border-box}
 @media(max-width:639px){.btw-platform.internal-app.has-owner-detail-frame #main-content>.btw-event-content-frame{padding:16px}}
