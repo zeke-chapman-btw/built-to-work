@@ -1,3 +1,4 @@
+from urllib.parse import quote
 from django import template
 from django.urls import reverse
 from apps.event_reports.services import can_report
@@ -10,8 +11,9 @@ def event_header(context, event):
     from apps.operations.templatetags.task_ui import global_task_create_url
     request=context["request"]; user=request.user
     return dict(request=request,event=event,report_url=reverse("event_reports:detail",args=[event.pk]) if can_report(user) else None,
-        edit_url=reverse("events:event_edit",args=[event.pk]) if user.has_perm("events.change_event") and event.status!="archived" else None,
+        edit_url=reverse("events:event_edit",args=[event.pk])+"?return_to="+quote(request.get_full_path(),safe="") if user.has_perm("events.change_event") and event.status!="archived" else None,
         management_actions=available_actions(event) if user.has_perm("events.change_event") else [],
+        back_label="Events" if user.has_perm("events.view_event") else "My staff schedule",
         back_url=reverse("events:event_list") if user.has_perm("events.view_event") else reverse("staffing:schedule"),
         task_creation_enabled=context.get("task_creation_enabled",True),task_action_url=global_task_create_url(context) if context.get("task_action_in_event_header") else "")
 
@@ -29,7 +31,8 @@ def event_navigation(context, event, active=""):
     tabs = event_tabs(request.user,event)
     more = [tab for tab in tabs if tab["id"] in ("tasks", "notes", "documents")]
     current = next((tab for tab in more if tab["id"] == active), None)
-    return dict(primary_event_tabs=[tab for tab in tabs if tab not in more], more_event_tabs=more, active_event_tab=active, more_active=bool(current), active_more_label=current["label"] if current else "")
+    active_label = next((tab["label"] for tab in tabs if tab["id"] == active), "Event sections")
+    return dict(all_event_tabs=tabs,active_event_label=active_label,primary_event_tabs=[tab for tab in tabs if tab not in more], more_event_tabs=more, active_event_tab=active, more_active=bool(current), active_more_label=current["label"] if current else "")
 
 @register.inclusion_tag("events/operational_tools.html", takes_context=True)
 def event_operational_tools(context,event):
@@ -41,3 +44,9 @@ def event_operational_tools(context,event):
 @register.inclusion_tag("events/staff_navigation.html", takes_context=True)
 def staff_navigation(context, event, active="workdays"):
     return dict(staff_tabs=staff_tabs(context["request"].user, event), selected_staff_tab=active)
+
+
+@register.filter
+def event_timezone(event, instant=None):
+    from apps.events.timezone_choices import event_timezone_label
+    return event_timezone_label(event, instant)

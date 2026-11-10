@@ -16,6 +16,7 @@ from .execution_models import (ChecklistMaster,MasterChecklistCategory,MasterChe
 from .execution_forms import (ManagerForm,ExecutionActionForm,CategoryForm,ItemForm,
     ItemActionForm,MasterCategoryForm,MasterItemForm)
 from . import execution_services as svc
+from apps.internal_ui.section_editors import operations_return, operations_editor, operations_saved
 
 
 def execution_view(fn):
@@ -59,6 +60,8 @@ def event_context(request,event_id,section):
 
 
 def form_page(request,form,*,title,back,event=None,**extra):
+    if event is None:
+        return operations_editor(request,form,title=title,back=operations_return(request,back),**extra)
     return render(request,"operations/execution_form.html",dict(form=form,page_title=title,
         back_url=back,event=event,section="operations",can_view_setup_link=bool(event and setup_link_visible(request.user,event)),**extra),status=400 if form.is_bound else 200)
 
@@ -215,7 +218,7 @@ def master_edit(request,kind,object_id=None):
             saved,form=svc.save_master(actor=request.user,data=request.POST,kind=kind,object_id=object_id)
             if saved:
                 messages.success(request,"Master updated for future event checklists. Existing event snapshots were not changed.")
-                return redirect("operations:master-checklist")
+                return operations_saved(request,operations_return(request,reverse("operations:master-checklist")))
         except ValidationError as exc:form.is_valid();form.add_error(None,exc)
     return form_page(request,form,title=("Edit " if object_id else "Add ")+"master "+kind,
         back=reverse("operations:master-checklist"),master_edit=True)

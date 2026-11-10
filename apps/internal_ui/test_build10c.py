@@ -135,7 +135,7 @@ class Build10CTests(TestCase):
 
     def test_event_header_has_no_task_or_report_button(self):
         self.login();html=self.client.get(self.url()).content.decode()
-        header=html.split('<header class="event-record-header">',1)[1].split('</header>',1)[0]
+        header=html.split('<header class="event-record-header"',1)[1].split('</header>',1)[0]
         self.assertNotIn('data-task-create',header);self.assertNotIn('Event Report</a>',header)
         self.assertEqual(html.count('data-global-task-create'),1)
         self.assertIn('button-primary global-task-create',html)
@@ -171,7 +171,7 @@ class Build10CTests(TestCase):
 
     def test_expense_projection_excludes_report_but_keeps_real_expense_tools(self):
         self.login();response=self.client.get(reverse('event_reports:detail',args=[self.event.pk]),{'section':'expenses'})
-        self.assertContains(response,'Manual event expenses');self.assertNotContains(response,'<h2>Participant performance</h2>')
+        self.assertContains(response,'<h2>Expenses</h2>',html=True);self.assertNotContains(response,'<h2>Participant performance</h2>')
         self.assertContains(response,'name="section" value="expenses"')
         self.assertContains(response,reverse('event_reports:expense-add',args=[self.event.pk]))
 
@@ -182,7 +182,7 @@ class Build10CTests(TestCase):
 
     def test_legacy_combined_report_and_anchors_still_work(self):
         self.login();response=self.client.get(reverse('event_reports:detail',args=[self.event.pk]))
-        self.assertContains(response,'Manual event expenses');self.assertContains(response,'Participant performance')
+        self.assertContains(response,'<h2>Expenses</h2>',html=True);self.assertContains(response,'Participant performance')
         self.assertContains(response,'id="expenses"');self.assertContains(response,'id="performance"')
 
     def test_projection_does_not_change_report_calculations(self):

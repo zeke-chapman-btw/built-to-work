@@ -185,10 +185,11 @@ class HomeDashboard9G2ETests(TestCase):
         StaffingPlan.objects.create(event=event, required_staff=3)
         StaffAssignment.objects.create(event=event, staff=self.profiles[self.other.pk])
         url = reverse('events:event_list')
-        self.assertNotContains(self.client.get(url), 'confirmed staff')
+        self.assertNotContains(self.client.get(url), 'confirmed assignment')
         self.grant(self.staff, 'staffing', 'manage_event_staffing')
-        self.assertContains(self.client.get(url), '1 confirmed staff')
-        self.assertContains(self.client.get(url), '3 required')
+        self.assertContains(self.client.get(url), '1 confirmed assignment')
+        self.assertNotContains(self.client.get(url), '3 required')
+        self.assertContains(self.client.get(url), 'View daily coverage')
 
     def test_advanced_event_filters_expand_for_invalid_or_active_dates(self):
         self.grant(self.staff, 'events', 'view_event')

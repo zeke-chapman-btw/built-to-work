@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 
 from apps.participants.models import Participant
 from .models import Event, EventGroup, EventRegistration
+from .timezone_choices import timezone_choices
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M"
 
@@ -24,7 +25,7 @@ class EventForm(forms.ModelForm):
     revision = forms.CharField(required=False, widget=forms.HiddenInput)
 
     FIELD_GROUPS = (
-        ("Basic information", ("name", "code", "event_type", "event_type_other", "description")),
+        ("Basic information", ("name", "event_type", "event_type_other", "description")),
         ("Location", ("location_name", "address_line_1", "address_line_2", "city", "state", "postal_code", "country")),
         ("Schedule", ("timezone_name", "setup_date", "staff_arrival_time", "start_at", "end_at", "daily_start_time", "daily_end_time", "return_date")),
         ("Contact and logistics", ("contact_name", "contact_email", "contact_phone", "housing_information", "logistics_instructions")),
@@ -34,7 +35,7 @@ class EventForm(forms.ModelForm):
     class Meta:
         model = Event
         fields = tuple(name for title, names in (
-            ("basic", ("name", "code", "event_type", "event_type_other", "description")),
+            ("basic", ("name", "event_type", "event_type_other", "description")),
             ("location", ("location_name", "address_line_1", "address_line_2", "city", "state", "postal_code", "country")),
             ("schedule", ("timezone_name", "setup_date", "staff_arrival_time", "start_at", "end_at", "daily_start_time", "daily_end_time", "return_date")),
             ("logistics", ("contact_name", "contact_email", "contact_phone", "housing_information", "logistics_instructions")),
@@ -45,15 +46,16 @@ class EventForm(forms.ModelForm):
             **{name: forms.TimeInput(attrs={"type": "time"}) for name in ("staff_arrival_time", "daily_start_time", "daily_end_time")},
             **{name: forms.Textarea(attrs={"rows": 3}) for name in ("description", "housing_information", "logistics_instructions")},
         }
-        labels = {"location_name": "Venue", "return_date": "Arrival home date", "event_type_other": "Other event type", "timezone_name": "Event timezone"}
+        labels = {"location_name": "Venue", "return_date": "Arrival home date", "event_type_other": "Other event type", "timezone_name": "Time zone", "daily_start_time": "Default staff start time", "daily_end_time": "Default staff end time"}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._original_timezone = self.instance.timezone_name
         self._original_datetimes = {name: getattr(self.instance, name) for name in ("start_at", "end_at", "registration_opens_at", "registration_closes_at", "registration_deadline_at")}
-        self.fields["timezone_name"].help_text = "Use an IANA timezone, for example America/New_York. All date/time entries below use this timezone."
+        self.fields["timezone_name"].widget = forms.Select(choices=timezone_choices(self.data.get("timezone_name") if self.is_bound else self.initial.get("timezone_name")))
+        self.fields["timezone_name"].help_text = "All event dates and times use this time zone. Daylight saving changes are automatic."
         self.fields["start_at"].help_text = "The event start and end define the existing QR/kiosk operating window. Setup and travel dates do not extend it."
-        self.fields["daily_start_time"].help_text = "Optional daily planning hours; enter both times. These do not change the QR/kiosk window."
+        self.fields["daily_start_time"].help_text = "Optional defaults for staff assignments with no working times entered. Enter both times; setup days use separate defaults."
         self.fields["event_type_other"].help_text = "Optional description when the type is Other."
         if not self.instance._state.adding:
             self.initial["revision"] = self.instance.updated_at.isoformat()
@@ -69,12 +71,26 @@ class EventForm(forms.ModelForm):
     def grouped_fields(self):
         return [(title, [self[name] for name in names]) for title, names in self.FIELD_GROUPS]
 
+    @property
+    def editor_groups(self):
+        groups = {title: names for title, names in self.FIELD_GROUPS}
+        result=[]
+        for title in ('Basic information','Schedule','Location','Contact and logistics','Participant registration settings'):
+            names=groups[title]
+            if title == 'Schedule':
+                names=('timezone_name','start_at','end_at','daily_start_time','daily_end_time','setup_date','staff_arrival_time','return_date')
+            fields=[self[name] for name in names]
+            optional=title in ('Contact and logistics','Participant registration settings') and not any(f.field.required for f in fields)
+            result.append(dict(title=title, fields=fields, optional=optional,
+                open=any(f.errors for f in fields) or any(f.value() not in (None,'',False,0,'disabled','Group') for f in fields)))
+        return result
+
     def clean(self):
         cleaned = super().clean()
         try:
             zone = ZoneInfo(cleaned.get("timezone_name") or "UTC")
         except (ZoneInfoNotFoundError, TypeError, ValueError):
-            self.add_error("timezone_name", "Enter a valid IANA timezone, such as America/New_York.")
+            self.add_error("timezone_name", "Choose a valid time zone.")
             for name in ("start_at", "end_at", "registration_opens_at", "registration_closes_at", "registration_deadline_at"):
                 cleaned.pop(name, None)
             return cleaned
