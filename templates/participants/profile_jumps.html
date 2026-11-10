@@ -1,5 +1,5 @@
 {% if in_profile_tools %}<p>Jump to section</p>{% else %}<div class="crm-profile-reading-tools">
   <details class="crm-profile-jumps" data-ui-menu><summary>Jump to section</summary><div>{% endif %}
-    <a href="#profile-notes">Staff notes</a><a href="#profile-assessments">Trailer results</a><a href="#profile-touchpoints">Touchpoints</a><a href="#profile-events">Events</a><a href="#profile-identity">Contact</a><a href="#profile-qualifications">Qualifications</a><a href="#profile-connections">Job connections</a><a href="#profile-documents">Documents</a>
+    {% if can_view_notes %}<a href="#profile-notes">Staff notes</a>{% endif %}{% if can_view_quiz_results or can_view_game_results or can_view_simulator_results or can_view_historical_scores %}<a href="#profile-assessments">Trailer results</a>{% endif %}{% if profile_show_touchpoints %}<a href="#profile-touchpoints">Touchpoints</a>{% endif %}{% if can_view_registrations %}<a href="#profile-events">Events</a>{% endif %}<a href="#profile-identity">Contact</a><a href="#profile-qualifications">Qualifications</a>{% if profile_show_connections %}<a href="#profile-connections">Job connections</a>{% endif %}{% if can_view_documents %}<a href="#profile-documents">Documents</a>{% endif %}
 {% if not in_profile_tools %}  </div></details>
 </div>{% endif %}

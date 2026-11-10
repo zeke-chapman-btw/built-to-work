@@ -237,7 +237,7 @@ body.internal-app.has-participant-workspace.has-participants-pass3.has-participa
 
 @media (width < 900px) {
   /* One column; staff notes and contact come first on phones and tablets. */
-  .has-crm-ux-profile .pv-columns { display:flex; flex-direction:column; }
+  .has-crm-ux-profile .pv-columns { display:flex; flex-direction:column; align-items:stretch; }
   .has-crm-ux-profile .pv-main, .has-crm-ux-profile .pv-side { display:contents; }
   .has-crm-ux-profile #profile-notes { order:1; }
   .has-crm-ux-profile #profile-identity { order:2; }
