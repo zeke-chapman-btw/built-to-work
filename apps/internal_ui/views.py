@@ -1,9 +1,37 @@
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.http import Http404
 from django.shortcuts import render
+
+from .navigation import WORKSPACES, visible_workspace_links, visible_workspaces
+
+
+def _staff_context(request, **extra):
+    return {"navigation": visible_workspaces(request.user, request.path), **extra}
+
+
+def _require_staff(request):
+    if not request.user.is_active or not request.user.is_staff:
+        raise PermissionDenied
+
 
 @login_required(login_url='admin:login')
 def home(request):
-    if not request.user.is_staff:
+    _require_staff(request)
+    cards = [item for item in visible_workspaces(request.user, request.path) if item["id"] != "home"]
+    return render(request, 'internal/dashboard.html', _staff_context(request, page_title="Dashboard", page_description="A clear starting point for your authorized BTW work.", workspace_cards=cards))
+
+
+@login_required(login_url='admin:login')
+def workspace(request, workspace_id):
+    _require_staff(request)
+    item = next((entry for entry in WORKSPACES if entry["id"] == workspace_id and entry["id"] != "home"), None)
+    if item is None:
+        raise Http404
+    if not any(entry["id"] == workspace_id for entry in visible_workspaces(request.user)):
         raise PermissionDenied
-    return render(request, 'internal/dashboard.html')
+    links = visible_workspace_links(request.user, workspace_id)
+    return render(request, 'internal/workspace.html', _staff_context(
+        request, page_title=item["label"].title(), page_description=item["description"],
+        workspace_id=workspace_id, workspace_links=links,
+    ))
