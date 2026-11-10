@@ -13,7 +13,7 @@
 .brand { display: flex; min-height: 112px; align-items: center; justify-content: center; padding: 20px 18px; border-bottom: 1px solid #ffffff24; }
 .brand-logo { display: block; width: min(250px, 100%); height: auto; max-height: 68px; object-fit: contain; }
 .workspace-nav { display: grid; gap: 4px; padding: 20px 14px; }
-.nav-item { display: flex; min-height: 48px; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 700; letter-spacing: .04em; transition: background-color .15s ease, color .15s ease; }
+.nav-item { display: flex; min-height: 48px; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; color: #fff; font-family: "BTW Futura Condensed", Arial, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: .04em; transition: background-color .15s ease, color .15s ease; }
 .nav-item:hover { background: #ffffff18; }
 .nav-item.active { background: var(--red); color: #fff; }
 .nav-icon { display: inline-grid; width: 24px; height: 24px; flex: 0 0 24px; place-items: center; color: var(--yellow); font-size: 20px; line-height: 1; }
