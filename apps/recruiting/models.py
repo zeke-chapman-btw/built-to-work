@@ -33,6 +33,12 @@ class RecruitingProfile(TimestampedModel):
     employment_classification = models.ForeignKey(Classification, null=True, blank=True, on_delete=models.PROTECT, related_name='+')
     availability_classification = models.ForeignKey(Classification, null=True, blank=True, on_delete=models.PROTECT, related_name='+')
     willing_to_relocate = models.BooleanField(null=True, blank=True)
+    # NULL retains the pre-existing classification/boolean contract. An explicit
+    # blank records current Unknown without replaying historical profile text.
+    CURRENT_EMPLOYMENT = [('', 'Unknown'), ('full_time', 'Full time'), ('part_time', 'Part time'),
+        ('self_employed', 'Self employed'), ('contract', 'Contract'), ('unemployed', 'Unemployed')]
+    current_employment_status = models.CharField(max_length=20, choices=CURRENT_EMPLOYMENT, null=True, blank=True, default=None)
+    relocation_preference = models.CharField(max_length=5, choices=[('', 'Unknown'), ('yes', 'Yes'), ('maybe', 'Maybe'), ('no', 'No')], null=True, blank=True, default=None)
     revision = models.PositiveIntegerField(default=0)
     last_relevant_update_at = models.DateTimeField(null=True, blank=True)
     last_confirmed_at = models.DateTimeField(null=True, blank=True)

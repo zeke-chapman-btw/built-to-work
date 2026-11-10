@@ -6,7 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction, IntegrityError
-from django.db.models import Count, Q, Prefetch
+from django.db.models import Count, Q, Prefetch, F
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from apps.internal_ui.people_editors import people_render as render, people_saved, profile_link
@@ -119,10 +119,12 @@ def profile(request, participant_id):
     from apps.accounts.operational_access import general_recruiter
     if section == "acquisition" and general_recruiter(request.user) and not request.user.has_perm("participants.view_registrationsubmission"):
         raise PermissionDenied
-    permissions = {"documents": "participants.view_participantdocument", "qualifications": "participants.view_participantqualification",
+    if section == "acquisition" and request.headers.get('X-BTW-Editor') == '1' and not request.user.has_perm('participants.view_registrationsubmission'):
+        raise PermissionDenied
+    permissions = {"source-event":"events.view_event", "documents": "participants.view_participantdocument", "qualifications": "participants.view_participantqualification",
                    "events": "events.view_eventregistration", "notes": "participants.view_participantnote",
                    "activity": "participants.view_participant_activity"}
-    if section not in ("overview", "relationship", "recruiting", "career", "qualifications", "documents", "assessments", "events", "acquisition", "notes", "activity", "tasks"):
+    if section not in ("overview", "relationship", "recruiting", "career", "qualifications", "documents", "assessments", "events", "source-event", "acquisition", "notes", "activity", "tasks"):
         raise Http404
     if section in permissions and not request.user.has_perm(permissions[section]):
         raise PermissionDenied
@@ -195,19 +197,33 @@ def profile(request, participant_id):
         ctx["legacy_attendance"] = source["attendance"].filter(participant_id__in=member_ids).select_related("event").order_by("-checked_in_at")[:participation_limit]
     assessment_limit = 5 if section == "overview" else 50
     if ctx["can_view_quiz_results"]:
-        ctx["quiz_attempts"] = source["quizzes"].filter(participant_id__in=member_ids).select_related("experience_session__event").prefetch_related("sections__responses").order_by("-selected_at")[:assessment_limit]
+        quizzes=source['quizzes']
+        if section=='assessments':
+            from apps.assessments.models import QuizAttempt
+            quizzes=QuizAttempt.objects.filter(participant_id__in=member_ids,experience_session__participant_id__in=member_ids,
+                experience_session__registration__participant_id__in=member_ids,
+                experience_session__registration__event_id=F('experience_session__event_id'))
+        ctx["quiz_attempts"] = quizzes.filter(participant_id__in=member_ids).select_related("experience_session__event").prefetch_related("sections__responses").order_by("-selected_at")
+        ctx["quiz_page"] = Paginator(ctx["quiz_attempts"], 25).get_page(request.GET.get("quiz_page")) if section == "assessments" else None
+        ctx["quiz_attempts"] = ctx["quiz_page"] if section == "assessments" else ctx["quiz_attempts"][:assessment_limit]
         ctx["quiz_attempts"] = list(ctx["quiz_attempts"])
         for attempt in ctx["quiz_attempts"]:
             attempt.workspace_correct = sum(1 for section_row in attempt.sections.all() for response_row in section_row.responses.all() if response_row.is_correct)
     if ctx["can_view_game_results"]:
         from apps.games.models import GameSession
-        ctx["game_sessions"] = GameSession.objects.filter(experience_session__participant_id__in=member_ids).select_related("game", "experience_session__event").order_by("-created_at")[:assessment_limit]
+        ctx["game_sessions"] = GameSession.objects.filter(experience_session__participant_id__in=member_ids).select_related("game", "event", "experience_session__event").order_by("-created_at")
+        ctx["game_page"] = Paginator(ctx["game_sessions"], 25).get_page(request.GET.get("game_page")) if section == "assessments" else None
+        ctx["game_sessions"] = ctx["game_page"] if section == "assessments" else ctx["game_sessions"][:assessment_limit]
     if ctx["can_view_simulator_results"]:
         from apps.simulators.models import SimulatorCapture
-        ctx["simulator_results"] = SimulatorCapture.objects.filter(participant_id__in=member_ids).select_related("event", "station").order_by("-captured_at")[:assessment_limit]
+        ctx["simulator_results"] = SimulatorCapture.objects.filter(participant_id__in=member_ids).select_related("event", "station").order_by("-captured_at")
+        ctx["simulator_page"] = Paginator(ctx["simulator_results"], 25).get_page(request.GET.get("simulator_page")) if section == "assessments" else None
+        ctx["simulator_results"] = ctx["simulator_page"] if section == "assessments" else ctx["simulator_results"][:assessment_limit]
     if ctx["can_view_historical_scores"]:
         from .models import HistoricalSimulatorScore, HistoricalEventRecord
-        ctx["historical_scores"] = HistoricalSimulatorScore.objects.filter(participant_id__in=member_ids).select_related("event_record").order_by("-scored_at", "-pk")[:assessment_limit]
+        ctx["historical_scores"] = HistoricalSimulatorScore.objects.filter(participant_id__in=member_ids).select_related("event_record").order_by("-scored_at", "-pk")
+        ctx["historical_page"] = Paginator(ctx["historical_scores"], 25).get_page(request.GET.get("historical_page")) if section == "assessments" else None
+        ctx["historical_scores"] = ctx["historical_page"] if section == "assessments" else ctx["historical_scores"][:assessment_limit]
         ctx["historical_events"] = HistoricalEventRecord.objects.filter(participant_id__in=member_ids).select_related("event").order_by("-event_date", "-pk")[:assessment_limit]
     if ctx["can_view_notes"]:
         notes = ParticipantNote.objects.filter(participant_id__in=member_ids, audience="btw_internal").select_related("author", "author__staff_profile", "edited_by", "edited_by__staff_profile")
@@ -236,6 +252,8 @@ def profile(request, participant_id):
     ctx.update(workspace_intake_context(request.user, person, member_ids, ctx["career"]))
     from .ui_presentation import profile_preferences
     ctx.update(profile_preferences(ctx))
+    from .profile_followup import followup_context
+    followup_context(request, ctx, member_ids, source)
     return render(request, "participants/staff_profile.html", ctx)
 
 
@@ -243,9 +261,11 @@ def factual_timeline(user, person, member_ids, ctx):
     """Bounded factual chronology; no copied activity store or invented attendance."""
     from apps.crm.actor_names import compact_actor
     rows = []
-    def add(at, label, detail, source, key, source_action=""):
+    def add(at, label, detail, source, key, source_action="", actor=None):
         if at:
-            rows.append(dict(at=at, label=label, detail=detail, source=source, key=str(key), source_action=source_action))
+            group='staff' if actor and actor.is_staff else 'participant' if actor and hasattr(actor,'participant_account') else 'customer' if actor and hasattr(actor,'customer_identity') else 'unknown'
+            rows.append(dict(at=at, label=label, detail=detail, source=source, key=str(key), source_action=source_action,
+                actor=compact_actor(actor) if actor else 'Not recorded', actor_group=group))
     for row in Participant.objects.filter(pk__in=member_ids):
         add(row.created_at, "Participant record created", "Stored identity retained", "Participant", row.pk)
     if ctx["can_view_registrations"]:
@@ -253,14 +273,14 @@ def factual_timeline(user, person, member_ids, ctx):
             add(row.registered_at, "Event registration", f"{row.event.name} · {row.get_status_display()}", "Registration", row.pk)
     if ctx["can_view_registrations"]:
         source = activity_sources()
-        for row in source["sessions"].filter(participant_id__in=member_ids).select_related("event").order_by("-started_at")[:100]:
-            add(row.started_at, "Official experience started", row.event.name, "Experience session", row.pk)
+        for row in source["sessions"].filter(participant_id__in=member_ids).select_related("event", "created_by", "created_by__staff_profile").order_by("-started_at")[:100]:
+            add(row.started_at, "Official experience started", row.event.name, "Experience session", row.pk, actor=row.created_by)
         for row in source["attendance"].filter(participant_id__in=member_ids).select_related("event").order_by("-checked_in_at")[:100]:
             add(row.checked_in_at, "Retained legacy check-in", row.event.name, "Legacy attendance", row.pk)
     if ctx["can_view_documents"]:
         from .participant_document_models import ParticipantDocument
-        for row in ParticipantDocument.objects.filter(participant_id__in=member_ids).order_by("-uploaded_at")[:100]:
-            add(row.uploaded_at, "Document uploaded", row.original_filename, "Private document record", row.pk)
+        for row in ParticipantDocument.objects.filter(participant_id__in=member_ids).select_related('uploaded_by','uploaded_by__staff_profile').order_by("-uploaded_at")[:100]:
+            add(row.uploaded_at, "Document uploaded", row.original_filename, "Private document record", row.pk, actor=row.uploaded_by)
     if ctx["can_view_quiz_results"]:
         for row in ctx.get("quiz_attempts", []):
             add(row.completed_at or row.selected_at, "Quiz " + row.get_status_display().lower(), "Stored attempt; no score recalculation", "Assessment", row.pk)
@@ -273,10 +293,10 @@ def factual_timeline(user, person, member_ids, ctx):
     if ctx["can_view_verification"]:
         from .verification_models import ParticipantVerificationRecord
         for row in ParticipantVerificationRecord.objects.filter(participant_id__in=member_ids).select_related("reviewer").order_by("-created_at")[:100]:
-            add(row.created_at, "Credential review", f"{row.get_status_display()} · {row.reviewer or 'System'}", "Verification history", row.pk)
+            add(row.created_at, "Credential review", f"{row.get_status_display()} · {row.reviewer or 'System'}", "Verification history", row.pk, actor=row.reviewer)
     if ctx["can_view_internal_review"]:
         for row in person.internal_reviews.select_related("reviewer").order_by("-created_at")[:50]:
-            add(row.reviewed_at, "Internal participant review", f"{row.get_status_display()} · {row.reviewer}", "Internal review", row.pk)
+            add(row.reviewed_at, "Internal participant review", f"{row.get_status_display()} · {row.reviewer}", "Internal review", row.pk, actor=row.reviewer)
     types = [(Participant, member_ids), (ParticipantWorkExperience, ParticipantWorkExperience.objects.filter(participant_id__in=member_ids).values_list("pk", flat=True)),
              (ParticipantAcquisition, ParticipantAcquisition.objects.filter(participant_id__in=member_ids).values_list("pk", flat=True))]
     if ctx["can_view_notes"]:
@@ -285,7 +305,7 @@ def factual_timeline(user, person, member_ids, ctx):
         logs = AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(model), object_id__in=[str(pk) for pk in ids]).select_related("actor", "actor__staff_profile").order_by("-timestamp")[:100]
         for row in logs:
             add(row.timestamp, row.action.replace("participant.workspace.", "").replace(".", " ").title(),
-                f"{compact_actor(row.actor) if row.actor else 'System'} · {row.reason}", "Audited staff change", row.pk, source_action=row.action)
+                f"{compact_actor(row.actor) if row.actor else 'System'} · {row.reason}", "Audited staff change", row.pk, source_action=row.action, actor=row.actor)
     return sorted(rows, key=lambda r: (r["at"], r["source"], r["key"]), reverse=True)[:200]
 
 
@@ -417,7 +437,7 @@ def note_history(request, participant_id, object_id):
         raise PermissionDenied
     note = get_object_or_404(ParticipantNote, pk=object_id, participant_id__in=identity_members(person.pk))
     rows = AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(ParticipantNote), object_id=str(note.pk)).select_related("actor", "actor__staff_profile").order_by("-timestamp")
-    return render(request, "participants/note_history.html", context(request, participant=person, note=note, history=rows, page_title="Internal note history"))
+    return render(request, "participants/note_history.html", context(request, participant=person, note=note, history=Paginator(rows,PAGE_SIZE).get_page(request.GET.get("page")), page_title="Internal note history"))
 
 
 @workspace

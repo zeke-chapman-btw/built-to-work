@@ -27,6 +27,7 @@ def validate_document_file(upload):
     return name, expected[1]
 
 class ParticipantDocumentForm(forms.ModelForm):
+    expected_revision = forms.CharField(required=False, widget=forms.HiddenInput)
     file = forms.FileField(required=False)
     audit_reason = forms.CharField(max_length=500, label='Reason', help_text='Required for the audit history.')
     class Meta:
@@ -36,6 +37,7 @@ class ParticipantDocumentForm(forms.ModelForm):
     def __init__(self, *args, participant=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.participant = participant
+        if self.instance.pk:self.initial['expected_revision'] = self.instance.updated_at.isoformat()
         qs = ParticipantDocumentCategory.objects.filter(is_active=True)
         if self.instance and self.instance.pk:
             qs = ParticipantDocumentCategory.objects.filter(Q(is_active=True) | Q(pk=self.instance.category_id))
@@ -50,6 +52,8 @@ class ParticipantDocumentForm(forms.ModelForm):
         return None
     def clean(self):
         data = super().clean()
+        if self.instance.pk and data.get('expected_revision') and data['expected_revision'] != self.instance.updated_at.isoformat():
+            self.add_error(None, 'This document changed. Reload the latest version before saving. Your entered details are retained.')
         issue, expiry = data.get('issue_date'), data.get('expiration_date')
         if issue and expiry and expiry < issue:
             self.add_error('expiration_date', 'Expiration cannot be before the issue date.')

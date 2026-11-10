@@ -2,8 +2,8 @@
   <summary>More{% if more_active %}<span class="crm-profile-tool-current"> · {{ more_active }}</span>{% endif %}</summary>
   <div>
     <p>Profile details</p>
-    {% for item in detail_items %}<a href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>{{ item.label }}</a>{% endfor %}
-    {% if can_recruiting and section != 'recruiting' %}<a href="{% url 'recruiting:candidate' participant.pk %}">Recruiting management</a>{% endif %}
+    {% for item in detail_items %}<a{% if item.key != 'tasks' %} data-record-editor data-profile-manager{% endif %} href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>{{ item.label }}</a>{% endfor %}
+    {% if source_tools_url %}<a href="{{ source_tools_url }}">Source &amp; identity tools</a>{% endif %}
     {% if perms.participants.manage_portal_invitations %}<a href="{% url 'participants:portal-invitations' %}?participant={{ participant.pk }}">Participant portal invitation</a>{% endif %}
     {% if section == 'overview' %}{% include 'participants/profile_jumps.html' with in_profile_tools=True %}{% endif %}
   </div>

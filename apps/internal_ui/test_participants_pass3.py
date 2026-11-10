@@ -217,11 +217,13 @@ class ContinuousProfileCorrectionsTests(TestCase):
         for text in ('SYNTHETIC old resume.txt', 'SYNTHETIC private continuous note',
                      'SYNTHETIC older training', 'SYNTHETIC older license',
                      'SYNTHETIC ambiguous legacy', 'SYNTHETIC employer',
-                     'Assessment results', 'No linked simulator results recorded.',
-                     'SYNTHETIC continuous profile event', 'Recent factual activity'):
+                     'Assessment results', 'No assessment results recorded under your permissions.',
+                     'Event participation not recorded.', 'Recent history'):
             self.assertContains(response,text)
-        self.assertContains(response,'Registration does not prove attendance.')
-        self.assertContains(response,'No official experience sessions recorded.')
+        self.assertNotContains(response,'SYNTHETIC continuous profile event')
+        history = self.client.get(reverse('participants:staff-profile', args=[self.person.pk]), {'section':'events'}, HTTP_X_BTW_EDITOR='1')
+        self.assertContains(history,'SYNTHETIC continuous profile event')
+        self.assertContains(history,'Registration only')
         self.assertContains(response,'+ Internal Note')
         self.assertContains(response,reverse('participants:staff-document-download',args=[self.document.uuid]))
 
@@ -313,6 +315,6 @@ class ContinuousProfileCorrectionsTests(TestCase):
         response=self.client.get(reverse('participants:staff-profile',args=[person.pk]))
         for text in ('No active documents recorded.','No active internal notes recorded.',
                      'No education or training recorded.','No licenses or certifications recorded.',
-                     'No event registrations recorded.',
+                     'Event participation not recorded.',
                      '0.0 years of reported overall experience'):
             self.assertContains(response,text)

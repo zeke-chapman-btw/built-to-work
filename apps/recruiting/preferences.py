@@ -15,6 +15,8 @@ def current_preferences(participant):
     career = ParticipantCareerProfile.objects.filter(participant=participant).first()
     confirmed = bool(row and row.revision)
     def classified(field, legacy):
+        if field == 'employment_classification' and row and row.current_employment_status is not None:
+            return {'value':dict(RecruitingProfile.CURRENT_EMPLOYMENT).get(row.current_employment_status,'Unknown'), 'source':'Current employment status', 'id':None}
         choice = getattr(row, field, None)
         if choice:
             return {'value': choice.label, 'source': 'Current classification' +
@@ -31,8 +33,8 @@ def current_preferences(participant):
     return {'employment': classified('employment_classification', 'employment_status'),
         'availability': classified('availability_classification', 'work_availability'),
         'travel': {'yes': 'Yes', 'maybe': 'Maybe', 'no': 'No'}.get(effective_travel(career, travel_state), 'Not recorded'),
-        'relocation': yes_no(row.willing_to_relocate if row else None),
-        'interest': career.get_employment_interest_display() if career and career.employment_interest else 'Not recorded',
+        'relocation': ({'yes':'Yes','maybe':'Maybe','no':'No'}.get(row.relocation_preference,'Not recorded') if row and row.relocation_preference is not None else yes_no(row.willing_to_relocate if row else None)),
+        'interest': {'seeking':'Yes','open':'Maybe','not_seeking':'No'}.get(career.employment_interest if career else '', 'Not recorded'),
         'historical_employment': career.employment_status if career else '',
         'historical_availability': career.work_availability if career else ''}
 
@@ -57,6 +59,8 @@ def initial_preferences(participant):
         'profile_revision': profile_revision(participant),
         'employment_classification': row.employment_classification_id if row else None,
         'availability_classification': row.availability_classification_id if row else None,
-        'willing_to_relocate': choice(row.willing_to_relocate if row else None),
+        'current_employment_status': (row.current_employment_status if row and row.current_employment_status is not None else '__retained__' if (row and row.employment_classification_id) or (career and career.employment_status and not (row and row.revision)) else ''),
+        'retained_employment_label': current_preferences(participant)['employment']['value'],
+        'willing_to_relocate': row.relocation_preference if row and row.relocation_preference is not None else choice(row.willing_to_relocate if row else None),
         'willing_to_travel': effective_travel(career, travel_state) or '',
         'employment_interest': career.employment_interest if career else ''}

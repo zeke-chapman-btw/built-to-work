@@ -185,10 +185,12 @@ def discover(user, params, *, strict=False):
     from apps.recruiting.models import RecruitingProfile
     extra = canonical_records(RecruitingProfile.objects.all())
     relocation = d.get("relocation")
-    if relocation in {"yes", "no"}:
-        qs = qs.filter(pk__in=extra.filter(willing_to_relocate=relocation == "yes").values("_canonical_person"))
+    if relocation in {"yes", "maybe", "no"}:
+        condition = Q(relocation_preference=relocation)
+        if relocation != "maybe":condition |= Q(relocation_preference__isnull=True, willing_to_relocate=relocation == "yes")
+        qs = qs.filter(pk__in=extra.filter(condition).values("_canonical_person"))
     elif relocation == "unknown":
-        qs = qs.exclude(pk__in=extra.filter(willing_to_relocate__isnull=False).values("_canonical_person"))
+        qs = qs.exclude(pk__in=extra.filter(Q(relocation_preference__in=["yes","maybe","no"]) | Q(relocation_preference__isnull=True,willing_to_relocate__isnull=False)).values("_canonical_person"))
     for key in ("employment_classification", "availability_classification"):
         if d.get(key):
             qs = qs.filter(pk__in=extra.filter(**{key + "__key": d[key]}).values("_canonical_person"))

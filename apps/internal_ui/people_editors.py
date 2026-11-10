@@ -7,7 +7,7 @@ from .record_editors import local_return as shared_local_return,editor_response,
 from .section_editors import has_edit_conflict
 local_return=partial(shared_local_return,max_length=16384,max_fields=60)
 
-SECTIONS={'overview','relationship','recruiting','career','qualifications','documents','assessments','events','acquisition','notes','activity','tasks'}
+SECTIONS={'overview','relationship','recruiting','career','qualifications','documents','assessments','events','acquisition','notes','activity','tasks','source-event'}
 def intake_queue_origin(request):
     queue=reverse('participants:intake-review-queue')
     return local_return(request.GET.get('from_queue',''),fallback=queue,allowed={queue:{'status','page'}})
@@ -52,7 +52,7 @@ def people_return(request,person=None,fallback=None):
     allowed[reverse('participants:saved-views')]=directory_keys()
     if person:
         from apps.crm.navigation import QUERY_KEYS
-        allowed[reverse('participants:staff-profile',args=[person.pk])]=QUERY_KEYS|{'archived'}
+        allowed[reverse('participants:staff-profile',args=[person.pk])]=QUERY_KEYS|{'archived','tools'}
         for name in ['staff-participant-qualifications','staff-participant-documents','staff-participant-review']:
             allowed[reverse('participants:'+name,args=[person.pk])]={'page','q','status','state','from','return_to'}
     value=request.POST.get('return_to',request.GET.get('return_to',''))
@@ -63,6 +63,7 @@ def people_return(request,person=None,fallback=None):
         for key,item in parse_qsl(parts.query,keep_blank_values=True):
             if key=='from':item=local_return(item,fallback=listing,allowed=people_lists())
             if key=='section' and item not in SECTIONS:return default
+            if key=='tools' and item!='source':return default
             if key=='return_to':
                 item=clean(item,'',depth+1) if depth<2 else ''
                 if not item:continue
@@ -114,6 +115,9 @@ def people_render(request,template_name,context=None,**kwargs):
     section='documents' if 'document' in key else 'qualifications' if 'qualification' in key else 'overview'
     ctx['people_return_url']=people_return(request,person,ctx.get('return_url') or (profile_link(request,person,section) if person else reverse('participants:staff-directory')))
     if form:ctx['people_form_groups']=form_groups(form,career)
+    from apps.participants.profile_managers import manager_response
+    managed = manager_response(request, template_name, ctx, **kwargs)
+    if managed is not None:return managed
     if template_name=='participants/staff_document_categories.html':
         ctx.update(back=people_return(request,fallback=reverse('participants:staff-document-categories')),page_title='Edit document category' if ctx.get('editing') else ('Add document category' if request.headers.get('X-BTW-Editor')=='1' else 'Document categories'),save_label='Save category',cautious_save=True,editor_return_label='current records',fields_template='participants/document_category_fields.html',full_page_editor=request.headers.get('X-BTW-Editor')!='1')
         if request.headers.get('X-BTW-Editor')=='1':return editor_response(request,template=template_name,context=ctx,panel='internal/ui/record_form_panel.html')

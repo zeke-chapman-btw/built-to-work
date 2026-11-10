@@ -37,7 +37,7 @@ class ProfileCardForm(forms.Form):
             field = model._meta.get_field(name).formfield()
             field.label = {'career_interests': 'Trade and career interests', 'skills_interests': 'Reported skills and interests',
                 'years_of_experience': 'Reported overall experience (years)', 'education_training': 'Education & training',
-                'employment_interest': 'Interest in work', 'preferred_work_type': 'Work arrangement',
+                'employment_interest': 'Interested in work', 'preferred_work_type': 'Work arrangement',
                 'preferred_locations': 'Preferred work locations'}.get(name, field.label)
             if isinstance(field.widget, forms.Textarea):
                 field.widget.attrs['rows'] = 3
@@ -49,6 +49,7 @@ class ProfileCardForm(forms.Form):
             self.fields['type_revision'] = forms.CharField(widget=forms.HiddenInput)
             self.initial.update(primary_identifier=person.primary_identifier, type_revision=type_revision(person))
         if card == 'preferences':
+            self.fields['employment_interest'].choices = [('', 'Unknown'),('seeking','Yes'),('open','Maybe'),('not_seeking','No')]
             self.fields['travel'] = forms.ChoiceField(required=False, label='Willing to travel', choices=[('', 'Unknown'), ('yes', 'Yes'), ('maybe', 'Maybe'), ('no', 'No')])
             state = IntakeFieldState.objects.filter(participant=person, destination='travel_willingness').first()
             self.initial['travel'] = effective_travel(record, state) or ''
@@ -64,12 +65,20 @@ class ProfileCardForm(forms.Form):
                 from apps.recruiting.forms import PreferencesForm
                 initial = initial_preferences(person)
                 preferences = PreferencesForm(initial=initial)
-                for key in ('employment_classification', 'availability_classification', 'willing_to_relocate'):
+                for key in ('current_employment_status', 'employment_classification', 'availability_classification', 'willing_to_relocate'):
                     self.fields[key] = preferences.fields[key]
                     self.initial[key] = initial[key]
                 self.fields['recruiting_revision'] = forms.IntegerField(widget=forms.HiddenInput)
                 self.initial['recruiting_revision'] = initial['revision']
+        if card == 'preferences':
+            self.order_fields(['employment_interest','travel','willing_to_relocate','current_employment_status','preferred_work_type','preferred_locations','employment_classification','availability_classification'])
         self.initial['revision'] = profile_revision(person)
+        if card == 'preferences':
+            primary=['employment_interest','travel','willing_to_relocate','current_employment_status']
+            self.preference_primary=[self[name] for name in primary if name in self.fields]
+            self.preference_additional=[field for field in self.visible_fields() if field.name not in primary]
+            self.retained_employment=record.employment_status if record else ''
+            self.retained_availability=record.work_availability if record else ''
 
     def clean_contact_email(self):
         from .normalization import normalize_email
@@ -78,6 +87,12 @@ class ProfileCardForm(forms.Form):
     def clean_contact_phone(self):
         from .normalization import normalize_phone
         return normalize_phone(self.cleaned_data['contact_phone'])
+
+    def clean(self):
+        data=super().clean()
+        if 'current_employment_status' not in self.data:
+            data.pop('current_employment_status',None)
+        return data
 
 
 @transaction.atomic
@@ -106,8 +121,14 @@ def save_card(*, actor, participant_id, card, data):
         recruiting = RecruitingProfile.objects.select_for_update().filter(participant=person).first()
         if data['recruiting_revision'] != (recruiting.revision if recruiting else 0):
             raise ValidationError('These recruiting preferences changed. Reload before saving.')
-        class_fields = ('employment_classification', 'availability_classification', 'willing_to_relocate')
-        if any(data[key] != getattr(recruiting, key, None) for key in class_fields):
+        class_fields = [key for key in ('current_employment_status', 'employment_classification', 'availability_classification', 'willing_to_relocate') if key in data]
+        from apps.recruiting.preferences import initial_preferences
+        initial=initial_preferences(person)
+        def previous(key):
+            if key=='current_employment_status':return initial[key]
+            if key=='willing_to_relocate':return {'yes':True,'maybe':'maybe','no':False}.get(initial[key])
+            return getattr(recruiting,key,None)
+        if any(data[key] != previous(key) for key in class_fields):
             save_preferences(actor=actor, participant_id=person.pk, data={key: data[key] for key in class_fields},
                 expected_revision=data['recruiting_revision'], why='Staff updated Employment & preferences')
     changed = {key: data[key] for key in fields if not record or data[key] != getattr(record, key)}
@@ -170,5 +191,5 @@ def edit(request, participant_id, card):
                 return people_saved(request, 'participants:staff-profile', participant_id=person.pk)
     return editor_response(request, template='participants/compact_form.html', panel='internal/ui/record_form_panel.html',
         context=context(request, participant=person, form=form, page_title='Edit ' + CARDS[card][0],
-            back=people_return(request, person, reverse('participants:staff-profile', args=[person.pk])), save_label='Save changes', fields_template='internal/ui/section_fields.html',
+            back=people_return(request, person, reverse('participants:staff-profile', args=[person.pk])), save_label='Save changes', fields_template='participants/preference_card_fields.html' if card == 'preferences' else 'internal/ui/section_fields.html',
             cautious_save=True, editor_return_label='profile', save_conflict=conflict, full_page_editor=request.headers.get('X-BTW-Editor') != '1'))

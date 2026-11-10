@@ -44,7 +44,8 @@ def people_navigation(context):
 @register.inclusion_tag('participants/profile_sections.html',takes_context=True)
 def profile_sections(context):
     request=context['request'];person=context['participant'];active=context.get('section','overview')
-    items=[('overview','Overview',True),('career','Skills & experience',True),('qualifications','Qualifications',context.get('can_view_qualifications')),('documents','Documents',context.get('can_view_documents')),('assessments','Assessments',any(context.get(k) for k in ['can_view_quiz_results','can_view_game_results','can_view_historical_scores','can_view_simulator_results'])),('events','Events',context.get('can_view_registrations')),('notes','Internal notes',context.get('can_view_notes')),('acquisition','Details & history',True),('activity','Activity',context.get('can_view_activity')),('tasks','Linked tasks',True)]
+    originals=request.user.has_perm('participants.view_registrationsubmission')
+    items=[('overview','Overview',True),('career','Skills & experience',True),('qualifications','Qualifications',context.get('can_view_qualifications')),('documents','Documents',context.get('can_view_documents')),('assessments','Assessments',any(context.get(k) for k in ['can_view_quiz_results','can_view_game_results','can_view_historical_scores','can_view_simulator_results'])),('events','Events',context.get('can_view_registrations')),('notes','Internal notes',context.get('can_view_notes')),('acquisition','Original answers',originals),('activity','Activity',context.get('can_view_activity')),('tasks','Linked tasks',True)]
     rows=[dict(key=key,label=label,url=profile_link(request,person,key),active=key==active) for key,label,allowed in items if allowed]
     areas=[('overview','Profile',True),('relationship','Relationship',context.get('crm_btw_allowed') or context.get('crm_employer_allowed')),('recruiting','Recruiting',context.get('can_recruiting'))]
     primary=[dict(key=key,label=label,url=profile_link(request,person,key),active=(active==key if key!='overview' else active not in {'relationship','recruiting'})) for key,label,allowed in areas if allowed]
@@ -54,6 +55,11 @@ def profile_sections(context):
 def profile_tools(context):
     result=profile_sections(context)
     result.update(participant=context['participant'],perms=context.get('perms'),can_recruiting=context.get('can_recruiting'))
+    from apps.accounts.operational_access import general_recruiter
+    user=context['request'].user
+    authorized=context.get('can_manage_acquisition') or context.get('can_view_internal_review') or user.has_perms(('participants.view_participant','events.view_participantmatchreview'))
+    if authorized and (not general_recruiter(user) or user.has_perm('participants.view_registrationsubmission')):
+        result['source_tools_url']=profile_link(context['request'],context['participant'],'acquisition')+'&tools=source'
     return result
 
 @register.simple_tag(takes_context=True)
@@ -157,3 +163,10 @@ def people_score(value):
 def people_activity_label(value):
     words = re.sub(r"[_.]+", " ", str(value or "")).strip()
     return words[:1].upper() + words[1:].lower()
+
+@register.simple_tag(takes_context=True)
+def profile_evidence_page(context, key, page):
+    allowed={'quiz_page','game_page','simulator_page','historical_page','page'}
+    if key not in allowed:return ''
+    query=context['request'].GET.copy();query[key]=str(page)
+    return '?'+query.urlencode()

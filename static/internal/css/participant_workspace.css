@@ -628,3 +628,18 @@ body.internal-app.btw-platform.has-participants-explorer #main-content .people-e
 @media(max-width:639px) {
  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form>.ex-filter-actions {grid-column:1/-1;justify-content:flex-start}
 }
+
+/* Participant follow-up: compact facts, consistent text actions and paired evidence. */
+.pf-results-pair { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; }
+.pf-compact-row { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) auto; gap:12px; align-items:start; padding:10px 0; border-bottom:1px solid var(--line); font-size:14px; }
+.pf-compact-row:last-child { border-bottom:0; }
+.pf-compact-row > * { min-width:0; overflow-wrap:anywhere; }
+.pf-compact-row small { display:block; color:var(--muted); font-size:12px; }
+.pf-compact-row time { font-size:12px; color:var(--muted); }
+.pf-note-action { font-size:13px; font-weight:500; }
+.pf-original-answers dd { white-space:normal; overflow-wrap:anywhere; }
+.participant-manager [data-editor-query] { display:flex; gap:10px; align-items:end; flex-wrap:wrap; margin-bottom:20px; }
+.participant-manager [data-editor-query] .field { flex:1; min-width:160px; }
+@media(max-width:767px){.pf-results-pair{grid-template-columns:minmax(0,1fr)}.pf-compact-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.pf-compact-row time{grid-column:1/-1}.participant-manager [data-editor-query] .field{min-width:0;width:100%}}
+
+.p3-reading-section a[data-record-editor] { display:inline-block; max-width:100%; }

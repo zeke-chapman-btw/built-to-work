@@ -102,7 +102,8 @@ class HomeBusinessOverviewTests(TestCase):
         self.assertEqual(queue.context['reviews'].paginator.count, 3)
         self.assertEqual(response.context['home_intake_count'], queue.context['reviews'].paginator.count)
         self.assertEqual(next(a for a in response.context['home_attention'] if a['id']=='intake')['count'], 3)
-        self.assertContains(response, '?status=open')
+        self.assertEqual(next(a for a in response.context['home_attention'] if a['id']=='intake')['url'], reverse('participants:intake-review-queue')+'?status=open')
+        self.assertNotContains(response, 'id="home-review-queues"')
         self.assertNotContains(response, 'Everything is ready')
 
     def test_intake_permission_guard_prevents_even_reading_the_restricted_count(self):
@@ -123,12 +124,15 @@ class HomeBusinessOverviewTests(TestCase):
         with patch('apps.internal_ui.home_data._intake_review_count', side_effect=DatabaseError('synthetic')):
             response = self.page()
         self.assertEqual([a['id'] for a in response.context['home_attention']], ['tasks'])
-        self.assertContains(response, 'Intake review check unavailable')
+        self.assertIn('Intake review check unavailable', response.context['home_attention_unavailable'])
+        self.assertIsNone(response.context['home_intake_count'])
+        self.assertNotContains(response, 'id="home-review-queues"')
         self.assertNotContains(response, 'No flagged items')
         with patch('apps.internal_ui.home_data._work_data', side_effect=DatabaseError('synthetic')):
             response = self.page()
         self.assertEqual([a['id'] for a in response.context['home_attention']], ['intake'])
-        self.assertContains(response, 'Overdue task check unavailable')
+        self.assertIn('Overdue task check unavailable', response.context['home_attention_unavailable'])
+        self.assertContains(response, 'My Tasks')
         self.assertIsNone(response.context['home_attention_count'])
 
     def test_zero_connected_sources_use_limited_truthful_empty_state(self):
@@ -148,7 +152,8 @@ class HomeBusinessOverviewTests(TestCase):
             self.event(name='SYNTHETIC hidden '+state, status=state)
         response = self.page()
         self.assertEqual([e.pk for e in response.context['home_events']], [current.pk,future[0].pk,future[1].pk])
-        self.assertContains(response, '>Current</span>')
+        self.assertContains(response, current.name)
+        self.assertNotContains(response, '>Current</span>')
         self.assertNotContains(response, 'SYNTHETIC ended')
         self.assertNotContains(response, 'SYNTHETIC hidden')
 
@@ -159,11 +164,12 @@ class HomeBusinessOverviewTests(TestCase):
         with patch('django.utils.timezone.now', return_value=fixed):
             response = self.page()
         self.assertContains(response, 'Oct 27, 2026')
-        self.assertContains(response, '8:30 PM')
-        self.assertContains(response, '9:30 PM')
-        markup=Markup();markup.feed(response.content.decode())
-        self.assertIn('27', ''.join(markup.with_class('dashboard-event-date')[0]['text']))
-        self.assertNotIn('28', ''.join(markup.with_class('dashboard-event-date')[0]['text']))
+        self.assertNotContains(response, '8:30 PM')
+        self.assertNotContains(response, '9:30 PM')
+        detail = self.client.get(reverse('events:event_detail', args=[event.pk]))
+        self.assertContains(detail, '8:30 PM')
+        self.assertContains(detail, '9:30 PM')
+        self.assertNotContains(response, 'Oct 28, 2026')
 
     def test_registration_counts_match_existing_evidence_not_tickets_or_void_rows(self):
         event = self.event()
@@ -191,13 +197,15 @@ class HomeBusinessOverviewTests(TestCase):
         response=self.page(self.staff)
         self.assertIsNone(response.context['home_events'][0].directory_registered)
         self.assertEqual(response.context['home_registration_state'],'restricted')
-        self.assertContains(response,'Registered count unavailable for your role')
+        self.assertNotContains(response,'Registered count unavailable for your role')
+        self.assertContains(response,event.name)
         with patch('apps.internal_ui.event_presentation.directory_counts',side_effect=DatabaseError('synthetic')):
             response=self.page()
         self.assertContains(response,event.name)
         self.assertEqual(response.context['home_registration_state'],'unavailable')
         self.assertIsNone(response.context['home_events'][0].directory_registered)
-        self.assertContains(response,'Registered count could not be loaded')
+        self.assertNotContains(response,'Registered count could not be loaded')
+        self.assertNotContains(response,'Registered: 0')
 
     def test_scoped_events_use_existing_assignee_and_manager_destinations(self):
         assigned=self.event(name='SYNTHETIC assigned')
@@ -291,6 +299,9 @@ class HomeBusinessOverviewTests(TestCase):
             end_at=datetime(2026,10,30,21,tzinfo=UTC), daily_start_time=time(9), daily_end_time=time(17))
         with patch('django.utils.timezone.now',return_value=datetime(2026,10,27,12,tzinfo=UTC)):
             response=self.page()
-        self.assertContains(response,'Daily hours: 9:00 AM – 5:00 PM')
+        self.assertNotContains(response,'Daily hours:')
+        detail=self.client.get(reverse('events:event_detail',args=[event.pk]))
+        self.assertContains(detail,'9:00 AM')
+        self.assertContains(detail,'5:00 PM')
         self.assertContains(response,'Oct 28, 2026 – Oct 30, 2026')
         self.assertNotContains(response,'Window:')

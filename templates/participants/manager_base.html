@@ -1,0 +1,5 @@
+{% extends 'internal/ui/editor_panel.html' %}
+{% block editor_content %}<div class="btw-editor-body participant-manager" data-profile-manager-panel{% if save_conflict %} data-editor-conflict{% endif %}>
+{% block people_content %}{% endblock %}
+<div role="status" data-editor-status></div></div>
+<footer class="btw-editor-actions"><button type="button" class="button secondary" data-editor-manager-back hidden>Back</button><button type="button" class="button secondary" data-editor-close>Close</button></footer>{% endblock %}

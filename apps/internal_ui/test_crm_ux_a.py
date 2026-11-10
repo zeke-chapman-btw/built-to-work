@@ -69,9 +69,14 @@ class CrmUxProfileTests(TestCase):
         self.assertContains(relationship, 'id="btw-interactions"')
         recruiting = self.client.get(self.url, {'section': 'recruiting'})
         self.assertContains(recruiting, 'id="profile-recruiting"')
-        self.assertContains(response, 'Registration does not prove attendance')
-        self.assertContains(response, 'no combined score')
-        self.assertContains(response, 'Source, intake &amp; correction history')
+        self.assertContains(response, 'Event participation')
+        self.assertContains(response, 'Original submitted answers')
+        self.assertNotContains(response, 'no combined score')
+        event_history = self.client.get(self.url, {'section':'events'}, HTTP_X_BTW_EDITOR='1')
+        self.assertContains(event_history, 'Registrations — separate from participation')
+        source_tools = self.client.get(self.url, {'section':'acquisition','tools':'source'})
+        self.assertContains(source_tools, 'Permanent system reference')
+        self.assertContains(source_tools, str(self.person.identity_uuid))
         self.assertContains(response, 'SYNTHETIC welding')
         self.assertEqual(Participant.objects.get(pk=self.person.pk).identity_uuid, self.person.identity_uuid)
         self.career.refresh_from_db(); self.assertIs(self.career.willing_to_travel, False)
@@ -149,7 +154,7 @@ class CrmUxProfileTests(TestCase):
             response = self.client.get(self.url)
             header = response.content.decode().split('<section id="profile-identity"', 1)[1].split('</header>', 1)[0]
             self.assertNotIn('Jump to section', header)
-            self.assertEqual('aria-label="Edit profile details"' in header, can_edit)
+            self.assertEqual('aria-label="Manage profile details"' in header, can_edit)
             if can_edit:
                 self.assertIn(reverse('participants:profile-card-edit', args=[self.person.pk, 'identity']), header)
                 self.assertIn('return_to=', header)
@@ -158,7 +163,7 @@ class CrmUxProfileTests(TestCase):
         self.person.save(update_fields=['archived_at'])
         response = self.client.get(self.url)
         header = response.content.decode().split('<section id="profile-identity"', 1)[1].split('</header>', 1)[0]
-        self.assertNotIn('aria-label="Edit profile details"', header)
+        self.assertNotIn('aria-label="Manage profile details"', header)
 
     def test_lighter_skill_rows_retain_zero_experience_source_and_expandable_evidence(self):
         from apps.participants.qualification_models import ParticipantQualification

@@ -151,6 +151,9 @@ def evaluate_rule(actor,item,career,extra,rule):
         if value=='maybe':
             return None,'Travel preference is Maybe; confirm with the candidate.',False
     elif kind=='relocation':
+        if extra and extra.relocation_preference is not None:
+            value=extra.relocation_preference
+            return value==rule['value'],f'Recorded relocation preference: {value or "unknown"}; travel is separate.',not bool(value)
         if extra and extra.willing_to_relocate is not None:
             value='yes' if extra.willing_to_relocate else 'no'
             return value==rule['value'],f'Recorded relocation preference: {value}; travel is separate.',False

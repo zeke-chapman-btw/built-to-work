@@ -1,0 +1,1 @@
+{% load people_ui tz %}<div class="pf-history" role="list">{% for item in history_rows %}<div class="pf-compact-row" role="listitem"><span>{{ item.label|people_activity_label }}</span><span>{{ item.actor }}</span><time>{{ item.at|localtime|date:'M j, Y H:i T' }}</time></div>{% empty %}<p>No history recorded under your permissions.</p>{% endfor %}</div>

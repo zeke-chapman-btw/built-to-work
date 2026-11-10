@@ -1,3 +1,4 @@
+from django.core.paginator import Paginator
 import uuid
 from django.contrib import messages
 from django.db import IntegrityError, transaction
@@ -93,7 +94,7 @@ def qualification_approval_detail(request, kind, object_id):
                 return people_saved(request,"participants:staff-qualification-approvals")
     return render(request, "participants/qualification_approval_detail.html", {
         "kind": kind, "target": target, "participant": participant, "summary": _summary(kind, target),
-        "history": ParticipantVerificationRecord.objects.filter(**{kind: target}).select_related("reviewer", "evidence_document", "supersedes"),
+        "history": Paginator(ParticipantVerificationRecord.objects.filter(**{kind: target}).select_related("reviewer", "evidence_document", "supersedes").order_by("-created_at","-pk"),25).get_page(request.GET.get("page")),
         "form": form, "can_decide": can_review_qualification_approvals(request.user),
         "participant_qualification_url": reverse("participants:staff-participant-qualifications", kwargs={"participant_id": participant.pk}),
         "page_title": "Review verification", "page_description": str(participant),

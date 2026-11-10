@@ -1,0 +1,1 @@
+{% load tz %}{% for row in participation_events %}{% timezone row.event__timezone_name %}<div class="pf-compact-row"><span><strong>{{ row.event__name }}</strong><small>Recorded official station activity</small></span><time>{{ row.first_activity|date:'M j, Y' }}</time></div>{% endtimezone %}{% empty %}<p class="p3-empty">Event participation not recorded.</p>{% endfor %}

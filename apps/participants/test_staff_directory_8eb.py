@@ -47,9 +47,11 @@ class StaffParticipantDirectoryTests(TestCase):
 
     def test_profile_is_authorized_and_shows_safe_empty_sections(self):
         self.assertTrue(self.client.login(username="directory-staff", password="test-password"))
-        response = self.client.get(reverse("participants:staff-profile", args=[self.person.pk]))
+        url = reverse("participants:staff-profile", args=[self.person.pk])
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200, getattr(response, "url", None))
-        self.assertNotContains(response, "Event registrations")
+        self.assertNotContains(response, "View event evidence &amp; registrations")
+        self.assertEqual(self.client.get(url, {"section":"events"}, HTTP_X_BTW_EDITOR="1").status_code, 403)
         self.assertNotContains(response, "Documents")
         self.assertNotContains(response, "Quiz activity")
         self.assertNotContains(response, "Game activity")
@@ -68,7 +70,8 @@ class StaffParticipantDirectoryTests(TestCase):
         self.assertTrue(self.client.login(username="directory-staff", password="test-password"))
         url = reverse("participants:staff-profile", args=[self.person.pk])
         response = self.client.get(url)
-        self.assertNotContains(response, "Event registrations")
+        self.assertNotContains(response, "View event evidence &amp; registrations")
+        self.assertEqual(self.client.get(url, {"section":"events"}, HTTP_X_BTW_EDITOR="1").status_code, 403)
         self.assertNotContains(response, "Private document files remain available only")
         permissions = Permission.objects.filter(
             content_type__app_label="events", codename="view_eventregistration"
@@ -77,7 +80,8 @@ class StaffParticipantDirectoryTests(TestCase):
         )
         self.staff.user_permissions.add(*permissions)
         response = self.client.get(url)
-        self.assertContains(response, "Event registrations")
+        self.assertContains(response, "Event participation")
+        self.assertContains(self.client.get(url, {"section":"events"}, HTTP_X_BTW_EDITOR="1"), "Registrations — separate from participation")
         self.assertContains(response, "Private documents")
         self.assertContains(self.client.get(url, {"section": "documents"}), "Private document files remain available only through the authorized document workflow")
 

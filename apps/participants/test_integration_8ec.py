@@ -173,7 +173,8 @@ class ParticipantIntegration8ECTests(TestCase):
         self.assertEqual(self.upload().status_code,403)
 
     def test_participant_review_history_attribution_and_idempotency(self):
-        self.assertContains(self.client.get(self.profile_url),'Not reviewed')
+        self.assertNotContains(self.client.get(self.profile_url),'Not reviewed')
+        self.assertContains(self.client.get(self.profile_url, {'section':'acquisition','tools':'source'}),'Not reviewed')
         data=self.review_data(status='approved',reviewer='someone-else',reviewed_at='2001-01-01')
         self.assertRedirects(self.client.post(self.review_url,data),self.profile_url)
         review=self.person.internal_reviews.get()

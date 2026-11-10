@@ -14,6 +14,7 @@ from apps.participants.qualification_models import ParticipantQualification, Qua
 
 
 class ParticipantQualificationForm(forms.ModelForm):
+    expected_revision = forms.CharField(required=False, widget=forms.HiddenInput)
     confirm_verified_change = forms.BooleanField(required=False, label="I understand that changing a verified qualification requires a new review")
     audit_reason = forms.CharField(max_length=500, label="Reason for this change")
 
@@ -24,6 +25,7 @@ class ParticipantQualificationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance.pk:self.initial['expected_revision'] = self.instance.updated_at.isoformat()
         choices = QualificationCatalogEntry.objects.filter(is_active=True)
         if self.instance.pk and self.instance.catalog_entry_id:
             choices = QualificationCatalogEntry.objects.filter(Q(is_active=True) | Q(pk=self.instance.catalog_entry_id))
@@ -34,6 +36,12 @@ class ParticipantQualificationForm(forms.ModelForm):
         self.fields["catalog_entry"].label = "Catalog qualification"
         self.fields["custom_name"].help_text = "Use a custom qualification when it is not in the catalog."
         self.fields["experience_details"].label = "Experience and credential details"
+    def clean(self):
+        data=super().clean()
+        if self.instance.pk and data.get('expected_revision') and data['expected_revision'] != self.instance.updated_at.isoformat():
+            self.add_error(None, 'This qualification changed. Reload the latest version before saving. Your entered details are retained.')
+        return data
+
     def clean_is_self_reported(self):
         return True if self.instance.source_submission_id else self.cleaned_data["is_self_reported"]
 

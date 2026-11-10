@@ -1,6 +1,7 @@
 """Synthetic Pass 1 contracts: navigation policy, disclosure and event context."""
 from datetime import UTC, datetime
 from html.parser import HTMLParser
+from urllib.parse import urlsplit
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
@@ -18,9 +19,11 @@ class LinkParser(HTMLParser):
         super().__init__()
         self.depth = 0
         self.nested = False
+        self.links = []
 
     def handle_starttag(self, tag, attrs):
         if tag == 'a':
+            self.links.append(dict(attrs))
             self.nested |= self.depth > 0
             self.depth += 1
 
@@ -124,7 +127,10 @@ class CorrectivePassOneTests(TestCase):
 
     def test_directory_context_link_reaches_event_and_preserves_staff_tool(self):
         response=self.client.get('/events/?view=all&q=SYNTHETIC')
-        self.assertContains(response,'data-event-open="'+str(self.event.pk)+'" href="'+reverse('events:event_detail',args=[self.event.pk])+'"')
+        links=LinkParser();links.feed(response.content.decode())
+        destination=reverse('events:event_detail',args=[self.event.pk])
+        self.assertTrue(any(urlsplit(link.get('href','')).path==destination for link in links.links))
+        self.assertFalse(links.nested)
         self.assertContains(self.client.get(reverse('events:event_detail',args=[self.event.pk])),reverse('staffing:event',args=[self.event.pk]))
 
 

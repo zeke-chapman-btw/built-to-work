@@ -1,7 +1,7 @@
 from pathlib import Path
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.db.models import Q
 from django.core.paginator import Paginator
@@ -62,10 +62,21 @@ def participant_documents(request, participant_id):
     participant = get_object_or_404(Participant, pk=participant_id)
     docs = participant.documents.select_related(
         'category', 'uploaded_by', 'replaces'
-    ).prefetch_related('qualification_links__qualification__catalog_entry', 'audit_events__actor')
+    ).prefetch_related('qualification_links__qualification__catalog_entry')
     from .verification_models import ParticipantVerificationRecord
     from django.db.models import Prefetch
     docs = docs.prefetch_related(Prefetch('verification_records', queryset=ParticipantVerificationRecord.objects.select_related('reviewer', 'evidence_document', 'document').order_by('-created_at', '-pk'), to_attr='_workspace_verifications'))
+    can_view_audit = request.user.has_perm('participants.view_participant_document_audit') or request.user.has_perm('participants.view_participantdocumentaudit')
+    if request.method == 'GET' and request.GET.get('audit'):
+        if not can_view_audit:raise PermissionDenied
+        from uuid import UUID
+        try:document_uuid=UUID(request.GET['audit'])
+        except (ValueError,TypeError):raise Http404
+        target=get_object_or_404(ParticipantDocument,participant=participant,uuid=document_uuid)
+        history=Paginator(target.audit_events.select_related('actor','actor__staff_profile').order_by('-created_at','-pk'),25).get_page(request.GET.get('page'))
+        return render(request,'participants/document_history_manager.html',{'participant':participant,'document':target,'history':history,'page_title':'Document history'})
+    if can_view_audit:
+        docs=docs.prefetch_related(Prefetch('audit_events',queryset=ParticipantDocumentAudit.objects.select_related('actor').order_by('-created_at','-pk')[:5],to_attr='manager_audit_preview'))
     form = ParticipantDocumentForm(participant=participant)
     if request.method == 'POST':
         _require_staff(request.user, *MANAGE_PERMS)
@@ -156,6 +167,8 @@ def document_archive(request, document_uuid):
             document = get_object_or_404(
                 ParticipantDocument.objects.select_for_update(), uuid=document_uuid
             )
+            if request.POST.get('expected_revision') and request.POST['expected_revision'] != document.updated_at.isoformat():
+                return render(request,'participants/manager_action_conflict.html',{'participant':document.participant,'page_title':'Document changed','save_conflict':True,'entered_reason':reason})
             if document.state != ParticipantDocument.State.ARCHIVED:
                 document.state = ParticipantDocument.State.ARCHIVED
                 document.save(update_fields=['state', 'updated_at'])
@@ -172,7 +185,7 @@ def document_replace(request, document_uuid):
     )
     if previous.state != ParticipantDocument.State.ACTIVE:
         raise Http404('Only the current active document can be replaced.')
-    form = ParticipantDocumentForm(request.POST or None, request.FILES or None, participant=previous.participant)
+    form = ParticipantDocumentForm(request.POST or None, request.FILES or None, participant=previous.participant, initial={'expected_revision':previous.updated_at.isoformat()})
     if request.method == 'POST' and form.is_valid():
         upload = _safe_upload_name(form.cleaned_data['file'], form.validated_content_type)
         try:
@@ -181,6 +194,9 @@ def document_replace(request, document_uuid):
                     ParticipantDocument.objects.select_for_update().select_related('participant'),
                     uuid=document_uuid, state=ParticipantDocument.State.ACTIVE,
                 )
+                if form.cleaned_data.get('expected_revision') and form.cleaned_data['expected_revision'] != previous.updated_at.isoformat():
+                    form.add_error(None, 'This document changed. Reload before replacing it. Choose your file again after reloading.')
+                    return render(request, 'participants/staff_document_replace.html', {'previous':previous,'participant':previous.participant,'form':form,'page_title':'Replace document','save_conflict':True})
                 replacement = form.save(commit=False)
                 replacement.participant = previous.participant
                 replacement.uploaded_by = request.user

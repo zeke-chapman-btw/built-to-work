@@ -12,25 +12,34 @@ class PreferencesForm(ReasonForm):
     fingerprint = forms.CharField(widget=forms.HiddenInput)
     profile_revision = forms.CharField(required=False, widget=forms.HiddenInput)
     employment_interest = forms.ChoiceField(required=False,
-        choices=ParticipantCareerProfile._meta.get_field('employment_interest').choices)
+        choices=[('', 'Unknown'), ('seeking','Yes'), ('open','Maybe'), ('not_seeking','No')], label='Interested in work')
     willing_to_travel = forms.TypedChoiceField(choices=[('', 'Not recorded'), ('yes', 'Yes'), ('maybe', 'Maybe'), ('no', 'No')],
         coerce=lambda v: {'yes': True, 'maybe': 'maybe', 'no': False}.get(v), required=False, empty_value=None)
+    current_employment_status = forms.ChoiceField(choices=RecruitingProfile.CURRENT_EMPLOYMENT, required=False, label='Current employment status')
     employment_classification = forms.ModelChoiceField(queryset=Classification.objects.filter(kind='employment'), required=False)
     availability_classification = forms.ModelChoiceField(queryset=Classification.objects.filter(kind='availability'), required=False)
-    willing_to_relocate = forms.TypedChoiceField(choices=[('', 'Not recorded'), ('yes', 'Yes'), ('no', 'No')],
-        coerce=lambda v: {'yes': True, 'no': False}.get(v), required=False, empty_value=None)
+    willing_to_relocate = forms.TypedChoiceField(choices=[('', 'Unknown'), ('yes', 'Yes'), ('maybe', 'Maybe'), ('no', 'No')],
+        coerce=lambda v: {'yes': True, 'maybe':'maybe', 'no': False}.get(v), required=False, empty_value=None)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.initial.get('current_employment_status') == '__retained__':
+            self.fields['current_employment_status'].choices = list(RecruitingProfile.CURRENT_EMPLOYMENT) + [('__retained__', 'Retain: ' + self.initial.get('retained_employment_label', 'Previously recorded value'))]
         from django.db.models import Q
         for field, kind in [('employment_classification', 'employment'), ('availability_classification', 'availability')]:
             self.fields[field].queryset = Classification.objects.filter(kind=kind).filter(
                 Q(is_active=True) | Q(pk=self.initial.get(field)))
             self.fields[field].empty_label = 'Not recorded'
-        self.fields['employment_classification'].label = 'Current employment situation'
+        self.fields['employment_classification'].label = 'Employment classification (retained catalog)'
+        self.fields['employment_classification'].help_text = 'Retained classification; current employment status is recorded separately.'
         self.fields['availability_classification'].label = 'Current availability'
-        self.order_fields(['employment_classification', 'availability_classification', 'employment_interest',
-            'willing_to_travel', 'willing_to_relocate', 'reason', 'revision', 'fingerprint'])
+        self.order_fields(['employment_interest', 'willing_to_travel', 'willing_to_relocate', 'current_employment_status', 'employment_classification', 'availability_classification', 'reason', 'revision', 'fingerprint'])
+
+    def clean(self):
+        data=super().clean()
+        if 'current_employment_status' not in self.data:
+            data.pop('current_employment_status',None)
+        return data
 
 
 class ListForm(forms.ModelForm):

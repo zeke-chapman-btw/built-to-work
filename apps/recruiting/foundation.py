@@ -31,6 +31,12 @@ def profile_fingerprint(item):
         'career': {k: getattr(career, k) for k in career_fields} if career else {}}
     extra = RecruitingProfile.objects.filter(participant=item).first()
     payload['recruiting'] = {k: getattr(extra, k) if extra else None for k in ('employment_classification_id', 'availability_classification_id', 'willing_to_relocate')}
+    # Keep the exact pre-migration hash for untouched profiles. NULL means no
+    # new statement, while an explicit blank is a current Unknown statement.
+    if extra:
+        for key in ('current_employment_status','relocation_preference'):
+            value=getattr(extra,key)
+            if value is not None:payload['recruiting'][key]=value
     return hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
 
 
@@ -112,8 +118,10 @@ def save_preferences(*, actor, participant_id, data, expected_revision, why, par
                 raise ValidationError('Your profile changed. Reload and review the current values before saving.')
         before = {'employment_classification': str(row.employment_classification_id or ''),
             'availability_classification': str(row.availability_classification_id or ''),
-            'willing_to_relocate': row.willing_to_relocate}
+            'willing_to_relocate': row.willing_to_relocate, 'current_employment_status':row.current_employment_status, 'relocation_preference':row.relocation_preference}
         for field, kind in [('employment_classification', 'employment'), ('availability_classification', 'availability')]:
+            if field not in data:
+                continue
             choice = data.get(field)
             if choice:
                 choice = Classification.objects.filter(pk=choice.pk).first()
@@ -140,11 +148,25 @@ def save_preferences(*, actor, participant_id, data, expected_revision, why, par
                 set_current_travel(career, 'maybe' if value == 'maybe' else 'yes' if value == True else 'no' if value == False else None)
             if updates:
                 update_participant_profile(participant=item, updates=updates)
-        row.willing_to_relocate = data.get('willing_to_relocate')
+        if 'current_employment_status' in data:
+            value = data['current_employment_status']
+            if value == '__retained__':
+                if row.current_employment_status is not None:
+                    raise ValidationError('The current employment status changed. Reload and review it.')
+            elif value not in dict(RecruitingProfile.CURRENT_EMPLOYMENT):
+                raise ValidationError('Choose a supported current employment status.')
+            else:
+                row.current_employment_status = value
+        if 'willing_to_relocate' in data:
+            value = data['willing_to_relocate']
+            if value not in (True, False, None, 'maybe'):
+                raise ValidationError('Choose Yes, Maybe, No or Unknown for relocation.')
+            row.relocation_preference = 'maybe' if value == 'maybe' else 'yes' if value is True else 'no' if value is False else ''
+            row.willing_to_relocate = value if value in (True, False) else None
         row.revision += 1
         row.last_relevant_update_at = timezone.now()
         row.save()
-        audit(staff, 'preferences.updated', row, data={'participant': item.pk, 'revision': row.revision, 'employment_classification': str(row.employment_classification_id or ''), 'availability_classification': str(row.availability_classification_id or ''), 'willing_to_relocate': row.willing_to_relocate, **{key: data[key] for key in extended}}, before=before, why=reason(why))
+        audit(staff, 'preferences.updated', row, data={'participant': item.pk, 'revision': row.revision, 'employment_classification': str(row.employment_classification_id or ''), 'availability_classification': str(row.availability_classification_id or ''), 'willing_to_relocate': row.willing_to_relocate, 'current_employment_status':row.current_employment_status, 'relocation_preference':row.relocation_preference, **{key: data[key] for key in extended}}, before=before, why=reason(why))
         return row
 
 

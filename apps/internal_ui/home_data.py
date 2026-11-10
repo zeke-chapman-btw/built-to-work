@@ -157,6 +157,7 @@ def operational_metrics(actor):
     from django.core.exceptions import PermissionDenied
     from django.db import DatabaseError
     from django.db.models import Count
+    from datetime import datetime, time
     from apps.reporting.access import allowed_tabs
     from apps.reporting.metrics import _event_cohort, _customer_projection, _confirmed_hires, _participant_population
     from apps.participants.identity import canonical_records
@@ -167,24 +168,35 @@ def operational_metrics(actor):
     except DatabaseError:
         tabs=set();access_state='unavailable'
     metrics=[]
-    def metric(label,scope,loader,url,required):
-        value=None
+    def metric(label,scope,loader,url,required,period_loader=None):
+        value=None;period=''
         if not set(required).issubset(tabs):
             state='restricted' if access_state=='available' else access_state
         else:
-            try:value=loader();state='available'
+            try:
+                value=loader();state='available'
             except PermissionDenied:state='restricted'
             except DatabaseError:state='unavailable'
-        metrics.append(dict(label=label,scope=scope,value=value,state=state,url=url if state=='available' else ''))
+            if state=='available' and period_loader is not None:
+                # A supplementary period read must not erase an available stock.
+                try:period=period_loader()
+                except (PermissionDenied,DatabaseError):period=''
+        metrics.append(dict(label=label,scope=scope,value=value,state=state,url=url if state=='available' else '',period=period))
+    now=timezone.now()
+    month=timezone.localdate(now).replace(day=1)
+    month_start=timezone.make_aware(datetime.combine(month,time.min))
     metric('Total Participants','Canonical directory people · preview fixtures excluded',
-        lambda:_participant_population(actor,{})[0].count(),reverse('participants:staff-directory'),['participants'])
+        lambda:_participant_population(actor,{})[0].count(),reverse('participants:staff-directory'),['participants'],
+        lambda:f"+{_participant_population(actor,{})[0].filter(created_at__gte=month_start,created_at__lte=now).count()} added this month")
     metric('Active Workforce Needs','Approved active position records · not requests or worker quantity',
         lambda:_customer_projection(actor,{})[2]['active_positions'],reverse('internal:reports')+'?tab=customers',['customers'])
     metric('Upcoming Events','Published, future start · preview fixtures excluded',
-        lambda:_event_cohort(actor,{}).filter(status='upcoming',start_at__gt=timezone.now()).count(),
-        reverse('events:event_list')+'?view=upcoming',['events'])
+        lambda:_event_cohort(actor,{}).filter(status='upcoming',start_at__gt=now).count(),
+        reverse('events:event_list')+'?view=upcoming',['events'],
+        lambda:f"{_event_cohort(actor,{}).filter(status='upcoming',start_at__gt=now,start_at__year=month.year,start_at__month=month.month).count()} scheduled this month")
     def placed():
         return canonical_records(_confirmed_hires(actor,{})).aggregate(n=Count('_canonical_person',distinct=True))['n']
     metric('Participants Placed','Unique canonical people · current explicitly confirmed hires · all time',
-        placed,reverse('internal:reports')+'?tab=hires',['hires','opportunities'])
+        placed,reverse('internal:reports')+'?tab=hires',['hires','opportunities'],
+        lambda:f"{canonical_records(_confirmed_hires(actor,{}).filter(confirmed_on__gte=month_start,confirmed_on__lte=now)).aggregate(n=Count('_canonical_person',distinct=True))['n']} confirmed this month")
     return metrics
