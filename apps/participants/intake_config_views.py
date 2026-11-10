@@ -18,6 +18,8 @@ from .intake_config_forms import (QuestionConfigForm, SkillRelationsForm, Qualif
 from .intake_contracts import validate_contract, PROTECTED
 from .intake_wizard import IntakeStepForm, STEP_NAMES, UI_STEP_NAMES, contract_step_for
 from .workspace_views import context
+from apps.internal_ui.section_editors import has_edit_conflict
+from .ui_presentation import intake_editor_groups
 
 
 def admin_page(view):
@@ -143,8 +145,8 @@ def edit(request, form_id, key=None, child=False, mode="question"):
     return render(request, "participants/intake_config_edit.html", context(request,
         page_title={"question": "Edit intake question", "skills": "Approved trade skills",
                     "mappings": "Qualification field mappings"}[mode],
-        intake_form=model, version=version, form=form, revision=revision(version),
-        is_protected=key in PROTECTED or child, mode=mode))
+        intake_form=model, version=version, form=form, revision=request.POST.get("revision") if form.is_bound else revision(version), save_conflict=has_edit_conflict(form),
+        is_protected=key in PROTECTED or child, mode=mode, editor_groups=intake_editor_groups(form,mode)))
 
 
 @admin_page

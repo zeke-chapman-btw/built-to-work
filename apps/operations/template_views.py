@@ -5,6 +5,9 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
+from django.urls import reverse
+from .presentation import list_page
+from apps.internal_ui.section_editors import operations_return, operations_editor, operations_saved, has_edit_conflict
 from apps.events.models import Event
 from .template_models import OperationsTemplate, OperationsTemplateRevision, EventOperationsApplication
 from .template_forms import TemplateDraftForm, ApplyTemplateForm, ConfirmTemplateActionForm
@@ -27,15 +30,18 @@ def _resource_rows(revision):
 def template_list(request):
     svc.require(request.user, "operations.view_operationstemplate")
     templates = OperationsTemplate.objects.prefetch_related("revisions").all()
-    return render(request, "operations_templates/list.html", {"page_title": "Operations Templates", "templates": templates, "can_manage": svc.can_manage(request.user)})
+    templates,filters=list_page(request,templates,search_fields=("name",))
+    return render(request, "operations_templates/list.html", {"page_title": "Operations Templates", "templates": templates, "can_manage": svc.can_manage(request.user),**filters})
 
 @login_required(login_url="/admin/login/")
 @require_http_methods(["GET"])
 def template_detail(request, revision_id):
     svc.require(request.user, "operations.view_operationstemplate")
     revision = _revision(revision_id)
+    resource_rows = _resource_rows(revision)
     return render(request, "operations_templates/detail.html", {"page_title": revision.name, "revision": revision,
-        "resources": _resource_rows(revision), "can_manage": svc.can_manage(request.user)})
+        "resources": resource_rows, "compact_actions":len(resource_rows)<=6, "can_manage": svc.can_manage(request.user),
+        "back_url":operations_return(request,reverse("operations:templates"),revision=revision)})
 
 @login_required(login_url="/admin/login/")
 @require_http_methods(["GET", "POST"])
@@ -49,10 +55,10 @@ def template_edit(request, revision_id=None):
         try:
             saved = svc.save_draft(actor=request.user, values=form.cleaned_data, revision=revision)
             messages.success(request, "Template draft saved.")
-            return redirect("operations:template-detail", revision_id=saved.pk)
+            return operations_saved(request,operations_return(request,reverse("operations:template-detail",args=[saved.pk]),revision=saved))
         except (ValidationError, IntegrityError) as exc:
             form.add_error(None, exc if isinstance(exc, ValidationError) else "A concurrent change prevented saving. Reload and review the draft.")
-    return render(request, "operations_templates/edit.html", {"page_title": "Edit template draft" if revision else "New Operations Template", "form": form, "revision": revision}, status=400 if form.is_bound else 200)
+    return render(request, "operations_templates/edit.html", {"page_title": "Edit template draft" if revision else "New Operations Template", "form": form, "revision": revision, "back_url":operations_return(request,reverse("operations:template-detail",args=[revision.pk]) if revision else reverse("operations:templates"),revision=revision), "save_conflict":has_edit_conflict(form)}, status=400 if form.is_bound else 200)
 
 @login_required(login_url="/admin/login/")
 @require_http_methods(["GET", "POST"])
@@ -71,11 +77,12 @@ def template_action(request, revision_id, action):
             elif action == "retire": svc.retire(actor=request.user, template=revision.template); saved = revision
             else: saved = svc.copy_revision(actor=request.user, revision=revision, duplicate=action=="duplicate")
             messages.success(request, labels[action]+" completed.")
-            return redirect("operations:template-detail", revision_id=saved.pk)
+            return operations_saved(request,operations_return(request,reverse("operations:template-detail",args=[saved.pk]),revision=saved))
         except (ValidationError, signing.BadSignature, IntegrityError) as exc:
             form.add_error(None, exc if isinstance(exc, ValidationError) else "The action could not be confirmed. Reload and review the revision.")
-    return render(request, "operations_templates/action.html", {"page_title": labels[action], "revision": revision,
-        "action_label": labels[action], "form": form, "resources": _resource_rows(revision)}, status=400 if form.is_bound else 200)
+    return operations_editor(request,form,title=labels[action],save_label=labels[action],
+        back=operations_return(request,reverse("operations:template-detail",args=[revision.pk]),revision=revision),
+        fields_template="operations_templates/action_fields.html",revision=revision,template_action=action,resources=_resource_rows(revision))
 
 @login_required(login_url="/admin/login/")
 @require_http_methods(["GET", "POST"])

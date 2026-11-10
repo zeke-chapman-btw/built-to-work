@@ -1,0 +1,148 @@
+/* Events adopt the reviewed record UI. Scoped: no global navigation or resource styling. */
+.internal-app .event-record-header { margin:0 0 16px; padding-bottom:16px; border-bottom:1px solid var(--line); }
+.internal-app .event-record-header .event-title-row { align-items:flex-start; gap:20px; }
+.internal-app .event-record-header .record-title { font-size:clamp(23px,2.4vw,30px); line-height:1.2; letter-spacing:-.025em; margin:8px 0; }
+.internal-app .event-record-header .event-summary { margin:0 0 5px; font-size:15px; color:var(--muted); }
+.internal-app .event-record-header .event-date-line { margin:0 0 10px; font-size:13px; color:var(--muted); }
+.internal-app .event-record-header .event-header-actions { flex-wrap:wrap; gap:8px; }
+.internal-app .event-record-header .event-header-actions .button { min-height:44px; font-size:14px; padding:9px 12px; border-radius:6px; }
+.internal-app .event-record-header .event-back { font-size:14px; }
+.internal-app #main-content .btw-event-surface { --btw-ui-padding:20px; font-size:15px; line-height:1.5; min-width:0; }
+.internal-app #main-content .btw-event-surface :is(h2,h3) { letter-spacing:-.015em; }
+.internal-app #main-content .btw-event-surface h2 { font-size:20px; line-height:1.3; margin:0 0 12px; }
+.internal-app #main-content .btw-event-surface h3 { font-size:16px; line-height:1.35; margin:0 0 8px; }
+.internal-app #main-content .btw-event-surface .card { border:1px solid var(--line); border-radius:var(--radius,10px); box-shadow:none; background:var(--surface); padding:20px; margin:0 0 16px; min-width:0; }
+.internal-app #main-content .btw-event-surface .card > :last-child { margin-bottom:0; }
+.internal-app #main-content .btw-event-surface .card p { margin:6px 0 12px; }
+.internal-app #main-content .btw-event-surface .btw-panel-heading { gap:16px; align-items:center; margin:0 0 16px; }
+.internal-app #main-content .btw-event-surface .btw-panel-heading h2 { margin:0; }
+.internal-app #main-content .btw-event-surface .btw-panel-heading p { color:var(--muted); font-size:14px; margin:4px 0 0; }
+.internal-app #main-content .btw-event-surface :is(.btw-disclosure,.btw-secondary-details) { border:0; border-top:1px solid var(--line); padding:0; margin:16px 0 0; border-radius:0; background:transparent; }
+.internal-app #main-content .btw-event-surface :is(.btw-disclosure,.btw-secondary-details) > summary { padding:12px 0; font-size:14px; font-weight:600; cursor:pointer; min-height:44px; box-sizing:border-box; }
+.internal-app #main-content .btw-event-surface .btw-disclosure > p { font-size:14px; color:var(--muted); }
+.internal-app #main-content .btw-event-surface .btw-table-wrap { overflow:auto; }
+.internal-app #main-content .btw-event-surface :is(.event-help,.btw-muted,.event-window-note) { font-size:14px; color:var(--muted); }
+.internal-app #main-content .btw-event-surface .btw-event-form-heading { margin:12px 0 20px; }
+.internal-app #main-content .btw-event-surface .btw-event-form-heading h1 { font-size:28px; margin:0 0 8px; }
+.internal-app #main-content .btw-event-surface .btw-event-form-heading p { margin:0; color:var(--muted); }
+.internal-app #main-content .btw-event-surface .btw-event-form-section .btw-editor-grid { margin-top:12px; gap:16px 20px; }
+.internal-app #main-content .btw-event-surface .btw-event-form-section > summary { font-size:18px; font-weight:600; cursor:pointer; min-height:28px; }
+.internal-app #main-content .btw-event-surface .btw-event-form-actions { display:flex; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:10px; padding:14px 0; }
+.internal-app #main-content .btw-event-surface .btw-event-form-actions > a { margin-right:auto; }
+.internal-app #main-content .btw-event-surface .btw-editor-help { font-size:14px; color:var(--muted); }
+.internal-app #main-content .btw-ui .btw-field :is(input[type=checkbox],input[type=radio]),
+.internal-app #main-content .btw-ui .staffing-day input[type=checkbox] { width:20px; height:20px; min-height:20px; flex:none; margin:0 8px 0 0; padding:0; vertical-align:middle; accent-color:var(--red); }
+.internal-app #main-content .btw-ui .btw-field:has(input[type=checkbox]) label,
+.internal-app #main-content .btw-ui .staffing-day legend label { display:flex; align-items:center; gap:6px; min-height:44px; }
+.internal-app #main-content .btw-ui .btw-staff-editor-fields > .btw-field { margin-bottom:14px; }
+.internal-app #main-content .btw-ui .staffing-day-grid { display:grid; grid-template-columns:1fr; gap:12px; margin-top:14px; }
+.internal-app #main-content .btw-ui :is(.staffing-day,.event-needs-day) { min-width:0; padding:12px; border:1px solid var(--line); border-radius:6px; }
+.internal-app #main-content .btw-ui .event-needs-grid { display:grid; grid-template-columns:1fr; gap:12px; }
+.internal-app #main-content .btw-ui .event-needs-fields { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.internal-app #main-content .btw-ui .staffing-time-grid { display:grid; grid-template-columns:1fr; gap:12px; }
+.internal-app #main-content .btw-ui .staffing-day .btw-disclosure { margin-top:4px; }
+.internal-app #main-content .btw-event-surface .event-icon-action { display:inline-flex; align-items:center; gap:6px; width:auto; min-width:44px; min-height:44px; padding:6px 8px; font-size:14px; }
+.internal-app #main-content .btw-event-surface .event-icon-action .btw-icon { width:17px; height:17px; }
+.internal-app #main-content .btw-event-surface .event-assignment-item { display:flex; align-items:flex-start; gap:16px; justify-content:space-between; padding:16px 0; border-bottom:1px solid var(--line); }
+.internal-app #main-content .btw-event-surface .event-day-tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; }
+.internal-app #main-content .btw-event-surface .event-day-tile { padding:16px; border:1px solid var(--line); border-radius:8px; background:var(--surface); }
+.internal-app #main-content .btw-event-surface .event-day-tile.needs-coverage { border-left:3px solid #b87415; }
+.internal-app #main-content .btw-event-surface .event-day-tile.coverage-complete { border-left:3px solid #27804e; }
+.internal-app #main-content .btw-event-surface .event-coverage-role { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.internal-app #main-content .btw-event-surface .event-coverage-role strong { margin-left:auto; font-size:18px; }
+.internal-app #main-content .btw-event-surface .event-coverage-role .coverage-state { font-size:13px; flex-basis:100%; text-align:right; color:var(--muted); }
+.internal-app #main-content .btw-event-surface .event-day-state { color:#226e43; font-weight:600; }
+.internal-app #main-content .btw-event-surface .btw-event-facts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px 24px; }
+.internal-app #main-content .btw-event-surface .btw-event-facts > div { display:block; padding:0; min-width:0; border:0; }
+.internal-app #main-content .btw-event-surface .btw-event-facts dt { color:var(--muted); font-size:13px; font-weight:500; margin:0 0 4px; }
+.internal-app #main-content .btw-event-surface .btw-event-facts dd { margin:0; font-size:15px; overflow-wrap:anywhere; }
+.internal-app #main-content .btw-event-surface .btw-event-facts .btw-icon { width:16px; height:16px; margin-right:5px; }
+.internal-app #main-content .btw-event-surface .event-info-stack { display:grid; grid-template-columns:minmax(0,1fr); gap:0; }
+.internal-app #main-content .btw-event-surface .event-window-note { padding-top:12px; border-top:1px solid var(--line); }
+.internal-app #main-content .btw-event-surface .event-records { display:grid; gap:0; }
+.internal-app #main-content .btw-event-surface .event-record { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:24px; }
+.internal-app #main-content .btw-event-surface .event-record h3 { font-size:20px; margin:0 0 6px; }
+.internal-app #main-content .btw-event-surface .event-record .event-location { color:var(--muted); margin:0 0 6px; }
+.internal-app #main-content .btw-event-surface .event-record .event-dates { font-size:14px; margin:0 0 12px; }
+.internal-app #main-content .btw-event-surface .event-record .event-timezone { display:block; color:var(--muted); font-size:12px; }
+.internal-app #main-content .btw-event-surface .event-record .event-badges { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+.internal-app #main-content .btw-event-surface .event-record-footer { display:flex; gap:12px; flex-wrap:wrap; font-size:13px; color:var(--muted); }
+.internal-app #main-content .btw-event-surface .event-open { min-height:44px; display:inline-flex; align-items:center; font-size:14px; }
+.internal-app #main-content .btw-event-surface .btw-active-filters { display:flex; flex-wrap:wrap; gap:12px; justify-content:space-between; padding:8px 0 12px; font-size:14px; color:var(--muted); }
+.internal-app .btw-event-list-heading .events-search-form { gap:8px; }
+.internal-app .btw-event-list-heading .event-primary-create { min-height:44px; font-size:14px; }
+.internal-app #main-content .btw-event-surface .operation-tool-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); list-style:none; padding:0; gap:12px; }
+.internal-app #main-content .btw-event-surface .operation-tool-list li { padding:14px; border:1px solid var(--line); border-radius:6px; min-width:0; }
+.internal-app #main-content .btw-event-surface .operation-tool-list a { display:flex; justify-content:space-between; align-items:center; min-height:44px; font-weight:600; }
+.internal-app #main-content .btw-event-surface .operation-tool-list p { font-size:14px; color:var(--muted); }
+.internal-app #main-content .btw-event-surface .ops-setup-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
+.internal-app #main-content .btw-event-surface .ops-setup-grid article { padding:14px; border:1px solid var(--line); border-radius:6px; }
+.internal-app #main-content .btw-event-surface .ops-setup-grid article p { font-size:14px; }
+.internal-app #main-content .btw-event-surface .btw-event-settings { overflow-wrap:anywhere; }
+.btw-event-section-picker { display:none; }
+@media(max-width:700px) {
+ .internal-app .event-record-header .event-title-row { display:block; }
+ .internal-app .event-record-header .event-header-actions { margin-top:14px; display:flex; }
+ .internal-app .event-record-header .record-title { font-size:24px; }
+ .internal-app #main-content .btw-event-surface .card { padding:16px; }
+ .internal-app #main-content .event-navigation:has(.btw-event-section-picker:not([hidden])) > :is(.event-unified-tabs,.event-more-menu) { display:none; }
+ .internal-app #main-content .event-navigation .btw-event-section-picker:not([hidden]) { display:block; width:100%; border:1px solid var(--line); border-radius:6px; background:var(--surface); position:relative; margin-bottom:16px; }
+ .internal-app #main-content .btw-event-section-picker summary { padding:12px 14px; font-size:15px; font-weight:600; min-height:44px; cursor:pointer; }
+ .internal-app #main-content .btw-event-section-picker nav { display:grid; grid-template-columns:1fr 1fr; padding:6px 10px 10px; gap:4px; }
+ .internal-app #main-content .btw-event-section-picker nav a { min-height:44px; padding:8px; display:flex; align-items:center; gap:8px; font-size:14px; border-radius:4px; text-decoration:none; }
+ .internal-app #main-content .btw-event-section-picker nav a[aria-current] { background:#fff0f1; color:var(--red); font-weight:600; }
+ .internal-app #main-content .btw-event-surface .event-record { grid-template-columns:1fr; gap:14px; }
+ .internal-app #main-content .btw-event-surface .event-record .event-badges { flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:flex-start; }
+ .internal-app #main-content .btw-event-surface .event-record .event-open { margin-left:auto; }
+ .internal-app #main-content .btw-event-surface :is(.btw-event-facts,.operation-tool-list) { grid-template-columns:1fr; }
+ .internal-app #main-content .btw-event-surface .btw-panel-heading { align-items:flex-start; flex-wrap:wrap; }
+ .internal-app #main-content .btw-event-surface .event-assignment-item { display:block; }
+ .internal-app #main-content .btw-event-surface .event-record-actions { margin-top:8px; flex-wrap:wrap; }
+ .internal-app #main-content .btw-event-surface .btw-event-form-section .btw-editor-grid { grid-template-columns:1fr; }
+ .internal-app #main-content .btw-event-surface .btw-event-form-actions { justify-content:flex-start; }
+ .internal-app #main-content .btw-event-surface .btw-event-form-actions > a { width:100%; margin-right:0; }
+ .internal-app #main-content .btw-event-surface :is(.event-day-tiles,.ops-setup-grid) { grid-template-columns:1fr; }
+}
+
+.internal-app #main-content .btw-ui .btw-field-checkbox { display:grid; grid-template-columns:20px minmax(0,1fr); align-items:center; gap:4px 8px; }
+.internal-app #main-content .btw-ui .btw-field-checkbox > :is(small,div) { grid-column:1/-1; }
+.internal-app #main-content .btw-ui .btw-field-checkbox label { margin:0; min-height:44px; }
+.internal-app #main-content .btw-ui .btw-field [role=group] label { display:flex; align-items:center; min-height:44px; gap:8px; }
+.internal-app .btw-event-list-heading .search-field input { min-height:44px; font-size:16px; }
+.internal-app #main-content .btw-event-surface .btw-form-card form > .btw-field { margin-bottom:16px; }
+.internal-app #main-content .btw-event-surface .event-registration-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.internal-app #main-content .btw-event-surface .ticket-image { max-width:220px; width:100%; height:auto; }
+@media(max-width:700px){.internal-app #main-content .btw-event-surface .event-registration-grid {grid-template-columns:1fr;}}
+
+.internal-app #main-content .btw-event-surface .btw-event-facts { margin:0; }
+.internal-app #main-content .btw-event-surface .btw-event-facts dt { display:block; position:static; text-transform:none; letter-spacing:0; }
+.internal-app #main-content .btw-event-surface .btw-event-facts dd { display:block; position:static; }
+.internal-app #main-content .btw-event-surface .btw-setup-resources { margin-top:16px; }
+.internal-app #main-content .btw-event-surface .btw-setup-resource { display:grid; grid-template-columns:minmax(140px,1fr) minmax(130px,1fr) minmax(100px,1.6fr); gap:10px 20px; padding:10px 0; border-top:1px solid var(--line); align-items:start; }
+.internal-app #main-content .btw-event-surface .btw-setup-resource h3 { font-size:15px; padding-top:10px; margin:0; }
+.internal-app #main-content .btw-event-surface .btw-setup-resource .btw-setup-state { font-size:14px; padding-top:10px; color:var(--muted); }
+.internal-app #main-content .btw-event-surface .btw-setup-resource details { min-width:0; font-size:14px; }
+.internal-app #main-content .btw-event-surface .btw-setup-resource summary { min-height:44px; padding:9px 0; cursor:pointer; }
+.internal-app #main-content .btw-event-surface .btw-setup-resource details p { margin:0 0 10px; color:var(--muted); font-size:14px; }
+@media(max-width:700px){
+ .internal-app #main-content .btw-event-surface .btw-setup-resource { grid-template-columns:minmax(0,1fr) auto; gap:4px 12px; }
+ .internal-app #main-content .btw-event-surface .btw-setup-resource details { grid-column:1/-1; }
+ .internal-app #main-content .btw-event-surface .btw-setup-resource summary { padding:8px 0; }
+}
+
+.internal-app #main-content .btw-event-surface .btw-filter-chips { display:flex; flex-wrap:wrap; gap:8px; }
+.internal-app #main-content .btw-event-surface .btw-filter-chips a { display:inline-flex; gap:12px; align-items:center; padding:8px 12px; min-height:44px; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--ink); text-decoration:none; }
+.internal-app #main-content .btw-event-surface .btw-filter-chips a span { color:var(--muted); }
+.internal-app #main-content .btw-event-surface [data-field-condition][hidden] { display:none; }
+
+.internal-app #main-content .btw-event-surface .event-day-tile { max-width:none; min-width:0; }
+.internal-app #main-content .btw-event-surface.event-workspace-stack > .card,.internal-app #main-content .btw-event-surface :is(.ops-progress-grid,.workdays-page) > .card { margin:0; }
+
+/* Owner refinement: lined event facts, with each date and time kept together. */
+.internal-app #main-content .btw-event-surface .btw-event-facts { grid-template-columns:minmax(0,1fr); gap:0; }
+.internal-app #main-content .btw-event-surface .btw-event-facts > div { display:grid; grid-template-columns:150px minmax(0,1fr); gap:12px; padding:13px 0; border-bottom:1px solid var(--line); align-items:baseline; }
+.internal-app #main-content .btw-event-surface .btw-event-facts > div:last-child { border-bottom:0; }
+.internal-app #main-content .btw-event-surface .btw-event-facts dt { margin:0; }
+@media(max-width:700px){
+ .internal-app #main-content .btw-event-surface .btw-event-facts > div { grid-template-columns:100px minmax(0,1fr); gap:10px; }
+}

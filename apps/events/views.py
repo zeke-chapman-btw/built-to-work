@@ -17,6 +17,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.internal_ui.record_editors import event_return, editor_response, editor_success, revision_conflict
 from apps.participants.models import Participant
 from apps.participants.identity import find_or_create_participant
 from apps.stations.forms import StationForEventForm
@@ -112,7 +113,15 @@ def event_list(request):
     for value, label in EventFilterForm.base_fields["view"].choices:
         query = parameters.copy(); query["view"] = value
         tabs.append({"id": value, "label": label, "url": "?" + query.urlencode()})
-    return render(request, "events/event_list.html", {"events": page, "page_obj": page, "filters": filters,
+    active_filters=[]
+    if valid:
+        for key,label in (("q","Search"),("event_type","Type"),("date_from","From (UTC)"),("date_to","Through (UTC)")):
+            value=filters[key].value()
+            if value:
+                query=parameters.copy();query.pop(key,None)
+                display=dict(filters.fields[key].choices).get(value,value) if key=="event_type" else value
+                active_filters.append(dict(label=label,value=display,url="?"+query.urlencode()))
+    return render(request, "events/event_list.html", {"active_filters":active_filters,"events": page, "page_obj": page, "filters": filters,
         "can_view_staffing": can_view_staffing, "view_tabs": tabs, "selected_view": selected, "view_label": dict(EventFilterForm.base_fields["view"].choices).get(selected, "Events"),
         "page_query": parameters.urlencode(), "page_title": "Events", "page_description": "Plan, publish and manage event operations."}, status=200 if valid else 400)
 
@@ -123,12 +132,13 @@ def event_create(request):
     if request.method not in ("GET", "POST"):
         return HttpResponse(status=405)
     form = EventForm()
+    back = event_return(request)
     if request.method == "POST":
         event, form = save_event(data=request.POST, actor=request.user)
         if event:
             messages.success(request, "Event published to staff." if event.status == "upcoming" else "Event saved as a draft.")
             return redirect("events:event_detail", event_id=event.pk)
-    return render(request, "events/event_form.html", {"form": form, "page_title": "Create event"}, status=400 if form.is_bound else 200)
+    return render(request, "events/event_form.html", {"form": form, "back": back, "page_title": "Add event"}, status=400 if form.is_bound else 200)
 
 
 @staff_permission_required('events.change_event')
@@ -138,12 +148,13 @@ def event_edit(request, event_id):
     if request.method not in ("GET", "POST"):
         return HttpResponse(status=405)
     form = EventForm(instance=event)
+    back = event_return(request, event)
     if request.method == "POST":
         saved, form = save_event(data=request.POST, actor=request.user, event_id=event.pk)
         if saved:
             messages.success(request, "Event saved. Changed details require finalization again." if saved.details_finalized_at is None else "Event saved.")
-            return redirect("events:event_detail", event_id=event.pk)
-    return render(request, "events/event_form.html", {"form": form, "event": event, "page_title": "Edit event"}, status=400 if form.is_bound else 200)
+            return redirect(back)
+    return render(request, "events/event_form.html", {"form": form, "event": event, "back": back, "save_conflict": revision_conflict(form), "page_title": "Edit event"}, status=400 if form.is_bound else 200)
 
 
 @staff_permission_required('events.change_event')
@@ -157,6 +168,7 @@ def event_action(request, event_id, action):
         return HttpResponse(status=405)
     if request.method == "GET" and action not in {item["id"] for item in available_actions(event)}:
         return HttpResponse("This action is not available for the event's current state.", status=409)
+    back = event_return(request, event)
     form = EventActionForm(initial={"revision": event.updated_at.isoformat()})
     if request.method == "POST":
         try:
@@ -166,7 +178,7 @@ def event_action(request, event_id, action):
             changed = None
         if changed:
             messages.success(request, TRANSITIONS[action][0] + " completed.")
-            return redirect("events:event_detail", event_id=event.pk)
+            return editor_success(request, back)
         event.refresh_from_db()
     if action=="complete":
         from django import forms
@@ -175,8 +187,10 @@ def event_action(request, event_id, action):
         execution=EventExecution.objects.filter(event=event).first()
         if not execution or not execution.primary_manager_id:
             form.fields["primary_manager"]=forms.ModelChoiceField(queryset=eligible_people(),label="Primary Event Manager",help_text="The closeout task will be assigned to this person.")
-    return render(request, "events/event_action.html", {"event": event, "form": form, "action_id": action,
-        "action_label": TRANSITIONS[action][0], "page_title": TRANSITIONS[action][0]}, status=400 if form.is_bound else 200)
+    return editor_response(request, template="events/event_action.html", panel="internal/ui/record_form_panel.html",
+        context={"event":event,"form":form,"action_id":action,"action_label":TRANSITIONS[action][0],
+        "page_title":TRANSITIONS[action][0],"editor_context":event.name,"back":back,
+        "save_label":TRANSITIONS[action][0],"save_conflict":revision_conflict(form),"fields_template":"events/action_fields.html"})
 
 
 @staff_permission_required('events.view_event')

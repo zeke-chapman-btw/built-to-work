@@ -65,6 +65,9 @@ class InternalShellTests(TestCase):
                     self.assertContains(response, "operations-home")
                 elif workspace_id == "platform-tools":
                     self.assertContains(response, "ops-tool-grid")
+                elif workspace_id == "participants":
+                    self.assertContains(response, "people-directory")
+                    self.assertContains(response, reverse("participants:staff-directory"))
                 elif workspace_id == "customers":
                     self.assertContains(response, "PLANNED")
                 else:

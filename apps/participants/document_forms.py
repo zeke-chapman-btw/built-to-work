@@ -61,3 +61,5 @@ class DocumentCategoryForm(forms.ModelForm):
     class Meta:
         model = ParticipantDocumentCategory
         fields = ('name', 'slug', 'description', 'position', 'is_active')
+        labels = {'slug': 'Category code', 'position': 'Display order', 'is_active': 'Active'}
+        help_texts = {'slug': 'Use a unique short code, such as training.'}

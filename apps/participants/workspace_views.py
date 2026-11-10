@@ -9,6 +9,7 @@ from django.db import transaction, IntegrityError
 from django.db.models import Count, Q, Prefetch
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from apps.internal_ui.people_editors import people_render as render, people_saved, profile_link
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 from apps.core.models import AuditLog
@@ -120,6 +121,8 @@ def profile(request, participant_id):
     person = person_for(participant_id)
     root = canonical_id(person.pk)
     if root != person.pk:
+        if request.GET.get("from"):
+            return redirect(profile_link(request,root))
         return redirect("participants:staff-profile", participant_id=root)
     member_ids = identity_members(person.pk)
     section = request.GET.get("section", "overview")
@@ -261,8 +264,8 @@ def edit_profile(request, participant_id):
         except ValidationError as exc:
             form.add_error(None, exc)
         else:
-            messages.success(request, "Participant profile updated. Historical intake and verified records were retained.")
-            return redirect("participants:staff-profile", participant_id=person.pk)
+            messages.success(request, "Profile saved.")
+            return people_saved(request,"participants:staff-profile", participant_id=person.pk)
     return render(request, "participants/workspace_form.html", context(request, participant=person, form=form, career_form=career_form,
         page_title="Edit participant profile", submit_label="Save profile", return_url=reverse("participants:staff-profile", args=[person.pk])),
         status=400 if request.method == "POST" and (form.errors or career_form.errors) else 200)
@@ -285,8 +288,8 @@ def add_person(request):
                 mutable["duplicate_revision"] = duplicate_fingerprint(matches)
                 form.data = mutable
         else:
-            messages.success(request, "Participant added. Original acquisition remains unknown until supported by evidence.")
-            return redirect("participants:staff-profile", participant_id=person.pk)
+            messages.success(request, "Participant added.")
+            return people_saved(request,"participants:staff-profile", participant_id=person.pk)
     return render(request, "participants/workspace_form.html", context(request, form=form, possible_matches=matches,
         page_title="Add participant", submit_label="Add participant", return_url=reverse("participants:staff-directory")),
         status=400 if form.is_bound and form.errors else 200)
@@ -306,8 +309,8 @@ def work_edit(request, participant_id, object_id=None):
         except ValidationError as exc:
             form.add_error(None, exc)
         else:
-            messages.success(request, "Work history saved with source attribution.")
-            return redirect(reverse("participants:staff-profile", args=[person.pk]) + "?section=career")
+            messages.success(request, "Work history saved.")
+            return people_saved(request,reverse("participants:staff-profile", args=[person.pk]) + "?section=career")
     return render(request, "participants/workspace_form.html", context(request, participant=person, form=form,
         page_title="Edit work history" if row else "Add work history", submit_label="Save work history",
         return_url=reverse("participants:staff-profile", args=[person.pk]) + "?section=career"),
@@ -328,8 +331,8 @@ def acquisition_edit(request, participant_id):
         except ValidationError as exc:
             form.add_error(None, exc)
         else:
-            messages.success(request, "Original acquisition corrected with an audit record.")
-            return redirect(reverse("participants:staff-profile", args=[person.pk]) + "?section=acquisition")
+            messages.success(request, "Original source updated.")
+            return people_saved(request,reverse("participants:staff-profile", args=[person.pk]) + "?section=acquisition")
     return render(request, "participants/workspace_form.html", context(request, participant=person, form=form,
         page_title="Correct original acquisition", form_description="Correct the original source only when supported by evidence. Later activity remains separate.",
         submit_label="Save attributable correction", return_url=reverse("participants:staff-profile", args=[person.pk]) + "?section=acquisition"),
@@ -356,11 +359,11 @@ def note_edit(request, participant_id, object_id=None):
         except ValidationError as exc:
             form.add_error(None, exc)
         else:
-            messages.success(request, "Internal note saved. It remains private to authorized BTW staff.")
-            return redirect(reverse("participants:staff-profile", args=[person.pk]) + "?section=notes")
+            messages.success(request, "Internal note saved.")
+            return people_saved(request,reverse("participants:staff-profile", args=[person.pk]) + "?section=notes")
     return render(request, "participants/workspace_form.html", context(request, participant=person, form=form,
         page_title="Edit internal note" if row else "Add internal note", submit_label="Save internal note",
-        form_description="BTW staff-only information. Customer-specific note creation belongs to Build 14.",
+        form_description="Private to authorized BTW staff.",
         return_url=reverse("participants:staff-profile", args=[person.pk]) + "?section=notes"),
         status=400 if form.is_bound and form.errors else 200)
 
@@ -397,7 +400,7 @@ def record_archive(request, participant_id, kind, object_id, restore=False):
             form.add_error(None, exc)
         else:
             messages.success(request, "Record restored." if restore else "Record archived; history retained.")
-            return redirect(reverse("participants:staff-profile", args=[person.pk]) + "?section=" + ("notes" if kind == "note" else "career"))
+            return people_saved(request,reverse("participants:staff-profile", args=[person.pk]) + "?section=" + ("notes" if kind == "note" else "career"))
     return render(request, "participants/workspace_form.html", context(request, participant=person, form=form,
         page_title=("Restore " if restore else "Archive ") + ("internal note" if kind == "note" else "work history"),
         submit_label="Restore record" if restore else "Archive record",
@@ -421,7 +424,7 @@ def register_person(request, participant_id):
             audit(request.user, "event.registered", person, after={"registration_id": str(registration.pk), "created": created},
                   reason=form.cleaned_data["audit_reason"])
             messages.success(request, "Existing participant registered; original acquisition and identity retained." if created else "This participant already has an active registration for this event.")
-            return redirect(reverse("participants:staff-profile", args=[person.pk]) + "?section=events")
+            return people_saved(request,reverse("participants:staff-profile", args=[person.pk]) + "?section=events")
     return render(request, "participants/workspace_form.html", context(request, participant=person, form=form,
         page_title="Register existing participant", submit_label="Register participant",
         form_description="Uses the existing event registration and QR ticket service. This does not record attendance or change original acquisition.",
@@ -437,6 +440,7 @@ def saved_views(request):
         try:
             params = request.GET.copy()
             params.update(request.POST)
+            params.pop("return_to", None)  # Navigation context is not saved search criteria.
             filters, population, criteria = discover(request.user, params, strict=True)
         except ValidationError as exc:
             form.add_error(None, exc)
@@ -452,8 +456,8 @@ def saved_views(request):
                     with transaction.atomic():
                         row = SavedParticipantView.objects.create(owner=request.user, name=form.cleaned_data["name"], criteria=criteria)
                     audit(request.user, "view.saved", row, after={"name": row.name, "criteria": criteria}, reason="Owner saved participant filters")
-                    messages.success(request, "Private saved view created. Current permissions are checked whenever it is opened.")
-                    return redirect("participants:staff-directory")
+                    messages.success(request, "Participant view saved.")
+                    return people_saved(request,"participants:staff-directory")
     return render(request, "participants/saved_views.html", context(request, form=form,
         saved_views=SavedParticipantView.objects.filter(owner=request.user), page_title="Saved participant views"),
         status=400 if form.is_bound and form.errors else 200)
@@ -475,7 +479,7 @@ def saved_view_archive(request, view_id, restore=False):
                 row.save(update_fields=["archived_at", "updated_at"])
                 audit(request.user, "view.restored" if restore else "view.archived", row,
                       after={"archived": not restore}, reason=form.cleaned_data["audit_reason"])
-                return redirect("participants:saved-views")
+                return people_saved(request,"participants:saved-views")
     return render(request, "participants/workspace_form.html", context(request, form=form,
         page_title=("Restore " if restore else "Archive ") + "saved view", form_description=row.name,
         submit_label="Restore saved view" if restore else "Archive saved view", return_url=reverse("participants:saved-views")),

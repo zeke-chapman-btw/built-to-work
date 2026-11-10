@@ -5,6 +5,7 @@ from django.db import transaction
 from django.db.models import Q, Prefetch
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
+from apps.internal_ui.people_editors import people_render as render, people_saved
 from uuid import UUID
 
 from apps.core.audit import record_audit
@@ -29,7 +30,9 @@ class ParticipantQualificationForm(forms.ModelForm):
         self.fields["catalog_entry"].queryset = choices.order_by("name")
         self.fields["catalog_entry"].required = False
         self.fields["custom_name"].required = False
-        self.fields["custom_name"].help_text = "For example: equipment type operated, trade skill, CDL class/endorsement, license, certification, training or education credential."
+        self.fields["custom_name"].label = "Custom qualification"
+        self.fields["catalog_entry"].label = "Catalog qualification"
+        self.fields["custom_name"].help_text = "Use a custom qualification when it is not in the catalog."
         self.fields["experience_details"].label = "Experience and credential details"
     def clean_is_self_reported(self):
         return True if self.instance.source_submission_id else self.cleaned_data["is_self_reported"]
@@ -126,7 +129,7 @@ def participant_qualifications(request, participant_id, qualification_id=None):
                 new_data=_snapshot(saved),
                 reason=form.cleaned_data["audit_reason"],
             )
-        return redirect("participants:staff-participant-qualifications", participant_id=participant.pk)
+        return people_saved(request,"participants:staff-participant-qualifications", participant_id=participant.pk)
 
     page = Paginator(records, 25).get_page(request.GET.get("page"))
     context = {"participant": participant, "records": page, "page_obj": page, "form": form, "is_edit": is_edit, "qualification": qualification, "can_add": can_add, "can_change": can_change, "mode": "participant", "page_title": "Participant qualifications"}

@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from urllib.parse import urlencode
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from apps.internal_ui.people_editors import people_render as render, people_saved
 from django.views.decorators.http import require_GET, require_POST
 
 from apps.participants.models import Participant
@@ -91,7 +92,7 @@ def participant_documents(request, participant_id):
                     document.file.storage.delete(document.file.name)
                 raise
             messages.success(request, 'Document uploaded securely.')
-            return redirect('participants:staff-participant-documents', participant_id=participant.pk)
+            return people_saved(request,'participants:staff-participant-documents', participant_id=participant.pk)
     qualifications = participant.qualifications.select_related('catalog_entry').all() if request.user.has_perm('participants.view_participantqualification') else ParticipantQualification.objects.none()
     page = Paginator(docs, 25).get_page(request.GET.get('page'))
     return render(request, 'participants/staff_documents.html', {
@@ -133,7 +134,7 @@ def document_edit(request, document_uuid):
                 }
                 _audit(updated, request.user, 'metadata_changed', reason, {'before': before, 'after': after})
                 messages.success(request, 'Document details updated.')
-                return redirect('participants:staff-participant-documents', participant_id=locked.participant_id)
+                return people_saved(request,'participants:staff-participant-documents', participant_id=locked.participant_id)
             document, form = locked, form
     else:
         form = ParticipantDocumentForm(instance=document, participant=document.participant)
@@ -158,7 +159,7 @@ def document_archive(request, document_uuid):
                 document.save(update_fields=['state', 'updated_at'])
                 _audit(document, request.user, 'archived', reason)
     document = get_object_or_404(ParticipantDocument, uuid=document_uuid)
-    return redirect('participants:staff-participant-documents', participant_id=document.participant_id)
+    return people_saved(request,'participants:staff-participant-documents', participant_id=document.participant_id)
 
 
 @login_required
@@ -199,7 +200,7 @@ def document_replace(request, document_uuid):
                 replacement.file.storage.delete(replacement.file.name)
             raise
         messages.success(request, 'Replacement saved; the prior file remains in history.')
-        return redirect('participants:staff-participant-documents', participant_id=previous.participant_id)
+        return people_saved(request,'participants:staff-participant-documents', participant_id=previous.participant_id)
     return render(request, 'participants/staff_document_replace.html', {'previous': previous, 'participant': previous.participant, 'form': form, 'page_title': 'Replace document'})
 
 
@@ -250,7 +251,7 @@ def qualification_document_link(request, document_uuid, qualification_id):
                 _audit(document, request.user, 'qualification_linked', reason, {
                     'qualification_id': qualification.pk,
                 })
-    return redirect('participants:staff-participant-documents', participant_id=document.participant_id)
+    return people_saved(request,'participants:staff-participant-documents', participant_id=document.participant_id)
 
 
 @login_required
@@ -270,7 +271,7 @@ def qualification_document_unlink(request, document_uuid, qualification_id):
                 'qualification_id': qualification_id,
             })
             link.delete()
-    return redirect('participants:staff-participant-documents', participant_id=document.participant_id)
+    return people_saved(request,'participants:staff-participant-documents', participant_id=document.participant_id)
 
 
 @login_required
@@ -288,7 +289,7 @@ def document_categories(request):
         obj.updated_by = request.user
         obj.save()
         messages.success(request, 'Document category saved.')
-        return redirect('participants:staff-document-categories')
+        return people_saved(request,'participants:staff-document-categories')
     return render(request, 'participants/staff_document_categories.html', {
         'categories': ParticipantDocumentCategory.objects.all(), 'form': form, 'editing': category, 'page_title': 'Document categories',
     })

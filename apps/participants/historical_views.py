@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from apps.internal_ui.people_editors import people_render as render, people_saved
 from django.views.decorators.http import require_http_methods, require_POST
 from .historical import (EXPORT_FIELDS, IMPORT_FIELDS, _read_rows, create_batch, export_participants,
                          import_ready, preview_batch, resolve_review)
@@ -25,7 +26,7 @@ def historical_index(request):
             if uploaded is None:
                 raise ValidationError("Choose a CSV or .xlsx file.")
             batch = create_batch(uploaded_file=uploaded, actor=request.user)
-            return redirect("participants:historical-map", batch_id=batch.pk)
+            return people_saved(request,"participants:historical-map", batch_id=batch.pk)
         except ValidationError as exc:
             error = "; ".join(exc.messages)
     batches = HistoricalImportBatch.objects.order_by("-created_at")[:50]
@@ -56,7 +57,7 @@ def historical_map(request, batch_id):
             if name:
                 HistoricalMappingTemplate.objects.create(name=name, kind="import", mapping=mapping,
                                                          created_by=request.user)
-            return redirect("participants:historical-batch", batch_id=batch.pk)
+            return people_saved(request,"participants:historical-batch", batch_id=batch.pk)
         except ValidationError as exc:
             error = "; ".join(exc.messages)
     mapped = [(field, mapping.get(field, "")) for field in IMPORT_FIELDS]
@@ -74,7 +75,7 @@ def historical_batch(request, batch_id):
         _require(request.user, "participants.change_historicalimportbatch")
         try:
             import_ready(batch, actor=request.user)
-            return redirect("participants:historical-batch", batch_id=batch.pk)
+            return people_saved(request,"participants:historical-batch", batch_id=batch.pk)
         except ValidationError as exc:
             error = "; ".join(exc.messages)
     return render(request, "participants/historical_batch.html", {"batch": batch,
@@ -87,7 +88,7 @@ def historical_review(request, row_id):
     _require(request.user, "participants.change_historicalimportrow")
     row = get_object_or_404(HistoricalImportRow.objects.select_related("batch"), pk=row_id)
     if row.status != HistoricalImportRow.Status.REVIEW:
-        return redirect("participants:historical-batch", batch_id=row.batch_id)
+        return people_saved(request,"participants:historical-batch", batch_id=row.batch_id)
     error = ""
     if request.method == "POST":
         try:
@@ -95,7 +96,7 @@ def historical_review(request, row_id):
             person = Participant.objects.filter(identity_uuid=chosen).first() if chosen else None
             resolve_review(row, actor=request.user, decision=request.POST.get("decision", ""),
                            reason=request.POST.get("reason", ""), participant=person)
-            return redirect("participants:historical-batch", batch_id=row.batch_id)
+            return people_saved(request,"participants:historical-batch", batch_id=row.batch_id)
         except (ValidationError, ValueError) as exc:
             error = str(exc)
     matches = Participant.objects.filter(identity_uuid__in=row.possible_matches)

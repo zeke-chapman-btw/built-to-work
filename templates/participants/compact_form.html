@@ -1,0 +1,1 @@
+{% extends 'participants/workspace_base.html' %}{% block page_heading %}<h1 class="btw-visually-hidden">{{ page_title }}</h1>{% endblock %}{% block people_content %}<div class="btw-editor-fallback">{% if not participant %}<a class="event-back" href="{{ back }}">← Back</a>{% endif %}{% include 'internal/ui/record_form_panel.html' %}</div>{% endblock %}
