@@ -15,17 +15,13 @@ from apps.participants.models import Participant, ParticipantCareerProfile
 
 class ProfileNavigation(HTMLParser):
     def __init__(self, html):
-        super().__init__(); self.in_areas = False; self.areas = []; self.ids = set()
+        super().__init__(); self.back = None; self.ids = set()
         self.feed(html)
 
     def handle_starttag(self, tag, pairs):
         attrs = dict(pairs)
         if attrs.get('id'): self.ids.add(attrs['id'])
-        if tag == 'nav' and attrs.get('aria-label') == 'Participant areas': self.in_areas = True
-        if tag == 'a' and self.in_areas: self.areas.append(attrs)
-
-    def handle_endtag(self, tag):
-        if tag == 'nav': self.in_areas = False
+        if tag == 'a' and 'event-back' in (attrs.get('class') or '').split() and self.back is None: self.back = attrs
 
 
 class CrmUxProfileTests(TestCase):
@@ -42,16 +38,18 @@ class CrmUxProfileTests(TestCase):
         self.client.force_login(self.admin, backend='django.contrib.auth.backends.ModelBackend')
         self.url = reverse('participants:staff-profile', args=[self.person.pk])
 
-    def test_three_areas_share_identity_and_appropriate_active_navigation(self):
+    def test_three_areas_share_identity_and_return_to_profile(self):
         for section in ['overview', 'relationship', 'recruiting']:
             with self.subTest(section=section):
                 response = self.client.get(self.url, {'section': section})
                 self.assertEqual(response.status_code, 200)
-                nav = ProfileNavigation(response.content.decode())
-                self.assertEqual([parse_qs(urlsplit(a['href']).query)['section'][0] for a in nav.areas], ['overview', 'relationship', 'recruiting'])
-                current = [a for a in nav.areas if a.get('aria-current') == 'page']
-                self.assertEqual(len(current), 1)
-                self.assertEqual(parse_qs(urlsplit(current[0]['href']).query)['section'], [section])
+                self.assertNotContains(response, 'aria-label="Participant areas"')
+                back = ProfileNavigation(response.content.decode()).back
+                if section == 'overview':
+                    self.assertEqual(urlsplit(back['href']).path, reverse('participants:staff-directory'))
+                else:
+                    self.assertEqual(urlsplit(back['href']).path, self.url)
+                    self.assertEqual(parse_qs(urlsplit(back['href']).query)['section'], ['overview'])
                 self.assertContains(response, 'class="people-profile-name"', count=1)
                 self.assertContains(response, str(self.person))
 
@@ -90,7 +88,7 @@ class CrmUxProfileTests(TestCase):
                 response = self.client.get(self.url, {'section': section, 'from': origin})
                 self.assertEqual(response.status_code, 200)
                 self.assertEqual(response.context['directory_origin'], origin)
-                self.assertEqual(parse_qs(urlsplit(ProfileNavigation(response.content.decode()).areas[0]['href']).query)['from'], [origin])
+                self.assertEqual(parse_qs(urlsplit(ProfileNavigation(response.content.decode()).back['href']).query)['from'], [origin])
 
     def test_relationship_and_recruiting_do_not_load_unrelated_assessment_history(self):
         with patch('apps.participants.workspace_views.activity_sources', side_effect=AssertionError('Unrelated evidence scan')):
@@ -100,7 +98,8 @@ class CrmUxProfileTests(TestCase):
     def test_restricted_reader_gains_no_crm_or_recruiting_authority(self):
         self.client.force_login(self.reader, backend='django.contrib.auth.backends.ModelBackend')
         response = self.client.get(self.url)
-        self.assertEqual(len(ProfileNavigation(response.content.decode()).areas), 1)
+        self.assertNotContains(response, 'section=relationship')
+        self.assertNotContains(response, 'section=recruiting')
         self.assertNotContains(response, '>Log interaction</a>')
         for section in ['relationship', 'recruiting']:
             self.assertEqual(self.client.get(self.url, {'section': section}).status_code, 403)

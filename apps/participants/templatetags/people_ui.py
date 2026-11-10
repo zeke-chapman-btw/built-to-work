@@ -74,7 +74,6 @@ def people_navigation(context):
     primary.sort(key=lambda item:order.get(item['label'],9))
     return dict(primary=primary,more=more,active_label=active)
 
-@register.inclusion_tag('participants/profile_sections.html',takes_context=True)
 def profile_sections(context):
     request=context['request'];person=context['participant'];active=context.get('section','overview')
     originals=request.user.has_perm('participants.view_registrationsubmission')

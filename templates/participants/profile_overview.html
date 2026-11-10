@@ -126,10 +126,10 @@
 
 {% if profile_show_connections %}
 <section id="profile-connections" tabindex="-1" class="card p3-reading-section" aria-labelledby="profile-connections-title">
-  <header class="btw-panel-heading"><h2 id="profile-connections-title">Job connections{% if profile_connection_active %} <span class="pv-count">{{ profile_connection_active }} active</span>{% endif %}</h2><a href="{% url 'recruiting:candidate' participant.pk %}">+ Connect</a></header>
+  <header class="btw-panel-heading"><h2 id="profile-connections-title">Job connections{% if profile_connection_active %} <span class="pv-count">{{ profile_connection_active }} active</span>{% endif %}</h2><span class="pv-heading-actions"><a href="{% url 'recruiting:candidate' participant.pk %}">+ Connect</a>{% if profile_connection_active or profile_connection_closed %}<a href="{% people_section_url 'recruiting' %}#profile-recruiting">All job connections</a>{% endif %}</span></header>
   {% for record in profile_connections %}<div class="pv-connection"><span><a href="{% url 'recruiting:candidate-detail' record.pk %}">{{ record.opportunity.need.organization }}</a><small>{{ record.opportunity.need.title }}</small></span>{% ui_badge record.stage.label 'info' %}</div>
   {% empty %}<p class="p3-empty">No job connections yet.</p>{% endfor %}
-  {% if profile_connection_more or profile_connection_closed %}<p class="pv-connection-footer"><span>{% if profile_connection_more %}+{{ profile_connection_more }} more active{% endif %}{% if profile_connection_more and profile_connection_closed %} · {% endif %}{% if profile_connection_closed %}{{ profile_connection_closed }} closed{% endif %}</span><a href="{% people_section_url 'recruiting' %}#profile-recruiting">Full history</a></p>{% endif %}
+  {% if profile_connection_more or profile_connection_closed %}<p class="pv-connection-footer"><span>{% if profile_connection_more %}+{{ profile_connection_more }} more active{% endif %}{% if profile_connection_more and profile_connection_closed %} · {% endif %}{% if profile_connection_closed %}{{ profile_connection_closed }} closed{% endif %}</span></p>{% endif %}
 </section>
 {% endif %}
 

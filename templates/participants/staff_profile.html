@@ -1,9 +1,9 @@
 {% extends people_base|default:'participants/workspace_base.html' %}{% load static verification_status participant_workspace people_ui crm_ui ui_patterns %}
 {% block body_class %}{{ block.super }} has-participant-profile has-crm-ux-profile{% endblock %}
-{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<link rel="stylesheet" href="{% static 'crm/profile.css' %}?v=profile-v2-2"><script defer src="{% static 'crm/profile_copy.js' %}?v=profile-v2-1"></script><link rel="stylesheet" href="{% static 'participants/identifier.css' %}?v=identifier-1">{% endblock %}
+{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<link rel="stylesheet" href="{% static 'crm/profile.css' %}?v=profile-v2-4"><script defer src="{% static 'crm/profile_copy.js' %}?v=profile-v2-1"></script><link rel="stylesheet" href="{% static 'participants/identifier.css' %}?v=identifier-1">{% endblock %}
 {% block page_heading %}
 <section class="people-profile-hero p3-profile-hero">
-  <a class="event-back" href="{{ directory_origin }}">← {{ directory_origin_label }}</a>
+  {% if section and section != 'overview' %}<a class="event-back" href="{% people_section_url 'overview' %}">← {{ participant }}</a>{% else %}<a class="event-back" href="{{ directory_origin }}">← {{ directory_origin_label }}</a>{% endif %}
   <div class="people-profile-heading">
     <span class="people-avatar" aria-hidden="true">{{ participant|people_initials }}</span>
     <div class="people-profile-title"><h1 class="people-profile-name"><a class="p3-profile-home" href="{% people_section_url 'overview' %}" aria-label="{{ participant }} — profile overview">{{ participant }}</a>{% if participant.primary_identifier %}<span class="badge participant-identifier-badge">{{ participant.get_primary_identifier_display }}</span>{% endif %}</h1>
@@ -19,15 +19,12 @@
       </div>{% endif %}
     </div>
     <div class="p3-profile-actions">
-      {% if participant.contact_phone %}<a class="button secondary pv-contact-action" href="tel:{{ participant.contact_phone|people_phone_link }}">{% ui_icon 'phone' %}Call</a><a class="button secondary pv-contact-action" href="sms:{{ participant.contact_phone|people_phone_link }}">{% ui_icon 'message' %}Text</a>{% endif %}
-      {% if participant.contact_email %}<a class="button secondary pv-contact-action" href="mailto:{{ participant.contact_email }}">{% ui_icon 'mail' %}Email</a>{% endif %}
       {% if crm_can_add %}<a class="button button-primary" data-record-editor href="{{ crm_new_url }}">+ Log touchpoint</a>{% endif %}
       {% profile_tools %}
     </div>
   </div>
 </section>{% endblock %}
 {% block people_content %}{% if not profile_manager %}<script defer src="{% static 'crm/profile_navigation.js' %}"></script>{% if participant.archived_at %}<p class="btw-inline-notice">Archived participant · staff profile management is read-only.</p>{% endif %}
-{% profile_sections %}
 {% include 'crm/previous.html' %}{% endif %}
 {% if section == 'relationship' %}<section class="card p3-reading-section crm-profile-summary-card" aria-labelledby="participant-relationship-summary"><header class="btw-panel-heading"><h2 id="participant-relationship-summary">Relationship Summary</h2></header>{% include 'crm/summary.html' %}</section>{% endif %}
 {% if section == 'overview' %}{% include 'participants/profile_overview.html' %}

@@ -284,7 +284,7 @@ class ContinuousProfileCorrectionsTests(TestCase):
         destinations={parse_qs(urlsplit(url).query).get('section',[''])[0] for url in parsed.links if urlsplit(url).path==base}
         self.assertTrue({'career','qualifications','documents','assessments','events','notes','acquisition','activity','tasks'}<=destinations)
         self.assertContains(response,'Jump to section')
-        self.assertContains(response,'aria-label="Participant areas"')
+        self.assertNotContains(response,'aria-label="Participant areas"')
         self.assertTrue({'relationship','recruiting'} <= destinations)
         self.assertNotContains(response,'Detailed management')
         self.assertNotContains(response,'p3-profile-jumps')
