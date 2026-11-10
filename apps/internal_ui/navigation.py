@@ -86,10 +86,10 @@ WORKSPACE_LINKS = {'events': ({'label': 'My staff schedule',
                  'url_name': 'admin:games_gamedefinition_changelist',
                  'permissions': ('games.view_gamedefinition', 'games.change_gamedefinition')},
                 ),
- 'platform-tools': ({'label':'Platform monitoring','description':'Existing synchronization, delivery and incident monitoring. Permanent administration home to be reviewed.','url_name':'events:operations-dashboard','permissions':('events.view_syncoutboxitem',)},
-                    {'label':'Participant match review','description':'Existing reversible offline identity review. Intended future home: participant reconciliation.','url_name':'events:match-review-list','permissions':('events.view_participantmatchreview',)},
+ 'platform-tools': ({'label':'Platform monitoring','description':'Monitor synchronization, delivery status and operational incidents.','url_name':'events:operations-dashboard','permissions':('events.view_syncoutboxitem',)},
+                    {'label':'Participant match review','description':'Review reversible offline identity matches and participant reconciliation.','url_name':'events:match-review-list','permissions':('events.view_participantmatchreview',)},
                     {'label':'Backup records','description':'Existing read-only backup records in restricted administration.','url_name':'admin:events_backuprecord_changelist','permissions':('events.view_backuprecord',)}),
- 'administration': ({'label':'Portal Preview','description':'Review portal experiences using your administrator account and isolated synthetic data.','url_name':'internal:portal-preview','permissions':()},
+ 'administration': ({'label':'Portal Preview','description':'Review Customer and Participant Portals with your administrator account and isolated synthetic data.','url_name':'internal:portal-preview','permissions':()},
                    {'label': 'Staff directory',
                      'description': 'Manage staff profiles and assignment history.',
                      'url_name': 'staffing:directory',
@@ -106,8 +106,8 @@ WORKSPACE_LINKS = {'events': ({'label': 'My staff schedule',
                      'description': 'Manage staff roles, daily pay, per diem and mileage rates.',
                      'url_name': 'workdays:settings',
                      'permissions': ('workdays.manage_compensation',)},
-                    {'label': 'Django administration',
-                     'description': 'Open the restricted Django configuration interface.',
+                    {'label': 'Advanced Django administration',
+                     'description': 'Restricted maintenance and native Django configuration for authorized administrators.',
                      'url_name': 'admin:index',
                      'permissions': ('auth.view_user', 'auth.change_user')},
 
@@ -255,7 +255,7 @@ def staff_destinations(user, current_path=""):
         active = "settings"
     if current_path.startswith(("/internal/reports/", "/reports/", "/workdays/reports/")):
         active = "events" if current_path.startswith("/reports/events/") else "settings" if current_path.startswith("/reports/categories/") else "reports"
-    if current_path.startswith(("/internal/settings/", "/workdays/mine/", "/internal/quick-actions/")):
+    if current_path.startswith(("/internal/settings/", "/workdays/mine/", "/internal/quick-actions/", "/accounts/staff/", "/workdays/compensation/")):
         active = "settings"
     for entry in entries:
         entry["active"] = entry["id"] == active
@@ -274,9 +274,7 @@ def settings_groups(user):
     from apps.accounts.roles import manager
     if manager(user):
         groups.insert(0,dict(label='Staff access',links=[dict(label='Staff accounts',description='Reviewed account setup, ordinary roles and secure invitations.',url=reverse('accounts:staff-index'))]))
-    # Customer authority stays explicit; existing other settings remain unchanged.
-    if "customers" in allowed:
-        groups.append(dict(label="Other destinations", links=[dict(label="Customers", description="Customer management", url=reverse("customers:directory"))]))
+    # Customers remains available through its existing permission-filtered primary destination.
     return groups
 
 
@@ -286,5 +284,8 @@ visible_workspaces = visible_legacy_workspaces
 
 
 def legacy_workspace_context(user, current_path=""):
-    return next((entry for entry in visible_legacy_workspaces(user, current_path)
-                 if entry["active"] and entry["id"] in ("administration", "platform-tools")), None)
+    entry = next((entry for entry in visible_legacy_workspaces(user, current_path)
+                  if entry["active"] and entry["id"] in ("administration", "platform-tools")), None)
+    if current_path.startswith(("/accounts/staff/", "/workdays/compensation/", "/reports/categories/", "/internal/workspaces/administration/")):
+        return dict(id="settings", label="Settings & Administration", url=reverse("internal:settings"))
+    return entry
