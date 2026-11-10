@@ -79,11 +79,11 @@ class ParticipantReset9GTests(TestCase):
         client = Client(enforce_csrf_checks=True)
         response = client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '<label for="id_email">Email:</label>', html=True)
+        self.assertContains(response, '<label for="id_email">Account email:</label>', html=True)
         self.assertContains(response, 'type="email"')
         self.assertContains(response, 'name="csrfmiddlewaretoken"')
-        self.assertContains(response, 'Send reset link')
-        self.assertContains(response, reverse('participants:login'))
+        self.assertContains(response, 'Send recovery instructions')
+        self.assertContains(response, reverse('accounts:login'))
         self.assertEqual(client.post(self.url, {'email': self.account.login_email}).status_code, 403)
 
     def test_known_unknown_and_inactive_addresses_have_identical_response(self):

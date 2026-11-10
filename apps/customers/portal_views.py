@@ -1,5 +1,6 @@
 """Shared Customer Portal. Read projections and locked mutations remain separate."""
 from functools import wraps
+from urllib.parse import urlencode
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied, ValidationError, ObjectDoesNotExist
 from django.core.paginator import Paginator
@@ -22,7 +23,7 @@ def customer_view(view):
         from .portal_preview import review_context
         with review_context(request):
             if not request.user.is_authenticated:
-                return redirect(reverse('accounts:login') + '?account_type=customer')
+                return redirect(reverse('accounts:login') + '?' + urlencode({'next': request.get_full_path()}))
             if request.session.get('_auth_user_backend') != 'apps.customers.auth.CustomerAuthenticationBackend' and not getattr(request, 'customer_preview', False):
                 raise PermissionDenied('Use Customer sign in for this workspace.')
             identity_for(request.user)

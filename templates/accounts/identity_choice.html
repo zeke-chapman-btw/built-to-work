@@ -1,0 +1,7 @@
+{% extends 'accounts/access_base.html' %}{% load static %}{% block access_content %}
+<script src="{% static 'accounts/login.js' %}" defer></script>
+<p>Your credentials verified more than one separate account. Choose the workspace to use for this session. Accounts remain separate.</p>
+<form method="post" data-unified-login>{% csrf_token %}<input type="hidden" name="challenge" value="{{ challenge }}">
+<fieldset class="identity-choice"><legend>Verified accounts</legend>{% for choice in choices %}<div class="field"><label><input type="radio" name="choice" value="{{ choice.value }}" required> {{ choice.label }}</label></div>{% endfor %}</fieldset>
+<button type="submit">Continue</button></form><a href="{% url 'accounts:login' %}">Start again</a>
+{% endblock %}

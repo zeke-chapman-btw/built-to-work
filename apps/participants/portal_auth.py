@@ -41,23 +41,8 @@ def _mail(subject, email, url):
 @never_cache
 @require_http_methods(['GET', 'POST'])
 def sign_in(request):
-    from .portal_preview import SESSION_KEY, participant_context
-    if request.session.get(SESSION_KEY):
-        with participant_context(request):
-            return redirect('participants:profile')
-    if active_account(request.user):
-        return redirect('participants:profile')
-    form = ParticipantLoginForm(request.POST if request.method == 'POST' else None)
-    if request.method == 'POST' and form.is_valid():
-        email = form.cleaned_data['email'].lower()
-        permitted = throttle('login-ip', request.META.get('REMOTE_ADDR', ''), limit=40) and throttle('login-email', email, limit=12)
-        user = ParticipantAuthenticationBackend().authenticate(request, participant_email=email,
-            password=form.cleaned_data['password']) if permitted else None
-        if user:
-            login(request, user, backend='apps.participants.auth.ParticipantAuthenticationBackend')
-            return redirect('participants:profile')
-        form.add_error(None, 'Check your email and password, or try again later. Need help? Use account recovery below.')
-    return render(request, 'accounts/unified_login.html', {'page_title': 'Welcome to Built to Work', 'form': form, 'account_type': 'participant', 'recovery_url': reverse('participants:password-reset')})
+    from apps.accounts.login_views import sign_in as unified_sign_in
+    return unified_sign_in(request)
 
 
 @never_cache
@@ -72,7 +57,7 @@ def sign_out(request):
 
 @never_cache
 @require_http_methods(['GET', 'POST'])
-def reset_request(request):
+def _participant_recovery(request):
     from .portal_preview import block_account_changes
     block_account_changes(request)
     form = PasswordResetRequestForm(request.POST if request.method == 'POST' else None)
@@ -203,3 +188,10 @@ def legacy_setup(request, token):
             audit(account.user, 'participant_account_activated', account)
         return redirect('participants:login')
     return render(request, 'participants/portal/form.html', {'title': 'Activate your portal', 'form': form})
+
+
+@never_cache
+@require_http_methods(['GET','POST'])
+def reset_request(request):
+    from apps.accounts.login_views import recovery as unified_recovery
+    return unified_recovery(request)

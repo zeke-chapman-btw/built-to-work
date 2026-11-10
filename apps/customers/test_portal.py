@@ -175,8 +175,8 @@ class AuthenticationTests(PortalFixtures, TestCase):
         for realm in ('staff', 'customer', 'participant'):
             response = self.client.get(reverse('accounts:login'), {'account_type': realm})
             self.assertEqual(response.status_code, 200)
-            for label in ('BTW Staff', 'Customer', 'Participant'):
-                self.assertContains(response, label)
+            self.assertContains(response, 'Email or username')
+            self.assertNotContains(response, 'name="account_type"')
         self.assertEqual(self.client.get(reverse('participants:login')).status_code, 200)
 
     def test_identical_email_realms_are_distinct_and_do_not_convert_or_merge(self):

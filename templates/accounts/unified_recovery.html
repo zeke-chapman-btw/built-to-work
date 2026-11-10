@@ -1,0 +1,9 @@
+{% extends 'accounts/access_base.html' %}{% load static %}{% block access_content %}
+<script src="{% static 'accounts/login.js' %}" defer></script>
+<p>Enter your account email to request a password reset. You do not need to choose an account type.</p>
+<form method="post" data-unified-login data-submitting-label="Sending request…">{% csrf_token %}
+{% if form.errors %}<div class="errors" role="alert" tabindex="-1" data-login-errors>Check the highlighted details. {{ form.non_field_errors }}</div>{% endif %}
+{% for field in form %}<div class="field">{{ field.label_tag }}{{ field }}{% if field.help_text %}<p class="help" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</p>{% endif %}{{ field.errors }}</div>{% endfor %}
+<button type="submit">Send recovery instructions</button></form>
+<nav aria-label="Account help"><a href="{% url 'accounts:login' %}">Back to sign in</a></nav>
+{% endblock %}
