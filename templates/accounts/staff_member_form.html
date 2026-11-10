@@ -1,0 +1,10 @@
+{% extends 'internal/base.html' %}{% load static %}
+{% block extra_head %}{{ block.super }}<script src="{% static 'internal/js/staff_member.js' %}" defer></script>{% endblock %}
+{% block content %}<div class="ux-frame"><a class="ux-back" href="{{ back_url }}">← Back to Staff</a>
+<section class="ux-surface"><div class="ux-card-body">
+<form method="post" class="ux-form" data-staff-member-form data-structured-form>
+{% csrf_token %}{% for field in form.hidden_fields %}{{ field }}{{ field.errors }}{% endfor %}
+{% if form.errors %}<div class="form-error-summary" role="alert" tabindex="-1" data-error-summary><h2>Review the highlighted information</h2>{{ form.non_field_errors }}<ul>{% for field in form.visible_fields %}{% if field.errors %}<li><a href="#{% if field.name == 'roles' %}{{ field.auto_id }}_0{% else %}{{ field.id_for_label }}{% endif %}">{{ field.label }}: {{ field.errors|join:', ' }}</a></li>{% endif %}{% endfor %}</ul></div>{% endif %}
+{% if form.field_groups %}{% for group in form.field_groups %}<fieldset class="staff-account-form-group"><legend>{{ group.title }}</legend>{% for field in group.fields %}<div data-staff-field="{{ field.name }}">{% include 'shared/ux_field.html' %}</div>{% endfor %}</fieldset>{% endfor %}{% else %}{% for field in form.visible_fields %}{% include 'shared/ux_field.html' %}{% endfor %}{% endif %}
+<div class="ux-actions"><button type="submit" class="button ux-primary">Save</button><a class="button" href="{{ back_url }}">Cancel</a></div>
+</form></div></section></div>{% endblock %}

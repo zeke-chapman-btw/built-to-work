@@ -15,3 +15,12 @@
 
 .r17-number.r17-missing{font-size:18px;line-height:28px}
 @media screen and (max-width:767px){.r17-disclosure>.r17-kpis,.r17-report .r17-kpis{grid-template-columns:minmax(0,1fr)}}
+
+/* Compact scoped outputs; native disclosure remains usable without script. */
+.r17-export-menu{position:relative;flex:0 0 auto}
+.r17-export-menu>summary{list-style:none;cursor:pointer;min-height:44px}
+.r17-export-menu>summary::-webkit-details-marker{display:none}
+.r17-export-options{position:absolute;z-index:35;right:0;top:calc(100% + 6px);display:grid;gap:8px;min-width:180px;max-width:calc(100vw - 40px);padding:12px;background:#fff;border:1px solid #dfe2e7;border-radius:8px;box-shadow:0 8px 24px #0002}
+.r17-export-options .button{min-height:44px;white-space:normal}
+.r17-filter-count:empty{display:none}
+@media print{.r17-export-menu{display:none!important}}

@@ -31,7 +31,7 @@ class StaffAccountGroupingTests(TestCase):
 
     def test_identity_roles_designations_and_confirmation_render_in_order(self):
         self.client.force_login(self.admin, backend='django.contrib.auth.backends.ModelBackend')
-        response = self.client.get(reverse('accounts:staff-create'))
+        response = self.client.get(reverse('accounts:staff-edit', args=[self.admin.pk]))
         self.assertEqual(response.status_code, 200)
         controls = Controls()
         controls.feed(response.content.decode())
@@ -41,6 +41,20 @@ class StaffAccountGroupingTests(TestCase):
         self.assertLess(names.index('can_approve_weekly_payroll'), names.index('reason'))
         self.assertLess(names.index('reason'), names.index('confirm_identity'))
         for name in ('username', 'email', 'profile', 'can_finalize_event_reports', 'can_approve_weekly_payroll', 'reason', 'confirm_identity'):
+            self.assertEqual(names.count(name), 1, name)
+
+    def test_connected_creation_keeps_own_pay_separate_from_financial_authority(self):
+        self.client.force_login(self.admin, backend='django.contrib.auth.backends.ModelBackend')
+        response = self.client.get(reverse('accounts:staff-create'))
+        controls = Controls()
+        controls.feed(response.content.decode())
+        names = controls.names
+        self.assertLess(names.index('email'), names.index('login_mode'))
+        self.assertLess(names.index('roles'), names.index('my_pay_access'))
+        self.assertLess(names.index('my_pay_access'), names.index('confirm_identity'))
+        self.assertNotIn('can_finalize_event_reports', names)
+        self.assertNotIn('can_approve_weekly_payroll', names)
+        for name in ('existing_profile', 'existing_account', 'login_mode', 'my_pay_access', 'confirm_identity'):
             self.assertEqual(names.count(name), 1, name)
 
     def test_grouping_preserves_every_visible_field_once(self):

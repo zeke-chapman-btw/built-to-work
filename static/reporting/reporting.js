@@ -1,4 +1,21 @@
-document.addEventListener('click',function(event){const control=event.target.closest('[data-report-print]');if(control){event.preventDefault();window.print();}});
+document.addEventListener('click',function(event){const control=event.target.closest('[data-report-print]');if(control){event.preventDefault();const menu=control.closest('[data-report-export]');if(menu){menu.open=false;menu.querySelector('summary').focus();}window.print();}});
+
+document.querySelectorAll('[data-report-export]').forEach(function(menu) {
+  menu.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape' && menu.open) {
+      menu.open = false;
+      menu.querySelector('summary').focus();
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  });
+  menu.addEventListener('click', function(event) {
+    if (event.target.closest('a')) menu.open = false;
+  });
+  document.addEventListener('click', function(event) {
+    if (menu.open && !menu.contains(event.target)) menu.open = false;
+  });
+});
 
 // Native disclosure works without JavaScript. Desktop starts expanded; phone starts compact.
 document.querySelectorAll('[data-report-filters]').forEach(function(panel) {

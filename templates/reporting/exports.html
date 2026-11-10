@@ -1,1 +1,6 @@
-<div class="r17-exports" aria-label="Report outputs">{% for item in exports %}<a class="button secondary" href="{{ item.url }}">{{ item.label }}</a>{% endfor %}<button class="button secondary" type="button" data-report-print>Print</button></div>
+<details class="r17-export-menu" data-report-export>
+<summary class="button secondary">Export</summary>
+<div class="r17-export-options" aria-label="Report outputs">
+{% for item in exports %}<a class="button secondary" href="{{ item.url }}">{{ item.label }}</a>{% endfor %}
+<button class="button secondary" type="button" data-report-print>Print</button>
+</div></details>

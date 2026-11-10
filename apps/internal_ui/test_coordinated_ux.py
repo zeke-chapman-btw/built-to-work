@@ -45,13 +45,13 @@ class CoordinatedSettingsTests(TestCase):
             self.assertNotContains(response,'href="'+reverse(name)+'"')
         self.assertContains(response,reverse('workdays:mine'))
 
-    def test_staff_create_form_preserves_roles_identity_reason_and_cancel(self):
+    def test_staff_create_form_preserves_roles_identity_and_cancel(self):
         self.login();response=self.client.get(reverse('accounts:staff-create'))
         self.assertEqual(response.status_code,200)
-        for text in ['<legend>Roles','ux-role-option','I confirm this staff identity','Reason for this change','Cancel','ux-form']:
+        for text in ['<legend>Sign-in access','name="roles"','I checked the existing profiles','Cancel','ux-form']:
             self.assertContains(response,text)
         self.assertNotContains(response,'<h2>Create staff account</h2>')
-        self.assertContains(response,'href="'+reverse('accounts:staff-index')+'"')
+        self.assertContains(response,'href="'+reverse('staffing:directory')+'"')
         before=get_user_model().objects.count()
         response=self.client.post(reverse('accounts:staff-create'),{'username':'synthetic-no-save'})
         self.assertEqual(response.status_code,200)
@@ -83,7 +83,7 @@ class CoordinatedSettingsTests(TestCase):
         before=list(CompensationRate.objects.order_by('pk').values())
         response=self.client.get(reverse('workdays:settings'))
         self.assertEqual(response.status_code,200)
-        for text in ['400.12 USD','50.50 USD','0.7654 USD per mile','Rate version history','SYNTHETIC historical reason']:
+        for text in ['$400.12/day','$50.50/day','$0.7654/mile','Rate history','SYNTHETIC historical reason']:
             self.assertContains(response,text)
         self.assertEqual(list(CompensationRate.objects.order_by('pk').values()),before)
 

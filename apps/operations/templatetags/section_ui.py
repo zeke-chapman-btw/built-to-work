@@ -54,8 +54,9 @@ def operations_navigation(context):
         tab = dict(item, label=label)
         if label == 'Games':
             tab.update(url=home + '?resource=games', active=games)
-            # Keep the existing administration destination available in More.
-            remaining = [dict(link, label='Game administration', active=False) if link is item else link for link in remaining]
+            # The Games library already exposes this same administration URL.
+            # Keep it in that context rather than duplicate it in More.
+            remaining = [link for link in remaining if link is not item]
         else:
             remaining = [link for link in remaining if link is not item]
             if label == 'Forms' and request.resolver_match and request.resolver_match.url_name in ('intake-trailer-manage', 'intake-trailer-prepare'):

@@ -1,4 +1,28 @@
 {% extends 'shared/workspace_landing.html' %}
 {% block workspace_class %}ux-settings-page{% endblock %}
-{% block workspace_content %}{% if settings_section == 'account' %}<section class="ux-surface ux-account-summary" aria-labelledby="settings-heading"><header class="ux-card-heading"><h2 id="settings-heading">Your account</h2></header><div class="ux-card-body"><p>Signed in as <strong>{{ request.user.get_username }}</strong>.</p><p class="ux-note">Manage your personal access and open your staff history.</p><div class="ux-actions"><a class="button" href="{{ password_change_url }}">Change your password</a><a class="button" href="{% url 'workdays:mine' %}">My Workday History</a><a class="button" href="{% url 'staffing:schedule' %}">My staff schedule</a></div></div></section>{% endif %}
-{% for group in settings_groups %}<section class="ux-surface"><header class="ux-card-heading"><h2>{{ group.label }}</h2></header><ul class="ux-nav-list">{% for link in group.links %}<li><a class="ux-nav-row" href="{{ link.url }}"><span><strong>{{ link.label }}</strong><small>{{ link.description }}</small></span><span aria-hidden="true">→</span></a></li>{% endfor %}</ul></section>{% endfor %}{% endblock %}
+{% block workspace_content %}
+{% if settings_section == 'account' %}
+<section class="ux-surface ux-account-summary" aria-labelledby="settings-heading">
+  <header class="ux-card-heading"><h2 id="settings-heading">Your account</h2></header>
+  <div class="ux-card-body">
+    <p>Signed in as <strong>{{ request.user.get_username }}</strong>.</p>
+    <p class="ux-note">Sign-in and recovery email: {{ request.user.email|default:'Not recorded' }}</p>
+    {% if not linked_staff_profile %}<p class="ux-note">No staff profile is linked. An Administrator or Manager can connect your existing profile in Staff settings. Contact details and shirt size become available after linking.</p>{% endif %}
+    <form method="post" class="ux-form" data-structured-form>
+      {% csrf_token %}
+      {% for field in personal_form.hidden_fields %}{{ field }}{{ field.errors }}{% endfor %}
+      {% if personal_form.errors %}<div role="alert" class="form-error-summary" tabindex="-1" data-error-summary><h3>Review your information</h3>{{ personal_form.non_field_errors }}</div>{% endif %}
+      {% for field in personal_form.visible_fields %}{% include 'shared/ux_field.html' %}{% endfor %}
+      <div class="ux-actions"><button class="button ux-primary" type="submit">Save</button><a class="button" href="{% url 'internal:settings' %}">Reset</a></div>
+    </form>
+    <div class="ux-actions">
+      {% if own_pay_available %}<a class="button" href="{% url 'reporting:my-pay' %}">My Pay</a>{% endif %}
+      <a class="button" href="{{ password_change_url }}">Change your password</a>
+      <a class="button" href="{% url 'workdays:mine' %}">My Workday History</a>
+      <a class="button" href="{% url 'staffing:schedule' %}">My staff schedule</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% for group in settings_groups %}<section class="ux-surface"><header class="ux-card-heading"><h2>{{ group.label }}</h2></header><ul class="ux-nav-list">{% for link in group.links %}<li><a class="ux-nav-row" href="{{ link.url }}"><span><strong>{{ link.label }}</strong><small>{{ link.description }}</small></span><span aria-hidden="true">→</span></a></li>{% endfor %}</ul></section>{% endfor %}
+{% endblock %}

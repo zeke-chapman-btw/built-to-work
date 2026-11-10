@@ -48,7 +48,8 @@ def directory(request):
     if state not in ("active","inactive","all"): state="active"
     if state!="all": people=people.filter(is_active=state=="active")
     if q: people=people.filter(Q(first_name__icontains=q)|Q(last_name__icontains=q)|Q(email__icontains=q))
-    return render(request,"staffing/directory.html",dict(page_title="Staff directory",people=Paginator(people,20).get_page(request.GET.get("page")),q=q,selected_status=state))
+    from apps.accounts.roles import manager
+    return render(request,"staffing/directory.html",dict(page_title="Staff directory",people=Paginator(people,20).get_page(request.GET.get("page")),q=q,selected_status=state,can_manage_staff=manager(request.user)))
 
 
 @staff_view
@@ -57,11 +58,24 @@ def profile(request,profile_id):
     if request.method!="GET": raise PermissionDenied
     person=get_object_or_404(StaffProfile.objects.select_related("user"),pk=profile_id)
     history=person.assignments.select_related("event","source_request","changed_by").prefetch_related("days")
-    return render(request,"staffing/profile.html",dict(page_title=str(person),person=person,history=Paginator(history,20).get_page(request.GET.get("page")),availability=person.availability_requests.select_related("event","decided_by")[:50]))
+    from apps.accounts.roles import require_account_manager, require_target
+    can_manage = False
+    try:
+        require_account_manager(request.user)
+        if person.user_id:
+            require_target(request.user, person.user)
+        can_manage = True
+    except PermissionDenied:
+        pass
+    return render(request,"staffing/profile.html",dict(page_title=str(person),person=person,can_manage_staff=can_manage,history=Paginator(history,20).get_page(request.GET.get("page")),availability=person.availability_requests.select_related("event","decided_by")[:50]))
 
 
 @staff_view
 def profile_edit(request,profile_id=None):
+    if profile_id is None and request.method == 'GET':
+        from apps.accounts.roles import manager
+        if manager(request.user):
+            return redirect('accounts:staff-create')
     services.require_perm(request.user,"staffing.change_staffprofile" if profile_id else "staffing.add_staffprofile")
     person=get_object_or_404(StaffProfile,pk=profile_id) if profile_id else StaffProfile()
     form=ProfileForm(instance=person)

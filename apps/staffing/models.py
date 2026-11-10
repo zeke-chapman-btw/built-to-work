@@ -15,6 +15,7 @@ class StaffProfile(UUIDModel, TimestampedModel):
     state = models.CharField(max_length=100, blank=True)
     zip_code = models.CharField(max_length=24, blank=True)
     shirt_size = models.CharField(max_length=12, blank=True, choices=[(s, s) for s in ("XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL")])
+    my_pay_enabled = models.BooleanField(default=False, db_default=False, help_text="Allow this person to view only their own earnings statements.")
     is_active = models.BooleanField(default=True)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="staff_profile")
     internal_notes = models.TextField(blank=True)

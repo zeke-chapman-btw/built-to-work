@@ -158,8 +158,8 @@ def _private_statement(row):
 
 
 def own_statements(actor):
-    actor=staff(actor);profile=StaffProfile.objects.filter(user=actor).first()
-    if not profile:raise PermissionDenied("Your account has no linked contractor profile.")
+    from .access import own_pay_profile
+    profile=own_pay_profile(actor)
     from django.db.models import OuterRef,Subquery
     newest=PayrollApproval.objects.filter(version__period_id=OuterRef("approval__version__period_id")).order_by("-version__number").values("pk")[:1]
     rows=ContractorStatement.objects.filter(staff=profile,approval_id=Subquery(newest)).select_related("approval__version__period","approval__approved_by").defer("approval__version__snapshot").order_by("-approval__version__period_id")
@@ -178,8 +178,8 @@ def statement_data(approval,rows):
 
 
 def own_statement(actor,version_id):
-    actor=staff(actor);profile=StaffProfile.objects.filter(user=actor).first()
-    if not profile:raise PermissionDenied
+    from .access import own_pay_profile
+    profile=own_pay_profile(actor)
     row=ContractorStatement.objects.filter(staff=profile,approval__version_id=version_id).select_related("approval__version__period").defer("approval__version__snapshot").first()
     if not row:raise PermissionDenied("This earnings statement is not yours.")
     return _private_statement(row)

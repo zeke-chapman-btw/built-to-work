@@ -27,8 +27,10 @@ class ReportingFixtures(TestCase):
         cls.capture_profile=SimulatorCaptureProfile.objects.create(name="SYNTHETIC R17 profile",simulator_type="Synthetic")
         cls.worker=U.objects.create_user("synthetic-contractor-one",password="synthetic-test-password",is_staff=True)
         cls.other=U.objects.create_user("synthetic-contractor-two",password="synthetic-test-password",is_staff=True)
-        cls.staff=StaffProfile.objects.create(first_name="SYNTHETIC",last_name="Contractor One",user=cls.worker)
-        cls.other_staff=StaffProfile.objects.create(first_name="SYNTHETIC",last_name="Contractor Two",user=cls.other)
+        # Earnings/privacy journeys explicitly opt in both fixture contractors;
+        # default-off and revocation are tested separately by the staff suite.
+        cls.staff=StaffProfile.objects.create(first_name="SYNTHETIC",last_name="Contractor One",user=cls.worker,my_pay_enabled=True)
+        cls.other_staff=StaffProfile.objects.create(first_name="SYNTHETIC",last_name="Contractor Two",user=cls.other,my_pay_enabled=True)
         cls.role=StaffRole.objects.get(name="Staff")
         cls.rate=CompensationRate.objects.create(kind="mileage",amount=".5",effective_from=date(2020,1,1),reason="SYNTHETIC")
     def person(self,interest="",event=None):

@@ -30,6 +30,8 @@ def staff(view):
 
 
 def page(request, template, **context):
+    from .ui_context import from_settings
+    context['recruiting_settings_origin'] = from_settings(request)
     context.setdefault('page_title', 'Recruiting')
     context.setdefault('active_workspace', 'participants')
     # Independent forms keep their POST contracts but must not share HTML IDs.
@@ -198,7 +200,9 @@ def classifications(request, classification_id=None):
                 result = form.save(commit=False);result.full_clean();result.save()
                 service.audit(actor, 'classification.saved', result, data={k:getattr(result,k) for k in fields},before=previous,why=form.cleaned_data['reason'])
         except ValidationError as exc:form.add_error(None,exc)
-        else:return redirect('recruiting:classifications')
+        else:
+            from .ui_context import catalog_url
+            return redirect(catalog_url(request, 'recruiting:classifications'))
     from apps.core.models import AuditLog
     from django.contrib.contenttypes.models import ContentType
     history=AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(Classification),action='recruiting.classification.saved')

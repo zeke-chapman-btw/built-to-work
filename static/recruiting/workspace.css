@@ -19,3 +19,25 @@
 
 /* Post-Build 16: each existing position action retains its own target and focus. */
 .recruiting-workspace nav.recruiting-actions>a{display:inline-flex;align-items:center;min-height:44px;padding:8px 12px}
+
+/* Scoped Needs and Settings presentation over existing workflows. */
+.recruiting-workspace.is-settings-catalog{max-width:none}
+.recruiting-config-form{max-width:720px}
+.recruiting-need-actions{margin:0 0 16px}
+.recruiting-need-filters{display:flex;align-items:end;flex-wrap:wrap;gap:12px;margin:12px 0 18px}
+.recruiting-need-filters .field{flex:1 1 160px;min-width:0;margin:0}
+.recruiting-need-filters .field:first-of-type{flex:2 1 220px}
+.recruiting-need-filters label{display:block;margin-bottom:6px;font-size:12px}
+.recruiting-need-filters :is(input,select){width:100%;max-width:100%;min-height:44px}
+.recruiting-need-filters .form-error-summary{flex-basis:100%}
+.recruiting-workspace [data-workforce-filters]>summary{min-height:44px;line-height:24px;padding-block:10px;cursor:pointer}
+.recruiting-workspace .table-scroll{overflow-x:auto;max-width:100%;min-width:0}
+.recruiting-workspace .table-scroll table{width:100%}
+.recruiting-workspace .workspace-table td{overflow-wrap:anywhere}
+.recruiting-workspace .workspace-table td details{min-width:180px;font-size:12px;margin-top:6px}
+.recruiting-workspace .workspace-table td details summary{min-height:36px;cursor:pointer}
+.recruiting-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px}
+@media(max-width:767.98px){.recruiting-need-filters .field{flex-basis:calc(50% - 12px)}}
+@media(max-width:479.98px){.recruiting-need-filters .field{flex-basis:100%}.recruiting-need-filters :is(input,select){font-size:16px}.recruiting-workspace .table-scroll table{min-width:650px}}
+
+.recruiting-workspace .recruiting-summary-value{font-size:28px;line-height:36px;font-weight:600;margin:12px 0 8px}.recruiting-stage-summary{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px 20px}.recruiting-stage-summary li{display:flex;gap:12px;align-items:center;min-height:36px}

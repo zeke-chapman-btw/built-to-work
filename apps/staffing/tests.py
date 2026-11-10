@@ -94,7 +94,11 @@ class Staffing9CTests(TestCase):
     def test_staff_directory_search_inactive_and_pagination(self):
         self.other_person.is_active=False; self.other_person.save()
         r=self.client.get('/staff/directory/',{'q':'Other','status':'inactive'}); self.assertContains(r,'SYNTHETIC Other'); self.assertNotContains(r,'SYNTHETIC Employee')
-        self.assertContains(self.client.get('/staff/directory/'),'Add staff')
+        directory = self.client.get('/staff/directory/')
+        self.assertContains(directory, 'Add profile')
+        self.assertContains(directory, reverse('staffing:profile-add'))
+        self.assertNotContains(directory, reverse('accounts:staff-create'))
+        self.assertNotContains(directory, 'Roles &amp; Access')
     def test_availability_starts_pending_with_original_dates(self):
         r=self.request(); self.assertEqual(r.status,'pending'); self.assertEqual(r.requested_dates,['2030-07-01','2030-07-02']); self.assertFalse(StaffAssignment.objects.exists())
     def test_duplicate_pending_and_approved_requests_rejected(self):

@@ -16,6 +16,17 @@ from .foundation import readiness
 @require_http_methods(['GET','POST'])
 def matching_directory(request):
     form=OpportunityForm(request.POST or None)
+    if request.method == 'GET' and request.GET.get('need') and manager(request.recruiting_actor):
+        import uuid
+        try:
+            need_id = uuid.UUID(request.GET['need'])
+        except (ValueError, TypeError):
+            messages.error(request, 'Choose an approved Workforce Need.')
+        else:
+            if form.fields['need'].queryset.filter(pk=need_id).exists():
+                form.initial['need'] = need_id
+            else:
+                messages.error(request, 'That Workforce Need is not available for recruiting setup.')
     if request.method=='POST':
         if not manager(request.recruiting_actor):raise PermissionDenied
         if form.is_valid():

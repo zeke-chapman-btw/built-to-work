@@ -51,8 +51,11 @@ class OperationsReferenceRefinementTests(TestCase):
         self.assertTrue(nav['primary_tabs'][0]['active'])
         self.assertEqual(next(x for x in nav['primary_tabs'] if x['label']=='Games')['url'],url+'?resource=games')
         remaining=[x for group in nav['groups'] for x in group['links']]
-        for route in ['operations:execution-index','operations:templates','operations:trailers','admin:games_gamedefinition_changelist']:
+        for route in ['operations:execution-index','operations:templates','operations:trailers']:
             self.assertIn(reverse(route),[x['url'] for x in remaining])
+        self.assertNotIn(reverse('admin:games_gamedefinition_changelist'), [x['url'] for x in remaining])
+        self.login()
+        self.assertContains(self.client.get(url+'?resource=games'), reverse('admin:games_gamedefinition_changelist'))
 
     def test_tabs_keep_permission_boundaries_and_active_deep_links(self):
         nav=self.nav(reverse('internal:workspace',args=['operations']),self.staff)

@@ -24,6 +24,17 @@ def page(request,template,**context):
     from apps.internal_ui.views import _staff_context
     return render(request,template,_staff_context(request,**context))
 
+def deliver_invitation(request, item):
+    """Use the existing invitation transport only after the setup transaction commits."""
+    target = item.user
+    url = request.build_absolute_uri(reverse('accounts:activate', args=[invitation_token(item)]))
+    def deliver():
+        try:
+            send_mail('Set up your Built to Work staff account', 'Set your own password using this private link within 24 hours:\n' + url, None, [target.email], fail_silently=False)
+        except Exception:
+            return
+    transaction.on_commit(deliver)
+
 @account_manager
 @require_http_methods(['GET'])
 def index(request):
@@ -77,11 +88,7 @@ def action(request,user_id,action):
         elif action=='invite':
             if form.cleaned_data['revision']!=revision(target):raise ValidationError('This account changed. Reload before inviting.')
             item=issue_invitation(user=target,actor=request.user,reason=form.cleaned_data['reason'],expected_revision=form.cleaned_data['revision'])
-            url=request.build_absolute_uri(reverse('accounts:activate',args=[invitation_token(item)]))
-            def deliver():
-                try:send_mail('Set up your Built to Work staff account','Set your own password using this private link within 24 hours:\n'+url,None,[target.email],fail_silently=False)
-                except Exception:return
-            transaction.on_commit(deliver)
+            deliver_invitation(request, item)
             messages.success(request,'Setup invitation requested. Email delivery depends on the configured transport.')
         else:raise ValidationError('Unsupported account action.')
     except ValidationError as exc:messages.error(request,' '.join(exc.messages))

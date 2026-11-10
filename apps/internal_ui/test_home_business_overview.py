@@ -299,8 +299,10 @@ class HomeBusinessOverviewTests(TestCase):
             end_at=datetime(2026,10,30,21,tzinfo=UTC), daily_start_time=time(9), daily_end_time=time(17))
         with patch('django.utils.timezone.now',return_value=datetime(2026,10,27,12,tzinfo=UTC)):
             response=self.page()
+            # Keep the authenticated follow-up request on the same clock as
+            # session creation; otherwise it expires fourteen days later.
+            detail=self.client.get(reverse('events:event_detail',args=[event.pk]))
         self.assertNotContains(response,'Daily hours:')
-        detail=self.client.get(reverse('events:event_detail',args=[event.pk]))
         self.assertContains(detail,'9:00 AM')
         self.assertContains(detail,'5:00 PM')
         self.assertContains(response,'Oct 28, 2026 – Oct 30, 2026')

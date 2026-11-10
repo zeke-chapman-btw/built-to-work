@@ -10,7 +10,9 @@ def _sections(user):
         for original in group['links']:
             link = dict(original)
             route = link.get('url_name')
-            if link['url'] == reverse('accounts:staff-index') or route in {'staffing:directory', 'workdays:index'}:
+            if route == 'workdays:index':
+                continue  # Cross-event history remains in Account and operational workday navigation.
+            if link['url'] == reverse('accounts:staff-index') or route == 'staffing:directory':
                 staff.append(link)
             elif route == 'internal:portal-preview':
                 direct['portal'] = link
@@ -22,7 +24,7 @@ def _sections(user):
             advanced.append({'label': group['label'], 'links': remaining})
     sections = [{'key': 'account', 'label': 'Account', 'groups': []}]
     if staff:
-        sections.append({'key': 'staff', 'label': 'Staff', 'groups': [{'label': 'Staff', 'links': staff}]})
+        sections.append({'key': 'staff', 'label': 'Staff', 'url': reverse('staffing:directory'), 'groups': []})
     for key, label in [('portal', 'Portal Preview'), ('compensation', 'Compensation Settings')]:
         if key in direct:
             sections.append({'key': key, 'label': label, 'url': direct[key]['url'], 'groups': []})
@@ -32,10 +34,10 @@ def _sections(user):
             'label': 'Recruiting configuration', 'links': [
                 {'label': 'Employment & availability classifications',
                  'description': 'Manage the existing stable classification catalog and retired values.',
-                 'url': reverse('recruiting:classifications')},
+                 'url': reverse('recruiting:classifications') + '?from=settings'},
                 {'label': 'Recruiting stages',
                  'description': 'Manage the existing shared recruiting lifecycle.',
-                 'url': reverse('recruiting:stages')},
+                 'url': reverse('recruiting:stages') + '?from=settings'},
             ]}]})
     if advanced:
         sections.append({'key': 'advanced', 'label': 'Advanced', 'groups': advanced})
@@ -60,7 +62,11 @@ def settings_context(request):
     elif path.startswith('/reports/categories/'):
         selected = 'advanced'
     else:
-        return None
+        from apps.recruiting.ui_context import from_settings
+        if from_settings(request):
+            selected = 'recruiting'
+        else:
+            return None
     sections = _sections(user)
     available = {section['key']: section for section in sections}
     # Root query strings choose presentation only. Protected tools use their

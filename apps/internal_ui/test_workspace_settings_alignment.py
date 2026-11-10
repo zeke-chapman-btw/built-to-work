@@ -35,7 +35,8 @@ class WorkspaceSettingsAlignmentTests(PortalFixtures, TestCase):
 
     def test_manager_staff_tools_keep_the_current_administrator_only_boundaries(self):
         self.staff_login(self.manager)
-        response = self.client.get(reverse('internal:settings'), {'tab': 'staff'})
+        response = self.client.get(reverse('internal:settings'), {'tab': 'staff'}, follow=True)
+        self.assertEqual(response.redirect_chain, [(reverse('staffing:directory'), 302)])
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'href="' + reverse('accounts:staff-index') + '"')
         self.assertNotContains(response, 'data-settings-tab="portal"')
@@ -63,7 +64,7 @@ class WorkspaceSettingsAlignmentTests(PortalFixtures, TestCase):
         self.staff_login()
         before = (Participant.objects.count(), ConsentAcceptance.objects.count(), Task.objects.count())
         for section in ['account', 'staff', 'recruiting', 'advanced']:
-            self.assertEqual(self.client.get(reverse('internal:settings'), {'tab': section}).status_code, 200)
+            self.assertEqual(self.client.get(reverse('internal:settings'), {'tab': section}, follow=True).status_code, 200)
         self.assertEqual(before, (Participant.objects.count(), ConsentAcceptance.objects.count(), Task.objects.count()))
 
     def test_customer_frame_uses_staff_geometry_without_staff_navigation_or_authority(self):

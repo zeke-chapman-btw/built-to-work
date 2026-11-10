@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, matching_views, workflow_views, job_views, employer_views
+from . import views, matching_views, workflow_views, job_views, employer_views, workforce_views
 
 app_name = 'recruiting'
 urlpatterns = [
@@ -7,6 +7,7 @@ urlpatterns = [
     path('disclosures/<uuid:disclosure_id>/members/<uuid:membership_id>/',employer_views.member_permission,name='disclosure-member'),
     path('people/<int:participant_id>/sharing-withdrawal/',employer_views.withdrawal,name='sharing-withdrawal'),
     path('',workflow_views.overview,name='overview'),
+    path('workforce-needs/',workforce_views.directory,name='workforce-needs'),
     path('campaigns/',workflow_views.campaigns,name='campaigns'),
     path('campaigns/<uuid:campaign_id>/',workflow_views.campaign_detail,name='campaign-detail'),
     path('requests/group/',workflow_views.request_group,name='request-group'),

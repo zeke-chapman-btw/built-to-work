@@ -101,8 +101,8 @@ class FollowupForm(TaskForm):
 
 
 class StageConfigurationForm(VersionReasonForm):
-    key=forms.SlugField(max_length=80)
-    label=forms.CharField(max_length=100)
-    position=forms.IntegerField(min_value=0,max_value=32767)
-    is_active=forms.BooleanField(required=False,initial=True)
+    key=forms.SlugField(max_length=80, label='Stable code', help_text='Set once. Existing pipeline history retains this code.')
+    label=forms.CharField(max_length=100, label='Stage name')
+    position=forms.IntegerField(min_value=0,max_value=32767, label='Display order', help_text='Lower numbers appear first.')
+    is_active=forms.BooleanField(required=False,initial=True, label='Available for new selections')
     expected_revision=forms.IntegerField(required=False,widget=forms.HiddenInput)

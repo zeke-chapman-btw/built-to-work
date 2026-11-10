@@ -24,8 +24,7 @@ from . import metrics,services,payroll,exports
 from .presentation import TAB_LABELS,workspace_data,table
 
 HIGHLIGHT_SUMMARY_LABELS = frozenset({
-    'Events conducted', 'Unique event leads', 'Qualified leads', 'Qualification rate',
-    'Active participants', 'Active opportunities', 'Confirmed hires', 'Active customers',
+    'Unique event leads', 'Qualified leads', 'Active participants', 'Confirmed hires',
 })
 
 PAY_COLUMNS=[("contractor","Contractor","text"),("event","Event","text"),("occurred_on","Work/trip date","text"),("source_kind","Source","text"),("base","Base USD","money"),("per_diem","Per diem USD","money"),("mileage","Mileage USD","money"),("incentives","Incentives USD","money"),("adjustments","Adjustments USD","money"),("total","Total USD","money")]
@@ -90,8 +89,12 @@ def workspace(request):
         additional = [card for card in cards if card['label'] not in HIGHLIGHT_SUMMARY_LABELS]
         if not primary:
             primary, additional = cards[:4], cards[4:]
+        overview_titles = {'Event lead trends', 'Recruiting pipeline', 'Confirmed hiring trend'}
+        featured = [graph for graph in charts if graph['title'] in overview_titles or 'acquisition' in graph['title'].lower()][:4]
+        if not featured:
+            featured = charts[:2]
         context.update(highlight_cards=primary, additional_cards=additional,
-            highlight_charts=charts[:2], additional_charts=charts[2:])
+            highlight_charts=featured, additional_charts=[graph for graph in charts if graph not in featured])
     return page(request,"reporting/workspace.html",page_title="Reports & Analytics",report_tabs=tabs_for(actor,tab),selected_tab=tab,filters=form,
         definitions=METRICS,exports=export_links(request) if actor.has_perm("reporting.export_reports") else [],
         legacy_reports=destinations,report_destinations=destinations,**context)

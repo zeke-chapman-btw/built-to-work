@@ -63,6 +63,10 @@ class ClassificationForm(forms.ModelForm):
     class Meta:
         model = Classification
         fields = ['kind', 'key', 'label', 'position', 'is_active']
+        labels = {'kind': 'Profile category', 'key': 'Stable code', 'label': 'Display name',
+                  'position': 'Display order', 'is_active': 'Available for new selections'}
+        help_texts = {'key': 'Set once. Existing answers retain this code.',
+                      'position': 'Lower numbers appear first.'}
 
 
 class CampaignPolicyForm(ReasonForm):

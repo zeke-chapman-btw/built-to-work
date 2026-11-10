@@ -101,12 +101,12 @@ class Post16A1Tests(EmployerFixtures, TestCase):
     def test_configuration_returns_to_settings_without_weakening_admin_guard(self):
         self.staff_login()
         for name in ['stages', 'classifications']:
-            response = self.client.get(reverse('recruiting:' + name))
+            response = self.client.get(reverse('recruiting:' + name), {'from': 'settings'})
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, reverse('internal:settings') + '?tab=recruiting')
         self.staff_login(self.recruiter)
         for name in ['stages', 'classifications']:
-            self.assertEqual(self.client.get(reverse('recruiting:' + name)).status_code, 403)
+            self.assertEqual(self.client.get(reverse('recruiting:' + name), {'from': 'settings'}).status_code, 403)
 
     def test_task_summary_keeps_accessible_totals_separate_from_my_view(self):
         user = get_user_model().objects.create_user(username='synthetic-a1-assignee', is_staff=True)

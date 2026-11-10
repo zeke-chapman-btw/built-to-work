@@ -87,20 +87,38 @@ def workspace(request,workspace_id):
         data=operations_home(request.user)
         from apps.events.experience_operations import can_view_event_operations
         if data["featured"] and can_view_event_operations(request.user):
-            links=links+[dict(label="Simulator Scoring",url=reverse("events:event_detail",args=[data["featured"]["event"].pk])+"?section=results",description="View recorded simulator results for the next upcoming event.")]
+            links=links+[dict(label="Simulator Scoring",url=reverse("events:event_detail",args=[data["featured"]["event"].pk])+"?section=results",description="View recorded simulator results for the next upcoming event.",context_label=data["featured"]["event"].name)]
         return render(request,"internal/operations_home.html",_staff_context(request,page_title="Operations",page_description="Manage event resources, quizzes, games, forms and consents.",workspace_links=links,
             reporting_available=bool(report_destinations(request.user)),**data))
     return render(request,"internal/workspace.html",_staff_context(request,page_title=item["label"].title(),page_description=item["description"],workspace_id=workspace_id,workspace_links=links))
 
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def settings(request):
     _require_staff(request)
     from .settings_presentation import settings_context
+    from apps.accounts.personal_profile import PersonalProfileForm, save_personal_profile
+    from apps.reporting.access import staff
+    from apps.staffing.models import StaffProfile
+    user = staff(request.user)
     presentation = settings_context(request)
+    if presentation['selected'] == 'staff':
+        return redirect('staffing:directory')
+    profile = StaffProfile.objects.filter(user=user).first()
+    form = PersonalProfileForm(user=user, profile=profile)
+    if request.method == 'POST':
+        if presentation['selected'] != 'account':
+            raise PermissionDenied
+        saved, form = save_personal_profile(actor=user, data=request.POST)
+        if saved:
+            messages.success(request, 'Your personal information was saved.')
+            return redirect('internal:settings')
     return render(request,"internal/settings.html",_staff_context(request,
         page_title="Settings",settings_presentation=presentation,
         settings_section=presentation["selected"],settings_groups=presentation["groups"],
+        personal_form=form, linked_staff_profile=profile,
+        own_pay_available=bool(profile and profile.my_pay_enabled),
         password_change_url=reverse("accounts:password-change")))
 
 @login_required

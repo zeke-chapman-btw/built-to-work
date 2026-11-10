@@ -30,11 +30,22 @@ class WorkdayForm(RevisionForm):
             self.fields['staff'].disabled=True
             self.initial.update({name:getattr(record,name) for name in ['staff','work_date','role','drove','effective_checkin_at','per_diem']})
             self.initial['revision']=record.updated_at.isoformat()
-class RoleForm(RevisionForm):
+class CompensationConfigurationForm(RevisionForm):
+    """Configuration retains automatic attribution; correction forms keep reasons."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields.pop('reason')
+
+    def clean(self):
+        data = super().clean()
+        data['reason'] = 'Compensation configuration saved; actor, time and before/after values recorded automatically.'
+        return data
+
+class RoleForm(CompensationConfigurationForm):
     name = forms.CharField(max_length=80)
     is_active = forms.BooleanField(required=False,initial=True)
     per_diem_eligible = forms.TypedChoiceField(choices=[('unknown','Needs manager review'),('yes','Eligible under configured daily policy'),('no','Not eligible')],coerce=lambda v:{'unknown':None,'yes':True,'no':False}[v])
-class RateForm(RevisionForm):
+class RateForm(CompensationConfigurationForm):
     kind = forms.ChoiceField(choices=CompensationRate.KINDS)
     role = forms.ModelChoiceField(queryset=StaffRole.objects.all(),required=False)
     amount = forms.DecimalField(max_digits=12,decimal_places=4,min_value=0,label='Approved amount (USD; mileage is USD per mile)')

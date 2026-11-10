@@ -26,6 +26,15 @@ def allowed_tabs(actor):
     except PermissionDenied:pass
     return tabs
 
+def own_pay_profile(actor):
+    """Read eligibility afresh for every page, statement and export request."""
+    from apps.staffing.models import StaffProfile
+    actor = staff(actor)
+    profile = StaffProfile.objects.filter(user=actor, my_pay_enabled=True).first()
+    if profile is None:
+        raise PermissionDenied("My Pay is not enabled for your staff profile.")
+    return profile
+
 def require_tab(actor,tab):
     actor=staff(actor)
     if tab not in allowed_tabs(actor):raise PermissionDenied("This report requires its source-record permissions.")

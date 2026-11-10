@@ -211,7 +211,9 @@ def stages(request,key=None):
         d=form.cleaned_data
         try:workflow.configure_stage(actor=request.user,key=d['key'],label=d['label'],position=d['position'],is_active=d['is_active'],expected_revision=d['expected_revision'],why=d['reason'])
         except ValidationError as exc:form.add_error(None,exc)
-        else:return redirect('recruiting:stages')
+        else:
+            from .ui_context import catalog_url
+            return redirect(catalog_url(request, 'recruiting:stages'))
     return page(request,'recruiting/stages.html',page_title='Recruiting Stages',stages=RecruitingStage.objects.all(),form=form)
 
 

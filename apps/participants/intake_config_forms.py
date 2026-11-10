@@ -17,29 +17,30 @@ def parse_options(text):
         if not line.strip():
             continue
         if "|" not in line:
-            raise ValidationError("Use one stable value | label per line.")
+            raise ValidationError("Use one choice code | displayed answer per line.")
         value, label = (part.strip() for part in line.split("|", 1))
         options.append({"value": value, "label": label})
     return options
 
 
 class QuestionConfigForm(forms.Form):
-    label = forms.CharField(max_length=240)
-    help_text = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 2}), max_length=2000)
-    type = forms.ChoiceField(choices=[(kind, kind.replace("_", " ").title()) for kind in sorted(KINDS - {"repeat_group"})])
-    step = forms.TypedChoiceField(coerce=int, choices=[(1, "Step 1 — Personal information"), (2, "Step 3 — Education and employment"),
+    label = forms.CharField(max_length=240, label='Question text')
+    help_text = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 2}), max_length=2000, label='Help shown to participants')
+    type = forms.ChoiceField(label='Answer format', choices=[(kind, {'short_text': 'Short answer', 'long_text': 'Long answer',
+        'single_choice': 'Choose one answer', 'multiple_choice': 'Choose several answers'}.get(kind, kind.replace("_", " ").title())) for kind in sorted(KINDS - {"repeat_group"})])
+    step = forms.TypedChoiceField(label='Participant step', coerce=int, choices=[(1, "Step 1 — Personal information"), (2, "Step 3 — Education and employment"),
         (3, "Step 4 — Trade interests and experience"), (4, "Step 5 — Career preferences")])
-    required = forms.BooleanField(required=False)
-    destination = forms.ChoiceField(label="Profile field mapping")
-    options = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 6}),
-        help_text="One stable value | participant-facing label per line. Changing a value changes the answer contract.")
-    condition_mode = forms.ChoiceField(choices=[
+    required = forms.BooleanField(required=False, label='Answer required')
+    destination = forms.ChoiceField(label="Save answer to", help_text='Choose an existing participant field or retain the answer only in submission history. Original saved answers are preserved.')
+    options = forms.CharField(required=False, label='Answer choices', widget=forms.Textarea(attrs={"rows": 6}),
+        help_text="One choice code | displayed answer per line. Keep existing codes to preserve recorded answers.")
+    condition_mode = forms.ChoiceField(label='When to show this question', choices=[
         ("keep", "Keep current condition"), ("always", "Always show"),
         ("equals", "Show when an earlier answer equals"), ("in", "Show for any selected earlier choice"),
         ("contains", "Show when an earlier multi-choice answer includes"),
         ("adult_non_student", "Adults 18+ who are not high school students")])
     condition_field = forms.ChoiceField(required=False, label="Earlier question")
-    condition_values = forms.MultipleChoiceField(required=False, label="Triggering choices")
+    condition_values = forms.MultipleChoiceField(required=False, label="Answers that show this question")
     max_selections = forms.IntegerField(required=False, min_value=1)
     min_selections = forms.IntegerField(required=False, min_value=0)
     exclusive = forms.CharField(required=False, help_text="Comma-separated stable values that must be selected alone.")
@@ -50,8 +51,9 @@ class QuestionConfigForm(forms.Form):
                      if child else contract["questions"])
         self.question = next((q for q in questions if q["key"] == key), None)
         super().__init__(*args, **kwargs)
+        destination_labels = {'dob': 'Date of birth', 'current_situation': 'Reported situation'}
         self.fields["destination"].choices = [("submission_only", "Submission history only")] + [
-            (key, key.replace("_", " ").title()) for key in DESTINATIONS]
+            (key, destination_labels.get(key, key.replace("_", " ").title())) for key in sorted(DESTINATIONS)]
         prior = []
         for q in questions:
             if q["key"] == key:

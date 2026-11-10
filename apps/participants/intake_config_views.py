@@ -22,6 +22,11 @@ from apps.internal_ui.section_editors import has_edit_conflict
 from .ui_presentation import intake_editor_groups
 
 
+def participant_step(question):
+    source_step = question.get('step')
+    return 2 if question.get('type') == 'consent' else 1 if source_step == 1 else source_step + 1 if isinstance(source_step, int) else 0
+
+
 def admin_page(view):
     @login_required(login_url="admin:login")
     @wraps(view)
@@ -109,9 +114,18 @@ def detail(request, form_id):
         else:
             messages.success(request, "Form action completed. Trailer downloads still require explicit local Admin confirmation.")
             return redirect("participants:intake-config-detail", form_id=model.pk)
+    # Display the existing five participant-facing steps without rewriting the
+    # retained schema, question ordering within a step, keys or conditions.
+    labels = UI_STEP_NAMES
+    grouped = {number: [] for number in labels}
+    for question in latest.snapshot['questions']:
+        number = participant_step(question)
+        grouped.setdefault(number, []).append(question)
+    question_groups = [{'number': number, 'title': labels.get(number, 'Other retained questions'),
+                        'questions': grouped[number]} for number in sorted(grouped) if grouped[number]]
     return render(request, "participants/intake_config_detail.html", context(request,
         page_title=model.name, intake_form=model, version=latest, revision=revision(latest),
-        questions=latest.snapshot["questions"], versions=model.versions.order_by("-version"),
+        questions=latest.snapshot["questions"], question_groups=question_groups, versions=model.versions.order_by("-version"),
         published=model.versions.filter(status="published"), assignments=model.intake_assignments.select_related(
             "event", "trailer", "active_version"), assignment_form=assignment_form, error=error))
 
@@ -167,11 +181,12 @@ def reorder(request, form_id, key):
         if direction == "remove":
             del contract["questions"][index]
         else:
-            other = index + (-1 if direction == "up" else 1)
-            if direction not in {"up", "down"} or not 0 <= other < len(contract["questions"]):
-                raise ValidationError("No question can move in that direction.")
-            if contract["questions"][index]["step"] != contract["questions"][other]["step"]:
-                raise ValidationError("Use the question editor to change steps.")
+            positions = [i for i, question in enumerate(contract['questions'])
+                         if participant_step(question) == participant_step(contract['questions'][index])]
+            neighbor = positions.index(index) + (-1 if direction == 'up' else 1)
+            if direction not in {'up', 'down'} or not 0 <= neighbor < len(positions):
+                raise ValidationError('No question can move in that direction within this step. Use the question editor to change steps.')
+            other = positions[neighbor]
             contract["questions"][index], contract["questions"][other] = contract["questions"][other], contract["questions"][index]
         validate_contract(contract)
         save_draft(actor=request.user, form_id=model.pk, contract=contract,

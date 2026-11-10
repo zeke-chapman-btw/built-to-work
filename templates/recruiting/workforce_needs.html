@@ -1,0 +1,22 @@
+{% extends 'recruiting/base.html' %}
+{% block recruiting_content %}
+<div class="ux-actions recruiting-need-actions"><a class="button" href="{% url 'recruiting:matching-directory' %}">All candidate matching</a>{% if can_manage_requests %}<a class="button" href="{% url 'recruiting:request-group' %}">Group positions into a Request</a>{% endif %}</div>
+<details class="btw-filter-panel" data-workforce-filters{% if filters.errors %} data-filter-errors{% endif %} open><summary>Filters{% if active_filters %} · {{ active_filters }} active{% endif %}</summary>
+<form method="get" class="recruiting-need-filters" aria-label="Workforce Need filters">
+{% if filters.errors %}<div class="form-error-summary" role="alert">{{ filters.non_field_errors }}{% for field in filters %}{{ field.errors }}{% endfor %}</div>{% endif %}
+{% for field in filters %}<div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>{% endfor %}
+<div class="ux-actions"><button type="submit" class="button ux-primary">Apply</button><a class="button" href="{% url 'recruiting:workforce-needs' %}">Reset</a></div>
+</form></details>
+<section class="ux-surface"><header class="ux-card-heading"><h2>Positions · {{ needs_page.paginator.count }}</h2></header>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Workforce Needs"><table class="workspace-table">
+<thead><tr><th scope="col">Position</th><th scope="col">Customer</th><th scope="col">Workers requested</th><th scope="col">Location</th><th scope="col">Status</th><th scope="col">Next step</th></tr></thead><tbody>
+{% for row in need_rows %}<tr><td>{% if row.need_url %}<a href="{{ row.need_url }}">{{ row.title }}</a>{% else %}{{ row.title }}{% endif %}
+<details><summary>{% if row.approved %}Approved requirements{% else %}Requirements awaiting approval{% endif %}</summary><p>{{ row.trade|default:'Trade not recorded' }} · {{ row.employment|default:'Employment type not recorded' }}</p><p>{{ row.description|default:'No description recorded.'|linebreaksbr }}</p>{% if row.campaign %}<p>Campaign: <a href="{{ row.campaign_url }}">{{ row.campaign }}</a></p>{% endif %}</details></td>
+<td>{{ row.customer }}</td><td>{{ row.quantity|default_if_none:'—' }}</td><td>{{ row.location|default:'—' }}</td><td>{{ row.status }}</td>
+<td><div class="ux-actions">{% if row.match_url %}<a href="{{ row.match_url }}">Match candidates</a>{% elif row.setup_url %}<a href="{{ row.setup_url }}">Set up recruiting</a>{% endif %}{% if row.pipeline_url %}<a href="{{ row.pipeline_url }}">Pipeline</a>{% elif not row.setup_url %}<span class="ux-note">{% if row.approved %}No active recruiting workspace{% else %}Approval required{% endif %}</span>{% endif %}</div></td></tr>
+{% empty %}<tr><td colspan="6">No Workforce Needs match this view.</td></tr>{% endfor %}
+</tbody></table></div>
+<nav class="recruiting-pagination" aria-label="Workforce Need pages">{% if needs_page.has_previous %}<a href="?{{ query_without_page }}&amp;page={{ needs_page.previous_page_number }}">Previous</a>{% endif %}<span>Page {{ needs_page.number }} of {{ needs_page.paginator.num_pages }}</span>{% if needs_page.has_next %}<a href="?{{ query_without_page }}&amp;page={{ needs_page.next_page_number }}">Next</a>{% endif %}</nav></section>
+{% if can_manage_requests %}<section class="ux-surface"><header class="ux-card-heading"><h2>Workforce Requests · {{ request_count }}</h2><a href="{% url 'recruiting:campaigns' %}">All Requests &amp; campaigns</a></header><div class="ux-card-body"><p class="ux-note">A Request groups positions. Position counts and requested workers are separate.</p>
+{% for item in requests %}<div class="recruiting-row"><a href="{{ item.filter_url }}">{{ item.name }}</a><span>{{ item.organization.name }} · {{ item.visible_positions }} visible position{{ item.visible_positions|pluralize }}</span></div>{% empty %}<p>No Requests match these positions.</p>{% endfor %}{% if request_count > 20 %}<p class="ux-note">Showing the first 20 Requests. All remain available in Requests &amp; campaigns.</p>{% endif %}</div></section>{% endif %}
+{% endblock %}
