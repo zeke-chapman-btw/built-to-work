@@ -1,0 +1,4 @@
+{% extends 'internal/base.html' %}
+{% block content %}
+{% if workspace_links %}<div class="workspace-grid">{% for item in workspace_links %}<a class="workspace-card card" href="{{ item.url }}"><strong>{{ item.label }}</strong><p>{{ item.description }}</p><span class="card-arrow" aria-hidden="true">→</span></a>{% endfor %}</div>{% else %}<section class="empty-state card"><span class="badge">WORKSPACE</span><h2>No additional workflows available</h2><p>This workspace has no other currently available workflows for your account.</p></section>{% endif %}
+{% endblock %}
