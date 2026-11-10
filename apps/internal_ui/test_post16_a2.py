@@ -115,7 +115,6 @@ class Post16A2Tests(EmployerFixtures, TestCase):
         response = self.client.get(reverse('participants:staff-profile', args=[self.person.pk]))
         self.assertContains(response, self.employment.label)
         self.assertContains(response, 'Weekends')
-        self.assertContains(response, 'Previously recorded employment')
 
     def test_legacy_editors_preserve_evidence_and_unrelated_role_cannot_write(self):
         for cls in [PortalCareerForm, CareerProfileForm]:

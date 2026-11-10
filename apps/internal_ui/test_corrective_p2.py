@@ -65,7 +65,7 @@ class CorrectiveP2Tests(TestCase):
     def test_restricted_overview_no_dob_notes_or_forbidden_links(self):
         self.login(self.reader);r=self.client.get(reverse('participants:staff-profile',args=[self.person.pk]))
         self.assertEqual(r.status_code,200)
-        for label in ('Who they are','What they can do','What they are looking for','Blueprint reading'):
+        for label in ('Synthetic P2 Person','Augusta','Blueprint reading'):
             self.assertContains(r,label)
         self.assertNotContains(r,'2009-01-01')
         self.assertNotContains(r,'DOB:')

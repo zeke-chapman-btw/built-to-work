@@ -108,8 +108,9 @@ class PersonIdDirectoryTests(TestCase):
         response=self.client.get(profile)
         self.assertNotContains(response,'>Edit type</a>')
         self.assertContains(response,reverse('participants:profile-card-edit',args=[self.person.pk,'identity']))
-        self.assertContains(response,'<dt>ID</dt>')
-        self.assertContains(response,'<dt>Type</dt>')
+        self.assertContains(response,f'aria-label="Copy participant ID {self.person.pk}"')
+        self.assertContains(response,f'data-copy-text="{self.person.pk}"')
+        self.assertNotContains(response,'<dt>Type</dt>')
         form_response=self.client.get(edit)
         self.assertEqual(form_response.context['form'].fields['identifier'].label,'Type')
         revision=form_response.context['form'].initial['revision']
@@ -118,6 +119,10 @@ class PersonIdDirectoryTests(TestCase):
         old_pk=self.person.pk;old_uuid=self.person.identity_uuid;self.person.refresh_from_db()
         self.assertEqual((self.person.pk,self.person.identity_uuid),(old_pk,old_uuid))
         self.assertEqual(self.person.primary_identifier,'student')
+        updated_profile=self.client.get(profile)
+        self.assertContains(updated_profile,'<dt>Type</dt>')
+        self.assertContains(updated_profile,self.person.get_primary_identifier_display())
+        self.assertContains(updated_profile,f'data-copy-text="{old_pk}"')
         self.assertTrue(IntakeFieldState.objects.get(participant=self.person,destination='primary_identifier').is_protected)
         from apps.core.models import AuditLog
         self.assertTrue(AuditLog.objects.filter(action='participants.identifier.changed').exists())
