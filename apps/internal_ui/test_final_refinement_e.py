@@ -62,11 +62,11 @@ class FinalRefinementETests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 html = response.content.decode()
                 self.assertNotIn('Skills not recorded.', html)
-                self.assertEqual('Profile skills summary not provided.' in html, not has_summary)
+                self.assertEqual('No skills yet.' in html, not has_summary and not has_record)
                 self.assertEqual('SYNTHETIC Blueprint reading' in html, has_summary)
                 self.assertEqual('SYNTHETIC Welding' in html, has_record)
                 if has_record:
-                    self.assertIn('Unverified', html); self.assertIn('Participant reported', html); self.assertIn('Self-reported', html)
+                    self.assertIn('Self-reported', html)
                 self.assertEqual(before, list(ParticipantQualification.objects.filter(participant=person).values()))
                 career.refresh_from_db()
                 self.assertEqual(career.skills_interests, 'SYNTHETIC Blueprint reading' if has_summary else '')

@@ -58,7 +58,7 @@ class CrmUxProfileTests(TestCase):
     def test_continuous_profile_retains_every_evidence_anchor_and_original_destinations(self):
         response = self.client.get(self.url)
         nav = ProfileNavigation(response.content.decode())
-        expected = {'profile-identity', 'profile-documents', 'profile-notes', 'profile-skills', 'profile-education', 'profile-credentials', 'profile-work', 'profile-preferences', 'profile-assessments', 'profile-events', 'profile-activity', 'profile-source', 'profile-recruiting', 'btw-interactions', 'employer-interactions'}
+        expected = {'profile-identity', 'profile-documents', 'profile-notes', 'profile-skills', 'profile-education', 'profile-credentials', 'profile-work', 'profile-preferences', 'profile-assessments', 'profile-events', 'profile-touchpoints', 'profile-qualifications', 'profile-recruiting', 'btw-interactions', 'employer-interactions'}
         self.assertTrue(expected <= nav.ids, expected - nav.ids)
         self.assertNotContains(response, 'Relationship history &amp; tools')
         self.assertNotContains(response, 'Recruiting information')
@@ -69,8 +69,9 @@ class CrmUxProfileTests(TestCase):
         self.assertContains(relationship, 'id="btw-interactions"')
         recruiting = self.client.get(self.url, {'section': 'recruiting'})
         self.assertContains(recruiting, 'id="profile-recruiting"')
-        self.assertContains(response, 'Event participation')
-        self.assertContains(response, 'Original submitted answers')
+        self.assertContains(response, 'No events yet.')
+        self.assertContains(response, 'Original answers')
+        self.assertNotContains(response, 'Recent history')
         self.assertNotContains(response, 'no combined score')
         event_history = self.client.get(self.url, {'section':'events'}, HTTP_X_BTW_EDITOR='1')
         self.assertContains(event_history, 'Registrations — separate from participation')
@@ -137,7 +138,7 @@ class CrmUxProfileTests(TestCase):
         self.assertLess(html.index('id="profile-identity"'), html.index('id="profile-skills"'))
         self.assertContains(response, 'Reported skills')
         self.assertContains(response, 'SYNTHETIC welding')
-        self.assertContains(response, '0.0 years of reported overall experience')
+        self.assertContains(response, '0.0 years reported')
         self.assertContains(response, 'Jump to section')
         self.assertNotContains(response, 'Profile facts &amp; evidence')
 
@@ -181,7 +182,7 @@ class CrmUxProfileTests(TestCase):
         from apps.crm.services import create_internal
         create_internal(actor=self.admin, participant_id=self.person.pk, data={'activity_type':'call','summary':'SYNTHETIC retained contact','occurred_at':timezone.now()}, operation_id=uuid.uuid4())
         response=self.client.get(self.url, {'section':'relationship'})
-        self.assertContains(response, '>+ Interaction</a>', count=1)
+        self.assertContains(response, '>+ Log touchpoint</a>', count=1)
         self.assertContains(response, 'data-record-editor')
         self.assertNotContains(response, 'Interaction shortcuts')
         for label in ['Log call','Record email','Record text','Log meeting','Relationship note']:

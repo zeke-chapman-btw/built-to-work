@@ -80,9 +80,9 @@ class StaffParticipantDirectoryTests(TestCase):
         )
         self.staff.user_permissions.add(*permissions)
         response = self.client.get(url)
-        self.assertContains(response, "Event participation")
+        self.assertContains(response, "Events attended")
         self.assertContains(self.client.get(url, {"section":"events"}, HTTP_X_BTW_EDITOR="1"), "Registrations — separate from participation")
-        self.assertContains(response, "Private documents")
+        self.assertContains(response, ">Documents</h2>")
         self.assertContains(self.client.get(url, {"section": "documents"}), "Private document files remain available only through the authorized document workflow")
 
     def test_missing_participant_returns_404(self):

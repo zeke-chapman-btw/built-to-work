@@ -217,14 +217,15 @@ class ContinuousProfileCorrectionsTests(TestCase):
         for text in ('SYNTHETIC old resume.txt', 'SYNTHETIC private continuous note',
                      'SYNTHETIC older training', 'SYNTHETIC older license',
                      'SYNTHETIC ambiguous legacy', 'SYNTHETIC employer',
-                     'Assessment results', 'No assessment results recorded under your permissions.',
-                     'Event participation not recorded.', 'Recent history'):
+                     'Trailer results', 'No trailer results yet.',
+                     'No events yet.'):
             self.assertContains(response,text)
         self.assertNotContains(response,'SYNTHETIC continuous profile event')
         history = self.client.get(reverse('participants:staff-profile', args=[self.person.pk]), {'section':'events'}, HTTP_X_BTW_EDITOR='1')
         self.assertContains(history,'SYNTHETIC continuous profile event')
         self.assertContains(history,'Registration only')
-        self.assertContains(response,'+ Internal Note')
+        self.assertNotContains(response,'Recent history')
+        self.assertContains(response,'+ Add note')
         self.assertContains(response,reverse('participants:staff-document-download',args=[self.document.uuid]))
 
     def test_old_categories_are_visible_independently_of_requested_page(self):
@@ -234,7 +235,7 @@ class ContinuousProfileCorrectionsTests(TestCase):
         self.assertEqual(len(groups['skills']['items']),5)
         for row in (self.training,self.credential,self.legacy):
             self.assertContains(response,row.custom_name)
-        self.assertNotContains(response,'No education or training recorded.')
+        self.assertNotContains(response,'No education yet.')
         self.training.refresh_from_db(); self.assertEqual(self.training.reported_kind,'training')
 
     def test_restricted_role_neither_fetches_nor_discloses_private_collections(self):
@@ -244,11 +245,11 @@ class ContinuousProfileCorrectionsTests(TestCase):
         self.assertEqual(response.status_code,200)
         timeline.assert_not_called()
         for text in (self.note.content,self.document.original_filename,self.credential.custom_name,
-                     self.event.name,'Download securely','+ Internal Note'):
+                     self.event.name,'>Download</a>','+ Add note'):
             self.assertNotContains(response,text)
         for key in ('profile_notes','profile_documents','profile_qualification_groups','profile_activity','recorded_sessions','legacy_attendance'):
             self.assertIsNone(response.context.get(key),key)
-        self.assertContains(response,'Assessment results are unavailable to your staff role.')
+        self.assertNotContains(response,'id="profile-assessments"')
 
     def test_preview_limits_and_resume_are_independent_of_recent_document_page(self):
         from apps.participants.participant_document_models import ParticipantDocument, ParticipantDocumentCategory
@@ -265,8 +266,8 @@ class ContinuousProfileCorrectionsTests(TestCase):
         self.assertEqual(response.context['profile_note_total'],9)
         self.assertEqual(len(response.context['profile_work_history']),5)
         self.assertEqual(response.context['profile_work_total'],9)
-        self.assertLessEqual(len(response.context['profile_activity']),10)
-        self.assertContains(response,'3 of 9 active documents')
+        self.assertIsNone(response.context.get('profile_activity'))
+        self.assertContains(response,'All 9 documents')
 
     def test_continuous_sections_and_contextual_actions_replace_redundant_navigation(self):
         response=self.profile()
@@ -277,7 +278,7 @@ class ContinuousProfileCorrectionsTests(TestCase):
                 if attrs.get('id','').startswith('profile-'):self.ids[attrs['id']]=attrs
                 if tag=='a':self.links.append(attrs.get('href',''))
         parsed=Links();parsed.feed(response.content.decode())
-        for name in ('identity','documents','notes','skills','education','credentials','other','work','preferences','assessments','events','activity'):
+        for name in ('identity','documents','notes','skills','education','credentials','other','work','preferences','assessments','events','qualifications'):
             self.assertEqual(parsed.ids['profile-'+name].get('tabindex'),'-1')
         base=reverse('participants:staff-profile',args=[self.person.pk])
         destinations={parse_qs(urlsplit(url).query).get('section',[''])[0] for url in parsed.links if urlsplit(url).path==base}
@@ -313,8 +314,8 @@ class ContinuousProfileCorrectionsTests(TestCase):
         person=Participant.objects.create(first_name='SYNTHETIC sparse',last_name='Example')
         ParticipantCareerProfile.objects.create(participant=person,years_of_experience=0,willing_to_travel=False)
         response=self.client.get(reverse('participants:staff-profile',args=[person.pk]))
-        for text in ('No active documents recorded.','No active internal notes recorded.',
-                     'No education or training recorded.','No licenses or certifications recorded.',
-                     'Event participation not recorded.',
-                     '0.0 years of reported overall experience'):
+        for text in ('No documents yet.','No staff notes yet.',
+                     'No education yet.','No licenses or certifications yet.',
+                     'No events yet.',
+                     '0.0 years reported'):
             self.assertContains(response,text)

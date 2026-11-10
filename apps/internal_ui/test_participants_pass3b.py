@@ -306,7 +306,7 @@ class ParticipantExplorerTests(TestCase):
         self.assertContains(response,'href="#profile-documents"')
         self.assertContains(response,'Linked tasks')
         self.assertContains(response,'Participant portal invitation')
-        self.assertContains(response,'+ Internal Note')
+        self.assertContains(response,'+ Add note')
 
     def test_profile_simplification_preserves_restricted_evidence_boundaries(self):
         self.client.force_login(self.reader,backend='django.contrib.auth.backends.ModelBackend')
@@ -316,5 +316,5 @@ class ParticipantExplorerTests(TestCase):
         self.assertNotContains(response,'Participant portal invitation')
         self.assertNotContains(response,'PRIVATE-NOTE-SENTINEL')
         self.assertNotContains(response,'PRIVATE-QUALIFICATION')
-        self.assertNotContains(response,'+ Internal Note')
-        self.assertNotContains(response,'Download securely')
+        self.assertNotContains(response,'+ Add note')
+        self.assertNotContains(response,'>Download</a>')

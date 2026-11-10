@@ -44,7 +44,7 @@ class StaffCrmTests(EmployerFixtures, TestCase):
         self.assertEqual(self.client.post(url, payload).status_code, 302)
         self.assertEqual(Interaction.objects.count(), 1)
         profile = self.client.get(reverse("participants:staff-profile", args=[self.person.pk]))
-        self.assertNotContains(profile, payload["summary"])
+        self.assertContains(profile, payload["summary"])  # recent touchpoints show on the profile
         relationship = self.client.get(reverse("participants:staff-profile", args=[self.person.pk]), {"section": "relationship"})
         self.assertContains(relationship, payload["summary"])
         self.assertContains(relationship, "BTW Interactions")

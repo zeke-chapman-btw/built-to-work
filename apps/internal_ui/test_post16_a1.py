@@ -62,7 +62,7 @@ class Post16A1Tests(EmployerFixtures, TestCase):
         self.assertContains(response, 'Eastern (EST)')
         self.staff_login()
         overview = self.client.get(reverse('participants:staff-profile', args=[self.person.pk]))
-        self.assertContains(overview, 'Event participation not recorded.')
+        self.assertContains(overview, 'No events yet.')
         self.assertNotContains(overview, 'Dec 31, 2026 · 9:30 PM')
         for query in ({'section': 'events'},):
             staff = self.client.get(reverse('participants:staff-profile', args=[self.person.pk]), query)

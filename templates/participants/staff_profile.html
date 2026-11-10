@@ -1,17 +1,27 @@
-{% extends people_base|default:'participants/workspace_base.html' %}{% load static verification_status participant_workspace people_ui crm_ui %}
+{% extends people_base|default:'participants/workspace_base.html' %}{% load static verification_status participant_workspace people_ui crm_ui ui_patterns %}
 {% block body_class %}{{ block.super }} has-participant-profile has-crm-ux-profile{% endblock %}
-{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<link rel="stylesheet" href="{% static 'crm/profile.css' %}?v=participant-cleanup-1"><link rel="stylesheet" href="{% static 'participants/identifier.css' %}?v=identifier-1">{% endblock %}
+{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<link rel="stylesheet" href="{% static 'crm/profile.css' %}?v=profile-v2-1"><script defer src="{% static 'crm/profile_copy.js' %}?v=profile-v2-1"></script><link rel="stylesheet" href="{% static 'participants/identifier.css' %}?v=identifier-1">{% endblock %}
 {% block page_heading %}
 <section class="people-profile-hero p3-profile-hero">
   <a class="event-back" href="{{ directory_origin }}">← {{ directory_origin_label }}</a>
   <div class="people-profile-heading">
     <span class="people-avatar" aria-hidden="true">{{ participant|people_initials }}</span>
     <div class="people-profile-title"><h1 class="people-profile-name"><a class="p3-profile-home" href="{% people_section_url 'overview' %}" aria-label="{{ participant }} — profile overview">{{ participant }}</a>{% if participant.primary_identifier %}<span class="badge participant-identifier-badge">{{ participant.get_primary_identifier_display }}</span>{% endif %}</h1>
-      <p>{{ participant.city|default:'Location not recorded' }}{% if participant.state %}, {{ participant.state }}{% endif %}{% if current_interests %}<span class="p3-identity-interest"> · {{ current_interests|truncatechars:80 }}</span>{% endif %}</p>
-
+      <span class="pv-id-badge">ID {{ participant.pk|stringformat:"d" }}<button type="button" class="pv-id-copy" data-copy-text="{{ participant.pk|stringformat:'d' }}" aria-label="Copy participant ID {{ participant.pk|stringformat:'d' }}" title="Copy ID">{% ui_icon 'documents' %}</button></span>
+      <p>{% if current_interests %}<span class="p3-identity-interest">{{ current_interests|truncatechars:80 }}</span> · {% endif %}{{ participant.city|default:'Location not provided' }}{% if participant.state %}, {{ participant.state }}{% endif %}</p>
+      {% if current_profile_preferences %}<div id="profile-preferences" tabindex="-1" class="pv-header-chips" role="group" aria-label="Work preferences">
+        {% with prefs=current_profile_preferences %}
+        {% if prefs.interest != 'Not recorded' %}<span class="pv-chip-pair">Seeking work {% ui_badge prefs.interest prefs.interest|people_answer_tone %}</span>{% endif %}
+        {% if prefs.travel != 'Not recorded' %}<span class="pv-chip-pair">Travel {% ui_badge prefs.travel prefs.travel|people_answer_tone %}</span>{% endif %}
+        {% if prefs.relocation != 'Not recorded' %}<span class="pv-chip-pair">Relocate {% ui_badge prefs.relocation prefs.relocation|people_answer_tone %}</span>{% endif %}
+        {% if prefs.availability.value != 'Not recorded' %}<span class="pv-chip-pair">Available {% ui_badge prefs.availability.value 'neutral' %}</span>{% endif %}
+        {% endwith %}
+      </div>{% endif %}
     </div>
     <div class="p3-profile-actions">
-      {% if crm_can_add %}<a class="button button-primary" data-record-editor href="{{ crm_new_url }}">+ Interaction</a>{% endif %}
+      {% if participant.contact_phone %}<a class="button secondary pv-contact-action" href="tel:{{ participant.contact_phone|people_phone_link }}">{% ui_icon 'phone' %}Call</a><a class="button secondary pv-contact-action" href="sms:{{ participant.contact_phone|people_phone_link }}">{% ui_icon 'message' %}Text</a>{% endif %}
+      {% if participant.contact_email %}<a class="button secondary pv-contact-action" href="mailto:{{ participant.contact_email }}">{% ui_icon 'mail' %}Email</a>{% endif %}
+      {% if crm_can_add %}<a class="button button-primary" data-record-editor href="{{ crm_new_url }}">+ Log touchpoint</a>{% endif %}
       {% profile_tools %}
     </div>
   </div>

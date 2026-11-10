@@ -67,6 +67,8 @@ def followup_context(request, ctx, members, sources):
         # response. Require actual started station activity, not that shell.
         rows=sources['sessions'].filter(participant_id__in=members,activities__started_at__isnull=False).values('event_id','event__name','event__timezone_name').annotate(first_activity=Min('activities__started_at')).order_by('-first_activity','event_id')
         ctx['participation_events']=Paginator(rows,25).get_page(request.GET.get('page')) if ctx['section']=='events' else list(rows[:5])
+        if ctx['section']=='overview':
+            ctx['participation_total']=rows.count()
     if ctx['section'] in {'events','source-event'} and ctx['can_view_events']:
         acquisition=ctx.get('acquisition_record')
         requested=request.GET.get('source_event','')

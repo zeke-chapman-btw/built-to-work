@@ -209,7 +209,7 @@ class ProfileFollowupTests(EmployerFixtures, TestCase):
         self.assertContains(response,'4/7 correct')
         self.assertNotContains(response,'4/15')
         self.assertContains(response,'73.125')
-        self.assertContains(response,'original TOTAL SCORE · percent')
+        self.assertContains(response,'73.125%')
         self.assertContains(response,'SYNTHETIC seven-question quiz')
         self.assertEqual(len(response.context['participation_events']),1)
         self.assertEqual(response.context['participation_events'][0]['event_id'],event.pk)
@@ -244,7 +244,7 @@ class ProfileFollowupTests(EmployerFixtures, TestCase):
             if index:ExperienceSession.objects.create(event=event,registration=registration,participant=self.person,mode='official')
         response=self.get_manager('events')
         self.assertEqual(len(response.context['participation_events']),0)
-        self.assertContains(response,'Event participation not recorded')
+        self.assertContains(response,'No events yet.')
         self.assertContains(response,'Registration only',count=2)
 
     def test_read_only_staff_cannot_mutate_through_manager(self):

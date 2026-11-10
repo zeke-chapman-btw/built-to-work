@@ -14,6 +14,39 @@ def people_initials(person):
     # A neutral initials avatar; never substitute a private identity-document photo.
     return ((first[:1]+last[:1]).upper() or '?')
 
+def _phone_digits(value):
+    digits=re.sub(r'\D','',str(value or ''))
+    return digits[1:] if len(digits)==11 and digits.startswith('1') else digits
+
+@register.filter
+def people_phone(value):
+    """Display a US phone as (706) 555-0142; leave anything else as entered."""
+    digits=_phone_digits(value)
+    return f'({digits[:3]}) {digits[3:6]}-{digits[6:]}' if len(digits)==10 else str(value or '')
+
+@register.filter
+def people_phone_link(value):
+    digits=_phone_digits(value)
+    return ('+1'+digits) if len(digits)==10 else re.sub(r'[^\d+]','',str(value or ''))
+
+@register.filter
+def people_answer_tone(value):
+    """Shared Yes/Maybe/No badge tones; unknown answers stay neutral."""
+    return {'Yes':'success','Maybe':'warning'}.get(str(value),'neutral')
+
+@register.filter
+def people_verification(record):
+    """One badge per qualification or document: label plus shared tone."""
+    from apps.participants.templatetags.verification_status import verification_summary
+    summary=verification_summary(record)
+    status=str(summary.get('status','')).replace(' ','_')
+    if status=='verified':return {'label':'Verified','tone':'info'}
+    if status in ('pending','pending_review'):return {'label':'Pending review','tone':'warning'}
+    if status in ('rejected','expired'):return {'label':status.title(),'tone':'danger'}
+    if getattr(record,'is_self_reported',False):return {'label':'Self-reported','tone':'neutral'}
+    label=str(summary.get('label') or 'Not verified')
+    return {'label':label[:1].upper()+label[1:].lower(),'tone':'neutral'}
+
 @register.filter
 def interest_tags(value):
     return [x.strip() for x in re.split(r'[,;\n]+',str(value or '')) if x.strip()][:4]
@@ -45,9 +78,9 @@ def people_navigation(context):
 def profile_sections(context):
     request=context['request'];person=context['participant'];active=context.get('section','overview')
     originals=request.user.has_perm('participants.view_registrationsubmission')
-    items=[('overview','Overview',True),('career','Skills & experience',True),('qualifications','Qualifications',context.get('can_view_qualifications')),('documents','Documents',context.get('can_view_documents')),('assessments','Assessments',any(context.get(k) for k in ['can_view_quiz_results','can_view_game_results','can_view_historical_scores','can_view_simulator_results'])),('events','Events',context.get('can_view_registrations')),('notes','Internal notes',context.get('can_view_notes')),('acquisition','Original answers',originals),('activity','Activity',context.get('can_view_activity')),('tasks','Linked tasks',True)]
+    items=[('overview','Overview',True),('career','Skills & experience',True),('qualifications','Qualifications',context.get('can_view_qualifications')),('documents','Documents',context.get('can_view_documents')),('assessments','Trailer results',any(context.get(k) for k in ['can_view_quiz_results','can_view_game_results','can_view_historical_scores','can_view_simulator_results'])),('events','Events',context.get('can_view_registrations')),('notes','Staff notes',context.get('can_view_notes')),('acquisition','Original answers',originals),('activity','History',context.get('can_view_activity')),('tasks','Linked tasks',True)]
     rows=[dict(key=key,label=label,url=profile_link(request,person,key),active=key==active) for key,label,allowed in items if allowed]
-    areas=[('overview','Profile',True),('relationship','Relationship',context.get('crm_btw_allowed') or context.get('crm_employer_allowed')),('recruiting','Recruiting',context.get('can_recruiting'))]
+    areas=[('overview','Profile',True),('relationship','Touchpoints',context.get('crm_btw_allowed') or context.get('crm_employer_allowed')),('recruiting','Job connections',context.get('can_recruiting'))]
     primary=[dict(key=key,label=label,url=profile_link(request,person,key),active=(active==key if key!='overview' else active not in {'relationship','recruiting'})) for key,label,allowed in areas if allowed]
     return dict(section=active,items=rows,primary_items=primary,detail_items=[x for x in rows if x['key']!='overview'],more_active=next((x['label'] for x in rows if x['active'] and x['key']!='overview'),''),active_label=next((x['label'] for x in primary if x['active']),'Profile'))
 

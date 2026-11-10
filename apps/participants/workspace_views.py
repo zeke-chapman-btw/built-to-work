@@ -243,8 +243,6 @@ def profile(request, participant_id):
     ctx["related_tasks"] = TaskParticipantLink.objects.filter(participant_id__in=member_ids, task__in=tasks_for(request.user)).select_related("task", "task__assigned_staff").order_by("-created_at")[:25]
     if section == "activity":
         ctx["timeline"] = factual_timeline(request.user, person, member_ids, ctx)
-    elif section == "overview" and ctx["can_view_activity"]:
-        ctx["profile_activity"] = factual_timeline(request.user, person, member_ids, ctx)[:3]
     if section == "overview":
         ctx["profile_work_total"] = ctx["work_history"].count()
         ctx["profile_work_history"] = list(ctx["work_history"][:5])
@@ -254,6 +252,9 @@ def profile(request, participant_id):
     ctx.update(profile_preferences(ctx))
     from .profile_followup import followup_context
     followup_context(request, ctx, member_ids, source)
+    if section == "overview":
+        from .profile_overview import overview_context
+        ctx.update(overview_context(request, person, ctx))
     return render(request, "participants/staff_profile.html", ctx)
 
 
