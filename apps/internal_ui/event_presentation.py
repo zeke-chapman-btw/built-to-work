@@ -18,12 +18,13 @@ def event_tools(user, event):
         add("Quizzes & Tests", "assessments:event_configuration", [event.pk], "Choose assessment categories and question sets for this event.")
     if user.has_perm("events.change_event"):
         if can_view_event_operations(user):
-            add("Station assignments", "events:event_detail", [event.pk], "Manage station assignments using the existing event form.", "?section=results#event-stations")
+            add("Station assignments", "events:event_detail", [event.pk], "Manage station assignments using the existing event form.", "?section=operations#event-stations")
         add("Public registration settings", "events:public-settings", [event.pk], "Manage registration availability and the event’s public link.")
     if user.has_perm("games.view_eventgameconfiguration") or user.has_perm("games.change_eventgameconfiguration"):
         add("Game configuration", "admin:games_eventgameconfiguration_changelist", description="Review this event’s selected game and settings.", suffix="?event__id__exact="+str(event.pk))
     if can_view_event_operations(user):
-        add("Simulator results & configuration", "events:event_detail", [event.pk], "View recorded simulator scores and configuration checks.", "?section=results")
+        add("Simulator configuration references", "events:event_detail", [event.pk], "Review existing event configuration checks.", "?section=operations#event-configuration")
+        add("Simulator results", "events:event_detail", [event.pk], "View recorded simulator scores.", "?section=results")
     if user.has_perm("events.view_offlineeventpreparation"):
         for prep in event.offline_preparations.select_related("trailer").order_by("created_at", "pk")[:10]:
             add("Offline preparation · "+prep.trailer.display_name, "events:offline-preparation-detail", [prep.pk], "Open registration preparation for this event and trailer.")

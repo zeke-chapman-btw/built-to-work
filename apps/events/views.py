@@ -242,7 +242,7 @@ def event_detail(request, event_id):
     from .experience_operations import can_view_event_operations, event_experience_overview
     can_view_operations = can_view_event_operations(request.user)
     can_view_offline = request.user.has_perms(("events.view_offlineeventpreparation", "events.view_syncoutboxitem", "events.view_centraleventdownload"))
-    overview = event_experience_overview(event, include_offline=can_view_offline) if can_view_operations and section == "results" else None
+    overview = event_experience_overview(event, include_offline=can_view_offline) if can_view_operations and section in ("operations", "results") else None
     from .event_management import available_actions
     with timezone.override(ZoneInfo(event.timezone_name)):
         return render(request, "events/event_detail.html", {
@@ -354,7 +354,7 @@ def event_station_assign(request, event_id):
     form = StationForEventForm(request.POST)
     if not form.is_valid():
         messages.error(request, "Choose a valid active station and assignment settings.")
-        return redirect("events:event_detail", event_id=event.pk)
+        return redirect(reverse("events:event_detail", args=[event.pk]) + "?section=operations#event-stations")
     assignment, created = assign_station(event=event, station=form.cleaned_data["station"], actor=request.user)
     old_data = {"enabled": assignment.enabled, "display_order": assignment.display_order}
     assignment.enabled = form.cleaned_data["enabled"]
@@ -366,7 +366,7 @@ def event_station_assign(request, event_id):
         from apps.events.services import audit_action
         audit_action(actor=request.user, action="station.event_assignment.updated", instance=assignment, old_data=old_data, new_data={"enabled": assignment.enabled, "display_order": assignment.display_order})
     messages.success(request, "Station assigned to event." if created else "Station assignment updated.")
-    return redirect("events:event_detail", event_id=event.pk)
+    return redirect(reverse("events:event_detail", args=[event.pk]) + "?section=operations#event-stations")
 
 
 @staff_permission_required('events.view_qrticket', 'events.view_eventregistration')

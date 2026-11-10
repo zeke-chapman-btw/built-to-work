@@ -36,9 +36,9 @@ class InternalShellTests(TestCase):
         user = self.make_staff('limited-staff')
         self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
         home = self.client.get(reverse('internal:home'))
-        self.assertContains(home, 'HOME')
-        self.assertNotContains(home, 'PARTICIPANTS')
-        self.assertNotContains(home, 'OPERATIONS')
+        self.assertContains(home, 'Home')
+        self.assertNotContains(home, 'Participants')
+        self.assertNotContains(home, 'Operations')
         self.assertEqual(self.client.get(reverse('internal:workspace', kwargs={'workspace_id': 'participants'})).status_code, 403)
 
     def test_home_and_logo_link_to_dashboard_and_workspace_destinations(self):
