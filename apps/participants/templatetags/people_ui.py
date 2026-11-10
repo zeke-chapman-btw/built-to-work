@@ -88,6 +88,9 @@ def profile_sections(context):
 def profile_tools(context):
     result=profile_sections(context)
     result.update(participant=context['participant'],perms=context.get('perms'),can_recruiting=context.get('can_recruiting'))
+    # The jump menu mirrors the overview cards, so it needs the same visibility flags.
+    for key in ('can_view_notes','can_view_quiz_results','can_view_game_results','can_view_simulator_results','can_view_historical_scores','can_view_registrations','can_view_documents','profile_show_touchpoints','profile_show_connections'):
+        result[key]=context.get(key)
     from apps.accounts.operational_access import general_recruiter
     user=context['request'].user
     authorized=context.get('can_manage_acquisition') or context.get('can_view_internal_review') or user.has_perms(('participants.view_participant','events.view_participantmatchreview'))
