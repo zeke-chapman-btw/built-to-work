@@ -135,7 +135,7 @@ class Build10CTests(TestCase):
 
     def test_event_header_has_no_task_or_report_button(self):
         self.login();html=self.client.get(self.url()).content.decode()
-        header=html.split('<header class="event-record-header">',1)[1].split('</header>',1)[0]
+        header=html.split('<header class="event-record-header"',1)[1].split('</header>',1)[0]
         self.assertNotIn('data-task-create',header);self.assertNotIn('Event Report</a>',header)
         self.assertEqual(html.count('data-global-task-create'),1)
         self.assertIn('button-primary global-task-create',html)
