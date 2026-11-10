@@ -9,6 +9,7 @@ urlpatterns = [
     path('portal/activate/<str:token>/', portal_views.activate_account, name='portal-activate'),
     path('portal/invitation/', portal_views.recover_invitation, name='portal-recover'),
     path('portal/events/', portal_views.events, name='portal-events'),
+    path('portal/jobs/', portal_views.jobs, name='portal-jobs'),
     path('portal/events/<uuid:event_id>/', portal_views.event_detail, name='portal-event'),
     path('portal/activity/', portal_views.activity, name='portal-activity'),
     path('portal/account/', portal_views.account, name='portal-account'),

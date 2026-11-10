@@ -1,0 +1,14 @@
+{% extends 'participants/portal/base.html' %}
+{% block title %}Job Opportunities · Built to Work{% endblock %}
+{% block content %}
+<p class="eyebrow">Put your skills to work</p>
+<h1>Job Opportunities</h1>
+<p class="intro">Your next opportunity starts with what you can do.</p>
+<section class="portal-card" aria-labelledby="jobs-coming-soon">
+  <span class="badge">Coming soon</span>
+  <h2 id="jobs-coming-soon">More ways to put your skills to work</h2>
+  <p>Job opportunities aren’t available here yet. When published opportunities become available, you’ll find them here, connected to your existing BTW profile.</p>
+  <p>Keep your skills, interests and supporting documents up to date so your profile is ready.</p>
+  <a class="button" href="{% url 'participants:profile' %}">Update My Profile</a>
+</section>
+{% endblock %}

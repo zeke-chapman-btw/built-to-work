@@ -190,6 +190,12 @@ def events(request):
     return render(request, 'participants/portal/events.html', {'events': items, 'section': 'events'})
 
 
+@participant_view
+@require_GET
+def jobs(request):
+    return render(request, 'participants/portal/jobs.html', {'section': 'jobs'})
+
+
 class EventForm(forms.Form):
     contract = forms.CharField(widget=forms.HiddenInput)
     def __init__(self, *args, person, event, **kwargs):
