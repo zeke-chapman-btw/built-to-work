@@ -52,7 +52,7 @@ def workspace_intake_context(user, person, members, career):
                 source = None
         if destination == "travel_range" and career and career.willing_to_travel is False:
             continue
-        rows.append({"label": definition["label"], "value": _label(definition, value),
+        rows.append({"destination": destination, "label": definition["label"], "value": _label(definition, value),
                      "protected": bool(state and state.is_protected),
                      "source": source.intake_operation_id if source else None,
                      "reported_at": source.submitted_at if source else None})

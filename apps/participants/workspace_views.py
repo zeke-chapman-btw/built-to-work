@@ -196,6 +196,8 @@ def profile(request, participant_id):
         ctx["timeline"] = factual_timeline(request.user, person, member_ids, ctx)
     from .intake_workspace import workspace_intake_context
     ctx.update(workspace_intake_context(request.user, person, member_ids, ctx["career"]))
+    from .ui_presentation import profile_preferences
+    ctx.update(profile_preferences(ctx))
     return render(request, "participants/staff_profile.html", ctx)
 
 

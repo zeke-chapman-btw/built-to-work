@@ -1,0 +1,61 @@
+/* Opt-in foundation. Existing reports, Expenses editors and participant surfaces retain their CSS. */
+.btw-workspace-frame { --btw-workspace-width: 920px; width:100%; max-width:calc(var(--btw-workspace-width) + 48px); margin-inline:auto; padding-inline:24px; box-sizing:border-box; }
+body.has-corrective-events #main-content { width:100%; max-width:968px; margin-inline:auto; padding-inline:24px; box-sizing:border-box; min-width:0; }
+.btw-record-row { display:grid; grid-template-columns:minmax(0,1fr) auto; padding:0; overflow:visible; gap:0; }
+.btw-record-primary { display:block; min-width:0; padding:16px 20px; color:inherit; text-decoration:none; border-radius:inherit; }
+.btw-record-primary:hover { background:var(--btw-surface-subtle,#f8fafc); text-decoration:none; }
+.btw-record-primary h3 { margin:0 0 5px; font-size:1rem; color:var(--btw-text,#17202b); }
+.btw-record-primary p { margin:3px 0; line-height:1.4; }
+.btw-record-primary .event-record-type { color:#596779; font-size:.82rem; }
+.btw-record-secondary { padding:16px 20px 16px 8px; min-width:170px; display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end; gap:8px; }
+.btw-record-secondary .event-badges { flex-direction:row; flex-wrap:wrap; gap:6px; }
+.event-record-coverage { margin:0; display:flex; flex-direction:column; align-items:flex-end; color:#596779; font-size:.82rem; line-height:1.4; }
+.event-record-coverage a { display:inline-flex; align-items:center; min-height:44px; }
+.btw-record-row :is(a,button):focus-visible, .btw-section-nav a:focus-visible { outline:3px solid #bb1e2d; outline-offset:3px; }
+body.has-corrective-events .btw-detail-card .btw-panel-heading { align-items:center; margin:0 0 12px; }
+body.has-corrective-events .btw-detail-card .btw-panel-heading h2 { margin:0; }
+.btw-section-nav { display:flex; flex-wrap:wrap; gap:4px 14px; margin-bottom:16px; border-bottom:1px solid #dbe1e7; padding-bottom:8px; }
+.btw-section-nav a { display:inline-flex; align-items:center; min-height:44px; font-size:.875rem; }
+.btw-event-form-section { scroll-margin-top:24px; }
+body.has-corrective-events .btw-coverage-rows { display:grid; }
+body.has-corrective-events .btw-coverage-row { display:grid; grid-template-columns:110px repeat(2,minmax(0,1fr)); gap:8px 20px; padding:12px 0; border-top:1px solid #e0e5ea; align-items:center; }
+.btw-coverage-row h3 { font-size:.875rem; margin:0; }
+body.has-corrective-events .btw-coverage-row .event-coverage-role { display:flex; align-items:center; gap:8px; margin:0; padding:0; border:0; font-size:.875rem; }
+.btw-coverage-row .event-coverage-review { grid-column:2 / -1; margin:0; }
+.btw-settings-links { display:grid; gap:16px; padding-left:20px; }
+.btw-settings-links p { margin:4px 0 0; color:#596779; }
+@media(max-width:760px) {
+  body.has-corrective-events #main-content,.btw-workspace-frame { padding-inline:16px; }
+  .btw-record-row { grid-template-columns:1fr; }
+  .btw-record-primary { padding:14px 16px 8px; }
+  .btw-record-secondary { padding:0 16px 10px; flex-direction:row; flex-wrap:wrap; align-items:center; min-width:0; gap:4px 12px; }
+  .btw-record-secondary .event-record-coverage { align-items:flex-start; }
+  .btw-record-secondary .event-badges { align-items:center; }
+  body.has-corrective-events .btw-coverage-row { grid-template-columns:1fr; gap:8px; }
+  .btw-coverage-row .event-coverage-review { grid-column:auto; }
+  body.has-corrective-events .btw-coverage-row .event-coverage-role { justify-content:space-between; }
+}
+
+/* Override the older Events selectors only inside the adopted surface. */
+body.internal-app.has-corrective-events #main-content .btw-event-surface .btw-record-row { padding:0; gap:0; }
+body.internal-app.has-corrective-events #main-content .btw-event-surface .btw-record-primary h3 { font-size:16px; margin:0 0 4px; }
+body.internal-app.has-corrective-events #main-content .btw-event-surface .btw-record-primary p { margin:3px 0; }
+body.internal-app.has-corrective-events #main-content .btw-event-surface .btw-record-primary .event-timezone { display:inline; margin-left:4px; }
+body.internal-app.has-corrective-events #main-content .btw-event-surface .btw-record-secondary .event-badges { flex-direction:row; gap:6px; }
+body.internal-app.has-corrective-events #main-content .btw-event-surface .event-record-coverage { margin:0; }
+body.internal-app.has-corrective-events #main-content .btw-event-surface .btw-coverage-row .event-coverage-role { flex-wrap:nowrap; }
+body.internal-app.has-corrective-events #main-content .btw-event-surface .btw-coverage-row .event-coverage-role strong { font-size:14px; margin-left:auto; white-space:nowrap; }
+body.internal-app.has-corrective-events #main-content .btw-event-surface .btw-coverage-row .coverage-state { flex-basis:auto; white-space:nowrap; }
+body.internal-app.has-corrective-events #main-content .btw-event-surface .btw-detail-card .btw-event-facts { display:block; margin:0; }
+body.internal-app.has-corrective-events #main-content .btw-event-surface .btw-detail-card .btw-event-facts > div { display:grid; grid-template-columns:180px minmax(0,1fr); gap:16px; padding:12px 0; border-top:1px solid var(--line,#dbe1e7); }
+body.internal-app.has-corrective-events #main-content .btw-event-surface .btw-detail-card .btw-event-facts dt { margin:0; }
+@media(max-width:760px) {
+  body.internal-app.has-corrective-events #main-content .btw-event-surface .btw-record-row { grid-template-columns:1fr; }
+  body.internal-app.has-corrective-events #main-content .btw-event-surface .btw-detail-card .btw-event-facts > div { grid-template-columns:1fr; gap:4px; }
+}
+
+.btw-workspace-frame.btw-workspace-wide { --btw-workspace-width: 1200px; }
+
+body.internal-app.has-corrective-events #main-content .btw-event-surface .event-day-tile.btw-coverage-row { padding:12px 0; border:0; border-top:1px solid var(--line,#dbe1e7); border-radius:0; }
+.btw-coverage-complete-label { display:block; font-size:12px; font-weight:500; color:#226e43; margin-top:4px; }
+.legacy-workspace-context { margin-bottom:16px; font-size:.875rem; }

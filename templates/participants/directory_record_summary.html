@@ -1,0 +1,1 @@
+<p class="p2-record-meta">{{ person.city|default:'Location not recorded' }}{% if person.state %}, {{ person.state }}{% endif %}{% if person.career_profile.career_interests %} · {{ person.career_profile.career_interests|truncatechars:80 }}{% endif %}{% if person.archived_at %} · Archived{% endif %}</p>
