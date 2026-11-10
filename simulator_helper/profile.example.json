@@ -1,0 +1,6 @@
+{
+  "profile_id": "REPLACE_WITH_EXISTING_SERVER_PROFILE_UUID",
+  "profile_version": "uncalibrated",
+  "known_identifier_prefixes": ["tel"],
+  "state_regions": []
+}

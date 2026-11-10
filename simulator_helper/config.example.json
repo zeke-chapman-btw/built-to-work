@@ -1,0 +1,10 @@
+{
+  "server_url": "http://TRAILER_SERVER:8000",
+  "event_id": "REPLACE_WITH_EVENT_UUID",
+  "station_code": "SIM-01",
+  "profile_path": "profile.json",
+  "state_path": "state.json",
+  "poll_interval": 0.75,
+  "stable_reads": 3,
+  "min_confidence": 70
+}
