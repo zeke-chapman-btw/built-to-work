@@ -76,6 +76,17 @@ class Event(models.Model):
     details_finalized_at = models.DateTimeField(null=True, blank=True, editable=False)
     details_finalized_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="finalized_event_details", editable=False)
 
+    class Purpose(models.TextChoices):
+        GENERAL = "general", "General"
+        CUSTOMER = "customer", "Customer"
+        CAMPAIGN = "campaign", "Campaign"
+
+    # Purpose records who an event is for. It grants no customer access by itself;
+    # a Campaign event connects the people it reached to that Campaign.
+    purpose = models.CharField(max_length=12, choices=Purpose.choices, default=Purpose.GENERAL, db_default=Purpose.GENERAL)
+    customer = models.ForeignKey("customers.CustomerOrganization", null=True, blank=True, on_delete=models.PROTECT, related_name="events")
+    campaign = models.ForeignKey("customers.Campaign", null=True, blank=True, on_delete=models.PROTECT, related_name="events")
+
     @property
     def event_type_label(self):
         return self.event_type_other if self.event_type == self.EventType.OTHER and self.event_type_other else self.get_event_type_display()

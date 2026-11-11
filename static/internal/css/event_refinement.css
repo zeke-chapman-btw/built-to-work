@@ -290,3 +290,8 @@ body.internal-app.has-event-context #main-content .ev-person { margin:0 0 8px; }
 
 body.internal-app.has-event-context #main-content .ev-card-facts { padding:12px 16px; border-top:1px solid var(--line,#e5e7eb); }
 body.internal-app.has-event-context #main-content .ev-card-facts>div { grid-template-columns:130px 1fr; }
+body.internal-app.has-event-context #main-content .ev-purpose-pick { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; padding:2px; margin:0 0 12px; background:#eef0f2; border-radius:8px; }
+body.internal-app.has-event-context #main-content .ev-purpose-pick span { text-align:center; padding:6px 4px; border-radius:6px; font-size:13px; color:var(--muted); }
+body.internal-app.has-event-context #main-content .ev-purpose-pick span.is-on { background:var(--surface,#fff); color:var(--ink,#252830); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.08); }
+body.internal-app.has-event-context #main-content .ev-purpose-name { margin:0; font-weight:600; }
+body.internal-app.has-event-context #main-content .ev-purpose-meta { margin:2px 0 10px; color:var(--muted); font-size:13px; }

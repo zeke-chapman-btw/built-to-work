@@ -30,6 +30,7 @@ class EventForm(forms.ModelForm):
         ("Schedule", ("timezone_name", "setup_date", "staff_arrival_time", "start_at", "end_at", "daily_start_time", "daily_end_time", "return_date")),
         ("Contact and logistics", ("contact_name", "contact_email", "contact_phone", "housing_information", "logistics_instructions")),
         ("Participant registration settings", ("registration_opens_at", "registration_closes_at", "registration_deadline_at", "registration_capacity", "group_mode", "group_label")),
+        ("Purpose", ("purpose", "customer", "campaign")),
     )
 
     class Meta:
@@ -40,6 +41,7 @@ class EventForm(forms.ModelForm):
             ("schedule", ("timezone_name", "setup_date", "staff_arrival_time", "start_at", "end_at", "daily_start_time", "daily_end_time", "return_date")),
             ("logistics", ("contact_name", "contact_email", "contact_phone", "housing_information", "logistics_instructions")),
             ("registration", ("registration_opens_at", "registration_closes_at", "registration_deadline_at", "registration_capacity", "group_mode", "group_label")),
+            ("purpose", ("purpose", "customer", "campaign")),
         ) for name in names)
         widgets = {
             **{name: forms.DateInput(attrs={"type": "date"}) for name in ("setup_date", "return_date")},
@@ -51,6 +53,17 @@ class EventForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["simulator_qualification_threshold"].required = False
+        from apps.customers.models import Campaign, CustomerOrganization
+        self.fields["purpose"].required = False
+        self.fields["purpose"].widget = forms.RadioSelect(choices=Event.Purpose.choices)
+        self.fields["customer"].queryset = CustomerOrganization.objects.exclude(status="archived").order_by("name")
+        self.fields["customer"].label = "Customer"
+        self.fields["campaign"].queryset = Campaign.objects.exclude(status="cancelled").select_related("organization").order_by("organization__name", "name")
+        self.fields["campaign"].label_from_instance = lambda c: f"{c.name} · {c.organization.name}"
+        if self.instance.customer_id:
+            self.fields["customer"].queryset = (self.fields["customer"].queryset | CustomerOrganization.objects.filter(pk=self.instance.customer_id)).distinct()
+        if self.instance.campaign_id:
+            self.fields["campaign"].queryset = (self.fields["campaign"].queryset | Campaign.objects.filter(pk=self.instance.campaign_id)).distinct()
         self.fields["simulator_qualification_threshold"].help_text = "TOTAL SCORE percent; default 50. Finalized report versions retain their original threshold."
         self._original_timezone = self.instance.timezone_name
         self._original_datetimes = {name: getattr(self.instance, name) for name in ("start_at", "end_at", "registration_opens_at", "registration_closes_at", "registration_deadline_at")}
@@ -77,20 +90,43 @@ class EventForm(forms.ModelForm):
     def editor_groups(self):
         groups = {title: names for title, names in self.FIELD_GROUPS}
         result=[]
-        for title in ('Basic information','Schedule','Location','Contact and logistics','Participant registration settings'):
+        for title in ('Basic information','Purpose','Schedule','Location','Contact and logistics','Participant registration settings'):
             names=groups[title]
             if title == 'Schedule':
                 names=('timezone_name','start_at','end_at','daily_start_time','daily_end_time','setup_date','staff_arrival_time','return_date')
             fields=[self[name] for name in names]
-            optional=title in ('Contact and logistics','Participant registration settings') and not any(f.field.required for f in fields)
+            optional=title in ('Purpose','Contact and logistics','Participant registration settings') and not any(f.field.required for f in fields)
             result.append(dict(title=title, fields=fields, optional=optional,
-                open=any(f.errors for f in fields) or any(f.value() not in (None,'',False,0,'disabled','Group') for f in fields)))
+                open=any(f.errors for f in fields) or any(f.value() not in (None,'',False,0,'disabled','Group','general') for f in fields)))
         return result
 
     def clean(self):
         cleaned = super().clean()
         if cleaned.get("simulator_qualification_threshold") is None:
             cleaned["simulator_qualification_threshold"] = self.instance.simulator_qualification_threshold
+        if self.is_bound and "purpose" not in self.data:
+            # Forms that don't show Purpose keep what is already recorded.
+            cleaned["purpose"] = self.instance.purpose or Event.Purpose.GENERAL
+            cleaned["customer"] = self.instance.customer
+            cleaned["campaign"] = self.instance.campaign
+            return self._clean_rest(cleaned)
+        purpose = cleaned.get("purpose") or Event.Purpose.GENERAL
+        cleaned["purpose"] = purpose
+        if purpose == Event.Purpose.CUSTOMER:
+            cleaned["campaign"] = None
+            if not cleaned.get("customer"):
+                self.add_error("customer", "Choose the customer this event is for.")
+        elif purpose == Event.Purpose.CAMPAIGN:
+            if not cleaned.get("campaign"):
+                self.add_error("campaign", "Choose the campaign this event is for.")
+            else:
+                cleaned["customer"] = cleaned["campaign"].organization
+        else:
+            cleaned["customer"] = None
+            cleaned["campaign"] = None
+        return self._clean_rest(cleaned)
+
+    def _clean_rest(self, cleaned):
         try:
             zone = ZoneInfo(cleaned.get("timezone_name") or "UTC")
         except (ZoneInfoNotFoundError, TypeError, ValueError):

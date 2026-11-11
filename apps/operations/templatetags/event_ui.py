@@ -133,6 +133,7 @@ def event_editor_sections(form):
     result = []
     for key, title, names, optional in (
         ("basics", "Basic information", ("name", "event_type", "event_type_other", "description", "simulator_qualification_threshold"), False),
+        ("purpose", "Purpose", ("purpose", "customer", "campaign"), True),
         ("schedule", "Event dates", ("start_at", "end_at", "timezone_name"), False),
         ("location", "Location", ("location_name", "address_line_1", "address_line_2", "city", "state", "postal_code", "country"), False),
         ("travel-dates", "Setup and travel dates", ("setup_date", "staff_arrival_time", "return_date"), True),
@@ -147,7 +148,7 @@ def event_editor_sections(form):
             continue
         result.append(dict(id="event-" + key, title=title, fields=fields,
             optional=optional and not any(field.field.required for field in fields),
-            open=any(field.errors for field in fields) or any(field.value() not in (None, "", False, 0, "disabled", "Group") for field in fields)))
+            open=any(field.errors for field in fields) or any(field.value() not in (None, "", False, 0, "disabled", "Group", "general") for field in fields)))
     return result
 
 

@@ -18,6 +18,7 @@ SECTIONS={
  'contact':('Event contact',('contact_name','contact_email','contact_phone')),
  'housing':('Housing',('housing_information',)),
  'logistics':('Travel & setup',('logistics_instructions',)),
+ 'purpose':('Purpose',('purpose','customer','campaign')),
 }
 
 class SectionForm(forms.Form):

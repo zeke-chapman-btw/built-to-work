@@ -262,6 +262,23 @@ def exclusive_sources(item, organization_id, *, at=None):
             expires = policy.completed_at + timedelta(days=policy.exclusivity_days)
             if at < expires:
                 blocked.append({'source': source, 'expires': expires, 'setup_required': False})
+    # People reached through a Campaign event are connected to that Campaign.
+    # Exclusivity applies only once the Campaign has an exclusivity period set; any recorded source row (including a release) takes precedence.
+    from apps.events.purpose import campaigns_for_participants
+    from apps.customers.models import Campaign
+    members = identity_members(item.pk)
+    recorded = set(CampaignSource.objects.filter(participant_id__in=members).values_list('campaign_id', flat=True))
+    derived = campaigns_for_participants(members) - recorded
+    for campaign in Campaign.objects.filter(pk__in=derived).exclude(organization_id=organization_id):
+        policy = CampaignRecruitingPolicy.objects.filter(campaign=campaign).first()
+        if not policy or policy.exclusivity_days is None:
+            continue
+        if policy.completed_at is None:
+            blocked.append({'source': None, 'campaign': campaign, 'expires': None, 'setup_required': False})
+            continue
+        expires = policy.completed_at + timedelta(days=policy.exclusivity_days)
+        if at < expires:
+            blocked.append({'source': None, 'campaign': campaign, 'expires': expires, 'setup_required': False})
     return blocked
 
 

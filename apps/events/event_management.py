@@ -25,7 +25,9 @@ def event_snapshot(event):
     fields = (*EventForm.Meta.fields, "status", "staff_published_at", "staff_published_by_id", "details_finalized_at", "details_finalized_by_id")
     result = {}
     for name in fields:
-        value = getattr(event, name)
+        value = getattr(event, name + "_id") if name in ("customer", "campaign") else getattr(event, name)
+        if name in ("customer", "campaign") and value is not None:
+            value = str(value)
         if isinstance(value, datetime) and timezone.is_aware(value):
             value = value.astimezone(UTC)
         result[name] = value.isoformat() if hasattr(value, "isoformat") else str(value) if isinstance(value,Decimal) or (name.endswith("_id") and value is not None) else value

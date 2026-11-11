@@ -376,7 +376,10 @@ def campaign_detail(request, org_id, record_id):
     actions = {"planning": [("approve_activate", "Approve & activate"), ("hold", "Put on hold"), ("cancel", "Cancel campaign")], "active": [("hold", "Put on hold"), ("complete", "Mark complete"), ("cancel", "Cancel campaign")], "hold": [("approve_activate", "Approve & activate"), ("planning", "Return to planning"), ("cancel", "Cancel campaign")]}.get(obj.status, [])
     if obj.status == "hold" and obj.approved_planning_version == obj.planning_version:
         actions.append(("complete", "Mark complete"))
-    return render(request, "customers/campaign.html", context(request, org, "campaigns", campaign=obj, actions=actions, needs=obj.workforce_needs.select_related("effective_revision", "working_revision"), recent=activity(org, campaign=obj)[:30]))
+    from apps.events.purpose import connected_participant_ids
+    campaign_events = obj.events.filter(purpose="campaign").order_by("start_at")
+    people = len(connected_participant_ids(obj)) if request.user.has_perm("participants.view_participant") else None
+    return render(request, "customers/campaign.html", context(request, org, "campaigns", campaign=obj, actions=actions, campaign_events=campaign_events, connected_people=people, needs=obj.workforce_needs.select_related("effective_revision", "working_revision"), recent=activity(org, campaign=obj)[:30]))
 
 
 @staff_view

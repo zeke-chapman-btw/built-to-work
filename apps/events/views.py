@@ -273,6 +273,12 @@ def _overview_data(user, event, can_view_records):
     """Read-only figures for the event overview; each block follows its existing permission."""
     data = {"ov_stations": list(event.station_assignments.select_related("station").order_by("display_order", "station__name"))}
     data["ov_station_ready"] = sum(1 for item in data["ov_stations"] if item.enabled and item.station.is_active)
+    if event.purpose == "campaign" and event.campaign_id:
+        from .purpose import connected_participant_ids
+        from apps.recruiting.models import CampaignRecruitingPolicy
+        data["ov_campaign_policy"] = CampaignRecruitingPolicy.objects.filter(campaign_id=event.campaign_id).first()
+        if can_view_records:
+            data["ov_campaign_people"] = len(connected_participant_ids(event.campaign))
     if can_view_records:
         from apps.stations.models import ExperienceSession
         people = set(EventRegistration.objects.filter(event=event).exclude(status="void").values_list("participant_id", flat=True))
