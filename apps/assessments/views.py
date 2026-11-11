@@ -38,11 +38,11 @@ def _require_admin(request):
 
 
 def _authoring(request, template, context):
-    titles={"dashboard.html":"Quizzes","categories.html":"Assessment categories",
-        "category_form.html":"Edit category" if context.get("category") and not context["category"]._state.adding else "Add category",
+    titles={"dashboard.html":"Quizzes","categories.html":"Quiz categories",
+        "category_form.html":"Edit category" if context.get("category") and not context["category"]._state.adding else "New category",
         "question_sets.html":"Quizzes","question_set_detail.html":getattr(context.get("question_set"),"name","Question set") or "Question set",
         "question_form.html":"Edit question" if context.get("item") else "New question",
-        "question_set_form.html":"New Draft question set","restart.html":"Void and restart assessment"}
+        "question_set_form.html":"New quiz","restart.html":"Void and restart assessment"}
     context.setdefault("page_title",titles.get(template,"Event Quizzes & Tests"))
     if template=="question_form.html":
         form=context["form"]
@@ -51,7 +51,7 @@ def _authoring(request, template, context):
     fallback=reverse("assessments:question_set_detail",args=[question_set.pk]) if question_set and template!="question_set_detail.html" else reverse("assessments:category_list") if template=="category_form.html" else reverse("assessments:question_set_list")
     context["back_url"]=operations_return(request,fallback,question_set=question_set)
     if template=="category_form.html":
-        return operations_editor(request,context["form"],title=context["page_title"],save_label="Save category",back=context["back_url"])
+        return operations_editor(request,context["form"],title=context["page_title"],save_label="Save",back=context["back_url"])
     return render(request, "assessments/" + template, context)
 
 
@@ -73,7 +73,7 @@ def category_list(request):
             category = form.save()
             audit_action(actor=request.user, action="assessment.category.created", instance=category,
                 source="quiz_admin", new_data={"name": category.name, "active": category.is_active})
-            messages.success(request, "Assessment category saved.")
+            messages.success(request, "Saved")
             return redirect("assessments:category_list")
     else:
         form = CategoryForm()
@@ -98,7 +98,7 @@ def category_edit(request, category_id=None):
         audit_action(actor=request.user, action="assessment.category.updated", instance=category,
             source="quiz_admin", old_data=old,
             new_data={"name": category.name, "active": category.is_active, "display_order": category.display_order})
-        messages.success(request, "Assessment category updated. Historical attempts remain unchanged.")
+        messages.success(request, "Saved")
         return operations_saved(request,operations_return(request,reverse("assessments:category_list")))
     return _authoring(request, "category_form.html", {"form": form, "category": category,
         "historical_usage": category.assessment_sections.exists() if category.pk else False})

@@ -8,6 +8,7 @@ class CategoryForm(forms.ModelForm):
     class Meta:
         model = AssessmentCategory
         fields = ("name", "description", "is_active", "display_order")
+        labels = {"is_active": "Active", "display_order": "Order on the quiz screen"}
 
 
 class QuestionSetForm(forms.ModelForm):
