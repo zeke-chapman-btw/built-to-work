@@ -222,3 +222,51 @@ body.internal-app.has-operations-refinement #main-content .ops-resource-more>sum
 body.internal-app.has-operations-refinement #main-content .ops-resource-more>summary:hover{background:transparent !important;color:var(--ink,#111827) !important}
 /* Event tool pages (execution, health, closeout) keep the same 16px phone margin as the event page. */
 @media(max-width:639.98px){body.internal-app.btw-platform #main-content:has(>.event-record-header){padding-inline:16px !important;box-sizing:border-box}}
+/* Layout batch 2: event tool pages (Execution, Health Monitor, Closeout) match the Report/Expenses card style. */
+body.internal-app #main-content .operations-design.btw-event-surface{display:flex;flex-direction:column;gap:16px}
+body.internal-app #main-content .operations-design.btw-event-surface .btw-panel-heading h2{font:600 15px/22px var(--font);letter-spacing:0;text-transform:none;margin:0;white-space:nowrap}
+body.internal-app #main-content .operations-design.btw-event-surface>.card{margin:0;border-radius:12px}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-tool-heading{margin:0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-tool-heading h2{font-size:18px;line-height:26px}
+body.internal-app #main-content .ops-progress-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0}
+body.internal-app #main-content .ops-progress-tile{display:grid;gap:4px;align-content:start;background:#fff;border:1px solid var(--line,#e5e7eb);border-radius:12px;padding:14px 16px;min-width:0}
+body.internal-app #main-content .ops-progress-tile>span{font-size:13px;color:#4b5563}
+body.internal-app #main-content .ops-progress-tile>strong{font-size:24px;line-height:1.2;font-weight:600}
+body.internal-app #main-content .ops-progress-tile>strong small{font-size:13px;font-weight:400;color:#6b7280}
+body.internal-app #main-content .ops-progress-tile>small{font-size:12.5px;color:#6b7280}
+body.internal-app #main-content .ops-progress-tile progress{appearance:none;-webkit-appearance:none;width:100%;height:6px;border:0;border-radius:99px;background:#eef0f2;overflow:hidden;margin:4px 0 2px}
+body.internal-app #main-content .ops-progress-tile progress::-webkit-progress-bar{background:#eef0f2;border-radius:99px}
+body.internal-app #main-content .ops-progress-tile progress::-webkit-progress-value{background:var(--red,#c8102e);border-radius:99px}
+body.internal-app #main-content .ops-progress-tile progress::-moz-progress-bar{background:var(--red,#c8102e);border-radius:99px}
+body.internal-app #main-content .ops-tool-links>a:not(.button){color:var(--brand-red-dark,#a51d24);font-weight:500}
+body.internal-app #main-content .ops-checklist-filter{background:#fff;border:1px solid var(--line,#e5e7eb) !important;border-radius:12px !important;padding:0 16px !important;margin:0 !important}
+body.internal-app #main-content .ops-checklist-filter[open]{padding-bottom:16px !important}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-checklist-row{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-checklist-row h3{font-size:14px;font-weight:600;margin:0 0 4px}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-checklist-row nav{margin-top:0;justify-content:flex-end}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-checklist-row nav a{color:var(--brand-red-dark,#a51d24)}
+body.internal-app #main-content .operations-design.btw-event-surface .btw-panel-heading p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+body.internal-app #main-content .operations-design.btw-event-surface>.ops-archived{margin:0 !important;border-top:0 !important}
+@media (max-width:700px){
+ body.internal-app #main-content .ops-progress-grid{grid-template-columns:1fr}
+ body.internal-app #main-content .operations-design.btw-event-surface .ops-checklist-row{flex-direction:column;gap:6px}
+ body.internal-app #main-content .operations-design.btw-event-surface .ops-checklist-row nav{justify-content:flex-start}
+}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-history-card{padding:0 16px !important}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-history-card>.btw-disclosure{margin:0 !important;border:0 !important}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-checklist-filter{background:#fff !important}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-item-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0;font-size:13px;color:var(--muted)}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-checklist-row{padding:12px 0}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-checklist-row>div{min-width:0}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-checklist-row>div>p:not(.ops-item-meta){margin:6px 0 0;font-size:13px}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-checklist-row nav{display:flex;flex-wrap:nowrap;align-items:center;gap:14px;font-size:13px;white-space:nowrap}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-checklist-row nav form{margin:0}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-checklist-row nav .button{min-height:34px;padding:6px 12px;font-size:13px}
+body.internal-app #main-content .operations-design.btw-event-surface .btw-record-list{gap:0}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-quiet-link{color:var(--brand-red-dark,#a51d24);font-size:13px;font-weight:500}
+@media (max-width:700px){body.internal-app #main-content .operations-design.btw-event-surface .ops-checklist-row nav{flex-wrap:wrap;white-space:normal;gap:8px 14px}}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-checklist-row{min-height:0;height:auto}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-checklist-row nav{flex:none;height:auto;min-height:0;align-content:flex-start}
+body.internal-app #main-content .operations-design.btw-event-surface .event-current-section{display:none}
+body.internal-app #main-content .operations-design.btw-event-surface>.event-navigation-shell{margin-bottom:-16px}
+body.internal-app #main-content .operations-design.btw-event-surface>.ops-execution-navigation{margin:0}

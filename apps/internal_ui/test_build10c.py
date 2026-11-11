@@ -228,8 +228,7 @@ class Build10CTests(TestCase):
 
     def test_monitor_is_pending_and_never_claims_verified_readiness(self):
         self.login();response=self.client.get(self.url('operations'))
-        self.assertContains(response,'Event Health Monitor');self.assertContains(response,'does not have a checklist snapshot yet')
-        self.assertContains(response,'Progress records staff checklist completion')
+        self.assertContains(response,'Health Monitor');self.assertContains(response,'does not have a checklist snapshot yet')
         self.assertNotContains(response,'Ready with Exceptions');self.assertNotContains(response,'Approve exception')
         self.assertEqual(len(PLANNING_PHASES),4)
 

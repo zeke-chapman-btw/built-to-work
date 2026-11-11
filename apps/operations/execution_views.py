@@ -52,7 +52,7 @@ def event_context(request,event_id,section):
     return dict(event=event,execution=execution,section="operations",execution_section=section,
         can_view_setup_link=setup_link_visible(request.user,event),
         can_view_closeout_task=bool(execution and execution.closeout_task_id and tasks_for(request.user).filter(pk=execution.closeout_task_id).exists()),
-        page_title={"execution":"Event execution","health":"Event Health Monitor","closeout":"Closeout"}[section],
+        page_title={"execution":"Execution","health":"Health Monitor","closeout":"Closeout"}[section],
         managing_execution=managing,can_assign_manager=svc.administrator(request.user) and event.status!="archived",
         checklist_writable=bool(execution and managing and not execution.closed_at and event.status!="archived"),
         indicators=svc.progress(execution) if execution else [],
@@ -103,11 +103,11 @@ def manager_edit(request,event_id):
         try:
             saved,form=svc.set_manager(actor=request.user,event_id=event.pk,data=request.POST)
             if saved:
-                messages.success(request,"Primary Event Manager saved. Existing checklist records are retained.")
+                messages.success(request,"Event manager saved.")
                 return redirect("operations:execution",event_id=event.pk)
         except ValidationError as exc:
             form.is_valid();form.add_error(None,exc)
-    return form_page(request,form,title="Primary Event Manager",back=reverse("operations:execution",args=[event.pk]),event=event)
+    return form_page(request,form,title="Event manager",back=reverse("operations:execution",args=[event.pk]),event=event)
 
 
 ACTION_LABELS={"end":"Mark as ended","adopt_end":"Record historical end","close":"Formally close out event","reopen":"Reopen closeout"}
@@ -186,7 +186,7 @@ def item_action(request,event_id,item_id,action):
                 messages.success(request,"Checklist item updated.")
                 return redirect("operations:health",event_id=event_id)
         except ValidationError as exc:form.is_valid();form.add_error(None,exc)
-    return form_page(request,form,title={"complete":"Complete checklist item","undo":"Reopen checklist item","na":"Mark Not Applicable","archive":"Archive optional checklist item"}[action],
+    return form_page(request,form,title={"complete":"Complete checklist item","undo":"Reopen checklist item","na":"Mark as not needed","archive":"Archive checklist item"}[action],
         back=reverse("operations:health",args=[event_id]),event=context["event"],checklist_item=item,submit_label="Confirm change")
 
 
@@ -229,7 +229,7 @@ def present_history(entries):
     actions={"checklist.initialized":"Checklist initialized","manager.changed":"Event Manager changed",
         "ended":"Event marked Ended","closed":"Event formally closed out","reopened":"Closeout reopened",
         "item.saved":"Checklist item updated","item.complete":"Checklist item completed",
-        "item.undo":"Checklist item reopened","item.na":"Item marked Not Applicable",
+        "item.undo":"Checklist item reopened","item.na":"Item marked not needed",
         "item.archive":"Optional item archived"}
     rows=list(entries)
     ids={str(d["assigned_staff_id"]) for entry in rows for d in (entry.old_data or {},entry.new_data or {}) if d.get("assigned_staff_id")}

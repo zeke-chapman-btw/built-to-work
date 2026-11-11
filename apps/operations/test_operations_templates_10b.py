@@ -238,7 +238,7 @@ class OperationsTemplates10BTests(TestCase):
         self.assertEqual(self.client.post(reverse('events:station_assign',args=[self.event.pk]),{}).status_code,403)
     def test_operations_navigation_and_contextual_task_preserved(self):
         rev=self.published();response=self.client.get(reverse('events:event_detail',args=[self.event.pk])+'?section=operations')
-        self.assertContains(response,'Event setup');self.assertContains(response,'+ Task');self.assertContains(response,'Event Health Monitor')
+        self.assertContains(response,'Event setup');self.assertContains(response,'+ Task');self.assertContains(response,'Health Monitor')
         self.assertEqual(response.content.count(b'data-global-task-create'),1)
         self.assertContains(self.client.get(reverse('internal:workspace',args=['operations'])),'Operations Templates')
 

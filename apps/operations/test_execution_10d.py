@@ -215,7 +215,7 @@ class Execution10DTests(TestCase):
         self.client.force_login(self.worker_user,backend="django.contrib.auth.backends.ModelBackend")
         before=(AuditLog.objects.count(),Task.objects.count(),EventChecklistItem.objects.count())
         response=self.client.get(reverse("operations:health",args=[self.event.pk]))
-        self.assertEqual(response.status_code,200);self.assertContains(response,"Event Health Monitor")
+        self.assertEqual(response.status_code,200);self.assertContains(response,"Health Monitor")
         self.assertEqual(before,(AuditLog.objects.count(),Task.objects.count(),EventChecklistItem.objects.count()))
         self.client.force_login(self.other_user,backend="django.contrib.auth.backends.ModelBackend")
         self.assertEqual(self.client.get(reverse("operations:health",args=[self.event.pk])).status_code,403)

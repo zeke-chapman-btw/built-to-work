@@ -16,7 +16,7 @@ class GuardedForm(OptionalReasonMixin, forms.Form):
 
 
 class ManagerForm(GuardedForm):
-    primary_manager=forms.ModelChoiceField(queryset=StaffProfile.objects.none(),label="Primary Event Manager")
+    primary_manager=forms.ModelChoiceField(queryset=StaffProfile.objects.none(),label="Event manager")
     def __init__(self,*args,execution=None,**kwargs):
         super().__init__(*args,**kwargs)
         self.fields["primary_manager"].queryset=eligible_people()
@@ -67,7 +67,7 @@ class ItemForm(OptionalReasonMixin, forms.ModelForm):
         if self.instance.required_from_master:
             self.fields["is_required"].disabled=True
             self.fields["category"].disabled=True
-            self.fields["is_required"].help_text="Required master items are retained. Use Not Applicable with a reason when appropriate."
+            self.fields["is_required"].help_text="Required items stay on every event. Mark one as not needed if it doesn't apply."
         # Retain a historic assignee for display; choosing another still uses current event eligibility.
         self.previous_assignee=self.instance.assigned_staff_id if self.instance.pk else None
     def clean_assigned_staff(self):

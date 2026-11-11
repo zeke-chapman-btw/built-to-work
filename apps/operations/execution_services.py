@@ -196,7 +196,7 @@ def event_action(*,actor,event_id,action,data):
         if execution.event.status!="completed" or not execution.actual_ended_at:raise ValidationError("Mark the event Ended before formal closeout.")
         if EventChecklistItem.objects.filter(category__execution=execution,category__phase="closeout",
                 archived_at__isnull=True,is_required=True,state="todo").exists():
-            raise ValidationError("Complete applicable required Closeout items, or mark them Not Applicable with a reason.")
+            raise ValidationError("Finish the required closeout items, or mark them as not needed.")
         before=snap(execution);execution.closed_at=timezone.now();execution.closed_by=actor;execution.save()
         _update_closeout_task(execution,actor,"completed");audit(actor,"closed",execution,before,form.cleaned_data["reason"])
     elif action=="reopen":
@@ -257,7 +257,7 @@ def item_action(*,actor,event_id,item_id,action,data):
     revision(item,form.cleaned_data["revision"]);reason=form.cleaned_data["reason"].strip()
     if action in ("na","archive") and not reason:
         form.add_error("reason","Record a reason for this change.");return None,form
-    if action=="archive" and item.required_from_master:raise ValidationError("Required master items cannot be removed. Mark Not Applicable with a reason instead.")
+    if action=="archive" and item.required_from_master:raise ValidationError("Required items can't be removed. Mark it as not needed instead.")
     before=snap(item)
     if action=="archive":item.archived_at=timezone.now()
     else:
@@ -288,7 +288,7 @@ def save_master(*,actor,data,kind,object_id=None):
 def progress(execution):
     rows=list(EventChecklistItem.objects.filter(category__execution=execution,archived_at__isnull=True).select_related("category"))
     indicators=[]
-    for key,label,phases in (("ready","Ready to Go?",("prepare","arrival")),("live","Live Operations",("live",)),("closeout","Closeout",("closeout",))):
+    for key,label,phases in (("ready","Getting ready",("prepare","arrival")),("live","During the event",("live",)),("closeout","Closeout",("closeout",))):
         selected=[x for x in rows if x.category.phase in phases]
         applicable=[x for x in selected if x.state!="na"]
         complete=sum(x.state=="done" for x in applicable)
