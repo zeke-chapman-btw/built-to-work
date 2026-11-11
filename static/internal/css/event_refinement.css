@@ -295,3 +295,9 @@ body.internal-app.has-event-context #main-content .ev-purpose-pick span { text-a
 body.internal-app.has-event-context #main-content .ev-purpose-pick span.is-on { background:var(--surface,#fff); color:var(--ink,#252830); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.08); }
 body.internal-app.has-event-context #main-content .ev-purpose-name { margin:0; font-weight:600; }
 body.internal-app.has-event-context #main-content .ev-purpose-meta { margin:2px 0 10px; color:var(--muted); font-size:13px; }
+
+/* Event Purpose editor: show only the field that matters for the chosen purpose. */
+form:has(input[name=purpose][value=general]:checked) .field-customer,
+form:has(input[name=purpose][value=general]:checked) .field-campaign,
+form:has(input[name=purpose][value=customer]:checked) .field-campaign,
+form:has(input[name=purpose][value=campaign]:checked) .field-customer { display:none; }

@@ -193,3 +193,4 @@
 .participant-manager [data-editor-status]:empty { display:none; }
 [data-editor-manager-back][hidden] { display:none !important; }
 .participant-manager pre { white-space:pre-wrap; overflow-wrap:anywhere; }
+
