@@ -209,3 +209,16 @@ body.internal-app.has-operations-refinement #main-content .intake-authoring-step
 body.internal-app.has-operations-refinement #main-content .intake-authoring-step[open]>summary{border-bottom:1px solid var(--line);margin-bottom:8px}
 
 body.internal-app.has-operations-refinement #main-content .ops-resource-menu a small{display:block;font-size:11px;line-height:16px;color:var(--muted);white-space:normal}
+
+/* Layout batch 2: "More" reads as a normal tab; the row scrolls on phones instead of clipping. */
+body.internal-app.has-operations-refinement #main-content .btw-workspace-navigation:has(.ops-resource-navigation){display:flex;align-items:stretch;gap:0;border-bottom:1px solid var(--line,#e5e7eb)}
+body.internal-app.has-operations-refinement #main-content .btw-workspace-navigation .ops-resource-navigation{display:flex;flex:0 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none;border-bottom:0 !important;grid-template-columns:none}
+body.internal-app.has-operations-refinement #main-content .btw-workspace-navigation .ops-resource-navigation::-webkit-scrollbar{display:none}
+body.internal-app.has-operations-refinement #main-content .btw-workspace-navigation .ops-resource-navigation>.ops-resource-tab{flex:0 0 auto;width:auto;white-space:nowrap}
+body.internal-app.has-operations-refinement #main-content .ops-resource-more{flex:0 0 auto;margin:0 !important}
+body.internal-app.has-operations-refinement #main-content .ops-resource-more>summary,
+body.internal-app.has-operations-refinement #main-content .ops-resource-more>summary.is-active{width:auto !important;height:100%;min-height:44px;padding:0 12px !important;border-radius:0 !important;background:transparent !important;border-bottom:2px solid transparent !important;color:var(--muted,#5b6472) !important;font:500 13px/20px var(--font) !important}
+body.internal-app.has-operations-refinement #main-content .ops-resource-more>summary.is-active{color:var(--red,#bc1b31) !important;border-bottom-color:currentColor !important}
+body.internal-app.has-operations-refinement #main-content .ops-resource-more>summary:hover{background:transparent !important;color:var(--ink,#111827) !important}
+/* Event tool pages (execution, health, closeout) keep the same 16px phone margin as the event page. */
+@media(max-width:639.98px){body.internal-app.btw-platform #main-content:has(>.event-record-header){padding-inline:16px !important;box-sizing:border-box}}
