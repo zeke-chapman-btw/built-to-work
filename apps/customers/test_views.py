@@ -144,7 +144,7 @@ class CustomerScreenTests(CustomerFixtures, TestCase):
         self.assertEqual(len(response.context["rows"]), 3)
         self.assertContains(response, "return_to=")
         response = self.client.get(self.url("directory"), {"q": "missing-company"})
-        self.assertContains(response, "No customers found")
+        self.assertContains(response, "No customers match these filters")
 
     def test_history_does_not_leak_connected_private_records(self):
         self.child(self.org_b, "contact", {"first_name": "SYNTHETIC confidential"})

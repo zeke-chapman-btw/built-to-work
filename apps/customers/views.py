@@ -73,10 +73,27 @@ def activity(org, need=None, campaign=None):
     return query.order_by("-audit__timestamp", "-pk")
 
 
+CUSTOMER_LIST_TABS = {"search": "All customers", "activity": "Recent activity"}
+
+
 @staff_view
 @require_http_methods(["GET"])
 def directory(request):
-    query = organizations(request.user).select_related("primary_contact", "primary_lead__identity").annotate(need_count=Count("workforce_needs", distinct=True)).order_by("name", "pk")
+    query = organizations(request.user).select_related("primary_contact", "primary_lead__identity").annotate(
+        open_position_count=Count("workforce_needs", filter=Q(workforce_needs__status__in=["active", "hold"]), distinct=True),
+        active_campaign_count=Count("campaigns", filter=~Q(campaigns__status__in=["completed", "cancelled"]), distinct=True),
+    ).order_by("name", "pk")
+    try:
+        from apps.crm.access import internal_context
+        internal_context(request.user, organization=True)
+        show_last_contact = True
+    except PermissionDenied:
+        show_last_contact = False
+    if show_last_contact:
+        from django.db.models import Max
+        query = query.annotate(last_touchpoint=Max("relationship_interactions__occurred_at", filter=Q(
+            relationship_interactions__audience="btw", relationship_interactions__archived_at__isnull=True,
+            relationship_interactions__participant__isnull=True)))
     term, status, prepared = request.GET.get("q", "").strip(), request.GET.get("status", ""), request.GET.get("provisioned", "")
     if term:
         query = query.filter(Q(name__icontains=term) | Q(legal_name__icontains=term) | Q(industry__icontains=term))
@@ -85,10 +102,10 @@ def directory(request):
     if prepared in {"yes", "no"}:
         query = query.filter(provisioned=prepared == "yes")
     from apps.crm.directory_reads import directory_panel, directory_sections
-    panel = directory_sections(request)
+    panel = directory_sections(request, CUSTOMER_LIST_TABS)
     if panel['directory_listing'] != 'search':
         panel.update(directory_panel(request, 'customers'))
-    return render(request, "customers/directory.html", context(request, rows=page(request, query), q=term, status=status, provisioned=prepared, statuses=Org.Status.choices, directory_context=request.get_full_path(), **panel))
+    return render(request, "customers/directory.html", context(request, rows=page(request, query), q=term, status=status, provisioned=prepared, statuses=Org.Status.choices, directory_context=request.get_full_path(), show_last_contact=show_last_contact, **panel))
 
 
 @staff_view

@@ -70,3 +70,27 @@
 .cx-row-main small{font-size:13px;color:var(--muted,#56616d)}
 .cx-row-side{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .has-customer-page .customer-list.cx-rows{padding:0 16px}
+
+/* Customers list: same table pattern as the participants list. */
+.customer-app .cx-list { padding:0; overflow:hidden; }
+.customer-app .cx-list .btw-result-heading { padding:16px 20px; border-bottom:1px solid var(--line,#e5e7eb); }
+.customer-app .cx-list .btw-result-heading h2 { margin:0; font-size:1rem; }
+.customer-app :is(.cx-list-head,.cx-list-row) { display:grid; grid-template-columns:minmax(180px,1.8fr) minmax(90px,.7fr) minmax(90px,.6fr) minmax(100px,.7fr) minmax(130px,1fr); gap:12px; align-items:center; padding:12px 20px; }
+.customer-app .cx-list-touch :is(.cx-list-head,.cx-list-row) { grid-template-columns:minmax(180px,1.8fr) minmax(90px,.7fr) minmax(90px,.6fr) minmax(100px,.7fr) minmax(130px,1fr) minmax(100px,.7fr); }
+.customer-app .cx-list-head { font-size:.75rem; font-weight:600; color:var(--muted,#6b7280); text-transform:uppercase; letter-spacing:.03em; background:var(--surface-subtle,#f9fafb); }
+.customer-app .cx-list-row { border-top:1px solid var(--line,#e5e7eb); }
+.customer-app .cx-list-row:first-of-type { border-top:0; }
+.customer-app .cx-list-name { display:flex; flex-direction:column; min-width:0; }
+.customer-app .cx-list-name a { font-weight:600; color:var(--ink,#111827); text-decoration:none; }
+.customer-app .cx-list-name a:hover { text-decoration:underline; }
+.customer-app .cx-list-name small { color:var(--muted,#6b7280); }
+.customer-app .cx-list-label { display:none; }
+.customer-app .cx-list-none { color:var(--muted,#9ca3af); }
+.customer-app .cx-list .customer-empty { padding:20px; margin:0; }
+@media (max-width:760px) {
+  .customer-app .cx-list-head { display:none; }
+  .customer-app :is(.cx-list-row,.cx-list-touch .cx-list-row) { grid-template-columns:1fr 1fr; gap:8px 12px; padding:14px 16px; }
+  .customer-app .cx-list-name { grid-column:1/-1; }
+  .customer-app .cx-list-field { display:flex; flex-direction:column; gap:2px; }
+  .customer-app .cx-list-label { display:block; font-size:.72rem; color:var(--muted,#6b7280); }
+}
