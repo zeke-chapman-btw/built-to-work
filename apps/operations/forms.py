@@ -5,7 +5,7 @@ from apps.staffing.models import StaffProfile
 from .models import Task,EventNote,EventDocument
 class RevisionForm(forms.Form):
     revision=forms.CharField(widget=forms.HiddenInput)
-    reason=forms.CharField(max_length=500,widget=forms.Textarea(attrs={"rows":2}))
+    reason=forms.CharField(max_length=500,required=False,widget=forms.HiddenInput)
 class TaskForm(forms.ModelForm):
     revision = forms.CharField(widget=forms.HiddenInput, required=False)
     linked_records=forms.CharField(required=False,initial='1',widget=forms.HiddenInput)
@@ -95,7 +95,7 @@ class TaskRevisionForm(RevisionForm):
 
 class NoteForm(forms.ModelForm):
     revision=forms.CharField(widget=forms.HiddenInput,required=False)
-    reason=forms.CharField(max_length=500,widget=forms.Textarea(attrs={"rows":2}))
+    reason=forms.CharField(max_length=500,required=False,widget=forms.HiddenInput)
     class Meta:
         model=EventNote
         fields=("content","visibility")
@@ -106,11 +106,11 @@ class NoteForm(forms.ModelForm):
         if not manager:self.fields["visibility"].choices=[("staff","Assigned event staff")];self.initial["visibility"]="staff"
 class DocumentForm(forms.ModelForm):
     file=forms.FileField()
-    reason=forms.CharField(max_length=500)
+    reason=forms.CharField(max_length=500,required=False,widget=forms.HiddenInput)
     class Meta:
         model=EventDocument
         fields=("title","description","visibility")
 class DemoForm(forms.Form):
     visibility=forms.ChoiceField(choices=EventNote._meta.get_field("visibility").choices,initial="managers")
     confirm=forms.BooleanField(label="Create a clearly labeled synthetic preview PDF, not a real upload.")
-    reason=forms.CharField(max_length=500)
+    reason=forms.CharField(max_length=500,required=False,widget=forms.HiddenInput)

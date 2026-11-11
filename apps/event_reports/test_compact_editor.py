@@ -130,6 +130,6 @@ class CompactExpenseEditorTests(TestCase):
         self.assertEqual(obj.reference,original_reference)
         self.assertEqual(obj.reason,data['reason'])
         response=self.client.get(reverse('event_reports:expense-edit',args=[obj.pk]),**self.headers)
-        self.assertTrue(response.context['form'].fields['reason'].required)
-        self.assertContains(response,'Reason for change')
+        self.assertFalse(response.context['form'].fields['reason'].required)
+        self.assertNotContains(response,'Reason for change')
         self.assertNotContains(response,'name="reference"')

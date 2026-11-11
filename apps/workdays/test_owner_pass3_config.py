@@ -18,7 +18,7 @@ class CompensationConfigurationTests(TestCase):
         self.assertNotIn('reason', RateForm().fields)
         self.assertNotIn('reason', RoleForm().fields)
         self.assertIn('reason', RevisionForm().fields)
-        self.assertFalse(RevisionForm({'revision': 'new'}).is_valid())
+        self.assertTrue(RevisionForm({'revision': 'new'}).is_valid())
 
     def test_dated_rate_without_reason_preserves_approved_pay(self):
         with patch('apps.workdays.services.timezone.now', return_value=datetime(2030, 7, 1, 14, tzinfo=UTC)):

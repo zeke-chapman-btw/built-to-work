@@ -7,7 +7,7 @@ class ProfileChoice(forms.ModelChoiceField):
         return str(obj) if obj.is_active else str(obj)+' (Inactive profile)'
 class RevisionForm(forms.Form):
     revision = forms.CharField(widget=forms.HiddenInput,initial='new')
-    reason = forms.CharField(max_length=2000,widget=forms.Textarea(attrs={'rows':2}))
+    reason = forms.CharField(max_length=2000,required=False,widget=forms.HiddenInput)
 class CheckinForm(forms.Form):
     work_date = forms.DateField(widget=forms.DateInput(attrs={'type':'date'}))
     role = forms.ModelChoiceField(queryset=StaffRole.objects.none())

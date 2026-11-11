@@ -99,7 +99,7 @@ class AssignmentForm(forms.Form):
     staff = forms.ModelChoiceField(queryset=StaffProfile.objects.none(),label="Assigned employee")
     coverage_role = coverage_role_field()
     role = forms.CharField(required=False,max_length=80,label="Additional responsibility (optional)")
-    reason = forms.CharField(max_length=500,widget=forms.Textarea(attrs={"rows":2}),label="Assignment change reason")
+    reason = forms.CharField(max_length=500,required=False,widget=forms.HiddenInput,label="Assignment change reason")
     def __init__(self,*args,event,assignment=None,**kwargs):
         super().__init__(*args,**kwargs)
         self.event=event

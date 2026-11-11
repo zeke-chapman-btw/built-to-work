@@ -6,11 +6,10 @@ from .models import ExpenseCategory, ManualExpense, IncentiveLine, CostReview
 
 class RevisionForm(forms.Form):
     revision=forms.CharField(widget=forms.HiddenInput)
-    reason=forms.CharField(max_length=500,widget=forms.Textarea(attrs={'rows':3}))
+    reason=forms.CharField(max_length=500,required=False,widget=forms.HiddenInput)
     def clean_reason(self):
-        value=self.cleaned_data['reason'].strip()
-        if not value:raise forms.ValidationError('A reason is required.')
-        return value
+        # Reasons are optional; keep the audit column non-blank with a plain label.
+        return (self.cleaned_data.get('reason') or '').strip() or 'Not given'
 
 class EntryForm(forms.ModelForm):
     revision=forms.CharField(widget=forms.HiddenInput)
@@ -19,10 +18,13 @@ class EntryForm(forms.ModelForm):
         super().__init__(*args,**kwargs)
         self.fields['revision'].initial=self.instance.updated_at.isoformat() if self.instance.pk and self.instance.updated_at else 'new'
         self.fields['request_key'].initial=self.instance.request_key if self.instance.request_key else uuid.uuid4()
+        if 'reason' in self.fields:
+            self.fields['reason'].required=False
+            self.fields['reason'].widget=forms.HiddenInput()
     def clean_reason(self):
-        value=self.cleaned_data['reason'].strip()
-        if not value:raise forms.ValidationError('A reason is required.')
-        return value
+        value=(self.cleaned_data.get('reason') or '').strip()
+        if value:return value
+        return 'Created.' if self.instance._state.adding else 'Updated.'
 
 class ExpenseForm(EntryForm):
     class Meta:
@@ -38,13 +40,9 @@ class ExpenseForm(EntryForm):
         self.fields['category'].queryset=ExpenseCategory.objects.filter(q)
         labels={'cost':'Operating expense — included','incentive_purchase':'Incentive purchase — excluded','staff_reference':'Staff reference — excluded'}
         self.fields['treatment'].widget.choices=[(value,labels.get(value,label)) for value,label in self.fields['treatment'].choices]
-        if self.instance._state.adding:
-            self.fields['reason'].required=False
-            self.fields['reason'].widget=forms.HiddenInput()
     def clean_reason(self):
-        # New expenses need no staff explanation. Retain the existing nonblank
-        # audit column with a truthful creation label, separate from optional notes.
-        value=self.cleaned_data.get('reason','').strip()
+        # Reasons are optional. Keep the existing nonblank audit column with a plain label.
+        value=(self.cleaned_data.get('reason') or '').strip()
         if self.instance._state.adding and not value:return 'Expense created.'
         return super().clean_reason()
     def clean_reference(self):
@@ -67,7 +65,7 @@ class IncentiveForm(EntryForm):
 
 class CategoryForm(forms.ModelForm):
     revision=forms.CharField(widget=forms.HiddenInput)
-    reason=forms.CharField(max_length=500,widget=forms.Textarea(attrs={'rows':3}))
+    reason=forms.CharField(max_length=500,required=False,widget=forms.HiddenInput)
     class Meta:
         model=ExpenseCategory
         fields=['name','is_active','incentive_purchase']
@@ -80,9 +78,7 @@ class CategoryForm(forms.ModelForm):
         if ExpenseCategory.objects.filter(name__iexact=name).exclude(pk=self.instance.pk).exists():raise forms.ValidationError('A category with this name already exists.')
         return name
     def clean_reason(self):
-        value=self.cleaned_data['reason'].strip()
-        if not value:raise forms.ValidationError('A reason is required.')
-        return value
+        return (self.cleaned_data.get('reason') or '').strip() or ('Created.' if self.instance._state.adding else 'Updated.')
 
 class ReviewForm(RevisionForm):
     manual_reviewed=forms.BooleanField(required=False,label='Manual expenses are reconciled, including an intentional zero if no expenses exist')
