@@ -50,3 +50,5 @@ body.internal-app #main-content .qb-toggles { display:flex; flex-direction:colum
   body.internal-app #main-content .qb-q { flex-direction:column; }
   body.internal-app #main-content .qb-choices { grid-template-columns:1fr; }
 }
+body.internal-app #main-content .qb-publish > summary.button { padding:0 18px; min-height:40px; align-items:center; cursor:pointer; }
+body.internal-app #main-content .qb-head .badge, body.internal-app #main-content .qb-head > :last-child { flex-shrink:0; white-space:nowrap; }
