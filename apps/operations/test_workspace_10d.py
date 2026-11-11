@@ -117,5 +117,5 @@ class ManagementUI10DTests(TestCase):
         r=self.client.get(reverse("operations:execution",args=[self.event.pk]))
         self.assertEqual(r.status_code,200)
         self.assertNotContains(r,'?section=operations')
-        self.assertNotContains(r,'Assign Event Manager')
+        self.assertNotContains(r,'Assign event manager')
         self.assertContains(r,reverse("operations:health",args=[self.event.pk]))

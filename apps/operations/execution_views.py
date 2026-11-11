@@ -52,7 +52,7 @@ def event_context(request,event_id,section):
     return dict(event=event,execution=execution,section="operations",execution_section=section,
         can_view_setup_link=setup_link_visible(request.user,event),
         can_view_closeout_task=bool(execution and execution.closeout_task_id and tasks_for(request.user).filter(pk=execution.closeout_task_id).exists()),
-        page_title={"execution":"Event execution","health":"Event Health Monitor","closeout":"Event Closeout"}[section],
+        page_title={"execution":"Event execution","health":"Event Health Monitor","closeout":"Closeout"}[section],
         managing_execution=managing,can_assign_manager=svc.administrator(request.user) and event.status!="archived",
         checklist_writable=bool(execution and managing and not execution.closed_at and event.status!="archived"),
         indicators=svc.progress(execution) if execution else [],
@@ -110,7 +110,7 @@ def manager_edit(request,event_id):
     return form_page(request,form,title="Primary Event Manager",back=reverse("operations:execution",args=[event.pk]),event=event)
 
 
-ACTION_LABELS={"end":"Mark Ended","adopt_end":"Record historical end","close":"Formally close out event","reopen":"Reopen closeout"}
+ACTION_LABELS={"end":"Mark as ended","adopt_end":"Record historical end","close":"Formally close out event","reopen":"Reopen closeout"}
 @execution_view
 def action(request,event_id,action):
     if action not in ACTION_LABELS:raise Http404
