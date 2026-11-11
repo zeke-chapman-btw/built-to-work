@@ -57,7 +57,7 @@ class HomeDashboardPolishTests(TestCase):
         headers = self.markup.with_class('dashboard-section-header')
         self.assertEqual(len(headers), 5)
         headings = [''.join(h['children'][0]['text']).strip() for h in headers]
-        for actual, expected in zip(headings, ('My tasks', 'Updates', 'Quick actions', 'Overview', 'Upcoming events')):
+        for actual, expected in zip(headings, ('My tasks', 'Updates', 'Quick actions', 'Overview', 'Current & upcoming events')):
             self.assertIn(expected, actual)
         self.assertContains(self.response, reverse('operations:tasks') + '?view=mine')
         self.assertContains(self.response, reverse('operations:updates'))
