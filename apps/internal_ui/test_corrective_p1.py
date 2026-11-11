@@ -100,7 +100,7 @@ class CorrectivePassOneTests(TestCase):
 
     def test_housing_empty_and_filled_use_lined_facts(self):
         url=reverse('events:event_detail',args=[self.event.pk])
-        self.assertContains(self.client.get(url),'Accommodation')
+        self.assertContains(self.client.get(url),'No housing added yet')
         self.event.housing_information='SYNTHETIC accommodation\nSecond line'
         self.event.save()
         response=self.client.get(url)

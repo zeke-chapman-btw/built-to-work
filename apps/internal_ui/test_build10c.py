@@ -150,18 +150,21 @@ class Build10CTests(TestCase):
     def test_tasks_notes_documents_remain_discoverable_in_more(self):
         self.login();html=self.client.get(self.url()).content.decode()
         more=html.split('aria-label="More event sections"',1)[1].split('</nav>',1)[0]
-        for section in ('tasks','notes','documents'):
+        for section in ('tasks','documents'):
             self.assertIn(reverse('operations:event',args=[self.event.pk,section]),more)
+        self.assertIn(reverse('operations:event',args=[self.event.pk,'notes']),html.split('aria-label="More event sections"',1)[0])
 
     def test_more_selected_section_is_identified(self):
-        self.login();response=self.client.get(reverse('operations:event',args=[self.event.pk,'notes']))
-        self.assertContains(response,'More event tools, Notes selected');self.assertContains(response,'has-active')
+        self.login();response=self.client.get(reverse('operations:event',args=[self.event.pk,'documents']))
+        self.assertContains(response,'More event tools, Documents selected');self.assertContains(response,'has-active')
+        response=self.client.get(reverse('operations:event',args=[self.event.pk,'notes']))
+        self.assertContains(response,'href="%s" aria-current="page"'%reverse('operations:event',args=[self.event.pk,'notes']))
         self.assertContains(response,reverse('operations:event',args=[self.event.pk,'notes']))
 
     def test_workdays_are_part_of_staff_without_changing_url_or_policy(self):
         self.login();response=self.client.get(reverse('workdays:event',args=[self.event.pk]))
         self.assertEqual(response.status_code,200);self.assertNotContains(response,'aria-label="Staff sections"')
-        self.assertContains(response,reverse('workdays:event',args=[self.event.pk]));self.assertContains(response,'Clock')
+        self.assertContains(response,reverse('workdays:event',args=[self.event.pk]));self.assertContains(response,'Staff check-ins')
         self.assertContains(response,reverse('staffing:event',args=[self.event.pk]))
 
     def test_workday_manager_does_not_gain_staffing_management(self):

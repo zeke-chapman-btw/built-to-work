@@ -58,10 +58,10 @@ class EventsPassTwoTests(TestCase):
 
     def test_approved_primary_order_and_all_previous_tools_have_destinations(self):
         nav=self.navigation(self.owner)
-        self.assertEqual([t['label'] for t in nav['primary_event_tabs']],['Overview','Staff','Clock','Registrations & Tickets','Expenses','Reports & Results'])
-        self.assertEqual(nav['event_nav_count'],7)
+        self.assertEqual([t['label'] for t in nav['primary_event_tabs']],['Overview','Staff','Staff check-ins','Registrations','Expenses','Report','Notes'])
+        self.assertEqual(nav['event_nav_count'],8)
         more={t['label']:t['url'] for t in nav['more_event_tabs']}
-        for label in ['Operations','Tasks','Notes','Documents','Quizzes & Tests','Station assignments','Game configuration','Simulator configuration references','Execution checklist','Health Monitor','Closeout','Primary Event Manager']:
+        for label in ['Operations','Tasks','Documents','Quizzes & Tests','Station assignments','Game configuration','Simulator configuration references','Execution checklist','Health Monitor','Closeout','Primary Event Manager']:
             self.assertIn(label,more)
         for tab in event_tabs(self.owner,self.event):
             self.assertIn(tab['url'],[t['url'] for t in nav['primary_event_tabs']+nav['more_event_tabs']]+[t['url'] for t in nav['result_links']])
@@ -177,7 +177,7 @@ class EventsPassTwoTests(TestCase):
 
     def test_existing_info_fields_and_dirty_guard_are_present_without_global_leak(self):
         response=self.client.get(reverse('events:event_detail',args=[self.event.pk]))
-        for text in ['Venue','Address','Start','End','Time zone','Accommodation','SYNTHETIC lodging<br>Second line','event-info-pass2']:self.assertContains(response,text)
+        for text in ['Venue','Address','Event days','Time zone','Housing','SYNTHETIC lodging<br>Second line','ev-overview']:self.assertContains(response,text)
         self.assertContains(self.client.get(reverse('events:event_edit',args=[self.event.pk])),'data-event-dirty-guard')
         self.assertNotContains(self.client.get('/internal/'),'data-event-dirty-guard')
 

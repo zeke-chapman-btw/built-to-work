@@ -9,10 +9,10 @@ from .models import Event
 from .services import audit_action
 
 TRANSITIONS = {
-    "publish": ("Publish to Staff", {"draft"}, "upcoming"),
-    "complete": ("Mark Ended", {"upcoming"}, "completed"),
-    "cancel": ("Cancel Event", {"draft", "upcoming"}, "cancelled"),
-    "archive": ("Archive Event", {"draft", "completed", "cancelled"}, "archived"),
+    "publish": ("Publish to staff", {"draft"}, "upcoming"),
+    "complete": ("Mark complete", {"upcoming"}, "completed"),
+    "cancel": ("Cancel event", {"draft", "upcoming"}, "cancelled"),
+    "archive": ("Archive event", {"draft", "completed", "cancelled"}, "archived"),
     "finalize_details": ("Finalize details", {"draft", "upcoming"}, None),
     "reopen_details": ("Reopen details", {"draft", "upcoming"}, None),
 }

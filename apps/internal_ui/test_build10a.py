@@ -97,7 +97,7 @@ class Build10ATests(TestCase):
     def test_event_name_and_lifecycle_confirmation_are_preserved(self):
         self.login(self.admin);response=self.client.get(reverse('events:event_detail',args=[self.next.pk]))
         self.assertContains(response,'class="record-title">'+self.next.name)
-        self.assertContains(response,'Event actions')
+        self.assertContains(response,'Cancel event')
         self.assertContains(response,reverse('events:event_action',args=[self.next.pk,'cancel']))
         self.next.refresh_from_db();self.assertEqual(self.next.status,'upcoming')
     def test_existing_event_sections_render_for_admin(self):

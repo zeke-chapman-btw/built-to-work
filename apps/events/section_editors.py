@@ -15,9 +15,9 @@ from .views import staff_permission_required
 SECTIONS={
  'event':('Event & location',('name','event_type','event_type_other','description','location_name','address_line_1','address_line_2','city','state','postal_code','country')),
  'schedule':('Schedule',('timezone_name','start_at','end_at','daily_start_time','daily_end_time','setup_date','staff_arrival_time','return_date')),
- 'contact':('Event Contact',('contact_name','contact_email','contact_phone')),
- 'housing':('Event Housing',('housing_information',)),
- 'logistics':('Travel & Logistics',('logistics_instructions',)),
+ 'contact':('Event contact',('contact_name','contact_email','contact_phone')),
+ 'housing':('Housing',('housing_information',)),
+ 'logistics':('Travel & setup',('logistics_instructions',)),
 }
 
 class SectionForm(forms.Form):

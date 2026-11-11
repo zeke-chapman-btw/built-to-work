@@ -258,8 +258,9 @@ def event_detail(request, event_id):
     can_view_offline = request.user.has_perms(("events.view_offlineeventpreparation", "events.view_syncoutboxitem", "events.view_centraleventdownload"))
     overview = event_experience_overview(event, include_offline=can_view_offline) if can_view_operations and section in ("operations", "results") else None
     from .event_management import available_actions
+    overview_data = _overview_data(request.user, event, can_view_records) if section == "overview" else {}
     with timezone.override(ZoneInfo(event.timezone_name)):
-        return render(request, "events/event_detail.html", {
+        return render(request, "events/event_detail.html", {**overview_data,
             "page_title": event.name, "page_description": "Event configuration and recorded experience progress.",
             "section": section, "management_actions": available_actions(event), "event": event, "registrations": registrations, "registration_form": form,
             "can_view_records": can_view_records, "can_view_operations": can_view_operations, "overview": overview,
@@ -267,6 +268,26 @@ def event_detail(request, event_id):
             "experience_sessions": overview["sessions"] if overview else [],
             "registration_count": EventRegistration.objects.filter(event=event, status="active").values("participant_id").distinct().count() if can_view_records else None,
         }, status=400 if form is not None and form.is_bound and form.errors else 200)
+
+def _overview_data(user, event, can_view_records):
+    """Read-only figures for the event overview; each block follows its existing permission."""
+    data = {"ov_stations": list(event.station_assignments.select_related("station").order_by("display_order", "station__name"))}
+    data["ov_station_ready"] = sum(1 for item in data["ov_stations"] if item.enabled and item.station.is_active)
+    if can_view_records:
+        from apps.stations.models import ExperienceSession
+        people = set(EventRegistration.objects.filter(event=event).exclude(status="void").values_list("participant_id", flat=True))
+        people |= set(ExperienceSession.objects.filter(event=event, participant__isnull=False).values_list("participant_id", flat=True))
+        data["ov_people"] = len(people)
+        data["ov_signed_up"] = EventRegistration.objects.filter(event=event, status="active").values("participant_id").distinct().count()
+    from apps.staffing.services import coverage, require_manager
+    try:
+        require_manager(user)
+    except PermissionDenied:
+        pass
+    else:
+        data["ov_coverage"] = coverage(event)
+    return data
+
 
 @staff_permission_required('events.view_eventregistration')
 def registration_detail(request, event_id, registration_id):

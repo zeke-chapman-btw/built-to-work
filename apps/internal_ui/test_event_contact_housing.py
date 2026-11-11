@@ -110,7 +110,7 @@ class EventContactHousingPresentationTests(TestCase):
             self.assertFalse(parsed.details[key]['open'])
         for name in self.values:
             self.assertEqual(parsed.fields.count(name), 1)
-        for title in ('Event Contact', 'Event Housing', 'Travel &amp; Logistics'):
+        for title in ('Event contact', 'Housing', 'Travel &amp; setup'):
             self.assertContains(response, title)
         self.assertContains(response, 'Save the event, then configure daily Staff &amp; Driver needs')
         for future in ('housing_type', 'hotel_name', 'housing_address', 'provision_status', 'receipt_url'):
@@ -151,10 +151,10 @@ class EventContactHousingPresentationTests(TestCase):
 
     def test_info_sections_escape_text_and_keep_contact_links_and_old_housing_anchor(self):
         response = self.client.get(self.detail_url())
-        for title in ('Event Contact', 'Event Housing', 'Travel &amp; Logistics'):
+        for title in ('Event contact', 'Housing', 'Travel &amp; setup'):
             self.assertContains(response, title)
         for text in ('SYNTHETIC &lt;Contact&gt;', 'lodging &lt;b&gt;Example&lt;/b&gt;<br>Second line',
-                     'logistics &amp; equipment<br>Keep route clear', 'mailto:contact@example.test', 'tel:+1-555-0100', 'id="housing-and-logistics"'):
+                     'logistics &amp; equipment<br>Keep route clear', 'mailto:contact@example.test', 'tel:+15550100', 'id="housing-and-logistics"'):
             self.assertContains(response, text)
         links = self.structure(response).links
         self.assertTrue(any(urlsplit(x).path==reverse('events:section-edit',args=[self.event.pk,'contact']) for x in links))
@@ -197,7 +197,7 @@ class EventContactHousingPresentationTests(TestCase):
         self.assertContains(response, 'Eastern (EDT)')
         edit = reverse('staffing:plan-edit', args=[self.event.pk])
         self.assertTrue(any(urlsplit(h).path == edit for h in self.structure(response).links))
-        self.assertContains(response, 'Daily Staff &amp; Driver needs')
+        self.assertContains(response, 'Sign-up deadline')
 
     def test_staffing_manager_without_event_edit_gets_only_staffing_actions(self):
         self.client.force_login(self.manager, backend='django.contrib.auth.backends.ModelBackend')

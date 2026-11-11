@@ -39,14 +39,20 @@ def event_navigation(context, event, active=""):
     tabs = event_tabs(request.user,event)
     by_id = {tab["id"]: tab for tab in tabs}
     primary = []
-    for key, label in (("overview", "Overview"), ("staff", "Staff"), ("clock", "Clock"),
-                       ("registrations", "Registrations & Tickets"), ("expenses", "Expenses")):
+    for key, label in (("overview", "Overview"), ("staff", "Staff"), ("clock", "Staff check-ins"),
+                       ("registrations", "Registrations"), ("expenses", "Expenses")):
         if key in by_id:
-            primary.append(dict(by_id[key], label=label, icon="event-dollar" if key == "expenses" else key))
+            tab = dict(by_id[key], label=label, icon="event-dollar" if key == "expenses" else key)
+            if key == "staff" and tab["url"] == reverse("staffing:event", args=[event.pk]):
+                from apps.staffing.models import AvailabilityRequest
+                tab["count"] = AvailabilityRequest.objects.filter(event=event, status="pending").count()
+            primary.append(tab)
     result_tab = by_id.get("report") or by_id.get("results")
     if result_tab:
-        primary.append(dict(result_tab, id="report-results", label="Reports & Results", icon="results"))
-    more = [tab for tab in tabs if tab["id"] not in ("overview", "staff", "clock", "registrations", "expenses", "report", "results")]
+        primary.append(dict(result_tab, id="report-results", label="Report" if "report" in by_id else "Results", icon="results"))
+    if "notes" in by_id:
+        primary.append(dict(by_id["notes"], label="Notes", icon="notes"))
+    more = [tab for tab in tabs if tab["id"] not in ("overview", "staff", "clock", "registrations", "expenses", "report", "results", "notes")]
     # Existing tool policy supplies every specialist link; do not invent routes or grants.
     tools = event_tools(request.user, event)
     seen = {tab["url"] for tab in more}
@@ -131,10 +137,10 @@ def event_editor_sections(form):
         ("location", "Location", ("location_name", "address_line_1", "address_line_2", "city", "state", "postal_code", "country"), False),
         ("travel-dates", "Setup and travel dates", ("setup_date", "staff_arrival_time", "return_date"), True),
         ("staff-defaults", "Staff assignment defaults", ("daily_start_time", "daily_end_time"), True),
-        ("contact-logistics", "Event Contact", ("contact_name", "contact_email", "contact_phone"), True),
-        ("housing", "Event Housing", ("housing_information",), True),
-        ("logistics", "Travel & Logistics", ("logistics_instructions",), True),
-        ("registration", "Participant registration settings", ("registration_opens_at", "registration_closes_at", "registration_deadline_at", "registration_capacity", "group_mode", "group_label"), True),
+        ("contact-logistics", "Event contact", ("contact_name", "contact_email", "contact_phone"), True),
+        ("housing", "Housing", ("housing_information",), True),
+        ("logistics", "Travel & setup", ("logistics_instructions",), True),
+        ("registration", "Participant sign-up", ("registration_opens_at", "registration_closes_at", "registration_deadline_at", "registration_capacity", "group_mode", "group_label"), True),
     ):
         fields = [form[name] for name in names if not form[name].is_hidden]
         if not fields:
