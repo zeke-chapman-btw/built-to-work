@@ -85,7 +85,7 @@ class TaskWorkspace9G2CTests(TestCase):
         self.assertEqual(workspace.return_path('/operations/tasks/?view=all&secret=drop&q=safe#bad'),'/operations/tasks/?view=all&q=safe')
     def test_quick_get_modal_and_full_fallback_assets(self):
         self.login();url=reverse('operations:quick-create');full=self.client.get(url);self.assertContains(full,'data-task-form');self.assertContains(full,'task_create.js');self.assertContains(full,'csrfmiddlewaretoken');self.assertContains(full,'task-create-dialog')
-        self.assertContains(full,'SYNTHETIC Alpha');self.assertContains(full,'SYNTHETIC Alice Review');self.assertContains(full,'id="id_assigned_staff_helptext"')
+        self.assertContains(full,'SYNTHETIC Alpha');self.assertContains(full,'SYNTHETIC Alice Review')
         fragment=self.client.get(url,HTTP_X_TASK_MODAL='1');self.assertContains(fragment,'data-task-form');self.assertNotContains(fragment,'<html');self.assertEqual(fragment['Cache-Control'],'no-store')
     def test_quick_create_self_assignment_and_success_destination(self):
         r=self.post(self.data(return_to='/operations/tasks/?view=created&priority=high'));self.assertEqual(r.status_code,201,r.content);t=Task.objects.get();self.assertEqual(t.created_by,self.users['owner']);self.assertEqual(t.assigned_staff,self.profiles['owner']);self.assertIn('return_to=',r.json()['url']);self.assertEqual(AuditLog.objects.count(),1)

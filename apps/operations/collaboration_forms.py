@@ -68,4 +68,4 @@ class TaskLinksForm(TaskRevisionForm):
 class TaskCommentForm(forms.Form):
     revision = forms.CharField(widget=forms.HiddenInput)
     content = forms.CharField(max_length=4000, label="Comment", widget=forms.Textarea(attrs={"rows":4}),
-        help_text="Plain text only. Do not include information that task collaborators should not see.")
+        help_text="")

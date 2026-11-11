@@ -9,29 +9,27 @@ class RevisionForm(forms.Form):
 class TaskForm(forms.ModelForm):
     revision = forms.CharField(widget=forms.HiddenInput, required=False)
     linked_records=forms.CharField(required=False,initial='1',widget=forms.HiddenInput)
-    reason = forms.CharField(label="Change note (optional)", max_length=500, required=False,
-                             widget=forms.Textarea(attrs={"rows": 2}))
+    reason = forms.CharField(label="Change note", max_length=500, required=False, widget=forms.HiddenInput)
     class Meta:
         model = Task
         fields = ("title", "description", "assigned_staff", "event", "due_date", "priority")
-        labels = {"assigned_staff": "Responsible staff member", "event": "Related event", "due_date": "Due date (optional)"}
+        labels = {"title": "Task", "description": "Notes", "assigned_staff": "Assigned to", "event": "Event", "due_date": "Due date"}
         widgets = {"due_date": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
                    "description": forms.Textarea(attrs={"rows": 4})}
 
     def __init__(self, *args, actor=None, event=None, **kwargs):
         from .task_access import eligible_assignees, events_for
         super().__init__(*args, **kwargs)
+        self.label_suffix = ""
         self.original_assignee_id = self.instance.assigned_staff_id
         self.original_event_id = self.instance.event_id
         self.fields["assigned_staff"].queryset = StaffProfile.objects.filter(
             Q(pk__in=eligible_assignees().values("pk")) | Q(pk=self.original_assignee_id)).select_related("user")
-        self.fields["assigned_staff"].help_text = "Choose an active staff login. An existing legacy assignment may be retained."
         allowed = events_for(actor) if actor else Event.objects.none()
         self.visible_event_ids = set(allowed.values_list("pk", flat=True))
         self.fields["event"].queryset = Event.objects.filter(
             (Q(pk__in=self.visible_event_ids) & ~Q(status="archived")) | Q(pk=self.original_event_id))
         self.fields["event"].label_from_instance = lambda obj: obj.name if obj.pk in self.visible_event_ids else "Associated event (restricted)"
-        self.fields["event"].help_text = "Optional. Event access remains separate from task access."
         self.initial["revision"] = self.instance.updated_at.isoformat() if self.instance.updated_at else "new"
         if event:
             self.initial["event"] = event.pk

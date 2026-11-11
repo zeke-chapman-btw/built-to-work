@@ -192,7 +192,7 @@ class TaskFoundation9G2ATests(TestCase):
         t=self.create()
         for actor in [self.creator,self.assignee,self.admin]:
             self.login(actor);r=self.client.get(reverse('operations:task',args=[t.pk]))
-            self.assertContains(r,'Edit / Reassign Task');self.assertContains(r,'Archive task');self.assertContains(r,'Activity history')
+            self.assertContains(r,'>Edit task</a>');self.assertContains(r,'Archive task');self.assertContains(r,'Activity history')
             for name in ['task-edit','task-status','task-archive']:
                 response=self.client.get(reverse('operations:'+name,args=[t.pk]));self.assertEqual(response.status_code,200);self.assertContains(response,'<label');self.assertContains(response,'csrfmiddlewaretoken')
 
