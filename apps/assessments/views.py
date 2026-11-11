@@ -40,7 +40,7 @@ def _require_admin(request):
 def _authoring(request, template, context):
     titles={"dashboard.html":"Quizzes","categories.html":"Assessment categories",
         "category_form.html":"Edit category" if context.get("category") and not context["category"]._state.adding else "Add category",
-        "question_sets.html":"Question sets","question_set_detail.html":getattr(context.get("question_set"),"name","Question set") or "Question set",
+        "question_sets.html":"Quizzes","question_set_detail.html":getattr(context.get("question_set"),"name","Question set") or "Question set",
         "question_form.html":"Edit question" if context.get("item") else "New question",
         "question_set_form.html":"New Draft question set","restart.html":"Void and restart assessment"}
     context.setdefault("page_title",titles.get(template,"Event Quizzes & Tests"))
