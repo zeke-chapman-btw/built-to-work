@@ -1,1 +1,16 @@
-{% extends 'reporting/base.html' %}{% load reporting_ui %}{% block content %}<a href="{{ back_url }}">← My Pay</a><section class="ux-surface r17-report"><header class="r17-section-head"><div><h2>{{ snapshot.contractor }}</h2><p>{{ snapshot.period_start }} – {{ snapshot.period_end }}</p><p class="r17-help">{{ snapshot.status }} · Version {{ snapshot.version }} · Approved by {{ snapshot.approver }} at {{ snapshot.approved_at }}</p></div>{% include 'reporting/exports.html' %}</header><div class="r17-kpis"><article class="r17-kpi"><p class="r17-label">Compensation</p><p class="r17-number">{{ snapshot.totals.compensation|money }}</p></article><article class="r17-kpi"><p class="r17-label">Reimbursements</p><p class="r17-number">{{ snapshot.totals.reimbursements|money }}</p></article><article class="r17-kpi"><p class="r17-label">Total reported</p><p class="r17-number">{{ snapshot.totals.total|money }}</p></article></div>{% include 'reporting/table.html' %}<p class="r17-help">Private Contractor Earnings Statement · {{ snapshot.timezone }} · {{ snapshot.calculation_version }}. Reported approved amounts; this is not a net-pay calculation or payment confirmation.</p></section>{% endblock %}
+{% extends 'reporting/base.html' %}{% load reporting_ui %}{% block content %}<a class="ux-back" href="{{ back_url }}">← My pay</a>
+<div class="mypay">
+<header class="mypay-stub-head">
+<div><h2>{{ snapshot.contractor }}</h2><p>{% if week_start %}Week of {{ week_start|date:'M j' }} – {{ week_end|date:'M j, Y' }}{% else %}{{ snapshot.period_start }} – {{ snapshot.period_end }}{% endif %}{% if snapshot.approved_at %} · Approved {{ snapshot.approved_at|slice:':10' }}{% endif %}</p></div>
+{% include 'reporting/exports.html' %}
+</header>
+<div class="mypay-tiles">
+<div class="mypay-tile"><span>Day pay</span><strong>{{ snapshot.totals.base|money }}</strong></div>
+<div class="mypay-tile"><span>Per diem</span><strong>{{ snapshot.totals.per_diem|money }}</strong></div>
+<div class="mypay-tile"><span>Mileage</span><strong>{{ snapshot.totals.mileage|money }}</strong></div>
+<div class="mypay-tile"><span>Bonuses &amp; adjustments</span><strong>{{ snapshot.totals.incentives|add_money:snapshot.totals.adjustments|money }}</strong></div>
+<div class="mypay-tile mypay-total"><span>Total</span><strong>{{ snapshot.totals.total|money }}</strong></div>
+</div>
+<section class="mypay-stubs">{% include 'reporting/table.html' %}</section>
+</div>
+{% endblock %}

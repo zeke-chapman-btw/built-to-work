@@ -314,7 +314,15 @@ def my_pay(request):
     except (ValueError,TypeError):return HttpResponseBadRequest("Choose a valid reporting year.")
     if not 1900<=year<=2100:return HttpResponseBadRequest("Choose a supported reporting year.")
     statements=list(payroll.own_statements(actor));page_obj=Paginator(statements,20).get_page(request.GET.get('page'))
-    return page(request,'reporting/my_pay.html',page_title="My Pay",statements=page_obj,year=year,earnings=payroll.earnings_year(actor,year,through=timezone.localdate(timezone.now(),ZoneInfo(REPORT_TIMEZONE)) if year==timezone.localdate(timezone.now(),ZoneInfo(REPORT_TIMEZONE)).year else None),description="Private Contractor Earnings Statements. Approval is not proof of payment. Compensation and reimbursements remain separate.")
+    from datetime import date as _date
+    def _day(value):
+        try:return value if isinstance(value,_date) else _date.fromisoformat(str(value)[:10])
+        except (TypeError,ValueError):return None
+    stubs=[dict(version_id=approval.version_id,start=_day(data.get("period_start")),end=_day(data.get("period_end")),
+                total=data.get("totals",{}).get("total"),status=data.get("status",""),
+                corrected=str(data.get("status","")).startswith(("Under correction","Superseded")))
+           for approval,data in page_obj.object_list]
+    return page(request,'reporting/my_pay.html',page_title="My pay",statements=page_obj,stubs=stubs,year=year,earnings=payroll.earnings_year(actor,year,through=timezone.localdate(timezone.now(),ZoneInfo(REPORT_TIMEZONE)) if year==timezone.localdate(timezone.now(),ZoneInfo(REPORT_TIMEZONE)).year else None),description="Private Contractor Earnings Statements. Approval is not proof of payment. Compensation and reimbursements remain separate.")
 
 
 @login_required(login_url="accounts:login")
@@ -324,4 +332,8 @@ def my_statement(request,version_id):
     actor=staff(request.user);snapshot=payroll.own_statement(actor,version_id)
     if request.GET.get('format'):
         return report_export(request,actor,"Contractor Earnings Statement",PAY_COLUMNS,[*snapshot['rows'],{'contractor':'TOTAL REPORTED','event':'','occurred_on':'','source_kind':'',**snapshot['totals']}],{'start':snapshot['period_start'],'end':snapshot['period_end']},status=snapshot['status'],version=snapshot['version'],source=snapshot['calculation_version']+'; approved by '+snapshot['approver']+' at '+snapshot['approved_at'],private=True)
-    return page(request,'reporting/statement.html',page_title="Contractor Earnings Statement",snapshot=snapshot,report_table=table(PAY_COLUMNS,snapshot['rows']),exports=export_links(request),back_url=reverse('reporting:my-pay'))
+    from datetime import date as _date
+    def _day(value):
+        try:return value if isinstance(value,_date) else _date.fromisoformat(str(value)[:10])
+        except (TypeError,ValueError):return None
+    return page(request,'reporting/statement.html',page_title="Pay stub",snapshot=snapshot,week_start=_day(snapshot.get("period_start")),week_end=_day(snapshot.get("period_end")),report_table=table(PAY_COLUMNS,snapshot['rows']),exports=export_links(request),back_url=reverse('reporting:my-pay'))

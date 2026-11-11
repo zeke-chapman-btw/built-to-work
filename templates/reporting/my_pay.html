@@ -1,1 +1,30 @@
-{% extends 'reporting/base.html' %}{% load reporting_ui %}{% block content %}<p><a class="ux-back" href="{% url 'internal:settings' %}">← Your account</a></p><p>{{ description }}</p><form method="get" class="r17-actions"><label for="earnings-year">Year</label><input id="earnings-year" type="number" min="1900" max="2100" name="year" value="{{ year }}"><button class="button secondary">View year</button></form><section class="ux-surface r17-report"><h2>{{ year }} earnings{% if current_year == year %} · Year to date{% endif %}</h2><div class="r17-kpis"><article class="r17-kpi"><p class="r17-label">Compensation</p><p class="r17-number">{{ earnings.compensation|money }}</p></article><article class="r17-kpi"><p class="r17-label">Reimbursements</p><p class="r17-number">{{ earnings.reimbursements|money }}</p></article><article class="r17-kpi"><p class="r17-label">Reported amounts</p><p class="r17-number">{{ earnings.total|money }}</p></article></div><p class="r17-help">Latest approved versions only; amounts belong to their recorded work/trip/adjustment date. Corrected versions replace earlier versions in yearly totals without deleting history.</p></section><section class="ux-surface r17-report"><h2>Contractor Earnings Statements</h2>{% for approval,data in statements %}<article class="r17-statement-row"><div><h3>{{ data.period_start }} – {{ data.period_end }}</h3><p class="r17-help">{{ data.status }} · Version {{ data.version }} · Approved {{ data.approved_at }}</p></div><strong>{{ data.totals.total|money }}</strong><a href="{% url 'reporting:my-statement' approval.version_id %}">View statement →</a></article>{% empty %}<p>No approved earnings statement is available for your linked contractor profile yet.</p>{% endfor %}{% include 'reporting/pages.html' with page=statements %}</section>{% endblock %}
+{% extends 'reporting/base.html' %}{% load reporting_ui %}{% block content %}
+<div class="mypay">
+<form method="get" class="mypay-year" aria-label="Choose a year">
+<label for="earnings-year">Year</label>
+<input id="earnings-year" type="number" min="1900" max="2100" name="year" value="{{ year }}">
+<button class="button secondary">Show</button>
+</form>
+
+<section class="mypay-totals" aria-labelledby="mypay-totals-title">
+<h2 id="mypay-totals-title">{{ year }}{% if current_year == year %} so far{% endif %}</h2>
+<div class="mypay-tiles">
+<div class="mypay-tile"><span>Day pay</span><strong>{{ earnings.base|money }}</strong></div>
+<div class="mypay-tile"><span>Per diem</span><strong>{{ earnings.per_diem|money }}</strong></div>
+<div class="mypay-tile"><span>Mileage</span><strong>{{ earnings.mileage|money }}</strong></div>
+<div class="mypay-tile"><span>Bonuses &amp; adjustments</span><strong>{{ earnings.incentives|add_money:earnings.adjustments|money }}</strong></div>
+<div class="mypay-tile mypay-total"><span>Total</span><strong>{{ earnings.total|money }}</strong></div>
+</div>
+</section>
+
+<section class="mypay-stubs" aria-labelledby="mypay-stubs-title">
+<h2 id="mypay-stubs-title">Weekly pay stubs</h2>
+{% for stub in stubs %}<a class="mypay-stub" href="{% url 'reporting:my-statement' stub.version_id %}">
+<span class="mypay-week">{% if stub.start %}Week of {{ stub.start|date:'M j' }} – {{ stub.end|date:'M j, Y' }}{% else %}Pay stub{% endif %}{% if stub.corrected %} <span class="badge warning">Corrected</span>{% endif %}</span>
+<strong>{{ stub.total|money }}</strong>
+<span class="mypay-view">View stub</span>
+</a>{% empty %}<p class="mypay-empty">No pay stubs yet</p>{% endfor %}
+{% include 'reporting/pages.html' with page=statements %}
+</section>
+</div>
+{% endblock %}

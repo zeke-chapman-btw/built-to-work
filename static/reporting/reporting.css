@@ -24,3 +24,26 @@
 .r17-export-options .button{min-height:44px;white-space:normal}
 .r17-filter-count:empty{display:none}
 @media print{.r17-export-menu{display:none!important}}
+
+/* My pay */
+.mypay{display:grid;gap:18px;max-width:1000px}
+.mypay-year{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.mypay-year label{font-size:13px;font-weight:600;align-self:center}
+.mypay-year input{width:110px;min-height:40px}
+.mypay h2{margin:0 0 12px;font-size:16px;font-weight:600}
+.mypay-tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.mypay-tile{background:#fff;border:1px solid var(--line,#dce0e4);border-radius:10px;padding:14px 16px}
+.mypay-tile span{display:block;font-size:12px;font-weight:500;color:var(--muted,#56616d)}
+.mypay-tile strong{display:block;font-size:20px;font-weight:600;margin-top:4px}
+.mypay-total{border-color:#252830;box-shadow:inset 0 0 0 1px #252830}
+.mypay-stubs{background:#fff;border:1px solid var(--line,#dce0e4);border-radius:10px;padding:14px 16px 6px}
+.mypay-stub{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:16px;min-height:52px;border-top:1px solid #eceef1;color:inherit;text-decoration:none}
+.mypay-stub:hover .mypay-view{text-decoration:underline}
+.mypay-stub strong{font-variant-numeric:tabular-nums}
+.mypay-view{color:#a51d24;font-size:13px;font-weight:500}
+.mypay-empty{margin:0;padding:12px 0;border-top:1px solid #eceef1;color:var(--muted,#56616d)}
+@media (max-width:800px){.mypay-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.mypay-total{grid-column:1/-1}}
+@media (max-width:480px){.mypay-stub{grid-template-columns:minmax(0,1fr) auto}.mypay-view{display:none}}
+.mypay-stub-head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px}
+.mypay-stub-head h2{margin:0}
+.mypay-stub-head p{margin:4px 0 0;color:var(--muted,#56616d);font-size:14px}
