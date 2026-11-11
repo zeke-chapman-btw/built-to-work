@@ -125,6 +125,22 @@ def event_staffing(request,event_id):
     # Present current and retained records separately without changing pagination.
     context["confirmed_assignments"] = [a for a in context["assignments"] if a.status == "confirmed"]
     context["assignment_history"] = [a for a in context["assignments"] if a.status != "confirmed"]
+    from datetime import date as _date
+    days=[d["date"] for d in summary["days"]] if summary else []
+    def day_chips(requested):
+        wanted=set()
+        for value in requested or []:
+            try: wanted.add(_date.fromisoformat(str(value)))
+            except ValueError: pass
+        return [dict(date=d,on=d in wanted) for d in days] or [dict(date=d,on=True) for d in sorted(wanted)]
+    for record in context["availability"]:
+        record.day_chips=day_chips(record.requested_dates)
+    context["pending_requests"]=[r for r in context["availability"] if r.status=="pending"]
+    context["decided_requests"]=[r for r in context["availability"] if r.status!="pending"]
+    for assignment in context["confirmed_assignments"]:
+        worked={d.date for d in assignment.days.all()}
+        assignment.day_chips=[dict(date=d,on=d in worked) for d in days] or [dict(date=d,on=True) for d in sorted(worked)]
+    context["signup_open"]=services.opportunity_open(event,plan)
     with timezone.override(ZoneInfo(event.timezone_name)):
         return render(request,"staffing/event_manage.html",context)
 

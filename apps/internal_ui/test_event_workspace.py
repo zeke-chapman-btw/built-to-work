@@ -83,7 +83,7 @@ class EventWorkspaceContextTests(TestCase):
         self.assertEqual([a.pk for a in response.context["confirmed_assignments"]], [self.assignment.pk])
         self.assertEqual(len(response.context["assignment_history"]), 0)
         self.assertEqual(response.context["assignments"].paginator.count, 1)
-        self.assertContains(response, "event-day-tile")
+        self.assertContains(response, "st-day")
         self.assertContains(response, "Edit assignment")
         self.assertNotContains(response, ">Reassign Staff</a>")
 

@@ -1,3 +1,35 @@
 /* Build 9C: staff and staffing surfaces only; reuse the BTW foundation. */
 .staffing-page{min-width:0}.staffing-page .card{margin-block:1.25rem}.staffing-page h2{color:var(--btw-red,#d71935);border-bottom:1px solid var(--border,#ddd);padding-bottom:.6rem}.staffing-page .field{margin-block:1rem}.staffing-page input:not([type=checkbox]),.staffing-page select,.staffing-page textarea{max-width:100%;box-sizing:border-box}.staffing-record{padding:1rem 0;border-bottom:1px solid var(--border,#ddd);overflow-wrap:anywhere}.staffing-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}.staffing-summary strong{display:block;font-size:1.8rem}.staffing-summary span{display:block}.staffing-table{overflow-x:auto}.staffing-table table{width:100%;border-collapse:collapse}.staffing-table td,.staffing-table th{text-align:left;padding:.75rem;border-bottom:1px solid var(--border,#ddd)}.staffing-day-grid{display:grid;gap:1rem}.staffing-day{min-width:0;border:1px solid var(--border,#ddd);border-radius:12px;padding:1rem}.staffing-time-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}.staffing-nav,.staffing-filters,.staffing-mobile-links{display:flex;gap:1rem;flex-wrap:wrap;align-items:center}.staffing-nav{padding-block:1rem;border-bottom:1px solid var(--border,#ddd)}.staffing-nav [aria-current=page]{font-weight:700;color:var(--btw-red,#d71935)}.staffing-date-list{padding-left:1.25rem}.staffing-page .errorlist{color:#a10018}.staffing-page fieldset legend{font-weight:700}
 @media(max-width:700px){.staffing-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.staffing-time-grid{grid-template-columns:1fr}.staffing-filters{align-items:stretch;flex-direction:column}.staffing-page .event-actions .button{max-width:100%;white-space:normal}.staffing-nav a{padding:.5rem 0}}
+
+/* Staff tab per mock-up */
+.st-page { display:flex; flex-direction:column; gap:16px; }
+.st-page .st-banner { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 16px; background:var(--surface,#fff); border:1px solid var(--line,#e5e7eb); border-radius:10px; }
+.st-page .st-banner p { margin:0; }
+.st-page .st-card { padding:0; margin:0; overflow:hidden; }
+.st-page .st-head { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--line,#e5e7eb); }
+.st-page .st-head h2 { margin:0; font-size:15px; font-weight:600; text-transform:none; letter-spacing:0; }
+.st-page .st-days { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; padding:16px; }
+.st-page .st-day { display:flex; flex-direction:column; align-items:flex-start; gap:6px; padding:12px; border:1px solid var(--line,#e5e7eb); border-radius:8px; }
+.st-page .st-day.is-short { border-color:#f3c4c4; background:#fff8f8; }
+.st-page .st-day h3 { margin:0 0 4px; font-size:14px; }
+.st-page .st-role { display:flex; justify-content:space-between; width:100%; font-size:14px; }
+.st-page .st-role strong.is-short { color:var(--danger,#b42318); }
+.st-page .st-row { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; padding:14px 16px; border-top:1px solid var(--line,#e5e7eb); }
+.st-page .st-head + .st-row, .st-page summary + .st-row { border-top:0; }
+.st-page .st-who { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.st-page .st-who small, .st-page .st-muted { color:var(--muted,#6b7280); font-size:13px; }
+.st-page .st-note { margin:0; font-style:italic; color:var(--muted,#6b7280); }
+.st-page .st-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.st-page .st-chip { display:inline-flex; flex-direction:column; padding:2px 8px; border-radius:6px; background:#f1f2f4; color:#9aa0a6; font-size:12px; font-weight:600; line-height:16px; }
+.st-page .st-chip.is-on { background:#252830; color:#fff; }
+.st-page .st-chip em { font-style:normal; font-weight:500; }
+.st-page .st-actions { display:flex; gap:8px; flex-shrink:0; }
+.st-page .st-times summary { font-size:13px; }
+.st-page .st-empty, .st-page .st-notice { margin:0; padding:14px 16px; color:var(--muted,#6b7280); }
+.st-page details.st-card > summary { padding:14px 16px; }
+.st-page .st-pages { display:flex; gap:12px; padding:12px 16px; border-top:1px solid var(--line,#e5e7eb); }
+@media (max-width:600px) {
+  .st-page .st-row { flex-direction:column; }
+  .st-page .st-banner { flex-direction:column; align-items:flex-start; }
+}

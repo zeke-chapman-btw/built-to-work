@@ -176,12 +176,11 @@ class DailyCoverageTests(TestCase):
         self.assignment(coverage_role="staff_lead")
         self.assignment(person=self.other_person,coverage_role="combined")
         response=self.client.get(reverse("staffing:event",args=[self.event.pk]))
-        self.assertContains(response,"coverage-complete")
-        self.assertContains(response,"Fully staffed")
-        self.assertContains(response,"1 needed")
+        self.assertContains(response,">Full<")
+        self.assertContains(response," short<");self.assertContains(response,"class=\"is-short\"")
         self.assertNotContains(response,"required staff-days")
         self.assertNotContains(response,"event-coverage-totals")
-        self.assertContains(response,"Times and assignment details")
+        self.assertContains(response,"<summary>Times</summary>")
 
     def test_no_needs_and_unclassified_review_are_visible(self):
         self.needs()
