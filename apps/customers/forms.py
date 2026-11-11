@@ -27,8 +27,6 @@ class AuthorizedForm:
                 field.widget = forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")
             field.widget.attrs.setdefault("class", "customer-control")
         self.label_suffix = ""
-        if "reason" in self.fields:
-            self.fields["reason"].label = "Reason for change"
 
     def clean(self):
         values = super().clean()
@@ -41,8 +39,6 @@ class AuthorizedForm:
     def field_groups(self):
         groups = self.sections or (("Details", tuple(name for name in self.fields if name not in {"reason", "org_revision", "record_revision", "return_to"})),)
         result = [{"title": title, "fields": [self[name] for name in names if name in self.fields and not self[name].is_hidden], "errors": any(self[name].errors for name in names if name in self.fields)} for title, names in groups]
-        if "reason" in self.fields:
-            result.append({"title": "Reason", "fields": [self["reason"]]})
         return [group for group in result if group["fields"]]
 
 
@@ -50,7 +46,7 @@ class MutationFields(forms.Form):
     org_revision = forms.IntegerField(min_value=0, widget=forms.HiddenInput)
     record_revision = forms.IntegerField(min_value=0, required=False, widget=forms.HiddenInput)
     return_to = forms.CharField(max_length=2000, required=False, widget=forms.HiddenInput)
-    reason = forms.CharField(max_length=1500, widget=forms.Textarea(attrs={"rows": 2}))
+    reason = forms.CharField(max_length=1500, required=False, widget=forms.HiddenInput)
 
 
 class CustomerModelForm(AuthorizedForm, MutationFields, forms.ModelForm):

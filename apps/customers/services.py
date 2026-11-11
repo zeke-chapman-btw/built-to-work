@@ -19,10 +19,7 @@ from .validation import require_submittable
 
 
 def reason(value):
-    value = str(value or "").strip()
-    if not value:
-        raise ValidationError({"reason": "A reason is required."})
-    return value
+    return str(value or "").strip()
 
 
 def expected(record, value, label="record"):

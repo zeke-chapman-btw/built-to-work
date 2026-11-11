@@ -679,12 +679,9 @@ class WorkforceNeedTests(CustomerFixtures, TestCase):
             self.assertEqual(need.status, final)
             self.assertEqual(need.effective_revision.worker_quantity, 5)
 
-    def test_manual_closure_requires_reason_and_records_actor_and_time(self):
+    def test_manual_closure_records_actor_and_time(self):
         org = self.org()
         need = self.approved_need(org)
-        with self.assertRaises(ValidationError):
-            svc.need_status(actor=self.admin, org_id=org.pk, need_id=need.pk, expected_org_revision=org.revision,
-                            expected_need_revision=need.revision, action="close", why="")
         svc.need_status(actor=self.manager, org_id=org.pk, need_id=need.pk, expected_org_revision=org.revision,
                         expected_need_revision=need.revision, action="close", why="Hiring completed after staff review")
         need.refresh_from_db()
