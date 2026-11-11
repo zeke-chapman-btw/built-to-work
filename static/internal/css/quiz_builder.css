@@ -68,3 +68,4 @@ body.internal-app #main-content .ib-assign, body.internal-app #main-content .ib-
 body.internal-app #main-content .ib-history > summary { font-weight:600; cursor:pointer; }
 body.internal-app #main-content .ib-version { display:flex; align-items:center; gap:12px; padding:8px 0; border-top:1px solid var(--line,#e5e7eb); }
 body.internal-app #main-content .qb-head form { flex-shrink:0; }
+body.internal-app #main-content :is(.wd-more,.qb-publish) > summary.button { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 16px; box-sizing:border-box; }
