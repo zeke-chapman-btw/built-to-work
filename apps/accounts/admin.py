@@ -1,3 +1,4 @@
+from apps.core.optional_reason import OptionalReasonMixin
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin,GroupAdmin
 from django.contrib.auth.models import Group
@@ -9,7 +10,7 @@ from .models import User
 from .roles import lock_role_groups
 from .staff_services import account_state,audit
 from apps.core.audit import record_audit
-class AuditedUserForm(UserChangeForm):
+class AuditedUserForm(OptionalReasonMixin, UserChangeForm):
     audit_reason=forms.CharField(label='Reason for account change',widget=forms.Textarea(attrs={'rows':2}))
     def clean(self):
         values=super().clean()

@@ -141,6 +141,8 @@ def ui_icon(name):
 @register.inclusion_tag("internal/ui/field.html")
 def ui_field(field, field_id=""):
     """Render a bound field without changing its POST name or validation."""
+    if field.is_hidden:
+        return {"field": field, "hidden_only": True, "widget": field.as_widget()}
     field_id = field_id or field.id_for_label or field.auto_id or field.html_name
     is_group = isinstance(field.field.widget, (forms.CheckboxSelectMultiple, forms.RadioSelect))
     described_by = field.field.widget.attrs.get("aria-describedby", "").split()

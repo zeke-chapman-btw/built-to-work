@@ -1,3 +1,4 @@
+from apps.core.optional_reason import OptionalReasonMixin
 import uuid
 from django import forms
 from django.contrib.auth import get_user_model
@@ -18,7 +19,7 @@ def staff_choices():
     return result
 
 
-class VersionReasonForm(forms.Form):
+class VersionReasonForm(OptionalReasonMixin, forms.Form):
     expected_revision=forms.IntegerField(widget=forms.HiddenInput)
     reason=forms.CharField(max_length=500,widget=forms.Textarea(attrs={'rows':2}))
 

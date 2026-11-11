@@ -1,3 +1,4 @@
+from apps.core.optional_reason import OptionalReasonMixin
 import uuid
 from django import forms
 from django.core.exceptions import ValidationError
@@ -57,7 +58,7 @@ class StaffParticipantCreateForm(forms.ModelForm):
         return normalize_phone(self.cleaned_data["contact_phone"])
 
 
-class WorkExperienceForm(forms.ModelForm):
+class WorkExperienceForm(OptionalReasonMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance.source == "staff":

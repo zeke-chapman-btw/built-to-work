@@ -1,4 +1,5 @@
 """Existing trailer display settings only; credential workflows stay superuser-only."""
+from apps.core.optional_reason import OptionalReasonMixin
 import hashlib,json
 from django import forms
 from django.contrib import messages
@@ -22,7 +23,7 @@ def revision(obj):
     return hashlib.sha256(json.dumps(snapshot(obj),sort_keys=True).encode()).hexdigest()
 
 
-class TrailerForm(forms.ModelForm):
+class TrailerForm(OptionalReasonMixin, forms.ModelForm):
     revision=forms.CharField(widget=forms.HiddenInput)
     reason=forms.CharField(max_length=500,widget=forms.Textarea(attrs={"rows":2}),label="Change reason")
     class Meta:

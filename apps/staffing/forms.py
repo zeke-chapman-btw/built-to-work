@@ -1,3 +1,4 @@
+from apps.core.optional_reason import OptionalReasonMixin
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from django import forms
@@ -138,7 +139,7 @@ class AssignmentForm(forms.Form):
         return data
 
 
-class DecisionForm(forms.Form):
+class DecisionForm(OptionalReasonMixin, forms.Form):
     revision = forms.CharField(widget=forms.HiddenInput)
     reason = forms.CharField(required=False,max_length=500,widget=forms.Textarea(attrs={"rows":2}))
     confirm = forms.BooleanField(label="I confirm this action.")

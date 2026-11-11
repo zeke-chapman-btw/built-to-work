@@ -1,3 +1,4 @@
+from apps.core.optional_reason import OptionalReasonMixin
 import uuid
 from django import forms
 from .employer import CATEGORIES
@@ -18,7 +19,7 @@ class DisclosureForm(forms.Form):
             (item[0]!='assessments' or actor.has_perms(['assessments.view_quizattempt','simulators.view_simulatorcapture']))]
 
 
-class RevokeForm(forms.Form):
+class RevokeForm(OptionalReasonMixin, forms.Form):
     disclosure=forms.UUIDField(widget=forms.HiddenInput)
     expected_revision=forms.IntegerField(widget=forms.HiddenInput)
     reason=forms.CharField(max_length=500)
@@ -30,24 +31,24 @@ class EmployerFeedbackForm(forms.Form):
     message=forms.CharField(max_length=2000,required=False,widget=forms.Textarea(attrs={'rows':3}),label='Feedback for BTW')
 
 
-class ConfirmHireForm(forms.Form):
+class ConfirmHireForm(OptionalReasonMixin, forms.Form):
     feedback=forms.UUIDField(widget=forms.HiddenInput)
     expected_candidate_revision=forms.IntegerField(widget=forms.HiddenInput)
     confirmed=forms.BooleanField(label='BTW confirms the actual hiring outcome')
     reason=forms.CharField(max_length=500)
 
 
-class FeedbackReviewForm(forms.Form):
+class FeedbackReviewForm(OptionalReasonMixin, forms.Form):
     feedback=forms.UUIDField(widget=forms.HiddenInput)
     reason=forms.CharField(max_length=500,label='BTW review note')
 
 
-class MemberPermissionForm(forms.Form):
+class MemberPermissionForm(OptionalReasonMixin, forms.Form):
     expected_revision=forms.IntegerField(widget=forms.HiddenInput)
     can_respond=forms.BooleanField(required=False,label='Allow employer responses for this candidate release')
     reason=forms.CharField(max_length=500)
 
 
-class WithdrawalForm(forms.Form):
+class WithdrawalForm(OptionalReasonMixin, forms.Form):
     reason=forms.CharField(max_length=500,widget=forms.Textarea(attrs={'rows':2}),label='Source and reason for the participant’s existing employer-sharing withdrawal')
     confirmed=forms.BooleanField(label='I am recording an actual participant withdrawal, not creating a new consent requirement')

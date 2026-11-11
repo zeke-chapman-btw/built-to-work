@@ -1,3 +1,4 @@
+from apps.core.optional_reason import OptionalReasonMixin
 from django import forms
 from django.db.models import Q
 from apps.staffing.models import StaffProfile
@@ -9,7 +10,7 @@ def eligible_people():
     return StaffProfile.objects.filter(is_active=True,user__is_active=True,user__is_staff=True).select_related("user")
 
 
-class GuardedForm(forms.Form):
+class GuardedForm(OptionalReasonMixin, forms.Form):
     revision=forms.CharField(widget=forms.HiddenInput)
     reason=forms.CharField(required=False,max_length=1000,label="Note / reason",widget=forms.Textarea(attrs={"rows":2}))
 
@@ -35,7 +36,7 @@ class ExecutionActionForm(GuardedForm):
                 help_text="Enter the known actual end rather than the scheduled end.")
 
 
-class CategoryForm(forms.ModelForm):
+class CategoryForm(OptionalReasonMixin, forms.ModelForm):
     revision=forms.CharField(widget=forms.HiddenInput)
     reason=forms.CharField(required=False,max_length=1000,widget=forms.Textarea(attrs={"rows":2}))
     class Meta:
@@ -48,7 +49,7 @@ class CategoryForm(forms.ModelForm):
             if field in self.fields:self.fields[field].label=label
 
 
-class ItemForm(forms.ModelForm):
+class ItemForm(OptionalReasonMixin, forms.ModelForm):
     revision=forms.CharField(widget=forms.HiddenInput)
     reason=forms.CharField(required=False,max_length=1000,widget=forms.Textarea(attrs={"rows":2}))
     class Meta:
@@ -77,7 +78,7 @@ class ItemActionForm(GuardedForm):
     confirm=forms.BooleanField(label="I confirm this checklist change.")
 
 
-class MasterCategoryForm(forms.ModelForm):
+class MasterCategoryForm(OptionalReasonMixin, forms.ModelForm):
     revision=forms.CharField(widget=forms.HiddenInput)
     reason=forms.CharField(required=False,max_length=1000,widget=forms.Textarea(attrs={"rows":2}))
     class Meta:
@@ -88,7 +89,7 @@ class MasterCategoryForm(forms.ModelForm):
         self.initial["revision"]=self.instance.updated_at.isoformat() if not self.instance._state.adding else "new"
 
 
-class MasterItemForm(forms.ModelForm):
+class MasterItemForm(OptionalReasonMixin, forms.ModelForm):
     revision=forms.CharField(widget=forms.HiddenInput)
     reason=forms.CharField(required=False,max_length=1000,widget=forms.Textarea(attrs={"rows":2}))
     class Meta:

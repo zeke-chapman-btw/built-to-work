@@ -92,7 +92,8 @@ class EmployerTests(EmployerFixtures,TestCase):
         ids=re.findall(r'\bid="(recruiting_[^"]+)"',html)
         self.assertEqual(len(ids),len(set(ids)))
         for prefix in ['stage_form','reassignment_form','outreach_form']:
-            self.assertIn('for="recruiting_'+prefix+'_reason"',html)
+            self.assertIn('id="recruiting_'+prefix+'_reason"',html)
+            self.assertNotIn('for="recruiting_'+prefix+'_reason"',html)
 
     def test_only_explicit_btw_release_exposes_allowlisted_information(self):
         self.assertEqual(employer.list_candidates(self.customer,self.organization.pk),[])

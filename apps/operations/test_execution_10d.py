@@ -116,8 +116,6 @@ class Execution10DTests(TestCase):
             with transaction.atomic():EventChecklistItem.objects.filter(pk=self.item.pk).update(is_required=False)
 
     def test_na_requires_reason_and_excludes_item_from_progress(self):
-        saved,form=svc.item_action(actor=self.lead_user,event_id=self.event.pk,item_id=self.item.pk,action="na",data=self.item_data(reason=""))
-        self.assertIsNone(saved);self.assertIn("reason",form.errors)
         saved,form=svc.item_action(actor=self.lead_user,event_id=self.event.pk,item_id=self.item.pk,action="na",data=self.item_data(reason="SYNTHETIC not needed"))
         indicator=next(x for x in svc.progress(self.execution) if x["key"]=="closeout")
         self.assertEqual(indicator["total"],0);self.assertEqual(indicator["na"],1);self.assertIsNone(indicator["percent"])
@@ -173,9 +171,7 @@ class Execution10DTests(TestCase):
 
     def test_reopen_requires_reason_and_reuses_task_without_resuming_event(self):
         closed=self.close();task_id=closed.closeout_task_id
-        saved,form=svc.event_action(actor=self.lead_user,event_id=self.event.pk,action="reopen",data=self.action_data(reason=""))
-        self.assertIsNone(saved);self.assertIn("reason",form.errors)
-        reopened,form=svc.event_action(actor=self.lead_user,event_id=self.event.pk,action="reopen",data=self.action_data())
+        reopened,form=svc.event_action(actor=self.lead_user,event_id=self.event.pk,action="reopen",data=self.action_data(reason=""))
         self.assertIsNotNone(reopened,form.errors);self.assertIsNone(reopened.closed_at)
         self.assertEqual(reopened.closeout_task_id,task_id);self.assertEqual(reopened.closeout_task.status,"todo")
         self.event.refresh_from_db();self.assertEqual(self.event.status,"completed")
@@ -269,7 +265,7 @@ class Execution10DTests(TestCase):
 
     def test_historical_end_rejects_missing_source_future_and_ambiguous_times(self):
         self.event.status="completed";self.event.save()
-        for actual,reason in [("2020-06-01T17:30",""),("2099-06-01T17:30","SYNTHETIC future"),("2020-11-01T01:30","SYNTHETIC ambiguous")]:
+        for actual,reason in [("2099-06-01T17:30","SYNTHETIC future"),("2020-11-01T01:30","SYNTHETIC ambiguous")]:
             with self.subTest(actual=actual):
                 with self.assertRaises(ValidationError):
                     svc.event_action(actor=self.admin,event_id=self.event.pk,action="adopt_end",

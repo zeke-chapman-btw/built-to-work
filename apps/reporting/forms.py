@@ -1,3 +1,4 @@
+from apps.core.optional_reason import OptionalReasonMixin
 from datetime import timedelta
 from zoneinfo import ZoneInfo
 from django import forms
@@ -71,11 +72,11 @@ class ReportFilter(forms.Form):
             self.add_error("end", "Through must be on or after From.")
         return d
 
-class ReasonForm(forms.Form):
+class ReasonForm(OptionalReasonMixin, forms.Form):
     revision = forms.IntegerField(min_value=0, widget=forms.HiddenInput)
     reason = forms.CharField(max_length=500, widget=forms.Textarea(attrs={"rows":2}))
 
-class PayrollStartForm(forms.Form):
+class PayrollStartForm(OptionalReasonMixin, forms.Form):
     starts_on = forms.DateField(label="Week starting Monday", widget=forms.DateInput(attrs={"type":"date"}))
     reason = forms.CharField(max_length=500, widget=forms.Textarea(attrs={"rows":2}))
     def clean_starts_on(self):
@@ -89,7 +90,7 @@ class ManualFigureForm(ReasonForm):
     unit = forms.CharField(max_length=40)
     source_note = forms.CharField(max_length=500)
 
-class AdjustmentForm(forms.Form):
+class AdjustmentForm(OptionalReasonMixin, forms.Form):
     event = forms.ModelChoiceField(queryset=Event.objects.all())
     staff = forms.ModelChoiceField(queryset=StaffProfile.objects.all())
     workday = forms.ModelChoiceField(queryset=Workday.objects.filter(is_active=True), required=False)

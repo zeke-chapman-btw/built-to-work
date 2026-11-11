@@ -1,4 +1,5 @@
 """Existing reversible identity review, using the shared internal presentation."""
+from apps.core.optional_reason import OptionalReasonMixin
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied,ValidationError
@@ -8,10 +9,10 @@ from apps.operations.presentation import list_page
 from .models import ParticipantIdentityLink,ParticipantMatchReview
 from .reconciliation import resolve_match,reverse_match
 
-class DecisionForm(forms.Form):
+class DecisionForm(OptionalReasonMixin, forms.Form):
     decision=forms.ChoiceField(choices=(("same","Same person — link identities"),("separate","Different people — keep separate")))
     reason=forms.CharField(max_length=500,widget=forms.Textarea(attrs={"rows":3}))
-class ReverseForm(forms.Form):
+class ReverseForm(OptionalReasonMixin, forms.Form):
     reason=forms.CharField(max_length=500,label="Reversal reason",widget=forms.Textarea(attrs={"rows":3}))
 
 def _can_view(user):

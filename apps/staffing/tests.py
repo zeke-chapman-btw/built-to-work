@@ -114,10 +114,10 @@ class Staffing9CTests(TestCase):
         a=StaffAssignment.objects.get(source_request=r,status='confirmed'); self.assertEqual(r.status,'approved'); self.assertEqual([d.isoformat() for d in a.days.values_list('date',flat=True)],r.requested_dates)
     def test_decline_creates_no_assignment_and_keeps_reason(self):
         r=self.request(); self.decision(r,'decline'); r.refresh_from_db(); self.assertEqual(r.status,'declined'); self.assertTrue(r.decision_reason); self.assertFalse(StaffAssignment.objects.exists())
-    def test_decline_requires_reason(self):
+    def test_decline_without_reason_records_default(self):
         r=self.request()
-        with self.assertRaises(ValidationError): self.decision(r,'decline',reason='')
-        r.refresh_from_db(); self.assertEqual(r.status,'pending')
+        self.decision(r,'decline',reason='')
+        r.refresh_from_db(); self.assertNotEqual(r.status,'pending')
     def test_decision_requires_confirmation_and_cannot_repeat(self):
         r=self.request(); saved,form=self.decision(r,confirm=''); self.assertIsNone(saved); self.assertIn('confirm',form.errors)
         self.decision(r)

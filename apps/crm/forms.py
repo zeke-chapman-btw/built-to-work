@@ -1,4 +1,5 @@
 """Small, explicit manual-entry forms; no ownership or provider fields."""
+from apps.core.optional_reason import OptionalReasonMixin
 import uuid
 
 from django import forms
@@ -13,7 +14,7 @@ from apps.recruiting.selection import opportunities_for
 from .models import ActivityType, ContactRelationship, Interaction
 
 
-class ActivityForm(forms.Form):
+class ActivityForm(OptionalReasonMixin, forms.Form):
     return_to = forms.CharField(required=False, max_length=16384, widget=forms.HiddenInput)
     operation_id = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
     revision = forms.IntegerField(widget=forms.HiddenInput, required=False, min_value=1)
@@ -109,7 +110,7 @@ class ActivityForm(forms.Form):
         return [field for field in self.optional_fields if field.name not in {"next_step", "follow_up_on", "responsible_staff"}]
 
 
-class ArchiveForm(forms.Form):
+class ArchiveForm(OptionalReasonMixin, forms.Form):
     revision = forms.IntegerField(widget=forms.HiddenInput, min_value=1)
     reason = forms.CharField(max_length=500, widget=forms.Textarea(attrs={"rows": 2}))
 
@@ -127,7 +128,7 @@ class LinkTaskForm(forms.Form):
         self.fields["task"].queryset = tasks_for(actor).filter(archived_at__isnull=True).order_by("title")
 
 
-class ContactForm(forms.Form):
+class ContactForm(OptionalReasonMixin, forms.Form):
     revision = forms.IntegerField(widget=forms.HiddenInput, min_value=0)
     role = forms.CharField(label="Relationship role", max_length=160, required=False)
     is_primary = forms.BooleanField(label="Primary business contact", required=False)

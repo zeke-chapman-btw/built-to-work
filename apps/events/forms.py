@@ -1,3 +1,4 @@
+from apps.core.optional_reason import OptionalReasonMixin
 from datetime import datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -189,12 +190,12 @@ class EventFilterForm(forms.Form):
         return data
 
 
-class EventActionForm(forms.Form):
+class EventActionForm(OptionalReasonMixin, forms.Form):
     revision = forms.CharField(widget=forms.HiddenInput)
     reason = forms.CharField(required=False, max_length=500, widget=forms.Textarea(attrs={"rows": 2}))
     confirm = forms.BooleanField(label="I confirm this event action.")
 
-class RegistrationForm(forms.Form):
+class RegistrationForm(OptionalReasonMixin, forms.Form):
     participant = forms.ModelChoiceField(
         queryset=Participant.objects.none(), required=False,
         help_text="Choose an existing participant, or leave blank to find/create by the details below.",
@@ -229,7 +230,7 @@ class RegistrationForm(forms.Form):
         return cleaned
 
 
-class ReissueTicketForm(forms.Form):
+class ReissueTicketForm(OptionalReasonMixin, forms.Form):
     expected_ticket_id = forms.UUIDField(widget=forms.HiddenInput)
     reason = forms.CharField(max_length=240, required=False, widget=forms.TextInput(attrs={"placeholder": "Reason for replacement (optional)"}))
 

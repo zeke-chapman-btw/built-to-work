@@ -1,3 +1,4 @@
+from apps.core.optional_reason import OptionalReasonMixin
 from django import forms
 
 from apps.events.models import Event
@@ -34,5 +35,5 @@ class ExperienceModeForm(forms.Form):
     mode = forms.ChoiceField(choices=(("staff_test", "Staff test"), ("demo", "Demo")))
 
 
-class SkipActivityForm(forms.Form):
+class SkipActivityForm(OptionalReasonMixin, forms.Form):
     reason = forms.CharField(max_length=500, widget=forms.Textarea(attrs={"rows": 2, "required": True}))

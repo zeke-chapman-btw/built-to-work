@@ -63,10 +63,8 @@ class EventManagement9BTests(TestCase):
         self.closeout(event)
         self.assertEqual(self.transition(event,'archive').status_code,302)
         event.refresh_from_db(); self.assertEqual(event.pk,identity); self.assertEqual(event.status,'archived')
-    def test_cancel_draft_and_archive_requires_reason(self):
-        event=self.create(); self.assertEqual(self.transition(event,'cancel',reason='').status_code,400)
-        self.assertEqual(self.transition(event,'cancel').status_code,302)
-        self.assertEqual(self.transition(event,'archive',reason='').status_code,400)
+    def test_cancel_draft_and_archive_without_reason(self):
+        event=self.create(); self.assertEqual(self.transition(event,'cancel',reason='').status_code,302)
         event.refresh_from_db(); self.assertEqual(event.status,'cancelled')
     def test_upcoming_cannot_be_archived_or_published_again(self):
         event=self.create(action='publish')

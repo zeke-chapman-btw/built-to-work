@@ -1,9 +1,10 @@
+from apps.core.optional_reason import OptionalReasonMixin
 from django import forms
 from .models import Classification, CandidateList, RecruitingProfile
 from apps.participants.models import ParticipantCareerProfile
 
 
-class ReasonForm(forms.Form):
+class ReasonForm(OptionalReasonMixin, forms.Form):
     reason = forms.CharField(max_length=500, widget=forms.Textarea(attrs={'rows': 2}))
 
 
@@ -57,7 +58,7 @@ class ConsolidationForm(ReasonForm):
     confirmed = forms.BooleanField(label='I reviewed both established identities and confirm they are the same person; original records and credentials remain separate.')
 
 
-class ClassificationForm(forms.ModelForm):
+class ClassificationForm(OptionalReasonMixin, forms.ModelForm):
     expected_revision=forms.CharField(widget=forms.HiddenInput)
     reason=forms.CharField(max_length=500,widget=forms.Textarea(attrs={'rows':2}))
     class Meta:
