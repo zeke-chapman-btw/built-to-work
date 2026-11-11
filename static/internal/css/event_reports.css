@@ -33,3 +33,11 @@ body.internal-app #main-content .ex-foot, body.internal-app #main-content .ex-pa
   body.internal-app #main-content .ex-actions { justify-content:flex-start; padding-top:6px !important; }
   body.internal-app #main-content .ex-table tfoot tr { display:flex; justify-content:space-between; }
 }
+body.internal-app.has-event-context #main-content :is(.reports-page,.workdays-page):has(.ex-page) { max-width:none !important; padding:0; grid-template-columns:minmax(0,1fr); }
+body.internal-app #main-content .ex-head h2 { white-space:nowrap; }
+@media (max-width:600px) {
+  body.internal-app #main-content .ex-head { flex-wrap:wrap; }
+  body.internal-app #main-content .ex-head-links { width:100%; justify-content:space-between; }
+  body.internal-app #main-content .ex-table td.ex-actions { display:flex; gap:16px; }
+}
+body.internal-app #main-content :is(.reports-page,.workdays-page):has(.ex-page) { --btw-standard-frame:100%; }

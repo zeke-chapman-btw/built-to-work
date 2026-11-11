@@ -46,5 +46,6 @@ body.internal-app #main-content .wd-totals strong { font-size:20px; }
   body.internal-app #main-content .wd-actions > * { flex:1; }
   body.internal-app #main-content .wd-totals { grid-template-columns:1fr; }
 }
-body.internal-app.has-event-context #main-content .workdays-page:has(> .wd-page) { max-width:none; padding:0; grid-template-columns:minmax(0,1fr); }
+body.internal-app.has-event-context #main-content .workdays-page:has(> .wd-page) { max-width:none !important; padding:0; grid-template-columns:minmax(0,1fr); }
 body.internal-app #main-content .wd-actions { flex-wrap:wrap; }
+body.internal-app #main-content .workdays-page:has(> .wd-page) { --btw-standard-frame:100%; }
