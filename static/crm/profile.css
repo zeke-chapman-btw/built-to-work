@@ -231,3 +231,10 @@ body.internal-app.has-participant-workspace.has-participants-pass3.has-participa
   .has-crm-ux-profile .pv-summary { grid-template-columns:repeat(2, minmax(0, 1fr)); }
   .has-crm-ux-profile .pv-facts { grid-template-columns:84px minmax(0, 1fr); }
 }
+
+/* Phone: open the More menu across the action row so it never runs off screen. */
+@media (width < 640px) {
+  body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-profile-actions { position: relative; }
+  body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-profile-tools { position: static; }
+  body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .crm-profile-tools[open] > div { left: 0; right: 0; width: auto; max-width: none; }
+}
