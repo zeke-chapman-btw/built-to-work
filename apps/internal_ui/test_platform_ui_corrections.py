@@ -53,6 +53,6 @@ class StaffTaskHeaderCorrectionsTests(TestCase):
         header_match=re.search(r'<header\b[^>]*class="[^"]*\bpage-header\b[^"]*"[^>]*>(.*?)</header>',response.content.decode(),re.S)
         self.assertIsNotNone(header_match)
         header=header_match.group(1)
-        self.assertIn('+ Task',header)
+        self.assertIn('+ New task',header)
         self.assertIn('data-task-create',header)
         self.assertIn('/operations/tasks/quick-create/',header)

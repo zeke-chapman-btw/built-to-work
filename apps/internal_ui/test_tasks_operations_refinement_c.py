@@ -64,8 +64,8 @@ class TasksOperationsRefinementCTests(TestCase):
         self.login(self.staff)
         response=self.client.get(reverse('operations:tasks'),{'q':'no matching title'})
         self.assertEqual(response.context['summary'],{'open':1,'overdue':1,'completed':0})
-        self.assertContains(response,'Accessible · before filters')
-        self.assertContains(response,'No tasks match this view')
+        self.assertContains(response,'aria-label="Totals before filters"')
+        self.assertContains(response,'No tasks match these filters')
         archived=self.client.get(reverse('operations:tasks'),{'view':'archived'})
         self.assertContains(archived,self.archived.title); self.assertNotContains(archived,self.own.title)
 

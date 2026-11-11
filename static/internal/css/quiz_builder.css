@@ -102,3 +102,4 @@ body.internal-app #main-content .ie-arrow { color:var(--btw-muted,#6b7280); text
   body.internal-app #main-content .ie-map-row { grid-template-columns:1fr; gap:4px; }
   body.internal-app #main-content .ie-arrow { display:none; }
 }
+body.internal-app #main-content .qb-q-actions .qb-more > summary { min-width:44px; padding:0 12px; display:inline-flex; align-items:center; justify-content:center; }

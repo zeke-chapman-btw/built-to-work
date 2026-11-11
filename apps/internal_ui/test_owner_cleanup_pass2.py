@@ -183,7 +183,7 @@ class TaskEditorTests(FixtureMixin,TestCase):
         response=self.client.get(reverse('operations:tasks'),{'view':'all','q':'Owner2 Task','sort':'title'})
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.context['tasks'].paginator.count,1)
-        self.assertContains(response,'<h2><span class="btw-result-label">All Tasks</span>: <strong>1</strong></h2>',html=True)
+        self.assertContains(response,'<span class="btw-view-label">All tasks</span> <span class="tk-count">1</span>',html=True)
         self.assertNotContains(response,'All accessible tasks')
         self.assertIn('sort=title',response.context['query'])
 

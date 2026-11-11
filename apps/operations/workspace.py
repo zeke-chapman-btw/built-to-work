@@ -87,6 +87,6 @@ def workspace(user, params, *, mine=False):
         overdue=Count('pk',filter=Q(status__in=('todo','in_progress'),due_date__lt=today)),completed=Count('pk',filter=Q(status='completed')))
     query={k:v for k,v in filters.items() if v};query['view']=view
     tabs=[]
-    for key,label in (('mine','My Tasks'),('created','Assigned by Me'),('all','All Tasks'),('archived','Archived')):
+    for key,label in (('mine','My tasks'),('created','Assigned by me'),('all','All tasks'),('archived','Archived')):
         tab=dict(query,view=key);tabs.append({'label':label,'count':counts[key],'active':view==key,'url':reverse('operations:tasks')+'?'+urlencode(tab)})
     return {'queryset':qs,'allowed':allowed,'view':view,'filters':filters,'tabs':tabs,'summary':summary,'query':urlencode(query),'today':today,'managing':managing}
