@@ -54,7 +54,7 @@ def edit_section(request, section):
             messages.success(request, 'Your information is up to date.')
             return redirect(_home(section))
     return _editor(request, form, 'Edit ' + SECTION_TITLES[section], section,
-        intro='Changes update your current BTW profile. Your original intake responses and staff verification history are retained.')
+        intro='')
 
 
 def _record(request, section, object_id):
@@ -92,7 +92,7 @@ def entry(request, section, object_id=None):
             messages.success(request, ENTRY_TITLES[section] + (' updated.' if row else ' added.'))
             return redirect(_home(section))
     return _editor(request, form, ('Edit ' if row else 'Add ') + ENTRY_TITLES[section], section,
-        intro='This is your self-reported information. BTW verification stays separate. Add creates another entry; Edit changes only this entry.')
+        intro='')
 
 
 @participant_view
