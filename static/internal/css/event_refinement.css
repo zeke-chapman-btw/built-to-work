@@ -316,3 +316,5 @@ body.internal-app #main-content .el-tile.is-warn strong{color:#b45309}
 body.internal-app #main-content .el-caption{caption-side:top;text-align:left;font-weight:600;padding:14px 16px;font-size:15px}
 body.internal-app #main-content .el-sub{display:block;color:#6b7280;font-size:12.5px;margin-top:2px}
 @media (max-width:720px){body.internal-app #main-content .el-tiles{grid-template-columns:1fr;gap:8px}}
+body.internal-app #main-content .el-table td .btw-record-primary{display:inline !important;padding:0 !important;margin:0 !important;font-weight:600;min-height:0 !important}
+body.internal-app #main-content .el-table td{vertical-align:middle}
