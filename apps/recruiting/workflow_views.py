@@ -51,7 +51,7 @@ def overview(request):
 def campaigns(request):
     from apps.customers.models import Campaign
     items=Campaign.objects.all() if manager(request.recruiting_actor) else Campaign.objects.filter(workforce_needs__recruiting_opportunity__in=opportunities_for(request.user)).distinct()
-    return page(request,'recruiting/campaigns.html',page_title='Recruiting Campaigns',campaigns=items,
+    return page(request,'recruiting/campaigns.html',page_title='Campaigns',campaigns=items,
         can_manage=manager(request.recruiting_actor),requests=WorkforceRequest.objects.all() if manager(request.recruiting_actor) else WorkforceRequest.objects.none())
 
 

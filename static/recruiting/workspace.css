@@ -41,3 +41,8 @@
 @media(max-width:479.98px){.recruiting-need-filters .field{flex-basis:100%}.recruiting-need-filters :is(input,select){font-size:16px}.recruiting-workspace .table-scroll table{min-width:650px}}
 
 .recruiting-workspace .recruiting-summary-value{font-size:28px;line-height:36px;font-weight:600;margin:12px 0 8px}.recruiting-stage-summary{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px 20px}.recruiting-stage-summary li{display:flex;gap:12px;align-items:center;min-height:36px}
+/* Shared layout: full width like the rest of the app, plain table links */
+body.internal-app #main-content .btw-workspace.recruiting-workspace{max-width:none !important;width:auto !important}
+body.internal-app #main-content .recruiting-workspace .workspace-table a{text-decoration:none;font-weight:600}
+body.internal-app #main-content .recruiting-workspace .workspace-table a:hover{text-decoration:underline}
+body.internal-app #main-content .recruiting-workspace .workspace-table th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280}
