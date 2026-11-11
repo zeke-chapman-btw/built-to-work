@@ -88,7 +88,7 @@ def task_status(request,task_id):
         if saved:
             messages.success(request,"Task status updated.")
             return redirect(task_destination(request, obj))
-    return form_page(request,form,"Change task status",reverse("operations:task", args=[obj.pk]))
+    return form_page(request,form,"Change status",reverse("operations:task", args=[obj.pk]))
 
 @staff_view
 def task_archive(request,task_id,restore=False):

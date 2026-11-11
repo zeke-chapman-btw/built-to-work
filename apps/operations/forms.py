@@ -83,13 +83,15 @@ class StatusForm(RevisionForm):
     def __init__(self, *args, manager=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["reason"].required = False
-        self.fields["reason"].label = "Change note (optional)"
+        self.fields["reason"].widget = forms.HiddenInput()
+        self.label_suffix = ""
 
 class TaskRevisionForm(RevisionForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["reason"].required = False
-        self.fields["reason"].label = "Change note (optional)"
+        self.fields["reason"].widget = forms.HiddenInput()
+        self.label_suffix = ""
 
 class NoteForm(forms.ModelForm):
     revision=forms.CharField(widget=forms.HiddenInput,required=False)
