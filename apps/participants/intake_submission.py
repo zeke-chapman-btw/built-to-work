@@ -139,7 +139,7 @@ def _event_extras(session):
 
 
 @transaction.atomic
-def complete_session(*, session_id, actor=None):
+def complete_session(*, session_id, actor=None, invite_participant=True):
     session = IntakeSession.objects.select_for_update(of=("self",)).select_related(
         "form_version__form", "consent_document", "event", "trailer").get(pk=session_id)
     _staff_channel(actor, session.channel)
@@ -242,7 +242,7 @@ def complete_session(*, session_id, actor=None):
         retain_pending_intake(session=session, submission=submission, actor=actor)
     session.submission, session.state = submission, "submitted"
     session.save(update_fields=["submission", "state", "updated_at"])
-    if session.channel != 'trailer' and not resolution.review_required:
+    if invite_participant and session.channel != 'trailer' and not resolution.review_required:
         from .portal_accounts import queue_invitation
         queue_invitation(participant)
     record_audit(actor=actor if getattr(actor, "is_authenticated", False) else None,
