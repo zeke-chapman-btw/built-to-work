@@ -15,7 +15,7 @@ DATE = forms.DateInput(attrs={"type": "date"})
 
 class StaffProfileForm(forms.ModelForm):
     revision = forms.CharField(widget=forms.HiddenInput)
-    audit_reason = forms.CharField(required=False, max_length=500, label="Change note (optional)")
+    audit_reason = forms.CharField(required=False, max_length=500, label="Change note", widget=forms.HiddenInput)
     class Meta:
         model = Participant
         fields = ("first_name", "last_name", "preferred_name", "contact_email", "contact_phone", "city", "state", "postal_code")
@@ -91,7 +91,7 @@ class AcquisitionForm(forms.ModelForm):
 class NoteForm(forms.ModelForm):
     revision = forms.CharField(required=False, widget=forms.HiddenInput)
     request_key = forms.UUIDField(initial=uuid.uuid4, widget=forms.HiddenInput)
-    audit_reason = forms.CharField(required=False, max_length=500, label="Change note (optional)")
+    audit_reason = forms.CharField(required=False, max_length=500, label="Change note", widget=forms.HiddenInput)
     class Meta:
         model = ParticipantNote
         fields = ("content",)

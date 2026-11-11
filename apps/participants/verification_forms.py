@@ -24,7 +24,7 @@ class VerificationDecisionForm(forms.Form):
     def clean(self):
         data = super().clean()
         if data.get("status") == ParticipantVerificationRecord.Status.REJECTED and not (data.get("reason") or "").strip():
-            self.add_error("reason", "Tell the participant why it wasn't verified.")
+            self.add_error("reason", "A reason is required to reject. The participant will see it.")
         method = data.get("method")
         if data.get("status") == ParticipantVerificationRecord.Status.VERIFIED:
             if method == ParticipantVerificationRecord.Method.DOCUMENT_VERIFIED and "evidence_document" in self.fields and not data.get("evidence_document"):

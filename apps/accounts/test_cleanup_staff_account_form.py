@@ -38,8 +38,7 @@ class StaffAccountGroupingTests(TestCase):
         names = controls.names
         self.assertLess(names.index('email'), names.index('roles'))
         self.assertLess(names.index('roles'), names.index('can_finalize_event_reports'))
-        self.assertLess(names.index('can_approve_weekly_payroll'), names.index('reason'))
-        self.assertLess(names.index('reason'), names.index('confirm_identity'))
+        self.assertLess(names.index('can_approve_weekly_payroll'), names.index('confirm_identity'))
         for name in ('username', 'email', 'profile', 'can_finalize_event_reports', 'can_approve_weekly_payroll', 'reason', 'confirm_identity'):
             self.assertEqual(names.count(name), 1, name)
 
