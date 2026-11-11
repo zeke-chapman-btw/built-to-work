@@ -1,5 +1,5 @@
 {% extends 'events/event_detail.html' %}{% load event_ui %}{% load static event_ui ui_patterns people_ui %}
-{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/staffing.css' %}?v=st-layout-1">{% endblock %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/staffing.css' %}?v=st-layout-2">{% endblock %}
 {% block content %}{% event_navigation event "staff" %}{% staff_navigation event "assignments" %}
 {% with back=request.get_full_path|urlencode small=summary.days|length %}
 <div class="events-page staffing-page event-workspace-stack btw-ui btw-event-surface st-page">
