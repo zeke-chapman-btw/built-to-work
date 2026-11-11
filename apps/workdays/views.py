@@ -97,7 +97,7 @@ def event_roster(request,event_id):
     approved=[d for d in checked_in if d.approval=='approved']
     from decimal import Decimal
     day_totals={'pay':sum((d.pay_amount or Decimal('0')) for d in approved),'per_diem':sum((d.per_diem_amount or Decimal('0')) for d in approved),'count':len(checked_in)}
-    return page(request,'event',page_title='Staff check-ins',event=event,calendar=calendar,selected=selected,roster=roster,days=days,trips=trips,day_tabs=day_tabs,checked_in=checked_in,missing=missing,day_totals=day_totals,distance=EventMileage.objects.filter(event=event).first(),origin=ORIGIN,totals=reports.totals(Workday.objects.filter(event=event),trips))
+    return page(request,'event',page_title=event.name,event=event,calendar=calendar,selected=selected,roster=roster,days=days,trips=trips,day_tabs=day_tabs,checked_in=checked_in,missing=missing,day_totals=day_totals,distance=EventMileage.objects.filter(event=event).first(),origin=ORIGIN,totals=reports.totals(Workday.objects.filter(event=event),trips))
 
 @staff_view
 def workday_edit(request,event_id=None,record_id=None):
