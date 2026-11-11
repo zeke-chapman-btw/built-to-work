@@ -13,7 +13,7 @@ class StaffAccountForm(forms.Form):
     is_active=forms.BooleanField(required=False,label='Account active')
     confirm_identity=forms.BooleanField(label='I confirm this staff identity and account link.')
     revision=forms.CharField(required=False,widget=forms.HiddenInput)
-    reason=forms.CharField(widget=forms.Textarea(attrs={'rows':2}),label='Reason for this change')
+    reason=forms.CharField(required=False,widget=forms.HiddenInput,label='Reason for this change')
     def __init__(self,*args,actor,target=None,**kwargs):
         super().__init__(*args,**kwargs)
         choices=[('recruiter','Recruiter'),('event_staff','Event Staff')]
@@ -49,4 +49,4 @@ class StaffAccountForm(forms.Form):
 
 class AccountActionForm(forms.Form):
     revision=forms.CharField(widget=forms.HiddenInput)
-    reason=forms.CharField(widget=forms.Textarea(attrs={'rows':2}))
+    reason=forms.CharField(required=False,widget=forms.HiddenInput)

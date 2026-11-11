@@ -8,7 +8,7 @@ class VerificationDecisionForm(forms.Form):
     request_key = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
     status = forms.ChoiceField(choices=(("unverified", "Unverified"), ("pending", "Pending Review"), ("verified", "Verify"), ("rejected", "Reject")))
     method = forms.ChoiceField(choices=())
-    reason = forms.CharField(widget=forms.Textarea(attrs={"rows": 3}), max_length=2000, label="Decision reason")
+    reason = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 3}), max_length=2000, label="Reason (required to reject — the participant will see it)")
     evidence_notes = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 3}), max_length=4000, label="Supporting evidence")
     evidence_document = forms.ModelChoiceField(queryset=ParticipantDocument.objects.none(), required=False, label="Current supporting document")
 
@@ -23,8 +23,8 @@ class VerificationDecisionForm(forms.Form):
 
     def clean(self):
         data = super().clean()
-        if not (data.get("reason") or "").strip():
-            self.add_error("reason", "A reason is required for every review decision.")
+        if data.get("status") == ParticipantVerificationRecord.Status.REJECTED and not (data.get("reason") or "").strip():
+            self.add_error("reason", "Tell the participant why it wasn't verified.")
         method = data.get("method")
         if data.get("status") == ParticipantVerificationRecord.Status.VERIFIED:
             if method == ParticipantVerificationRecord.Method.DOCUMENT_VERIFIED and "evidence_document" in self.fields and not data.get("evidence_document"):

@@ -32,7 +32,8 @@ def set_context(actor,trailer,preparation_id,revision,reason):
     cfg=ControlConfiguration.objects.select_for_update().filter(trailer=trailer).first()
     if int(revision)!=(cfg.revision if cfg else 0): raise ValidationError("Context changed. Reload before saving.")
     prep=OfflineEventPreparation.objects.filter(pk=preparation_id,trailer=trailer).exclude(event__status__in=("draft","cancelled","archived")).first()
-    if not prep or not reason.strip(): raise ValidationError("Choose a local preparation and provide a reason.")
+    reason = (reason or "").strip() or "Set by staff"
+    if not prep: raise ValidationError("Choose a local event preparation.")
     if cfg is None: cfg=ControlConfiguration(trailer=trailer)
     cfg.preparation=prep; cfg.revision+=1; cfg.save()
     audit(actor,"context.changed",cfg,reason,preparation=str(prep.pk))
@@ -153,7 +154,7 @@ def publish_score(actor,preparation,participant_id,*,publish,reason):
     if not actor.has_perms(("participants.view_participant","events.view_eventregistration","simulators.view_simulatorcapture")):
         from django.core.exceptions import PermissionDenied
         raise PermissionDenied
-    if not reason.strip():raise ValidationError("A publication decision requires a reason.")
+    reason=(reason or "").strip() or ("Published by staff" if publish else "Unpublished by staff")
     from apps.events.models import EventRegistration
     if not EventRegistration.objects.filter(event=preparation.event,participant_id=participant_id,status="active",participant__kind="person",participant__archived_at__isnull=True).exists():raise ValidationError("Choose an active participant registered at this event.")
     # Lock the event to serialize first grants and alias assignment on PostgreSQL.
@@ -173,7 +174,8 @@ def request_sync(actor,trailer,*,direction,key,reason):
     require(actor,"request_trailer_sync")
     type(trailer).objects.select_for_update().get(pk=trailer.pk)
     cfg=selected(trailer)
-    if not cfg or not cfg.preparation_id or not reason.strip():raise ValidationError("Select a local event and provide a reason.")
+    reason=(reason or "").strip() or "Requested by staff"
+    if not cfg or not cfg.preparation_id:raise ValidationError("Select a local event first.")
     if direction not in {"outbound","inbound"}:raise ValidationError("Choose a synchronization direction.")
     key=uuid.UUID(str(key))
     prior=SyncRunRequest.objects.filter(request_key=key).first()

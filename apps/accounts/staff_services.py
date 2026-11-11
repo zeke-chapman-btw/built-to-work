@@ -33,9 +33,8 @@ def lock_users(actor,target_id=None):
     users={u.pk:u for u in get_user_model().objects.select_for_update().filter(pk__in=ids).order_by('pk')}
     return users[actor.pk],users.get(target_id)
 def require_reason(value):
-    value=str(value or '').strip()
-    if not value:raise ValidationError('A reason is required.')
-    return value
+    # Reasons are optional; keep the audit entry readable when none is given.
+    return str(value or '').strip() or 'Updated by an administrator'
 
 def check_fields(data):
     if any(k in data for k in ('groups','user_permissions','is_superuser','is_staff','security_revision','password','password1','password2')):raise PermissionDenied('Use the authorized account fields.')

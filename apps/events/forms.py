@@ -235,4 +235,7 @@ class ReissueTicketForm(forms.Form):
 
 
 class VoidRegistrationForm(forms.Form):
-    reason = forms.CharField(max_length=240, widget=forms.TextInput(attrs={"required": True, "placeholder": "Reason for voiding"}))
+    reason = forms.CharField(max_length=240, required=False, widget=forms.HiddenInput)
+
+    def clean_reason(self):
+        return (self.cleaned_data.get("reason") or "").strip() or "Voided by staff"

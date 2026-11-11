@@ -73,8 +73,7 @@ class WorkExperienceForm(forms.ModelForm):
 
 class AcquisitionForm(forms.ModelForm):
     revision = forms.CharField(widget=forms.HiddenInput)
-    audit_reason = forms.CharField(max_length=1000, label="Evidence and reason for this correction",
-        help_text="Describe why this is the original source. Later participation must not replace it.")
+    audit_reason = forms.CharField(max_length=1000, required=False, widget=forms.HiddenInput, label="Evidence and reason for this correction")
     class Meta:
         model = ParticipantAcquisition
         fields = ("channel", "acquired_at", "event", "online_source", "source_submission", "provenance")

@@ -121,7 +121,7 @@ def correct_acquisition(*, actor, participant_id, data):
     for key in ("channel", "acquired_at", "event", "online_source", "source_submission", "provenance"):
         setattr(item, key, data[key])
     item.recorded_by = actor
-    item.correction_reason = require_reason(data["audit_reason"])
+    item.correction_reason = require_reason(data.get("audit_reason"), default="Corrected by staff")
     item.full_clean()
     item.save()
     audit(actor, "acquisition.corrected", item, before=before,

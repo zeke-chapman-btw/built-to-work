@@ -6,7 +6,7 @@ from .models import Device
 class ContextForm(forms.Form):
     preparation=forms.ModelChoiceField(queryset=OfflineEventPreparation.objects.none(),label="Local event preparation")
     revision=forms.IntegerField(widget=forms.HiddenInput)
-    reason=forms.CharField(max_length=300)
+    reason=forms.CharField(max_length=300,required=False,widget=forms.HiddenInput)
     def __init__(self,*args,trailer,**kwargs):
         super().__init__(*args,**kwargs)
         self.fields["preparation"].queryset=OfflineEventPreparation.objects.filter(trailer=trailer).exclude(event__status__in=("draft","cancelled","archived")).select_related("event")
@@ -24,7 +24,7 @@ class DeviceForm(forms.Form):
 class SyncForm(forms.Form):
     direction=forms.ChoiceField(choices=[("outbound","Send queued registration/intake data"),("inbound","Download selected event updates")])
     request_key=forms.UUIDField(widget=forms.HiddenInput)
-    reason=forms.CharField(max_length=300)
+    reason=forms.CharField(max_length=300,required=False,widget=forms.HiddenInput)
 
 class ReasonForm(forms.Form):
-    reason=forms.CharField(max_length=300)
+    reason=forms.CharField(max_length=300,required=False,widget=forms.HiddenInput)

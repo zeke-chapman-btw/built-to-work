@@ -1,6 +1,7 @@
 <ul class="record-list profile-entries{% if entry_section == 'skills' %} profile-skill-list{% endif %}">
 {% for qualification in entries %}
   <li><div class="profile-entry-copy"><div class="profile-entry-title"><strong>{{ qualification }}</strong><span class="badge{% if qualification.portal_status == 'Verified' %} badge--verified{% endif %}">{{ qualification.portal_status }}</span></div>
+    {% if qualification.portal_rejection_reason %}<p class="profile-rejection"><strong>Why it wasn't verified:</strong> {{ qualification.portal_rejection_reason }}</p>{% endif %}
     {% if qualification.reported_provider %}<p class="profile-provider">{{ qualification.reported_provider }}</p>{% endif %}
     {% if qualification.experience_details %}<p>{{ qualification.experience_details|linebreaksbr }}</p>{% endif %}
     {% if qualification.years_of_experience != None %}<small>{{ qualification.years_of_experience }} years of experience</small>{% endif %}

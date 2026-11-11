@@ -89,11 +89,14 @@ def profile(request):
     from .models import ParticipantQualification
     qualifications = ParticipantQualification.objects.filter(participant_id__in=identity_members(account.participant_id), is_active=True).select_related('catalog_entry').prefetch_related(
         'verification_records__evidence_document', 'verification_records__document', 'verification_records__reviewer', 'document_links')
-    # Reuse evidence-aware status, exposing none of its internal reasons or reviewer data.
+    # Reuse evidence-aware status. Only a rejection reason is shown to the participant;
+    # reviewer identity and other internal notes stay private.
     from .verification_services import qualification_verification_summary
     for qualification in qualifications:
         qualification._workspace_verifications = list(qualification.verification_records.all())
-        qualification.portal_status = qualification_verification_summary(qualification)['label']
+        summary = qualification_verification_summary(qualification)
+        qualification.portal_status = summary['label']
+        qualification.portal_rejection_reason = summary.get('reason', '') if summary.get('status') == 'rejected' else ''
     from .portal_profile_services import profile_sections
     sections = profile_sections(request.user, person, qualifications)
     from .portal_assessments import profile_assessment_results, profile_identity
