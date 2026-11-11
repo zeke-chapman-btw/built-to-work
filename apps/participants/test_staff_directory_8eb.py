@@ -89,3 +89,14 @@ class StaffParticipantDirectoryTests(TestCase):
         self.assertTrue(self.client.login(username="directory-staff", password="test-password"))
         response = self.client.get(reverse("participants:staff-profile", args=["999999999"]))
         self.assertEqual(response.status_code, 404)
+
+    def test_edit_profile_button_follows_change_permission(self):
+        url = reverse("participants:staff-profile", args=[self.person.pk])
+        edit_url = reverse("participants:staff-edit", args=[self.person.pk])
+        self.assertTrue(self.client.login(username="directory-staff", password="test-password"))
+        self.assertNotContains(self.client.get(url), edit_url)
+        self.staff.user_permissions.add(Permission.objects.get(codename="change_participant", content_type__app_label="participants", content_type__model="participant"))
+        response = self.client.get(url)
+        self.assertContains(response, ">Edit profile</a>")
+        self.assertContains(response, edit_url + "?return_to=")
+        self.assertEqual(self.client.get(edit_url).status_code, 200)
