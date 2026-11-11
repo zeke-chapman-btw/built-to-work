@@ -11,7 +11,7 @@ class GameAdministrationBridgeTests(TestCase):
         response = self.client.get(reverse('internal:workspace', args=['operations']), {'resource': 'games'})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Open game administration')
-        self.assertContains(response, 'restricted administration')
+        self.assertContains(response, 'Opens restricted administration')
         for name in ('admin:games_gamedefinition_changelist', 'admin:games_gamedefinition_add'):
             with self.subTest(name=name):
                 response = self.client.get(reverse(name))

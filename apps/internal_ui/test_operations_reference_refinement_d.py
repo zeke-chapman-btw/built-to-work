@@ -119,7 +119,7 @@ class OperationsReferenceRefinementTests(TestCase):
         self.assertContains(response,'href="'+url+'">Clear')
         filtered=self.client.get(url+'&q=no-match-synthetic')
         self.assertEqual(filtered.status_code,200)
-        self.assertContains(filtered,'No matching games.')
+        self.assertContains(filtered,'No matching games')
         self.assertNotContains(filtered,self.game.display_name)
         self.assertEqual(self.client.post(url,{'display_name':'should not save'}).status_code,405)
         self.game.refresh_from_db();self.assertEqual(self.game.display_name,'SYNTHETIC Private game definition')
