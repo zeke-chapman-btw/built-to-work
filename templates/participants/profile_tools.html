@@ -1,5 +1,5 @@
 <details data-ui-menu class="p3-profile-tools crm-profile-tools">
-  <summary>More{% if more_active %}<span class="crm-profile-tool-current"> · {{ more_active }}</span>{% endif %}</summary>
+  <summary>More</summary>
   <div>
     <p>Profile details</p>
     {% for item in detail_items %}<a{% if item.key != 'tasks' %} data-record-editor data-profile-manager{% endif %} href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>{{ item.label }}</a>{% endfor %}
