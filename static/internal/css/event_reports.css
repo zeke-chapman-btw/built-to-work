@@ -72,3 +72,6 @@ body.internal-app #main-content .er-versioned{margin:0 0 12px;display:flex;justi
 body.internal-app #main-content .er-links{display:flex;gap:12px}
 @media (max-width:900px){body.internal-app #main-content .er-cols{grid-template-columns:1fr}body.internal-app #main-content .er-tiles-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:640px){body.internal-app #main-content .er-tiles-3{grid-template-columns:1fr}}
+body.internal-app.has-event-context #main-content :is(.reports-page,.workdays-page):has(.er-page){max-width:none !important;padding:0;grid-template-columns:minmax(0,1fr)}
+body.internal-app #main-content :is(.reports-page,.workdays-page):has(.er-page){--btw-standard-frame:100%}
+body.internal-app #main-content .events-page:has(.er-page) > .event-page-context{display:none}
