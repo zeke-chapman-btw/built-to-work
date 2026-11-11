@@ -25,16 +25,17 @@ class QuestionSetForm(forms.ModelForm):
 
 
 class QuestionForm(forms.ModelForm):
-    choice_a = forms.CharField(label="Answer A", max_length=500)
-    choice_b = forms.CharField(label="Answer B", max_length=500)
-    choice_c = forms.CharField(label="Answer C", max_length=500)
-    choice_d = forms.CharField(label="Answer D", max_length=500)
+    choice_a = forms.CharField(label="Answer A", max_length=500, widget=forms.TextInput(attrs={"placeholder": "Answer A"}))
+    choice_b = forms.CharField(label="Answer B", max_length=500, widget=forms.TextInput(attrs={"placeholder": "Answer B"}))
+    choice_c = forms.CharField(label="Answer C", max_length=500, widget=forms.TextInput(attrs={"placeholder": "Answer C"}))
+    choice_d = forms.CharField(label="Answer D", max_length=500, widget=forms.TextInput(attrs={"placeholder": "Answer D"}))
     correct_choice = forms.ChoiceField(label="Correct answer", choices=(("a", "A"), ("b", "B"), ("c", "C"), ("d", "D")), widget=forms.RadioSelect)
 
     class Meta:
         model = Question
         fields = ("text", "image", "difficulty", "is_active")
-        widgets = {"text": forms.Textarea(attrs={"rows": 4})}
+        widgets = {"text": forms.Textarea(attrs={"rows": 3})}
+        labels = {"text": "Question", "is_active": "Question is on"}
 
     def __init__(self, *args, category=None, **kwargs):
         self.category = category

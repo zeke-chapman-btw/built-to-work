@@ -1,14 +1,14 @@
-{% extends 'operations/design_base.html' %}{% load ui_patterns %}
-{% block design_content %}
-<a class="event-back" href="{{ back_url }}">← Question set</a>
-<section class="card btw-form-card">
-<p class="event-help">{{ question_set.category.name }} · Draft version {{ question_set.version }}. Save, then use Kiosk preview from the question list.</p>
+{% extends 'operations/design_base.html' %}{% load ui_patterns static %}
+{% block design_content %}<link rel="stylesheet" href="{% static 'internal/css/quiz_builder.css' %}?v=qb-1">
+<a class="event-back" href="{{ back_url }}">← {{ question_set.category.name }} · version {{ question_set.version }}</a>
+<section class="card btw-form-card qb-form">
 <form method="post" enctype="multipart/form-data" data-section-form class="ops-form-stack">
 {% csrf_token %}<input type="hidden" name="return_to" value="{{ back_url }}">{% include 'internal/ui/form_errors.html' %}{% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
-<fieldset class="btw-authoring-group"><legend>Question</legend><div class="btw-field-stack">{% ui_field form.text %}{% ui_field form.difficulty %}</div></fieldset>
-<fieldset class="btw-authoring-group"><legend>Answer choices</legend><div class="btw-field-stack">{% ui_field form.choice_a %}{% ui_field form.choice_b %}{% ui_field form.choice_c %}{% ui_field form.choice_d %}</div></fieldset>
-<fieldset class="btw-authoring-group"{% if form.correct_choice.errors %} aria-describedby="answer-key-errors"{% endif %}><legend>Answer key</legend><div class="btw-field-stack">{{ form.correct_choice }}{% if form.correct_choice.errors %}<div id="answer-key-errors" role="alert">{{ form.correct_choice.errors }}</div>{% endif %}</div></fieldset>
-<details class="btw-disclosure"{% if form.image.errors or form.image.value %} open{% endif %}><summary>Question image (optional)</summary><p class="event-help">PNG, JPEG or WebP, up to 5 MB. Square images of 650 × 650 pixels or larger work best.</p>{% if item.question.image %}<img class="ops-content-image" src="{{ item.question.image.url }}" alt="Current question image">{% endif %}{% ui_field form.image %}</details>
-<details class="btw-disclosure"{% if form.is_active.errors or not form.is_active.value or item and not item.is_active %} open{% endif %}><summary>Question availability · {% if form.is_active.value %}Active{% else %}Inactive{% endif %}</summary>{% ui_field form.is_active %}{% if item %}<div class="field btw-field-checkbox"><input id="membership-active" type="checkbox" name="membership_active"{% if 'membership_active' in request.POST or request.method != 'POST' and item.is_active %} checked{% endif %}><label for="membership-active">Include in this draft question set</label></div>{% endif %}</details>
-{% include 'internal/ui/form_actions.html' with cancel_url=back_url submit_label='Save draft question' %}
+<div class="btw-field-stack">{% ui_field form.text %}</div>
+<fieldset class="qb-answers"{% if form.correct_choice.errors %} aria-describedby="answer-key-errors"{% endif %}><legend>Answers <small>Pick the correct one</small></legend>
+{% for letter, field in answer_rows %}<div class="qb-answer{% if field.errors %} has-error{% endif %}"><label class="qb-key" title="Mark {{ letter|upper }} as correct"><input type="radio" name="{{ form.correct_choice.html_name }}" value="{{ letter }}"{% if form.correct_choice.value == letter %} checked{% endif %} aria-label="{{ letter|upper }} is the correct answer"><span>{{ letter|upper }}</span></label><div class="qb-answer-input">{{ field }}{% if field.errors %}<div class="qb-err">{{ field.errors }}</div>{% endif %}</div></div>{% endfor %}
+{% if form.correct_choice.errors %}<div id="answer-key-errors" class="qb-err" role="alert">{{ form.correct_choice.errors }}</div>{% endif %}</fieldset>
+<div class="qb-row">{% ui_field form.difficulty %}<div class="qb-toggles">{% ui_field form.is_active %}{% if item %}<div class="field btw-field-checkbox"><input id="membership-active" type="checkbox" name="membership_active"{% if 'membership_active' in request.POST or request.method != 'POST' and item.is_active %} checked{% endif %}><label for="membership-active">Include in this version</label></div>{% endif %}</div></div>
+<details class="btw-disclosure"{% if form.image.errors or item.question.image %} open{% endif %}><summary>Picture (optional)</summary><p class="qb-muted">PNG, JPEG or WebP, up to 5 MB. Square pictures 650 × 650 or larger look best.</p>{% if item.question.image %}<img class="ops-content-image" src="{{ item.question.image.url }}" alt="Current question picture">{% endif %}{% ui_field form.image %}</details>
+{% include 'internal/ui/form_actions.html' with cancel_url=back_url submit_label='Save question' %}
 </form></section>{% endblock %}

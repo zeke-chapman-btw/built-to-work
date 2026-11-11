@@ -40,10 +40,13 @@ def _require_admin(request):
 def _authoring(request, template, context):
     titles={"dashboard.html":"Quizzes","categories.html":"Assessment categories",
         "category_form.html":"Edit category" if context.get("category") and not context["category"]._state.adding else "Add category",
-        "question_sets.html":"Question sets","question_set_detail.html":str(context.get("question_set","Question set")),
-        "question_form.html":"Edit question" if context.get("item") else "Add question",
+        "question_sets.html":"Question sets","question_set_detail.html":getattr(context.get("question_set"),"name","Question set") or "Question set",
+        "question_form.html":"Edit question" if context.get("item") else "New question",
         "question_set_form.html":"New Draft question set","restart.html":"Void and restart assessment"}
     context.setdefault("page_title",titles.get(template,"Event Quizzes & Tests"))
+    if template=="question_form.html":
+        form=context["form"]
+        context["answer_rows"]=[(name[-1],form[name]) for name in ("choice_a","choice_b","choice_c","choice_d")]
     question_set=context.get("question_set")
     fallback=reverse("assessments:question_set_detail",args=[question_set.pk]) if question_set and template!="question_set_detail.html" else reverse("assessments:category_list") if template=="category_form.html" else reverse("assessments:question_set_list")
     context["back_url"]=operations_return(request,fallback,question_set=question_set)
@@ -167,13 +170,13 @@ def question_set_detail(request, set_id):
     used_ids = {row.get("source_question_id") for snapshot in
         AssessmentSection.objects.filter(question_set=question_set).values_list("questions_snapshot", flat=True)
         for row in (snapshot or []) if isinstance(row, dict)}
-    items,filters=list_page(request,question_set.items.select_related("question").order_by("question__difficulty","question__created_at"),
+    items,filters=list_page(request,question_set.items.select_related("question").prefetch_related("question__choices").order_by("question__difficulty","question__created_at"),
         search_fields=("question__text",),name_field="question__text",newest_field="-question__created_at",
         active_field="question__is_active",status_choices=(("active","Active"),("inactive","Inactive")))
     for item in items:
         item.historically_used = str(item.question_id) in used_ids
     return _authoring(request, "question_set_detail.html", {"question_set": question_set,
-        "report": report, "publish_form": publish_form, "can_edit": request.user.is_superuser,
+        "report": report, "questions_needed": max(0, 15 - report["total"]), "publish_form": publish_form, "can_edit": request.user.is_superuser,
         "items": items,**filters})
 
 
