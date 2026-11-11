@@ -110,4 +110,6 @@ body.internal-app #main-content .nt-form .button{justify-self:start;width:auto}
 body.internal-app #main-content .nt-meta{margin:0 0 4px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:14px}
 body.internal-app #main-content .nt-note .event-note-body{white-space:normal}
 body.internal-app #main-content .el-count{font-size:13px;color:#6b7280;font-weight:500}
-body.internal-app #main-content:has(.nt-page) .btw-standard-workspace,body.internal-app #main-content .btw-standard-workspace:has(.nt-page){max-width:none !important}
+body.internal-app #main-content .events-page.operations-page:has(> .nt-page) > *{max-width:none !important}
+body.internal-app #main-content .nt-page{padding:0 24px 24px}
+@media (max-width:640px){body.internal-app #main-content .nt-page{padding:0 12px 16px}}

@@ -1,7 +1,7 @@
 {% extends "internal/base.html" %}{% load static tz task_ui event_ui ui_patterns %}
 {% block body_class %} has-corrective-events{% endblock %}
 {% block title %}{{ event.name }} | Events{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'internal/css/operations_templates.css' %}"><link rel="stylesheet" href="{% static 'internal/css/event_operations.css' %}"><link rel="stylesheet" href="{% static 'internal/css/event_management.css' %}?v=9b">{% include 'internal/ui/event_assets.html' %}<link rel="stylesheet" href="{% static 'internal/css/quiz_builder.css' %}?v=qb-8">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'internal/css/operations_templates.css' %}"><link rel="stylesheet" href="{% static 'internal/css/event_operations.css' %}"><link rel="stylesheet" href="{% static 'internal/css/event_management.css' %}?v=9b">{% include 'internal/ui/event_assets.html' %}<link rel="stylesheet" href="{% static 'internal/css/quiz_builder.css' %}?v=qb-10">{% endblock %}
 {% block page_heading %}{% event_header event %}{% endblock %}
 {% block content %}<div class="events-page event-operations btw-ui btw-event-surface">
 {% event_navigation event %}
