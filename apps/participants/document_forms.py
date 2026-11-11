@@ -29,7 +29,7 @@ def validate_document_file(upload):
 class ParticipantDocumentForm(forms.ModelForm):
     expected_revision = forms.CharField(required=False, widget=forms.HiddenInput)
     file = forms.FileField(required=False)
-    audit_reason = forms.CharField(max_length=500, label='Reason', help_text='Required for the audit history.')
+    audit_reason = forms.CharField(max_length=500, label='Reason', required=False, widget=forms.HiddenInput)
     class Meta:
         model = ParticipantDocument
         fields = ('category', 'description', 'issue_date', 'expiration_date', 'participant_visible')
@@ -57,8 +57,7 @@ class ParticipantDocumentForm(forms.ModelForm):
         issue, expiry = data.get('issue_date'), data.get('expiration_date')
         if issue and expiry and expiry < issue:
             self.add_error('expiration_date', 'Expiration cannot be before the issue date.')
-        if not (data.get('audit_reason') or '').strip():
-            self.add_error('audit_reason', 'Enter a reason for this document action.')
+        data['audit_reason'] = (data.get('audit_reason') or '').strip() or ('Document updated' if self.instance.pk else 'Document added')
         return data
 
 class DocumentCategoryForm(forms.ModelForm):

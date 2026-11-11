@@ -47,7 +47,7 @@ class StaffParticipantCreateForm(forms.ModelForm):
     lead_source = forms.CharField(required=False, max_length=240, label="Lead source", help_text="Staff-created people remain leads until required intake is verified.")
     confirm_distinct = forms.BooleanField(required=False, label="I reviewed the possible matches and this is a different person")
     duplicate_revision = forms.CharField(required=False, widget=forms.HiddenInput)
-    audit_reason = forms.CharField(max_length=500, label="Source / reason for adding this person")
+    audit_reason = forms.CharField(max_length=500, label="Source / reason for adding this person", required=False, widget=forms.HiddenInput)
     class Meta:
         model = Participant
         fields = ("first_name", "last_name", "preferred_name", "contact_email", "contact_phone", "city", "state", "postal_code")
@@ -114,7 +114,7 @@ class SavedViewForm(forms.Form):
 
 class ParticipantEventForm(forms.Form):
     event = forms.ModelChoiceField(queryset=Event.objects.none())
-    audit_reason = forms.CharField(max_length=500, label="Reason / source")
+    audit_reason = forms.CharField(max_length=500, label="Reason / source", required=False, widget=forms.HiddenInput)
     def __init__(self, *args, user, **kwargs):
         super().__init__(*args, **kwargs)
         from apps.operations.task_access import events_for
@@ -207,5 +207,5 @@ class DiscoveryForm(forms.Form):
 
 class RecordActionForm(forms.Form):
     revision = forms.CharField(widget=forms.HiddenInput)
-    audit_reason = forms.CharField(max_length=500, label="Reason")
+    audit_reason = forms.CharField(max_length=500, label="Reason", required=False, widget=forms.HiddenInput)
     confirm = forms.BooleanField(label="I confirm this change; the record and its history will be retained.")

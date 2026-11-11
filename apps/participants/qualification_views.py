@@ -16,7 +16,7 @@ from apps.participants.qualification_models import ParticipantQualification, Qua
 class ParticipantQualificationForm(forms.ModelForm):
     expected_revision = forms.CharField(required=False, widget=forms.HiddenInput)
     confirm_verified_change = forms.BooleanField(required=False, label="I understand that changing a verified qualification requires a new review")
-    audit_reason = forms.CharField(max_length=500, label="Reason for this change")
+    audit_reason = forms.CharField(max_length=500, label="Reason for this change", required=False, widget=forms.HiddenInput)
 
     class Meta:
         model = ParticipantQualification

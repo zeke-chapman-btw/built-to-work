@@ -159,20 +159,17 @@ def document_edit(request, document_uuid):
 @require_POST
 def document_archive(request, document_uuid):
     _require_staff(request.user, *MANAGE_PERMS)
-    reason = request.POST.get('audit_reason', '').strip()
-    if not reason:
-        messages.error(request, 'An audit reason is required.')
-    else:
-        with transaction.atomic():
-            document = get_object_or_404(
-                ParticipantDocument.objects.select_for_update(), uuid=document_uuid
-            )
-            if request.POST.get('expected_revision') and request.POST['expected_revision'] != document.updated_at.isoformat():
-                return render(request,'participants/manager_action_conflict.html',{'participant':document.participant,'page_title':'Document changed','save_conflict':True,'entered_reason':reason})
-            if document.state != ParticipantDocument.State.ARCHIVED:
-                document.state = ParticipantDocument.State.ARCHIVED
-                document.save(update_fields=['state', 'updated_at'])
-                _audit(document, request.user, 'archived', reason)
+    reason = request.POST.get('audit_reason', '').strip() or 'Archived by staff'
+    with transaction.atomic():
+        document = get_object_or_404(
+            ParticipantDocument.objects.select_for_update(), uuid=document_uuid
+        )
+        if request.POST.get('expected_revision') and request.POST['expected_revision'] != document.updated_at.isoformat():
+            return render(request,'participants/manager_action_conflict.html',{'participant':document.participant,'page_title':'Document changed','save_conflict':True,'entered_reason':reason})
+        if document.state != ParticipantDocument.State.ARCHIVED:
+            document.state = ParticipantDocument.State.ARCHIVED
+            document.save(update_fields=['state', 'updated_at'])
+            _audit(document, request.user, 'archived', reason)
     document = get_object_or_404(ParticipantDocument, uuid=document_uuid)
     return people_saved(request,'participants:staff-participant-documents', participant_id=document.participant_id)
 
@@ -257,18 +254,16 @@ def qualification_document_link(request, document_uuid, qualification_id):
         ParticipantQualification, pk=qualification_key, participant_id=document.participant_id
     )
     reason = request.POST.get('reason', '').strip()
-    if not reason:
-        messages.error(request, 'An audit reason is required to link a document.')
-    else:
-        with transaction.atomic():
-            link, created = QualificationDocumentLink.objects.get_or_create(
-                document=document, qualification=qualification,
-                defaults={'linked_by': request.user, 'reason': reason},
-            )
-            if created:
-                _audit(document, request.user, 'qualification_linked', reason, {
-                    'qualification_id': qualification.pk,
-                })
+    reason = reason or 'Linked by staff'
+    with transaction.atomic():
+        link, created = QualificationDocumentLink.objects.get_or_create(
+            document=document, qualification=qualification,
+            defaults={'linked_by': request.user, 'reason': reason},
+        )
+        if created:
+            _audit(document, request.user, 'qualification_linked', reason, {
+                'qualification_id': qualification.pk,
+            })
     return people_saved(request,'participants:staff-participant-documents', participant_id=document.participant_id)
 
 
@@ -281,14 +276,12 @@ def qualification_document_unlink(request, document_uuid, qualification_id):
         QualificationDocumentLink, document=document, qualification_id=qualification_id
     )
     reason = request.POST.get('reason', '').strip()
-    if not reason:
-        messages.error(request, 'An audit reason is required to unlink a document.')
-    else:
-        with transaction.atomic():
-            _audit(document, request.user, 'qualification_unlinked', reason, {
-                'qualification_id': qualification_id,
-            })
-            link.delete()
+    reason = reason or 'Unlinked by staff'
+    with transaction.atomic():
+        _audit(document, request.user, 'qualification_unlinked', reason, {
+            'qualification_id': qualification_id,
+        })
+        link.delete()
     return people_saved(request,'participants:staff-participant-documents', participant_id=document.participant_id)
 
 
