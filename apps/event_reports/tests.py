@@ -215,7 +215,7 @@ class Reporting9FTests(TestCase):
     def test_report_pages_render_no_private_notes(self):
         from apps.operations.models import EventNote
         EventNote.objects.create(event=self.event,content='SYNTHETIC SECRET MANAGER NOTE',author=self.admin,visibility='managers')
-        response=self.client.get(reverse('event_reports:detail',args=[self.event.pk]));self.assertEqual(response.status_code,200);self.assertNotContains(response,'SYNTHETIC SECRET MANAGER NOTE');self.assertContains(response,'Gift Cards &amp; Incentives')
+        response=self.client.get(reverse('event_reports:detail',args=[self.event.pk]));self.assertEqual(response.status_code,200);self.assertNotContains(response,'SYNTHETIC SECRET MANAGER NOTE');self.assertContains(response,'Gift cards &amp; incentives')
     def test_note_managers_see_authorized_existing_notes(self):
         from apps.operations.models import EventNote
         EventNote.objects.create(event=self.event,content='SYNTHETIC authorized note',author=self.admin,visibility='managers');self.client.force_login(self.admin,backend="django.contrib.auth.backends.ModelBackend");self.assertContains(self.client.get(reverse('event_reports:detail',args=[self.event.pk])),'SYNTHETIC authorized note')

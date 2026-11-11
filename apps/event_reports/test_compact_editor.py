@@ -82,15 +82,12 @@ class CompactExpenseEditorTests(TestCase):
     def test_list_has_clear_columns_total_and_secondary_history(self):
         obj = self.expense()
         response = self.client.get(reverse('event_reports:detail', args=[self.event.pk]), {'section':'expenses','category':str(self.category.pk)})
-        for label in ['Description','Category','Date','Amount (USD)','Actions','Included expense total','Expense history','Void expense']:
+        for label in ['Description','Category','Date','Amount','Total counted in cost','History','Void']:
             self.assertContains(response, label)
         self.assertContains(response, 'data-record-editor-dialog')
         self.assertContains(response, 'data-record-editor href=')
-        self.assertContains(response, 'all categories and dates')
+        self.assertContains(response, 'all dates')
         self.assertEqual(response.context['report']['cost']['manual'], Decimal('12.34'))
-        # Supporting financial meaning remains available; ordinary included rows omit repeated state text.
-        self.assertContains(response, 'Accounting treatment')
-        self.assertContains(response, 'Operating expense')
 
     def test_filters_do_not_redefine_authoritative_total(self):
         self.expense()
