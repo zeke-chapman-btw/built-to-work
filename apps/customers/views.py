@@ -202,7 +202,7 @@ def form_screen(request, *, org, tab, title, form_class, initial, save, instance
         except ObjectDoesNotExist:
             form.add_error(None, "This record is no longer available in this organization. Reload before continuing.")
         else:
-            messages.success(request, "Customer change saved.")
+            messages.success(request, "Saved")
             target = success(obj) if success else workspace_url(org, tab, initial.get("return_to", ""))
             if "return_to=" not in target:
                 target += ("&" if "?" in target else "?") + urlencode({"return_to": initial.get("return_to", "")})
@@ -236,14 +236,14 @@ def child_editor(request, org_id, kind, record_id=None):
 @require_http_methods(["GET", "POST"])
 def relationship_editor(request, org_id):
     org = org_for(request, org_id)
-    return form_screen(request, org=org, tab="company", title="Company relationship", description="Explicit relationship only; access, users and entitlements are not inherited. Choose an existing relationship and clear Active to disconnect without erasing history.", form_class=f.RelationshipForm, initial=initials(request, org), save=lambda d: s.save_relationship(actor=request.user, org_id=org.pk, target_id=d["target"].pk, kind=d["kind"], active=d["is_active"], expected_org_revision=d["org_revision"], why=d["reason"]))
+    return form_screen(request, org=org, tab="company", title="Connected company", form_class=f.RelationshipForm, initial=initials(request, org), save=lambda d: s.save_relationship(actor=request.user, org_id=org.pk, target_id=d["target"].pk, kind=d["kind"], active=d["is_active"], expected_org_revision=d["org_revision"], why=d["reason"]))
 
 
 @staff_view
 @require_http_methods(["GET", "POST"])
 def plan_editor(request, org_id):
     org = org_for(request, org_id)
-    return form_screen(request, org=org, tab="access", title="Configure Access & Plan", description="Organization settings do not grant participant access. Recruiting uses approved positions, staff permissions and explicit candidate releases.", form_class=f.AccessPlanForm, instance=org.access_plan, initial=initials(request, org, org.access_plan), save=lambda d: s.save_access_plan(actor=request.user, org_id=org.pk, expected_org_revision=d["org_revision"], expected_revision=d["record_revision"], data={k:d[k] for k in s.PLAN_FIELDS}, why=d["reason"]))
+    return form_screen(request, org=org, tab="access", title="Edit plan & access", form_class=f.AccessPlanForm, instance=org.access_plan, initial=initials(request, org, org.access_plan), save=lambda d: s.save_access_plan(actor=request.user, org_id=org.pk, expected_org_revision=d["org_revision"], expected_revision=d["record_revision"], data={k:d[k] for k in s.PLAN_FIELDS}, why=d["reason"]))
 
 
 @staff_view
@@ -253,7 +253,7 @@ def membership_editor(request, org_id, record_id=None):
     obj = get_object_or_404(Membership.objects.select_related("identity"), pk=record_id, organization=org) if record_id else None
     def save(d):
         return s.save_membership(actor=request.user, org_id=org.pk, expected_org_revision=d["org_revision"], membership_id=record_id, expected_revision=d["record_revision"], role=d["role"], state=d["state"], contact_id=d["contact"].pk if d.get("contact") else None, identity_id=d["identity"].pk if d.get("identity") else None, identity_data={k:d[k] for k in s.IDENTITY_FIELDS} if not obj and d["identity_mode"] == "new" else None, designate_primary=d.get("designate_primary", False), why=d["reason"])
-    return form_screen(request, org=org, tab="users", title="Edit membership" if obj else "Prepare customer user", description="Preparation reserves a seat for an enabled membership. Customer access requires an active account, invitation acceptance and an eligible company membership. Preparing or editing this record does not send an invitation.", form_class=f.MembershipEditForm if obj else f.MembershipForm, instance=obj, initial=initials(request, org, obj), save=save)
+    return form_screen(request, org=org, tab="users", title="Edit portal user" if obj else "New portal user", form_class=f.MembershipEditForm if obj else f.MembershipForm, instance=obj, initial=initials(request, org, obj), save=save)
 
 
 @staff_view
@@ -261,14 +261,14 @@ def membership_editor(request, org_id, record_id=None):
 def identity_editor(request, org_id, record_id):
     org = org_for(request, org_id)
     obj = get_object_or_404(CustomerIdentity.objects.filter(memberships__organization=org), pk=record_id)
-    return form_screen(request, org=org, tab="users", title="Edit prepared identity", form_class=f.IdentityForm, instance=obj, initial=initials(request, org, obj), save=lambda d: s.update_identity(actor=request.user, org_id=org.pk, expected_org_revision=d["org_revision"], identity_id=obj.pk, expected_revision=d["record_revision"], data={k:d[k] for k in s.IDENTITY_FIELDS}, why=d["reason"]))
+    return form_screen(request, org=org, tab="users", title="Edit name & email", form_class=f.IdentityForm, instance=obj, initial=initials(request, org, obj), save=lambda d: s.update_identity(actor=request.user, org_id=org.pk, expected_org_revision=d["org_revision"], identity_id=obj.pk, expected_revision=d["record_revision"], data={k:d[k] for k in s.IDENTITY_FIELDS}, why=d["reason"]))
 
 
 @staff_view
 @require_http_methods(["GET", "POST"])
 def primary_editor(request, org_id):
     org = org_for(request, org_id)
-    return form_screen(request, org=org, tab="users", title="Replace Primary Lead", description="Choose an enabled membership and explicitly choose the previous Primary Lead's role. Seat-neutral swaps are allowed.", form_class=f.PrimaryLeadForm, initial=initials(request, org), save=lambda d: s.transfer_primary(actor=request.user, org_id=org.pk, expected_org_revision=d["org_revision"], target_id=d["target"].pk, previous_role=d["previous_role"], why=d["reason"]))
+    return form_screen(request, org=org, tab="users", title="Change main lead", form_class=f.PrimaryLeadForm, initial=initials(request, org), save=lambda d: s.transfer_primary(actor=request.user, org_id=org.pk, expected_org_revision=d["org_revision"], target_id=d["target"].pk, previous_role=d["previous_role"], why=d["reason"]))
 
 
 @staff_view
@@ -277,7 +277,7 @@ def organization_action(request, org_id, action):
     org = org_for(request, org_id)
     if action not in {"archive", "restore"}:
         raise Http404
-    return form_screen(request, org=org, tab="company", title=action.title()+" customer", description="Only organization status changes. Memberships, Needs, Campaigns, history and connected organizations are preserved.", form_class=f.ActionForm, initial=initials(request, org), save=lambda d: s.organization_status(actor=request.user, org_id=org.pk, expected_revision=d["org_revision"], action=action, why=d["reason"]))
+    return form_screen(request, org=org, tab="company", title=action.capitalize()+" customer", form_class=f.ActionForm, initial=initials(request, org), save=lambda d: s.organization_status(actor=request.user, org_id=org.pk, expected_revision=d["org_revision"], action=action, why=d["reason"]))
 
 
 def revision_sections(revision):
@@ -330,7 +330,7 @@ def need_editor(request, org_id, record_id=None):
     obj = working if working and working.state == "draft" else Revision(organization=org, **{name: getattr(source, name) for name in TERM_FIELD_NAMES}) if source else Revision(organization=org)
     initial = initials(request, org, need)
     initial["working_id"] = working.pk if working else None
-    return form_screen(request, org=org, tab="needs", title="Edit hiring draft" if need else "New Workforce Need", description="Incomplete drafts are welcome. Every hiring term requires review before becoming effective. Saving does not submit or approve this draft.", form_class=f.HiringForm, instance=obj, initial=initial, save=lambda d: s.save_hiring_draft(actor=request.user, org_id=org.pk, expected_org_revision=d["org_revision"], need_id=record_id, expected_need_revision=d["record_revision"], expected_working_id=d["working_id"], data={k:d[k] for k in f.EDITABLE_TERM_FIELDS}, why=d["reason"]), success=lambda obj: reverse("customers:need", args=[org.pk, obj.pk]))
+    return form_screen(request, org=org, tab="needs", title="Edit position" if need else "New position", form_class=f.HiringForm, instance=obj, initial=initial, save=lambda d: s.save_hiring_draft(actor=request.user, org_id=org.pk, expected_org_revision=d["org_revision"], need_id=record_id, expected_need_revision=d["record_revision"], expected_working_id=d["working_id"], data={k:d[k] for k in f.EDITABLE_TERM_FIELDS}, why=d["reason"]), success=lambda obj: reverse("customers:need", args=[org.pk, obj.pk]))
 
 
 @staff_view
@@ -353,7 +353,7 @@ def need_action(request, org_id, record_id, action):
             return s.assign_campaign(**common, campaign_id=d["campaign"])
         return s.need_status(**common, action=action)
     review = {"label": "Current working revision " + str(obj.working_revision.number), "sections": revision_sections(obj.working_revision), "url": reverse("customers:need", args=[org.pk, obj.pk])} if action in revision_actions and obj.working_revision else None
-    return form_screen(request, org=org, tab="needs", title=action.replace("_", " ").title()+" Workforce Need", description="A reason is required. Review the current version before confirming. Prior approved details stay effective while changes are pending.", form_class=f.NeedAdministrationForm if action == "administration" else f.AssociationForm if action == "campaign" else f.ActionForm, initial=initial, save=save, review=review, success=lambda unused: reverse("customers:need", args=[org.pk, obj.pk]))
+    return form_screen(request, org=org, tab="needs", title=action.replace("_", " ").capitalize()+" position", form_class=f.NeedAdministrationForm if action == "administration" else f.AssociationForm if action == "campaign" else f.ActionForm, initial=initial, save=save, review=review, success=lambda unused: reverse("customers:need", args=[org.pk, obj.pk]))
 
 
 @staff_view
@@ -384,7 +384,7 @@ def campaign_detail(request, org_id, record_id):
 def campaign_editor(request, org_id, record_id=None):
     org = org_for(request, org_id)
     obj = get_object_or_404(Campaign, organization=org, pk=record_id) if record_id else Campaign(organization=org)
-    return form_screen(request, org=org, tab="campaigns", title="Edit Campaign" if record_id else "New Campaign", description="Planning approval is separate from approval of Workforce Needs. Planning edits invalidate approval and put an active Campaign on hold.", form_class=f.CampaignForm, instance=obj, initial=initials(request, org, obj), save=lambda d: s.save_campaign(actor=request.user, org_id=org.pk, expected_org_revision=d["org_revision"], campaign_id=record_id, expected_revision=d["record_revision"], data={k:d[k] for k in s.CAMPAIGN_FIELDS}, why=d["reason"]), success=lambda obj: reverse("customers:campaign", args=[org.pk, obj.pk]))
+    return form_screen(request, org=org, tab="campaigns", title="Edit campaign" if record_id else "New campaign", form_class=f.CampaignForm, instance=obj, initial=initials(request, org, obj), save=lambda d: s.save_campaign(actor=request.user, org_id=org.pk, expected_org_revision=d["org_revision"], campaign_id=record_id, expected_revision=d["record_revision"], data={k:d[k] for k in s.CAMPAIGN_FIELDS}, why=d["reason"]), success=lambda obj: reverse("customers:campaign", args=[org.pk, obj.pk]))
 
 
 @staff_view
@@ -395,4 +395,4 @@ def campaign_action(request, org_id, record_id, action):
     if action not in {"approve_activate", "hold", "planning", "complete", "cancel"}:
         raise Http404
     review = {"label": f"Current Campaign planning · Version {obj.planning_version}", "url": reverse("customers:campaign", args=[org.pk, obj.pk]), "sections": [{"title": "Planning details", "values": [{"label": label, "value": value or "Not provided"} for label, value in [("Campaign", obj.name), ("Description", obj.description), ("Objectives", obj.objectives), ("Start", obj.start_date), ("End", obj.end_date), ("Contact snapshot", obj.contact_name)]]}]}
-    return form_screen(request, org=org, tab="campaigns", title=action.replace("_", " ").title()+" Campaign", description=f"Review {obj.name}, planning version {obj.planning_version}. This does not approve any Workforce Need.", form_class=f.ActionForm, initial=initials(request, org, obj), review=review, save=lambda d: s.campaign_action(actor=request.user, org_id=org.pk, campaign_id=obj.pk, expected_org_revision=d["org_revision"], expected_revision=d["record_revision"], action=action, why=d["reason"]), success=lambda unused: reverse("customers:campaign", args=[org.pk, obj.pk]))
+    return form_screen(request, org=org, tab="campaigns", title=action.replace("_", " ").capitalize()+" campaign", form_class=f.ActionForm, initial=initials(request, org, obj), review=review, save=lambda d: s.campaign_action(actor=request.user, org_id=org.pk, campaign_id=obj.pk, expected_org_revision=d["org_revision"], expected_revision=d["record_revision"], action=action, why=d["reason"]), success=lambda unused: reverse("customers:campaign", args=[org.pk, obj.pk]))

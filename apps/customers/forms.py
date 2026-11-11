@@ -26,7 +26,9 @@ class AuthorizedForm:
             if isinstance(field, forms.DateField):
                 field.widget = forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")
             field.widget.attrs.setdefault("class", "customer-control")
-        self.fields.get("reason", forms.CharField()).help_text = "A brief explanation for the customer activity history."
+        self.label_suffix = ""
+        if "reason" in self.fields:
+            self.fields["reason"].label = "Reason for change"
 
     def clean(self):
         values = super().clean()
@@ -40,7 +42,7 @@ class AuthorizedForm:
         groups = self.sections or (("Details", tuple(name for name in self.fields if name not in {"reason", "org_revision", "record_revision", "return_to"})),)
         result = [{"title": title, "fields": [self[name] for name in names if name in self.fields and not self[name].is_hidden], "errors": any(self[name].errors for name in names if name in self.fields)} for title, names in groups]
         if "reason" in self.fields:
-            result.append({"title": "Reason for this change", "fields": [self["reason"]]})
+            result.append({"title": "Reason", "fields": [self["reason"]]})
         return [group for group in result if group["fields"]]
 
 
