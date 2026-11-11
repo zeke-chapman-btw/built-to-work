@@ -235,3 +235,9 @@
  .portal-page .pp-rows>li{flex-wrap:wrap}
  .portal-page .pp-next .button{width:100%;text-align:center}
 }
+/* Profile sections – match pp cards */
+.portal-page .profile-section{border-radius:14px;border:1px solid #e5e7eb}
+.portal-page .profile-section .section-heading h2{font-family:inherit;font-size:1.05rem;font-weight:600;text-transform:none;letter-spacing:0}
+.portal-page .profile-section .section-heading a{font-size:.9rem}
+.portal-page .profile-facts dt{text-transform:none;letter-spacing:0;font-size:.85rem;color:#6b7280}
+.portal-page .profile-section-links a{font-weight:500}

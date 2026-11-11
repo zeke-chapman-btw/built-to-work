@@ -1,6 +1,6 @@
 {% extends 'participants/portal/base.html' %}
 {% load tz current_preferences %}{% current_preferences_for account.participant as preferences %}
-{% block title %}My Profile · Built to Work{% endblock %}
+{% block title %}My profile · Built to Work{% endblock %}
 {% block content %}
 <div class="profile-workspace">
   <header class="profile-identity">
@@ -9,17 +9,15 @@
       <h2 class="profile-name">{{ profile_name }}</h2>
       {% if profile_current_role %}<p class="profile-headline">{{ profile_current_role }}</p>{% elif profile_interests %}<p class="profile-headline"><span>Interested in</span> {{ profile_interests }}</p>{% endif %}
       {% if profile_location %}<p class="profile-location">{{ profile_location }}</p>{% endif %}
-      <p class="profile-guidance">Your experience, skills and next steps. Keep your story up to date.</p>
     </div>
   </header>
-  <section class="portal-card profile-section"><div class="section-heading"><h2>Keep your profile current</h2><a class="profile-edit-link" href="{% url 'recruiting:portal-preferences' %}">Review &amp; confirm</a></div><p class="profile-guidance">Confirm the information you reviewed and update availability or relocation preferences.</p></section>
-  {% if request.portal_preview %}<p class="profile-preview-note">Synthetic preview profile · Identity and contact details stay protected.</p>{% endif %}
+  {% if request.portal_preview %}<p class="profile-preview-note">Preview profile</p>{% endif %}
   <nav class="profile-section-links btw-inpage-nav" aria-label="My Profile sections">
-    <a href="#personal">Contact</a><a href="#skills">Skills</a><a href="#assessments">Assessment Results</a><a href="#work">Experience</a><a href="#training">Training</a><a href="#credentials">Credentials</a><a href="#preferences">Preferences</a><a href="#availability">Availability</a><a href="#documents">Documents</a>
+    <a href="#personal">Contact</a><a href="#skills">Skills</a><a href="#assessments">Assessment results</a><a href="#work">Experience</a><a href="#training">Training</a><a href="#credentials">Credentials</a><a href="#preferences">Preferences</a><a href="#availability">Availability</a><a href="#documents">Documents</a>
   </nav>
 
   <section id="personal" class="portal-card profile-section">
-    <div class="section-heading"><h2>Personal &amp; Contact Information</h2><a class="profile-edit-link" href="{% url 'participants:portal-profile-edit' 'personal' %}">Edit Information</a></div>
+    <div class="section-heading"><h2>Contact information</h2><a class="profile-edit-link" href="{% url 'participants:portal-profile-edit' 'personal' %}">Edit</a></div>
     <dl class="profile-facts profile-contact-facts">
       <div><dt>Full name</dt><dd>{{ account.participant.first_name }} {{ account.participant.last_name }}</dd></div>
       {% if account.participant.preferred_name %}<div><dt>Preferred name</dt><dd>{{ account.participant.preferred_name }}</dd></div>{% endif %}
@@ -28,17 +26,17 @@
       <div><dt>City / state</dt><dd>{{ profile_location|default:'Not added yet' }}</dd></div>
       <div><dt>ZIP / postal code</dt><dd>{{ account.participant.postal_code|default:'Not added yet' }}</dd></div>
     </dl>
-    <p class="profile-section-note">Manage your sign-in email in Account. Contact BTW for help with protected identity details.</p>
+    
   </section>
 
   <section id="skills" class="portal-card profile-section">
-    <div class="section-heading"><h2>Skills &amp; Trades</h2><a class="profile-add-link" href="{% url 'participants:portal-entry-add' 'skills' %}">+ Add Skill</a></div>
-    {% if career.skills_interests %}<div class="profile-summary"><p>{{ career.skills_interests|linebreaksbr }}</p><a href="{% url 'participants:portal-profile-edit' 'skills-summary' %}">Edit Skills Summary</a></div>{% endif %}
-    {% include 'participants/portal/profile_qualification_entries.html' with entries=skill_entries entry_section='skills' edit_label='Skill' empty_message='What have you learned or practiced? Add a skill or trade to start.' empty_action='Add Your Skills' %}
+    <div class="section-heading"><h2>Skills &amp; trades</h2><a class="profile-add-link" href="{% url 'participants:portal-entry-add' 'skills' %}">+ Add skill</a></div>
+    {% if career.skills_interests %}<div class="profile-summary"><p>{{ career.skills_interests|linebreaksbr }}</p><a href="{% url 'participants:portal-profile-edit' 'skills-summary' %}">Edit summary</a></div>{% endif %}
+    {% include 'participants/portal/profile_qualification_entries.html' with entries=skill_entries entry_section='skills' edit_label='Skill' empty_message='What have you learned or practiced? Add a skill or trade to start.' empty_action='Add your skills' %}
   </section>
 
   <section id="assessments" class="portal-card profile-section profile-assessments" aria-labelledby="profile-assessment-heading">
-    <div class="section-heading"><div><h2 id="profile-assessment-heading">Assessment Results</h2><p class="profile-section-note">Finalized BTW quiz and accepted simulator results · Read only</p></div>{% if assessment_count %}<span class="profile-result-count">{{ assessment_count }} recorded</span>{% endif %}</div>
+    <div class="section-heading"><div><h2 id="profile-assessment-heading">Assessment results</h2></div>{% if assessment_count %}<span class="profile-result-count">{{ assessment_count }} recorded</span>{% endif %}</div>
     <ul class="record-list profile-assessment-list">
       {% for result in assessment_page %}
         <li><span class="profile-result-icon" aria-hidden="true">{% if result.type == 'Quiz' %}Q{% else %}S{% endif %}</span><div class="profile-result-copy"><div class="profile-result-title"><strong>{{ result.score }}</strong><span class="badge">{{ result.type }}</span></div><p>{{ result.event }} <span aria-hidden="true">·</span> <time datetime="{{ result.date|date:'c' }}">{{ result.date|timezone:result.timezone|date:'M j, Y' }}</time></p>{% if result.categories %}<ul class="profile-category-results">{% for category in result.categories %}<li><span>{{ category.name }}</span><strong>{{ category.correct }} correct</strong></li>{% endfor %}</ul>{% endif %}</div></li>
@@ -48,45 +46,45 @@
   </section>
 
   <section id="work" class="portal-card profile-section">
-    <div class="section-heading"><h2>Work Experience</h2><a class="profile-add-link" href="{% url 'participants:portal-entry-add' 'work' %}">+ Add Experience</a></div>
+    <div class="section-heading"><h2>Work experience</h2><a class="profile-add-link" href="{% url 'participants:portal-entry-add' 'work' %}">+ Add experience</a></div>
     <ul class="record-list profile-entries profile-work-timeline">
       {% for entry in work_entries %}<li><div class="profile-entry-copy"><strong>{{ entry.role|default:'Work experience' }}</strong>{% if entry.employer %}<span class="profile-employer">{{ entry.employer }}</span>{% endif %}<small>{% if entry.started_on %}{{ entry.started_on|date:'M Y' }}{% else %}Start date not reported{% endif %}{% if entry.is_current %} – Present{% elif entry.ended_on %} – {{ entry.ended_on|date:'M Y' }}{% endif %}{% if entry.location %} · {{ entry.location }}{% endif %}{% if entry.reported_duration %} · {{ entry.reported_duration }} reported at intake{% endif %}</small>{% if entry.description %}<p>{{ entry.description|linebreaksbr }}</p>{% endif %}<small class="profile-provenance">{% if entry.source == 'participant' %}Self-reported{% elif entry.source == 'intake' %}From your intake · Self-reported{% else %}BTW recorded{% endif %}</small></div><div class="profile-entry-actions">{% if entry.portal_editable %}<a href="{% url 'participants:portal-entry-edit' 'work' entry.pk %}">Edit Experience</a>{% endif %}{% if entry.portal_archivable %}<a href="{% url 'participants:portal-entry-archive' 'work' entry.pk %}">Archive Experience</a>{% endif %}</div></li>
-      {% empty %}<li class="profile-empty"><p>Paid work, volunteer work and equipment experience all count.</p><a href="{% url 'participants:portal-entry-add' 'work' %}">Add Your Work Experience</a></li>{% endfor %}
+      {% empty %}<li class="profile-empty"><p>Paid work, volunteer work and equipment experience all count.</p><a href="{% url 'participants:portal-entry-add' 'work' %}">Add your work experience</a></li>{% endfor %}
     </ul>
-    {% if hands_on_entries %}<details class="profile-history"><summary>Hands-on experience reported at intake</summary>{% for entry in hands_on_entries %}<article><strong>{{ entry.area }}</strong><small>{{ entry.source }} · {{ entry.duration }} · {{ entry.paid }}</small>{% if entry.skills %}<p>{{ entry.skills }}</p>{% endif %}{% if entry.description %}<p>{{ entry.description }}</p>{% endif %}</article>{% endfor %}<p class="profile-section-note">Your original responses are retained. Add new experience as you develop your skills.</p></details>{% endif %}
+    {% if hands_on_entries %}<details class="profile-history"><summary>Hands-on experience reported at intake</summary>{% for entry in hands_on_entries %}<article><strong>{{ entry.area }}</strong><small>{{ entry.source }} · {{ entry.duration }} · {{ entry.paid }}</small>{% if entry.skills %}<p>{{ entry.skills }}</p>{% endif %}{% if entry.description %}<p>{{ entry.description }}</p>{% endif %}</article>{% endfor %}</details>{% endif %}
   </section>
 
   <section id="training" class="portal-card profile-section">
-    <div class="section-heading"><h2>Education &amp; Training</h2><a class="profile-add-link" href="{% url 'participants:portal-entry-add' 'training' %}">+ Add Education or Training</a></div>
+    <div class="section-heading"><h2>Education &amp; training</h2><a class="profile-add-link" href="{% url 'participants:portal-entry-add' 'training' %}">+ Add education</a></div>
     {% if career.education_training %}<div class="profile-summary"><p>{{ career.education_training|linebreaksbr }}</p><a href="{% url 'participants:portal-profile-edit' 'education-summary' %}">Edit Education &amp; Training Summary</a></div>{% endif %}
     {% include 'participants/portal/profile_qualification_entries.html' with entries=training_entries entry_section='training' edit_label='Training' empty_message='A school, course, apprenticeship or training program can be part of your story.' empty_action='Add Education or Training' %}
   </section>
 
   <section id="credentials" class="portal-card profile-section">
-    <div class="section-heading"><h2>Licenses &amp; Certifications</h2><a class="profile-add-link" href="{% url 'participants:portal-entry-add' 'credentials' %}">+ Add Credential</a></div>
+    <div class="section-heading"><h2>Licenses &amp; certifications</h2><a class="profile-add-link" href="{% url 'participants:portal-entry-add' 'credentials' %}">+ Add credential</a></div>
     {% include 'participants/portal/profile_qualification_entries.html' with entries=credential_entries entry_section='credentials' edit_label='Credential' empty_message='Add a certification or license you have earned.' empty_action='Add a Certification or License' %}
-    <p class="profile-section-note">BTW verification is based on reviewed evidence. Self-reported credentials are not automatically verified.</p>
+    <p class="profile-section-note">Credentials you add show as self-reported until BTW checks them.</p>
   </section>
 
   <section id="preferences" class="portal-card profile-section">
-    <div class="section-heading"><h2>Career Interests &amp; Employment Preferences</h2><a class="profile-edit-link" href="{% url 'participants:portal-profile-edit' 'preferences' %}">Edit Career Interests</a></div>
+    <div class="section-heading"><h2>Career interests</h2><a class="profile-edit-link" href="{% url 'participants:portal-profile-edit' 'preferences' %}">Edit</a></div>
     <dl class="profile-facts"><div class="profile-wide"><dt>Industries and career interests</dt><dd>{{ current_interests|default:'Not added yet'|linebreaksbr }}</dd></div><div><dt>Work arrangement</dt><dd>{{ career.get_preferred_work_type_display|default:'Not added yet' }}</dd></div><div><dt>Preferred locations</dt><dd>{{ career.preferred_locations|default:'Not added yet' }}</dd></div><div><dt>Overall experience</dt><dd>{% if career.years_of_experience != None %}{{ career.years_of_experience }} years{% else %}Not added yet{% endif %}</dd></div></dl>
     {% if not current_interests %}<p class="profile-section-note"><a href="{% url 'participants:portal-profile-edit' 'preferences' %}">Update Your Career Interests</a></p>{% endif %}
   </section>
 
   <section id="availability" class="portal-card profile-section">
-    <div class="section-heading"><h2>Availability &amp; Travel</h2><a class="profile-edit-link" href="{% url 'recruiting:portal-preferences' %}">Edit Availability &amp; Travel</a></div>
+    <div class="section-heading"><h2>Availability &amp; travel</h2><a class="profile-edit-link" href="{% url 'recruiting:portal-preferences' %}">Edit</a></div>
     {% include 'recruiting/current_preferences.html' with participant=account.participant %}
   </section>
 
   <section id="documents" class="portal-card profile-section">
-    <div class="section-heading"><h2>Documents</h2><a class="profile-add-link" href="{% url 'participants:portal-document-add' %}">+ Add Document</a></div>
+    <div class="section-heading"><h2>Documents</h2><a class="profile-add-link" href="{% url 'participants:portal-document-add' %}">+ Add document</a></div>
     <ul class="profile-file-grid">
       {% for document in documents %}<li><div class="profile-file-identity"><span class="profile-file-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M8 12h8M8 16h6"/></svg></span><div><strong>{{ document.original_filename }}</strong><small>{{ document.category }} · {{ document.file_size|filesizeformat }} · {{ document.get_state_display }}</small>{% if document.issue_date %}<small>Issued {{ document.issue_date|date:'M j, Y' }}</small>{% endif %}{% if document.expiration_date %}<small>Expires {{ document.expiration_date|date:'M j, Y' }}</small>{% endif %}</div></div><div class="profile-file-actions"><a href="{% url 'participants:portal-document-download' document.uuid %}">View Document</a>{% if document.can_manage %}<form method="post" action="{% url 'participants:portal-document-archive' document.uuid %}">{% csrf_token %}<button class="text-button" type="submit" aria-label="Archive {{ document.original_filename }}">Archive</button></form>{% endif %}</div></li>
-      {% empty %}<li class="profile-empty"><p>Supporting documents help show your experience.</p><a href="{% url 'participants:portal-document-add' %}">Upload Your Resume</a></li>{% endfor %}
-    </ul><p class="profile-section-note">Supporting documents stay private to you and authorized BTW staff. Reviewed evidence is protected; archiving retains file history.</p>
+      {% empty %}<li class="profile-empty"><p>Supporting documents help show your experience.</p><a href="{% url 'participants:portal-document-add' %}">Upload your resume</a></li>{% endfor %}
+    </ul><p class="profile-section-note">Only you and BTW staff can see your documents.</p>
   </section>
 
-  {% if intake_rows %}<details class="portal-card profile-history"><summary>Information retained from your intake</summary><dl class="profile-facts">{% for row in intake_rows %}<div><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div>{% endfor %}</dl><p class="profile-section-note">Your original questionnaire responses remain alongside your current profile.</p></details>{% endif %}
+  {% if intake_rows %}<details class="portal-card profile-history"><summary>Information retained from your intake</summary><dl class="profile-facts">{% for row in intake_rows %}<div><dt>{{ row.label }}</dt><dd>{{ row.value }}</dd></div>{% endfor %}</dl></details>{% endif %}
 </div>
 {% endblock %}

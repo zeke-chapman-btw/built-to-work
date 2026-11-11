@@ -71,7 +71,7 @@ class ProfileRefinementTests(TestCase):
         self.assertContains(response, '<h1 class="page-title">My profile</h1>', html=True)
         self.assertContains(response, '<h2 class="profile-name">Alex Profile</h2>', html=True)
         self.assertContains(response, 'Example City, GA')
-        self.assertContains(response, 'Assessment Results')
+        self.assertContains(response, 'Assessment results')
         self.assertContains(response, 'eligible assessment results will appear here')
         self.assertNotContains(response, '100%')
         self.assertNotContains(response, 'visible to employers')

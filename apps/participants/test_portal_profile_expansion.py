@@ -47,8 +47,8 @@ class PortalProfileExpansionTests(TestCase):
     def test_default_profile_is_read_first_with_section_actions_and_jobs_navigation(self):
         response = self.client.get(self.path('profile'))
         self.assertEqual(response.status_code, 200)
-        for text in ('Work Experience', 'Skills &amp; Trades', 'Education &amp; Training', 'Licenses &amp; Certifications',
-                     'Edit Information', 'Add Your Work Experience', 'Add Your Skills', 'Upload Your Resume', 'Jobs'):
+        for text in ('Work experience', 'Skills &amp; trades', 'Education &amp; training', 'Licenses &amp; certifications',
+                     'Contact information', 'Add your work experience', 'Add your skills', 'Upload your resume', 'Jobs'):
             self.assertContains(response, text)
         self.assertNotContains(response, '<input type="text"')
         self.assertNotContains(response, '<textarea')
