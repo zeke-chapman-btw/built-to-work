@@ -47,3 +47,7 @@
 .mypay-stub-head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px}
 .mypay-stub-head h2{margin:0}
 .mypay-stub-head p{margin:4px 0 0;color:var(--muted,#56616d);font-size:14px}
+/* Shared layout: sentence-case labels like the rest of the app */
+.r17-label{text-transform:none;letter-spacing:0;font-size:13px;font-weight:500;color:#4b5563}
+.r17-workspace h2{font-size:15px}
+.r17-kpi,.r17-chart,.r17-report,.r17-filters{border-radius:12px}
