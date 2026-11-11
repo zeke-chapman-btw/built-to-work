@@ -29,7 +29,7 @@ def save_identifier(*, actor, participant_id, value, expected_revision, reason):
     from .workspace_services import lock_person, require_reason
     actor = fresh_staff(actor)
     require_people(actor, 'participants.change_participant')
-    reason = require_reason(reason)
+    reason = require_reason(reason, default="Updated by staff")
     if value not in {'', *PrimaryIdentifier.values}:
         raise ValidationError('Choose one of the five supported identifiers.')
     person = lock_person(participant_id)

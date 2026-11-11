@@ -24,8 +24,10 @@ def snapshot(instance, fields):
             for key in fields for value in [getattr(instance, key)]}
 
 
-def require_reason(reason):
+def require_reason(reason, default=None):
     if not (reason or "").strip():
+        if default:
+            return default
         raise ValidationError("An attributable reason is required.")
     return reason.strip()
 
@@ -69,7 +71,7 @@ def duplicate_fingerprint(matches):
 @transaction.atomic
 def create_person(*, actor, data):
     require_people(actor, "participants.add_participant")
-    reason = require_reason(data["audit_reason"])
+    reason = require_reason(data.get("audit_reason"), default="Added by staff")
     # Contact values remain hints; staff must explicitly review a separate-person
     # decision rather than silently linking somebody by email or phone.
     matches = participant_candidates(email=data.get("contact_email", ""), phone=data.get("contact_phone", ""))
@@ -202,5 +204,5 @@ def archive_record(*, actor, participant_id, kind, object_id, revision, reason, 
     row.archived_at = None if restore else timezone.now()
     row.save(update_fields=["archived_at", "updated_at"])
     audit(actor, kind + (".restored" if restore else ".archived"), row,
-          after={"archived": not restore}, reason=require_reason(reason))
+          after={"archived": not restore}, reason=require_reason(reason, default="Restored by staff" if restore else "Archived by staff"))
     return row

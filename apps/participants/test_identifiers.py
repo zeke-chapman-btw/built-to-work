@@ -56,7 +56,7 @@ class ParticipantIdentifierTests(TestCase):
         self.assertEqual(change.old_data['value'], 'student')
         self.assertEqual(change.new_data['value'], 'teacher_instructor')
         with self.assertRaises(ValidationError): self.manual(person, 'employee', expected_revision=stale)
-        with self.assertRaises(ValidationError): self.manual(person, 'employee', reason=' ')
+        self.manual(person, 'employee', reason=' ')  # reasons are optional
         self.manual(person, '')
         self.submit(current_situation='employed_other', current_industry='retail')
         person.refresh_from_db()

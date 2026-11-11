@@ -96,7 +96,7 @@ def form_groups(form,career_form=None):
         if career_form:
             add('Interests and experience',['career_interests','skills_interests','years_of_experience','education_training'],True,career_form)
             add('Work preferences',['employment_status','employment_interest','preferred_work_type','preferred_locations','work_availability','willing_to_travel'],True,career_form)
-        add('Change record',['audit_reason'])
+        used.add('audit_reason')
     else:
         add('',[f.name for f in form.visible_fields()])
     remaining=[f.name for f in form.visible_fields() if f.name not in used]
