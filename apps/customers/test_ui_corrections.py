@@ -70,7 +70,7 @@ class CustomerUICorrectionsTests(PortalFixtures, TestCase):
         represented={bound.name for group in form.groups for bound in group['fields']}
         self.assertEqual(represented,set(EDITABLE_TERM_FIELDS))
         self.assertEqual(len(form.groups),7)
-        self.assertContains(response,'Save Draft')
+        self.assertContains(response,'Save draft')
         self.assertContains(response,'Number of workers needed')
         self.assertNotContains(response,'Worker quantity:')
         org.refresh_from_db()
@@ -93,8 +93,8 @@ class CustomerUICorrectionsTests(PortalFixtures, TestCase):
 
     def test_task_specific_submit_labels_do_not_change_operations(self):
         org, lead, user=self.lead();member=self.membership(org,role='member');self.customer_login(user)
-        cases=[('customer_portal:need-create',[],'Save Draft'),('customer_portal:campaign-create',[],'Save Planning'),
-               ('customer_portal:invite',[],'Send Invitation'),('customer_portal:member-edit',[member.pk],'Save Member Changes')]
+        cases=[('customer_portal:need-create',[],'Save draft'),('customer_portal:campaign-create',[],'Save campaign'),
+               ('customer_portal:invite',[],'Send invitation'),('customer_portal:member-edit',[member.pk],'Save')]
         for name,args,label in cases:
             with self.subTest(name=name):self.assertContains(self.client.get(reverse(name,args=args)),label)
 

@@ -167,16 +167,16 @@ def form_page(request, title, form, *, tab, notice='', save=None, success=None, 
             messages.success(request, 'Your change was saved.' )
             return redirect(success(obj) if success else reverse('customer_portal:workspace', args=[tab]))
     if isinstance(form, f.NeedForm):
-        submit_label = 'Save Draft'
+        submit_label = 'Save draft'
     elif isinstance(form, f.CampaignForm):
-        submit_label = 'Save Planning'
+        submit_label = 'Save campaign'
     elif isinstance(form, f.MemberForm):
-        submit_label = 'Save Member Changes'
+        submit_label = 'Save'
     elif isinstance(form, f.InviteForm):
-        submit_label = 'Send Invitation'
+        submit_label = 'Send invitation'
     else:
-        submit_label = {'Submit': 'Submit to BTW', 'Withdraw': 'Withdraw Submission',
-                        'Resend': 'Resend Invitation', 'Revoke': 'Revoke Invitation'}.get(title.split()[0], title)
+        submit_label = {'Submit': 'Submit to BTW', 'Withdraw': 'Withdraw submission',
+                        'Resend': 'Resend invitation', 'Revoke': 'Revoke invitation'}.get(title.split()[0], title)
     return render(request, 'customers/portal/form.html', context(request, tab, title=title, form=form, notice=notice, submit_label=submit_label,
         cancel_url=cancel_url or reverse('customer_portal:workspace', args=[tab]),
         editor_mode=isinstance(form, (f.NeedForm, f.CampaignForm)),

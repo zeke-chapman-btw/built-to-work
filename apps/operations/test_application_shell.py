@@ -55,7 +55,7 @@ class CustomerSharedShellTests(PortalFixtures,TestCase):
                 self.assertNotContains(response,'data-task-create');self.assertNotContains(response,'notification-bell')
         response=self.client.get(reverse('customer_portal:need-create'));chrome(self,response)
         self.assertContains(response,'data-structured-form');self.assertEqual(len(response.context['form'].groups),7)
-        self.assertContains(response,'Number of workers needed');self.assertContains(response,'Save Draft')
+        self.assertContains(response,'Number of workers needed');self.assertContains(response,'Save draft')
         self.assertEqual([x['url'] for x in ShellLinks(response.content.decode()).links if x['active']],
                          [reverse('customer_portal:workspace',args=['recruiting'])])
 
