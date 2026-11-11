@@ -37,7 +37,7 @@ class QuickTaskForm(TaskForm):
             self.fields[name].widget=forms.SelectMultiple(attrs={'size':4,'data-record-select':name})
             self.fields[name].widget.choices=self.fields[name].choices
             self.fields[name].label=name.title()
-            self.fields[name].help_text='Select multiple records with Ctrl/Command. Search by name to find more.'
+            self.fields[name].help_text=''
         if not self.is_bound:self.initial['creation_token']=new_token(actor)
     def clean_creation_token(self):
         raw=self.cleaned_data['creation_token']
