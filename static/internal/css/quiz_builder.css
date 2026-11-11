@@ -113,3 +113,11 @@ body.internal-app #main-content .el-count{font-size:13px;color:#6b7280;font-weig
 body.internal-app #main-content .events-page.operations-page:has(> .nt-page) > *{max-width:none !important}
 body.internal-app #main-content .nt-page{padding:0 24px 24px}
 @media (max-width:640px){body.internal-app #main-content .nt-page{padding:0 12px 16px}}
+/* Recruiting overview (rc-) */
+body.internal-app #main-content .rc-page{display:grid;gap:16px}
+body.internal-app #main-content .rc-page .tk-tiles{margin:0}
+body.internal-app #main-content .rc-cols{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:start}
+body.internal-app #main-content .rc-stages{list-style:none;margin:0;padding:8px 16px;display:grid;gap:6px}
+body.internal-app #main-content .rc-stages li{display:flex;justify-content:space-between;border-bottom:1px solid var(--line,#eef0f3);padding:6px 0}
+body.internal-app #main-content .rc-tools{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px 16px}
+@media (max-width:900px){body.internal-app #main-content .rc-cols{grid-template-columns:1fr}}
