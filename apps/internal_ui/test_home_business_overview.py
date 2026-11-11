@@ -85,7 +85,7 @@ class HomeBusinessOverviewTests(TestCase):
         self.assertNotContains(response, hidden.title)
         markup = Markup(); markup.feed(response.content.decode())
         task_area = markup.with_class('dashboard-tasks')[0]
-        self.assertIn('Accessible overdue tasks', ''.join(task_area['text']))
+        self.assertIn('Overdue', ''.join(task_area['text']))
 
     def test_intake_count_matches_default_queue_including_held_but_not_deferred(self):
         for state, held in [('open',False),('resolved',True),('rejected',True),
@@ -132,7 +132,7 @@ class HomeBusinessOverviewTests(TestCase):
             response = self.page()
         self.assertEqual([a['id'] for a in response.context['home_attention']], ['intake'])
         self.assertIn('Overdue task check unavailable', response.context['home_attention_unavailable'])
-        self.assertContains(response, 'My Tasks')
+        self.assertContains(response, 'My tasks')
         self.assertIsNone(response.context['home_attention_count'])
 
     def test_zero_connected_sources_use_limited_truthful_empty_state(self):
@@ -262,12 +262,12 @@ class HomeBusinessOverviewTests(TestCase):
         action=quick_actions_for(self.staff)[0]
         self.assertEqual(action['id'],'add-participant')
         self.assertEqual(action['url'],reverse('admin:participants_participant_add'))
-        self.assertIn('administration',action['label'])
+        self.assertIn('(admin)',action['label'])
         self.assertFalse(self.staff.has_perm('participants.view_participant'))
         self.grant(self.staff,'participants.view_participant')
         action=quick_actions_for(self.staff)[0]
         self.assertEqual(action['url'],reverse('participants:staff-add'))
-        self.assertEqual(action['label'],'Add Participant')
+        self.assertEqual(action['label'],'+ New participant')
         self.assertEqual([a['id'] for a in quick_actions_for(self.staff)],['add-participant','settings'])
         self.assertEqual(next(a for a in available_quick_actions(self.admin) if a['id']=='add-participant')['url'],reverse('participants:staff-add'))
         self.grant(self.other,'participants.view_participant')

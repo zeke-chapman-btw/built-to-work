@@ -49,7 +49,7 @@ class QuickActionsTests(TestCase):
     def test_empty_selection_is_preserved_and_not_filled(self):
         self.assertRedirects(self.save([''] * 9), self.home)
         self.assertEqual(self.ids(), [])
-        self.assertContains(self.client.get(self.home), 'No Quick Actions selected.')
+        self.assertContains(self.client.get(self.home), 'No quick actions yet')
         self.user.refresh_from_db()
         self.assertEqual(self.user.quick_action_ids, [])
 

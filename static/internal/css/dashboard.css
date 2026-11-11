@@ -138,4 +138,4 @@ body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-hom
 }
 
 body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-personal>.dashboard-section {border:1px solid #d7a3ac;border-top:3px solid #b71935}
-@media(max-width:600px){body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-actions {grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){body.internal-app.home-dashboard-page.has-shared-workspace #main-content .p2-home .dashboard-actions {grid-template-columns:repeat(2,minmax(0,1fr))}}

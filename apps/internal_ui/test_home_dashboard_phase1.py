@@ -27,9 +27,9 @@ class HomeDashboardPhaseOneTests(TestCase):
     def test_dashboard_sections_use_live_data_and_existing_routes(self):
         response = self.client.get(reverse('internal:home'))
         self.assertEqual(response.status_code, 200)
-        for section in ('Current &amp; Upcoming Events', 'My Tasks', 'Updates', 'Quick Actions', 'Operational overview'):
+        for section in ('Upcoming events', 'My tasks', 'Updates', 'Quick actions', 'Overview'):
             self.assertContains(response, section)
-        self.assertContains(response, 'No task notifications yet.')
+        self.assertContains(response, 'No updates')
         self.assertContains(response, reverse('operations:updates'))
         self.assertNotContains(response, 'analytics data is not connected')
         self.assertEqual(len(response.context['quick_actions']), 9)
@@ -62,7 +62,7 @@ class HomeDashboardPhaseOneTests(TestCase):
         staff = get_user_model().objects.create_user('limited-layout', password='test-password', is_staff=True)
         self.client.force_login(staff, backend='django.contrib.auth.backends.ModelBackend')
         response = self.client.get(reverse('internal:home'))
-        self.assertEqual([a['label'] for a in response.context['quick_actions']], ['+ Task', 'Personal settings'])
+        self.assertEqual([a['label'] for a in response.context['quick_actions']], ['+ New task', 'Personal settings'])
         self.assertNotContains(response, 'href="'+reverse('events:event_create')+'"')
         self.assertNotContains(response, 'href="'+reverse('participants:staff-directory')+'"')
         staff.user_permissions.add(Permission.objects.get(content_type__app_label='events', codename='view_event'))

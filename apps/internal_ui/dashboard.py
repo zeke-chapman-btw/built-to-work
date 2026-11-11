@@ -4,10 +4,10 @@ from django.urls import reverse
 # Administrators grant/revoke these existing permissions on users or groups.
 # No user-supplied URL is stored or rendered. Settings is available to all staff.
 QUICK_ACTIONS = (
-    {"id": "create-task", "label": "+ Task", "route": "operations:quick-create", "permissions": (), "default": True},
-    {"id": "create-event", "label": "Create event", "route": "events:event_create", "permissions": ("events.add_event",), "default": True},
-    {"id": "add-participant", "label": "Add Participant", "route": "admin:participants_participant_add", "permissions": ("participants.add_participant",), "default": True},
-    {"id": "participant-directory", "label": "Participant directory", "route": "participants:staff-directory", "permissions": ("participants.view_participant",), "default": True},
+    {"id": "create-task", "label": "+ New task", "route": "operations:quick-create", "permissions": (), "default": True},
+    {"id": "create-event", "label": "+ New event", "route": "events:event_create", "permissions": ("events.add_event",), "default": True},
+    {"id": "add-participant", "label": "+ New participant", "route": "admin:participants_participant_add", "permissions": ("participants.add_participant",), "default": True},
+    {"id": "participant-directory", "label": "Participants", "route": "participants:staff-directory", "permissions": ("participants.view_participant",), "default": True},
     {"id": "events", "label": "Events", "route": "events:event_list", "permissions": ("events.view_event",), "default": True},
     {"id": "qualifications", "label": "Qualifications", "route": "participants:staff-qualifications", "permissions": ("participants.view_participantqualification",), "default": True},
     {"id": "documents", "label": "Documents", "route": "participants:staff-document-directory", "permissions": ("participants.view_participantdocument",), "default": True},
@@ -31,7 +31,7 @@ def available_quick_actions(user):
             if user.has_perm("participants.view_participant"):
                 action["route"] = "participants:staff-add"
             else:
-                action["label"] = "Add Participant (administration)"
+                action["label"] = "+ New participant (admin)"
         action["url"] = reverse(action["route"])
         actions.append(action)
     return actions

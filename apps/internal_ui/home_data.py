@@ -185,18 +185,18 @@ def operational_metrics(actor):
     now=timezone.now()
     month=timezone.localdate(now).replace(day=1)
     month_start=timezone.make_aware(datetime.combine(month,time.min))
-    metric('Total Participants','Canonical directory people · preview fixtures excluded',
+    metric('Participants','Canonical directory people · preview fixtures excluded',
         lambda:_participant_population(actor,{})[0].count(),reverse('participants:staff-directory'),['participants'],
         lambda:f"+{_participant_population(actor,{})[0].filter(created_at__gte=month_start,created_at__lte=now).count()} added this month")
-    metric('Active Workforce Needs','Approved active position records · not requests or worker quantity',
+    metric('Open positions','Approved active position records · not requests or worker quantity',
         lambda:_customer_projection(actor,{})[2]['active_positions'],reverse('internal:reports')+'?tab=customers',['customers'])
-    metric('Upcoming Events','Published, future start · preview fixtures excluded',
+    metric('Upcoming events','Published, future start · preview fixtures excluded',
         lambda:_event_cohort(actor,{}).filter(status='upcoming',start_at__gt=now).count(),
         reverse('events:event_list')+'?view=upcoming',['events'],
         lambda:f"{_event_cohort(actor,{}).filter(status='upcoming',start_at__gt=now,start_at__year=month.year,start_at__month=month.month).count()} scheduled this month")
     def placed():
         return canonical_records(_confirmed_hires(actor,{})).aggregate(n=Count('_canonical_person',distinct=True))['n']
-    metric('Participants Placed','Unique canonical people · current explicitly confirmed hires · all time',
+    metric('Hires','Unique canonical people · current explicitly confirmed hires · all time',
         placed,reverse('internal:reports')+'?tab=hires',['hires','opportunities'],
-        lambda:f"{canonical_records(_confirmed_hires(actor,{}).filter(confirmed_on__gte=month_start,confirmed_on__lte=now)).aggregate(n=Count('_canonical_person',distinct=True))['n']} confirmed this month")
+        lambda:f"{canonical_records(_confirmed_hires(actor,{}).filter(confirmed_on__gte=month_start,confirmed_on__lte=now)).aggregate(n=Count('_canonical_person',distinct=True))['n']} hired this month")
     return metrics

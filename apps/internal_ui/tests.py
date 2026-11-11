@@ -38,7 +38,7 @@ class InternalShellTests(TestCase):
         home = self.client.get(reverse('internal:home'))
         self.assertContains(home, 'Home')
         self.assertNotContains(home, 'href="'+reverse('participants:staff-directory')+'"')
-        metric=next(m for m in home.context['home_summary_metrics'] if m['label']=='Total Participants')
+        metric=next(m for m in home.context['home_summary_metrics'] if m['label']=='Participants')
         self.assertEqual(metric['state'],'restricted')
         self.assertIsNone(metric['value'])
         self.assertEqual(metric['url'],'')

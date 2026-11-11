@@ -48,6 +48,7 @@ class HomeDashboard9G2ETests(TestCase):
         return Event.objects.create(**values)
 
     def test_business_sections_have_required_reading_order_and_real_counts(self):
+        self.grant(self.staff, 'events', 'view_event')
         self.task()
         response = self.client.get(self.home)
         html = response.content.decode()
@@ -116,7 +117,7 @@ class HomeDashboard9G2ETests(TestCase):
         Participant.objects.create(first_name='SYNTHETIC', last_name='E metric')
         response = self.client.get(self.home)
         metrics = {m['label']: m for m in response.context['home_summary_metrics']}
-        for label in ('Upcoming Events','Total Participants'):
+        for label in ('Upcoming events','Participants'):
             self.assertEqual(metrics[label]['state'],'restricted')
             self.assertIsNone(metrics[label]['value'])
             self.assertEqual(metrics[label]['url'],'')
@@ -126,8 +127,8 @@ class HomeDashboard9G2ETests(TestCase):
         self.grant(self.staff,'participants','view_participant_analytics')
         response=self.client.get(self.home)
         metrics={m['label']:m for m in response.context['home_summary_metrics']}
-        self.assertEqual(metrics['Upcoming Events']['value'],1)
-        self.assertEqual(metrics['Total Participants']['value'],1)
+        self.assertEqual(metrics['Upcoming events']['value'],1)
+        self.assertEqual(metrics['Participants']['value'],1)
         self.assertTrue(all(m['scope'] for m in metrics.values()))
         self.staff.user_permissions.clear()
         self.assertEqual(len(self.client.get(self.home).context['home_metrics']), 2)
@@ -140,7 +141,7 @@ class HomeDashboard9G2ETests(TestCase):
         self.staff.save(update_fields=['quick_action_ids'])
         response = self.client.get(self.home)
         self.assertEqual(response.context['quick_actions'], [])
-        self.assertContains(response, 'No Quick Actions selected.')
+        self.assertContains(response, 'No quick actions yet')
 
     def test_participant_add_action_is_existing_admin_form_and_permission_scoped(self):
         self.grant(self.staff, 'participants', 'add_participant')
@@ -235,7 +236,7 @@ class HomeDashboard9G2ETests(TestCase):
         tasks = ' '.join(''.join(areas['dashboard-tasks-title']['text']).split())
         events = ' '.join(''.join(areas['dashboard-events-title']['text']).split())
         self.assertEqual(response.context['home_attention'][0]['count'], 2)
-        self.assertIn('Accessible overdue tasks', tasks)
+        self.assertIn('Overdue', tasks)
         self.assertContains(response,reverse('operations:tasks')+'?view=all&amp;due=overdue')
         self.assertEqual(response.context['home_unique_attention'],[])
         self.assertNotContains(response, 'SYNTHETIC B colleague overdue')
@@ -249,13 +250,14 @@ class HomeDashboard9G2ETests(TestCase):
         Participant.objects.create(first_name='SYNTHETIC',last_name='B current')
         Participant.objects.create(first_name='SYNTHETIC',last_name='B archived',archived_at=timezone.now())
         response=self.client.get(self.home)
-        metric=next(m for m in response.context['home_summary_metrics'] if m['label']=='Total Participants')
+        metric=next(m for m in response.context['home_summary_metrics'] if m['label']=='Participants')
         self.assertEqual(metric['state'],'available')
         self.assertEqual(metric['value'],participant_projection(self.staff,{})[0].count())
-        self.assertContains(response,'Canonical directory people')
+        self.assertIn('Canonical directory people', metric['scope'])
+        self.assertNotContains(response,'Canonical directory people')
         self.staff.user_permissions.clear()
         response=self.client.get(self.home)
-        metric=next(m for m in response.context['home_summary_metrics'] if m['label']=='Total Participants')
+        metric=next(m for m in response.context['home_summary_metrics'] if m['label']=='Participants')
         self.assertEqual(metric['state'],'restricted')
         self.assertIsNone(metric['value'])
         self.assertEqual(metric['url'],'')
@@ -265,7 +267,7 @@ class HomeDashboard9G2ETests(TestCase):
              patch('apps.internal_ui.home_data.task_access.events_for', side_effect=DatabaseError('synthetic event failure')):
             response = self.client.get(self.home)
         self.assertEqual(response.status_code, 200)
-        for text in ('Assigned work unavailable', 'Events unavailable'):
+        for text in ("Couldn't load your tasks", "Couldn't load events"):
             self.assertContains(response, text)
         for text in ('No open tasks assigned to you', 'No accessible overdue tasks',
                      'No current or upcoming events in your scope'):

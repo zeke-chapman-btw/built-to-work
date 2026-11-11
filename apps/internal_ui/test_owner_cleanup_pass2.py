@@ -271,13 +271,13 @@ class HomeAndNotificationsTests(FixtureMixin,TestCase):
         for old in ['More shortcuts','About checks','About these counts','>Needs Attention<']:self.assertNotIn(old,html)
         for action in response.context['quick_actions']:self.assertContains(response,action['url'])
         metrics=response.context['home_summary_metrics'];self.assertEqual(len(metrics),4)
-        self.assertEqual(next(m for m in metrics if m['label']=='Participants Placed')['value'],0)
-        self.assertIn('explicitly confirmed',next(m for m in metrics if m['label']=='Participants Placed')['scope'])
+        self.assertEqual(next(m for m in metrics if m['label']=='Hires')['value'],0)
+        self.assertIn('explicitly confirmed',next(m for m in metrics if m['label']=='Hires')['scope'])
 
     def test_source_failure_is_unavailable_not_zero(self):
         from apps.internal_ui.home_data import operational_metrics
         with patch('apps.customers.access.organizations',side_effect=DatabaseError('synthetic unavailable')):
-            metric=next(m for m in operational_metrics(self.admin) if m['label']=='Active Workforce Needs')
+            metric=next(m for m in operational_metrics(self.admin) if m['label']=='Open positions')
         self.assertIsNone(metric['value']);self.assertEqual(metric['state'],'unavailable')
 
     def test_bell_unread_read_and_current_visibility(self):

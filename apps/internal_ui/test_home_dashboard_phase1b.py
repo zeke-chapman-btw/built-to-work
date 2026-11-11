@@ -57,7 +57,7 @@ class HomeDashboardPolishTests(TestCase):
         headers = self.markup.with_class('dashboard-section-header')
         self.assertEqual(len(headers), 5)
         headings = [''.join(h['children'][0]['text']).strip() for h in headers]
-        for actual, expected in zip(headings, ('My Tasks', 'Updates', 'Quick Actions', 'Operational overview', 'Current & Upcoming Events')):
+        for actual, expected in zip(headings, ('My tasks', 'Updates', 'Quick actions', 'Overview', 'Upcoming events')):
             self.assertIn(expected, actual)
         self.assertContains(self.response, reverse('operations:tasks') + '?view=mine')
         self.assertContains(self.response, reverse('operations:updates'))
@@ -72,7 +72,7 @@ class HomeDashboardPolishTests(TestCase):
         notices = self.markup.with_class('dashboard-notification')
         self.assertEqual(len(notices), 1)
         self.assertEqual(notices[0]['tag'], 'li')
-        self.assertIn('No task notifications yet.', ''.join(notices[0]['text']))
+        self.assertIn('No updates', ''.join(notices[0]['text']))
         self.assertNotIn('Open Notifications', ''.join(notices[0]['text']))
         self.assertContains(self.response, reverse('operations:updates'))
         self.assertNotContains(self.response, 'No updates connected in this visual preview.')
