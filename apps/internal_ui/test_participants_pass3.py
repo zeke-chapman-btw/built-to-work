@@ -77,7 +77,7 @@ class ParticipantsPass3Tests(TestCase):
         expected = [field.html_name for form in (response.context['form'], response.context['career_form']) for field in form]
         for name in expected:
             with self.subTest(name=name): self.assertEqual(controls.names[name], 1)
-        self.assertContains(response, 'One Save profile updates all profile sections.')
+        self.assertNotContains(response, 'One Save profile updates all profile sections.')
         self.assertContains(response, 'data-section-form')
         self.assertContains(response, 'name="csrfmiddlewaretoken"')
         self.assertContains(response, '>Save profile</button>', count=1)
