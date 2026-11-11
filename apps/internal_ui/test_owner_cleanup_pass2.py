@@ -322,7 +322,7 @@ class StaffClockIntegrationTests(TestCase):
         before=AuditLog.objects.count()
         response=self.client.get(reverse('workdays:event',args=[self.event.pk]))
         self.assertEqual(response.status_code,200)
-        self.assertContains(response,'Event-day roster');self.assertContains(response,'Individual Round Trip')
+        self.assertContains(response,'Checked in');self.assertContains(response,'Mileage trips')
         self.assertContains(response,reverse('workdays:trip-add',args=[self.event.pk]))
         self.assertNotContains(response,'aria-label="Staff sections"')
         self.assertEqual(AuditLog.objects.count(),before)

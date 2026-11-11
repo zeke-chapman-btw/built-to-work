@@ -88,7 +88,16 @@ def event_roster(request,event_id):
     roster=[{'staff':a.assignment.staff,'recorded':a.assignment.staff_id in recorded} for a in assignments]
     days=Workday.objects.filter(event=event,work_date=selected).select_related('staff','role')
     trips=MileageTrip.objects.filter(event=event).select_related('staff','rate','approved_by')
-    return page(request,'event',page_title='Workdays & mileage',event=event,calendar=calendar,selected=selected,roster=roster,days=days,trips=trips,distance=EventMileage.objects.filter(event=event).first(),origin=ORIGIN,totals=reports.totals(Workday.objects.filter(event=event),trips))
+    from collections import Counter
+    scheduled=Counter(AssignmentDay.objects.filter(assignment__event=event,assignment__status='confirmed').values_list('date',flat=True))
+    checked=Counter(Workday.objects.filter(event=event,is_active=True).values_list('work_date',flat=True))
+    day_tabs=[{'date':d,'scheduled':scheduled.get(d,0),'checked':checked.get(d,0)} for d in calendar]
+    checked_in=[d for d in days if d.is_active]
+    missing=[row for row in roster if not row['recorded']]
+    approved=[d for d in checked_in if d.approval=='approved']
+    from decimal import Decimal
+    day_totals={'pay':sum((d.pay_amount or Decimal('0')) for d in approved),'per_diem':sum((d.per_diem_amount or Decimal('0')) for d in approved),'count':len(checked_in)}
+    return page(request,'event',page_title='Staff check-ins',event=event,calendar=calendar,selected=selected,roster=roster,days=days,trips=trips,day_tabs=day_tabs,checked_in=checked_in,missing=missing,day_totals=day_totals,distance=EventMileage.objects.filter(event=event).first(),origin=ORIGIN,totals=reports.totals(Workday.objects.filter(event=event),trips))
 
 @staff_view
 def workday_edit(request,event_id=None,record_id=None):

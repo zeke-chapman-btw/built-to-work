@@ -1,1 +1,48 @@
 .workdays-page .card{margin-top:20px}.workday-actions{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}.workdays-page article{border-top:1px solid #ddd;padding:16px 0}.workdays-page dl{display:grid;grid-template-columns:minmax(140px,1fr) 3fr;gap:8px}.workdays-page dt{font-weight:600}.workdays-page dd{margin:0;overflow-wrap:anywhere}.workdays-page pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.85rem}.workdays-page form p{max-width:720px}.workdays-page input:not([type=checkbox]):not([type=hidden]),.workdays-page select,.workdays-page textarea{box-sizing:border-box;width:100%;max-width:720px;padding:10px;border:1px solid #ccc;border-radius:8px}.workdays-page label{display:block;margin-bottom:6px}.workdays-page h1,.workdays-page h2,.workdays-page h3{overflow-wrap:anywhere}.workdays-page .errorlist{color:#a00018}.workdays-page .report-scroll{overflow-x:auto}.workdays-page table{width:100%;border-collapse:collapse}.workdays-page th,.workdays-page td{padding:10px;text-align:left;border-bottom:1px solid #ddd}.workdays-page .totals{display:flex;flex-wrap:wrap;gap:20px}@media(max-width:600px){.workdays-page dl{grid-template-columns:1fr}.workdays-page dd{margin-bottom:10px}.workdays-page .workday-actions .button{width:auto}.workdays-page h1{font-size:1.8rem}}
+
+/* Staff check-ins per mock-up */
+body.internal-app #main-content .wd-page { display:flex; flex-direction:column; gap:16px; }
+body.internal-app #main-content .wd-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+body.internal-app #main-content .wd-days { display:flex; gap:8px; flex-wrap:wrap; }
+body.internal-app #main-content .wd-days a { display:flex; flex-direction:column; min-width:120px; padding:8px 14px; border:1px solid var(--line,#e5e7eb); border-radius:8px; background:var(--surface,#fff); color:var(--ink,#252830); text-decoration:none; }
+body.internal-app #main-content .wd-days a small { color:var(--muted); font-size:12px; }
+body.internal-app #main-content .wd-days a[aria-current] { background:var(--brand-red,#D91F2A); border-color:var(--brand-red,#D91F2A); color:#fff; }
+body.internal-app #main-content .wd-days a[aria-current] small { color:#fff; }
+body.internal-app #main-content .wd-actions { display:flex; gap:8px; align-items:flex-start; }
+body.internal-app #main-content .wd-more { position:relative; }
+body.internal-app #main-content .wd-more > div { position:absolute; right:0; top:calc(100% + 4px); z-index:20; display:flex; flex-direction:column; min-width:200px; padding:6px; background:var(--surface,#fff); border:1px solid var(--line,#e5e7eb); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
+body.internal-app #main-content .wd-more > div a { padding:8px 10px; border-radius:6px; color:var(--ink,#252830); text-decoration:none; }
+body.internal-app #main-content .wd-more > div a:hover { background:#f4f5f6; }
+body.internal-app #main-content .wd-card { padding:0 !important; margin:0; overflow:hidden; }
+body.internal-app #main-content .wd-head { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid var(--line,#e5e7eb); }
+body.internal-app #main-content .wd-head h2 { margin:0; font-size:15px; font-weight:600; text-transform:none; letter-spacing:0; }
+body.internal-app #main-content .wd-head a { color:var(--brand-red-dark,#a51d24); font-weight:500; }
+body.internal-app #main-content .wd-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 16px; border-top:1px solid var(--line,#e5e7eb); color:var(--ink,#252830); text-decoration:none; }
+body.internal-app #main-content .wd-head + .wd-row { border-top:0; }
+body.internal-app #main-content a.wd-row:hover { background:#fafafa; }
+body.internal-app #main-content .wd-row.is-missing { background:#fff8f8; }
+body.internal-app #main-content .wd-who { display:flex; flex-direction:column; }
+body.internal-app #main-content .wd-who small, body.internal-app #main-content .wd-muted, body.internal-app #main-content .wd-sub { color:var(--muted); font-size:13px; }
+body.internal-app #main-content .wd-sub { margin:0; padding:12px 16px 0; }
+body.internal-app #main-content .wd-empty { margin:0; padding:14px 16px; color:var(--muted); }
+body.internal-app #main-content .wd-table-wrap { overflow-x:auto; }
+body.internal-app #main-content .wd-table { width:100%; border-collapse:collapse; font-size:14px; }
+body.internal-app #main-content .wd-table th { text-align:left; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); padding:10px 14px; border-bottom:1px solid var(--line,#e5e7eb); }
+body.internal-app #main-content .wd-table td { padding:12px 14px; border-bottom:1px solid var(--line,#e5e7eb); white-space:nowrap; }
+body.internal-app #main-content .wd-table .num { text-align:right; }
+body.internal-app #main-content .wd-table tr.is-void td { color:var(--muted); text-decoration:line-through; }
+body.internal-app #main-content .wd-table tr.is-void td:nth-last-child(-n+2) { text-decoration:none; }
+body.internal-app #main-content .wd-table tfoot td { font-weight:600; background:#fafafa; border-bottom:0; }
+body.internal-app #main-content .wd-links { display:flex; gap:12px; justify-content:flex-end; }
+body.internal-app #main-content .wd-trips > article { padding:12px 16px; border-top:1px solid var(--line,#e5e7eb); }
+body.internal-app #main-content .wd-trips > article h3 { margin:0 0 4px; font-size:14px; }
+body.internal-app #main-content .wd-totals { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+body.internal-app #main-content .wd-totals > div { display:flex; flex-direction:column; padding:14px 16px; }
+body.internal-app #main-content .wd-totals span { font-size:13px; color:var(--muted); }
+body.internal-app #main-content .wd-totals strong { font-size:20px; }
+@media (max-width:600px) {
+  body.internal-app #main-content .wd-days a { min-width:0; flex:1 1 40%; }
+  body.internal-app #main-content .wd-actions { width:100%; }
+  body.internal-app #main-content .wd-actions > * { flex:1; }
+  body.internal-app #main-content .wd-totals { grid-template-columns:1fr; }
+}
