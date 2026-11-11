@@ -1,7 +1,8 @@
 """On-demand, audited samples; never imported by a deploy or startup hook.
 
-The audit manifest owns exact primary keys, not every row whose name looks like
-a sample. Service audits remain after removal. No passwords enter the manifest.
+The audit manifest tracks exact primary keys for repeat-safe loading. Reset
+preserves protected history and requires a fresh local database instead.
+No passwords enter the manifest.
 """
 import os
 import threading
@@ -96,41 +97,6 @@ def include_created_children(owned):
                     changed = True
 
 
-def remove_owned(manifest):
-    owned = manifest.new_data["owned"]
-    # Fail closed if a person subsequently attached real work to a sample. Even
-    # nullable external references are checked; only retained audit actors may
-    # be detached. Never cascade through an unowned row.
-    for model in apps.get_models(include_auto_created=True):
-        if model is AuditLog:
-            continue
-        for field in model._meta.fields:
-            if not field.is_relation or not field.remote_field:
-                continue
-            parent = field.remote_field.model._meta.label_lower
-            if not owned.get(parent):
-                continue
-            external = model._base_manager.filter(**{field.attname + "__in": owned[parent]}).exclude(pk__in=owned.get(model._meta.label_lower, []))
-            if external.exists():
-                raise CommandError(f"Reset stopped: non-sample {model._meta.label} references sample data. Nothing removed.")
-    user_label = settings.AUTH_USER_MODEL.lower()
-    AuditLog.objects.filter(actor_id__in=owned.get(user_label, [])).update(actor=None)
-    if connection.vendor == "postgresql":
-        with connection.cursor() as cursor:
-            cursor.execute("SET CONSTRAINTS ALL DEFERRED")
-    # Protected/append-only histories may be removed ONLY for these exact sample
-    # keys. Deferred FK checks still run at commit; no constraints are disabled.
-    for label, ids in owned.items():
-        apps.get_model(label)._base_manager.filter(pk__in=ids)._raw_delete(connection.alias)
-    record_audit(actor=None, action="sample_data.reset", instance=manifest, source=SOURCE,
-                 new_data={"manifest": manifest.pk}, reason=WHY)
-    # Files are exact storage names recorded by this run, never directory globs.
-    def remove_files():
-        for label, field, name in manifest.new_data.get("files", []):
-            apps.get_model(label)._meta.get_field(field).storage.delete(name)
-    transaction.on_commit(remove_files)
-
-
 def load_samples(*, allow_preview=False, reset=False):
     require_safe_environment(allow_preview)
     # Locmem prevents email delivery even if settings normally configure a
@@ -145,8 +111,9 @@ def load_samples(*, allow_preview=False, reset=False):
             active = latest if latest and latest.action == "sample_data.created" else None
             if reset:
                 if active:
-                    remove_owned(active)
-                return "SAMPLE data removed." if active else "No active SAMPLE data to remove.", []
+                    raise CommandError("SAMPLE data includes protected submitted job-position history. "
+                                       "Nothing removed. Start a fresh local database to remove this dataset.")
+                return "No active SAMPLE data to remove.", []
             if active:
                 return "SAMPLE data already loaded; unchanged. Logins: " + ", ".join(USERNAMES), []
             from django.contrib.auth import get_user_model

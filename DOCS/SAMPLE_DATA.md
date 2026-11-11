@@ -47,21 +47,21 @@ in source files, manifests, or audit payloads. Keep the terminal private. Intake
 invitations are suppressed and ticket delivery opt-ins remain off; email is
 also redirected to the in-memory backend during loading.
 
-To remove the dataset without recreating it:
+To check reset requirements:
 
 ```sh
 python manage.py load_sample_data --reset --settings=config.settings.development
 ```
 
-Reset uses exact model names, primary keys, and storage filenames from an audit
-manifest. It preserves other data, including unrelated records named SAMPLE.
-It refuses the entire reset if new, unowned business records reference the
-dataset. The service audit trail and reset receipt remain. Reset never guesses
-ownership from a name prefix or deletes a directory of files.
+The dataset includes submitted and approved job-position history. When samples
+are loaded, `--reset` exits with an error explaining that a **fresh local
+database** is required. It deletes nothing: samples, other data, documents,
+password hashes, and audit history all stay intact. When no sample dataset is
+loaded, it reports that there is nothing to reset.
 
-The migration adds one narrow exception to the database's hiring-history delete
-guard: the revision must have a SAMPLE title **and** its exact primary key must
-appear in the latest active sample manifest. All other history guards remain.
+Create a new local database, migrate it, and load samples there when a clean
+review is needed. The loader never drops or replaces a database. It adds no
+migration and makes no exception to any history trigger or constraint.
 
 Production settings are always refused, even with DEBUG enabled or
 `--allow-preview`. Non-production settings with DEBUG disabled require that

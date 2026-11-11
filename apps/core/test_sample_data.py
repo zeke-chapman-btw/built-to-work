@@ -22,7 +22,7 @@ class SampleDataTests(TestCase):
         return output.getvalue()
 
     @override_settings(DEBUG=True)
-    def test_repeat_is_unchanged_reset_is_owned_and_roles_are_distinct(self):
+    def test_repeat_is_unchanged_and_reset_requires_fresh_database(self):
         other = Participant.objects.create(first_name="SAMPLE Unowned", last_name="Must survive")
         with tempfile.TemporaryDirectory() as folder, override_settings(
                 MEDIA_ROOT=Path(folder)/"media", PRIVATE_DOCUMENT_ROOT=Path(folder)/"documents",
@@ -44,30 +44,17 @@ class SampleDataTests(TestCase):
             self.assertFalse(PortalInvitation.objects.exists())
             self.assertFalse(PortalDelivery.objects.exists())
             self.assertTrue(AuditLog.objects.filter(source=SOURCE, action="sample_data.created").exists())
-            # A SAMPLE title alone must never bypass immutable hiring history.
-            from apps.core.audit import record_audit
+            # Even an active SAMPLE ownership manifest cannot bypass the guard.
             from apps.customers.models import WorkforceNeedRevision
-            manifest = AuditLog.objects.get(source=SOURCE, action="sample_data.created")
-            with transaction.atomic():
-                record_audit(actor=None, action="sample_data.reset", instance=manifest, source=SOURCE, reason="SAMPLE guard test")
-                with self.assertRaisesMessage(IntegrityError, "Retain submitted hiring revision history"), transaction.atomic():
-                    WorkforceNeedRevision.objects.filter(state="approved")._raw_delete(connection.alias)
-                transaction.set_rollback(True)
-            from apps.participants.workspace_models import ParticipantNote
-            busy = Participant.objects.get(first_name="SAMPLE Avery")
-            external = ParticipantNote.objects.create(participant=busy, author=users.get(username=USERNAMES[0]),
-                content="Unowned later work must block reset")
-            with self.assertRaisesMessage(CommandError, "non-sample"):
-                self.run_command(reset=True)
-            self.assertTrue(Participant.objects.filter(pk=busy.pk).exists())
-            external.delete()
-            with self.captureOnCommitCallbacks(execute=True):
+            with self.assertRaisesMessage(IntegrityError, "Retain submitted hiring revision history"), transaction.atomic():
+                WorkforceNeedRevision.objects.filter(state="approved")._raw_delete(connection.alias)
+            with self.assertRaisesMessage(CommandError, "Start a fresh local database"):
                 self.run_command(reset=True)
             connection.check_constraints()
-            self.assertEqual(list(Participant.objects.values_list("pk", flat=True)), [other.pk])
-            self.assertFalse(users.filter(username__in=USERNAMES).exists())
-            self.assertTrue(AuditLog.objects.filter(action="sample_data.reset", source=SOURCE).exists())
-            self.run_command(reset=True)
+            self.assertEqual(counts, {m._meta.label_lower: m._base_manager.count() for m in apps.get_models(include_auto_created=True)})
+            self.assertTrue(Participant.objects.filter(pk=other.pk).exists())
+            self.assertEqual(users.filter(username__in=USERNAMES).count(), 4)
+            self.assertFalse(AuditLog.objects.filter(action="sample_data.reset", source=SOURCE).exists())
 
     @override_settings(DEBUG=True, SETTINGS_MODULE="config.settings.production")
     def test_production_refuses_even_with_debug_and_override(self):
