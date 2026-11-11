@@ -1,27 +1,27 @@
 {% if crm_btw_allowed or crm_employer_allowed %}<div class="crm-panels{% if participant and section == 'relationship' %} crm-unified-history{% endif %}">
-{% if participant and section == 'relationship' and not crm_legacy %}<header class="crm-profile-history-heading"><h2>Interaction History</h2></header>{% endif %}
-{% if not crm_legacy %}<nav class="crm-audience-nav" aria-label="Relationship views">{% for view in crm_views %}<a href="{{ view.url }}"{% if view.selected %} aria-current="page"{% endif %}>{{ view.label }}</a>{% endfor %}</nav>{% endif %}
+{% if participant and section == 'relationship' and not crm_legacy %}<header class="crm-profile-history-heading"><h2>History</h2></header>{% endif %}
+{% if not crm_legacy %}<nav class="crm-audience-nav" aria-label="Touchpoint views">{% for view in crm_views %}<a href="{{ view.url }}"{% if view.selected %} aria-current="page"{% endif %}>{{ view.label }}</a>{% endfor %}</nav>{% endif %}
 {% if crm_view == 'followups' and not crm_legacy %}{% include 'crm/followups.html' %}{% else %}
 <div class="crm-filter-tools">
-<form method="get" class="crm-filters" aria-label="Filter relationship interactions">
+<form method="get" class="crm-filters" aria-label="Filter touchpoints">
 {% if section %}<input type="hidden" name="section" value="{{ section }}">{% endif %}
 {% if request.GET.from %}<input type="hidden" name="from" value="{{ request.GET.from }}">{% endif %}
 {% if crm_subject_is_company and request.GET.return_to %}<input type="hidden" name="return_to" value="{{ request.GET.return_to }}">{% endif %}
 {% if crm_previous_url %}<input type="hidden" name="crm_return_to" value="{{ crm_previous_url }}">{% endif %}
 <input type="hidden" name="crm_view" value="{{ crm_view }}">
 
-<div><label for="crm_type">Interaction type</label><select id="crm_type" name="crm_type"><option value="">All types</option>{% for value,label in crm_types %}<option value="{{ value }}"{% if request.GET.crm_type == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+<div><label for="crm_type">Type</label><select id="crm_type" name="crm_type"><option value="">All types</option>{% for value,label in crm_types %}<option value="{{ value }}"{% if request.GET.crm_type == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
 <div><label for="crm_from">From</label><input type="date" id="crm_from" name="crm_from" value="{{ request.GET.crm_from }}"></div><div><label for="crm_to">To</label><input type="date" id="crm_to" name="crm_to" value="{{ request.GET.crm_to }}"></div>
-<div class="cleanup-filter-buttons"><button class="button button-primary">Apply</button><a class="button secondary" href="{{ crm_reset_url }}">Reset</a></div><details class="cleanup-secondary-filters"{% if request.GET.crm_q or request.GET.crm_archived %} open{% endif %}><summary>Search &amp; archived records</summary><div><label for="crm_q">Employer, engagement or summary</label><input id="crm_q" name="crm_q" value="{{ request.GET.crm_q }}" type="search"></div><label class="crm-checkbox"><input type="checkbox" name="crm_archived" value="1"{% if request.GET.crm_archived == '1' %} checked{% endif %}>Include archived</label></details>
+<div class="cleanup-filter-buttons"><button class="button button-primary">Apply</button><a class="button secondary" href="{{ crm_reset_url }}">Reset</a></div><details class="cleanup-secondary-filters"{% if request.GET.crm_q or request.GET.crm_archived %} open{% endif %}><summary>Search and archived</summary><div><label for="crm_q">Search</label><input id="crm_q" name="crm_q" value="{{ request.GET.crm_q }}" type="search"></div><label class="crm-checkbox"><input type="checkbox" name="crm_archived" value="1"{% if request.GET.crm_archived == '1' %} checked{% endif %}>Include archived</label></details>
 </form>
 </div>
-{% if crm_btw_allowed %}{% if crm_show_btw or crm_legacy %}<section id="btw-interactions" class="{% if section != 'relationship' %}card {% endif %}crm-card"><header class="crm-panel-heading"><div>{% if section != 'relationship' %}<h2>BTW Interactions</h2>{% endif %}<p class="btw-visually-hidden">Private staff touchpoints · separate from employer records.</p></div>{% if crm_can_add and section != 'relationship' %}<a class="button button-primary" data-record-editor href="{{ crm_new_url }}">+ Interaction</a>{% endif %}</header>
+{% if crm_btw_allowed %}{% if crm_show_btw or crm_legacy %}<section id="btw-interactions" class="{% if section != 'relationship' %}card {% endif %}crm-card"><header class="crm-panel-heading"><div>{% if section != 'relationship' %}<h2>BTW touchpoints</h2>{% endif %}</div>{% if crm_can_add and section != 'relationship' %}<a class="button button-primary" data-record-editor href="{{ crm_new_url }}">+ Log touchpoint</a>{% endif %}</header>
 
 
 {% include 'crm/rows.html' with items=crm_btw_rows %}{% include 'crm/pagination.html' with page=crm_btw_page query=crm_btw_query audience='btw' anchor='btw-interactions' %}
-{% if participant %}<p class="crm-help">Existing sources remain in place: <a href="{% url 'participants:staff-profile' participant.pk %}?section=notes">Internal BTW notes</a>{% if can_recruiting %} · <a href="{% url 'recruiting:candidate' participant.pk %}">Recruiting outreach &amp; pipeline</a>{% endif %}. They are not copied into CRM.</p>{% endif %}
+
 </section>{% endif %}{% endif %}
-{% if crm_employer_allowed %}{% if crm_show_employer or crm_legacy %}<section id="employer-interactions" class="{% if section != 'relationship' %}card {% endif %}crm-card"><header class="crm-panel-heading"><div>{% if section != 'relationship' %}<h2>Employer Interactions</h2>{% endif %}<p>Employer-authored records · scoped to authorized recruiting engagements. Staff access is read-only.</p></div></header>
+{% if crm_employer_allowed %}{% if crm_show_employer or crm_legacy %}<section id="employer-interactions" class="{% if section != 'relationship' %}card {% endif %}crm-card"><header class="crm-panel-heading"><div>{% if section != 'relationship' %}<h2>From employers</h2>{% endif %}</div></header>
 {% include 'crm/rows.html' with items=crm_employer_rows %}{% include 'crm/pagination.html' with page=crm_employer_page query=crm_employer_query audience='employer' anchor='employer-interactions' %}
 </section>{% endif %}{% endif %}
 {% endif %}</div>{% endif %}

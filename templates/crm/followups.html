@@ -1,3 +1,3 @@
-<section class="{% if section != 'relationship' %}card {% endif %}crm-card" id="relationship-followups">{% if section != 'relationship' %}<h2>Follow-ups</h2>{% endif %}<p class="crm-help">Open, accessible Tasks · recorded dates alone do not create Tasks.</p>
-<h3>Dated Tasks</h3>{% include 'crm/task_rows.html' with tasks=crm_dated_tasks %}{% include 'crm/pagination.html' with page=crm_dated_tasks query=crm_dated_query audience='tasks' anchor='relationship-followups' %}
-<h3>Undated Tasks</h3>{% include 'crm/task_rows.html' with tasks=crm_undated_tasks %}{% include 'crm/pagination.html' with page=crm_undated_tasks query=crm_undated_query audience='undated' anchor='relationship-followups' %}</section>
+<section class="{% if section != 'relationship' %}card {% endif %}crm-card" id="relationship-followups">{% if section != 'relationship' %}<h2>Follow-ups</h2>{% endif %}
+<h3>With a due date</h3>{% include 'crm/task_rows.html' with tasks=crm_dated_tasks %}{% include 'crm/pagination.html' with page=crm_dated_tasks query=crm_dated_query audience='tasks' anchor='relationship-followups' %}
+<h3>No due date</h3>{% include 'crm/task_rows.html' with tasks=crm_undated_tasks %}{% include 'crm/pagination.html' with page=crm_undated_tasks query=crm_undated_query audience='undated' anchor='relationship-followups' %}</section>

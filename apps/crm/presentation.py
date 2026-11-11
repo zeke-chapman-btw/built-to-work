@@ -186,9 +186,9 @@ def history_context(request, *, participant=None, organization=None):
     result["crm_record_text_url"] = result["crm_new_url"] + "&type=sms"
     choices = [("all", "All")] if organization else []
     if result.get("crm_btw_allowed"):
-        choices.append(("btw", "BTW–Customer" if organization else "BTW Interactions"))
+        choices.append(("btw", "BTW–Customer" if organization else "BTW touchpoints"))
     if result.get("crm_employer_allowed"):
-        choices.append(("employer", "Employer–Participant" if organization else "Employer Interactions"))
+        choices.append(("employer", "Employer–Participant" if organization else "From employers"))
     if result.get("crm_btw_allowed"):
         choices.append(("followups", "Follow-ups"))
     selected = request.GET.get("crm_view", "all" if organization else "btw")
