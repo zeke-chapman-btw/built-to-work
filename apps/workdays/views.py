@@ -45,14 +45,14 @@ def index(request):
     q=request.GET.get('q','').strip()[:200]
     events=Event.objects.all()
     if q:events=events.filter(name__icontains=q)
-    return page(request,'index',page_title='Staff Workdays',events=Paginator(events.order_by('-start_at','pk'),25).get_page(request.GET.get('page')),q=q)
+    return page(request,'index',page_title='Workdays',events=Paginator(events.order_by('-start_at','pk'),25).get_page(request.GET.get('page')),q=q)
 
 @staff_view
 def mine(request):
     readonly(request);staff=svc.person(request.user)
     if not staff:raise PermissionDenied
     days=Workday.objects.filter(staff=staff).select_related('event','role','updated_by')
-    return page(request,'mine',page_title='My Workday History',days=Paginator(days,40).get_page(request.GET.get('page')))
+    return page(request,'mine',page_title='My workdays',days=Paginator(days,40).get_page(request.GET.get('page')))
 
 @staff_view
 def checkin(request,event_id):
@@ -178,7 +178,7 @@ def settings(request):
     roles=list(StaffRole.objects.all())
     for role in roles:role.current_rate=svc.rate_for('role',today,role)
     rates=CompensationRate.objects.select_related('role','created_by')
-    return page(request,'settings',page_title='Staff Compensation Settings',roles=roles,rates=Paginator(rates,40).get_page(request.GET.get('page')),per_diem=svc.rate_for('per_diem',today),mileage=svc.rate_for('mileage',today),origin=ORIGIN)
+    return page(request,'settings',page_title='Compensation',roles=roles,rates=Paginator(rates,40).get_page(request.GET.get('page')),per_diem=svc.rate_for('per_diem',today),mileage=svc.rate_for('mileage',today),origin=ORIGIN)
 
 @staff_view
 def role_edit(request,role_id=None):
@@ -220,4 +220,4 @@ def report(request):
         audit_action(actor=request.user,action='workdays.report.exported',instance=request.user,new_data={'filters':request.GET.dict()})
         return reports.csv_export(days,trips)
     query=request.GET.copy();query.pop('page',None);query.pop('trip_page',None);query['export']='csv'
-    return page(request,'report',page_title='Staff Workday & Reimbursement Reports',form=form,days=Paginator(days,40).get_page(request.GET.get('page')),trips=Paginator(trips,40).get_page(request.GET.get('trip_page')),totals=reports.totals(days,trips),csv_query=query.urlencode())
+    return page(request,'report',page_title='Workday report',form=form,days=Paginator(days,40).get_page(request.GET.get('page')),trips=Paginator(trips,40).get_page(request.GET.get('trip_page')),totals=reports.totals(days,trips),csv_query=query.urlencode())

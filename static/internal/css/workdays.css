@@ -44,8 +44,36 @@ body.internal-app #main-content .wd-totals strong { font-size:20px; }
   body.internal-app #main-content .wd-days a { min-width:0; flex:1 1 40%; }
   body.internal-app #main-content .wd-actions { width:100%; }
   body.internal-app #main-content .wd-actions > * { flex:1; }
-  body.internal-app #main-content .wd-totals { grid-template-columns:1fr; }
+  body.internal-app #main-content .wd-totals > div { padding:12px; }
+  body.internal-app #main-content .wd-totals strong { font-size:18px; }
 }
 body.internal-app.has-event-context #main-content .workdays-page:has(> .wd-page) { max-width:none !important; padding:0; grid-template-columns:minmax(0,1fr); }
 body.internal-app #main-content .wd-actions { flex-wrap:wrap; }
 body.internal-app #main-content .workdays-page:has(> .wd-page) { --btw-standard-frame:100%; }
+/* Workday list and report pages (layout batch 2) */
+body.internal-app #main-content .workdays-page .wd-tabs{margin:0 0 16px}
+body.internal-app #main-content .workdays-page:has(>.wd-page) .card{margin-top:0}
+body.internal-app #main-content .wd-search{display:flex;gap:8px;align-items:center;margin:0}
+body.internal-app #main-content .wd-search input{min-height:36px;padding:6px 10px;border:1px solid var(--control-line,#d1d5db);border-radius:7px;font:inherit;width:220px;max-width:100%}
+body.internal-app #main-content .wd-search .button{min-height:36px;padding:6px 12px}
+body.internal-app #main-content .wd-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:12px;padding:14px 16px;align-items:end;margin:0}
+body.internal-app #main-content .wd-filters .field{display:flex;flex-direction:column;gap:4px;min-width:0;margin:0}
+body.internal-app #main-content .wd-filters label{font-size:13px;font-weight:500}
+body.internal-app #main-content .wd-filters :is(input,select){width:100%;min-height:38px;padding:7px 10px;border:1px solid var(--control-line,#d1d5db);border-radius:7px;background:#fff;font:inherit}
+body.internal-app #main-content .wd-filter-actions{display:flex;gap:14px;align-items:center}
+body.internal-app #main-content .wd-filter-actions a,body.internal-app #main-content .wd-table a,body.internal-app #main-content .wd-pages a,body.internal-app #main-content .wd-trips a{color:var(--brand-red-dark,#a51d24);font-weight:500}
+body.internal-app #main-content .wd-error{color:#a51024;font-size:12px}
+body.internal-app #main-content .wd-pages{padding:12px 16px;border-top:1px solid var(--line,#e5e7eb);font-size:13px;display:flex;gap:12px}
+body.internal-app #main-content .wd-pages nav{display:flex;gap:12px;align-items:center}
+body.internal-app #main-content .wd-trips .workday-actions{margin:6px 0 0;font-size:13px}
+body.internal-app #main-content .wd-trips p{margin:2px 0;font-size:13px;color:var(--muted)}
+body.internal-app #main-content .workdays-page>.wd-page>.wd-card>a.wd-row{text-decoration:none}
+@media (max-width:640px){
+ body.internal-app #main-content .wd-head:has(.wd-search){flex-wrap:wrap}
+ body.internal-app #main-content .wd-search{width:100%}
+ body.internal-app #main-content .wd-search input{flex:1;width:auto}
+}
+body.internal-app #main-content .wd-search .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+body.internal-app #main-content .workdays-page .wd-head h2{border:0 !important;padding:0 !important;margin:0 !important}
+body.internal-app #main-content .wd-row .wd-links a{color:var(--brand-red-dark,#a51d24);font-weight:500;font-size:13px}
+@media (max-width:640px){body.internal-app #main-content .wd-filters{grid-template-columns:repeat(2,minmax(0,1fr))}body.internal-app #main-content .wd-filter-actions{grid-column:1/-1}}
