@@ -52,3 +52,19 @@ body.internal-app #main-content .qb-toggles { display:flex; flex-direction:colum
 }
 body.internal-app #main-content .qb-publish > summary.button { padding:0 18px; min-height:40px; align-items:center; cursor:pointer; }
 body.internal-app #main-content .qb-head .badge, body.internal-app #main-content .qb-head > :last-child { flex-shrink:0; white-space:nowrap; }
+/* Intake form builder (shares quiz builder look) */
+body.internal-app #main-content .qb-more { margin-left:auto; }
+body.internal-app #main-content .wd-more { position:relative; }
+body.internal-app #main-content .wd-more > summary { list-style:none; cursor:pointer; }
+body.internal-app #main-content .wd-more > summary::-webkit-details-marker { display:none; }
+body.internal-app #main-content .wd-more > div { position:absolute; right:0; top:calc(100% + 4px); z-index:20; display:flex; flex-direction:column; min-width:200px; padding:6px; background:var(--surface,#fff); border:1px solid var(--line,#e5e7eb); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
+body.internal-app #main-content .wd-more > div a, body.internal-app #main-content .wd-more .ib-remove { display:block; width:100%; text-align:left; padding:8px 10px; border:0; border-radius:6px; background:none; color:var(--ink,#252830); text-decoration:none; font:inherit; cursor:pointer; }
+body.internal-app #main-content .wd-more .ib-remove { color:var(--danger,#b42318); }
+body.internal-app #main-content .wd-more > div a:hover, body.internal-app #main-content .wd-more .ib-remove:hover { background:#f4f5f6; }
+body.internal-app #main-content .ib-move { display:flex; gap:4px; }
+body.internal-app #main-content .ib-move .button { min-width:40px; padding:0 10px; }
+body.internal-app #main-content .ib-children { margin:6px 0 0; padding:0; list-style:none; font-size:14px; }
+body.internal-app #main-content .ib-assign, body.internal-app #main-content .ib-history { padding:12px 16px !important; }
+body.internal-app #main-content .ib-history > summary { font-weight:600; cursor:pointer; }
+body.internal-app #main-content .ib-version { display:flex; align-items:center; gap:12px; padding:8px 0; border-top:1px solid var(--line,#e5e7eb); }
+body.internal-app #main-content .qb-head form { flex-shrink:0; }

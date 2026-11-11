@@ -118,9 +118,12 @@ def detail(request, form_id):
     # retained schema, question ordering within a step, keys or conditions.
     labels = UI_STEP_NAMES
     grouped = {number: [] for number in labels}
+    kind_labels = {'short_text': 'Short answer', 'long_text': 'Long answer', 'single_choice': 'Choose one',
+                   'multiple_choice': 'Choose several', 'consent': 'Consent', 'repeat_group': 'Repeating list'}
     for question in latest.snapshot['questions']:
         number = participant_step(question)
-        grouped.setdefault(number, []).append(question)
+        # Display-only copy: the stored snapshot is never changed.
+        grouped.setdefault(number, []).append({**question, 'kind_label': kind_labels.get(question.get('type'), str(question.get('type', '')).replace('_', ' ').capitalize())})
     question_groups = [{'number': number, 'title': labels.get(number, 'Other retained questions'),
                         'questions': grouped[number]} for number in sorted(grouped) if grouped[number]]
     return render(request, "participants/intake_config_detail.html", context(request,
