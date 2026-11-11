@@ -38,7 +38,7 @@ class CustomerRelationshipUxTests(EmployerFixtures, TestCase):
         self.assertEqual(before,(get_user_model().objects.count(),CustomerMembership.objects.count(),CustomerContact.objects.count()))
         self.organization.refresh_from_db();self.assertEqual(self.organization.primary_contact_id,self.contact.pk)
         overview=self.client.get(reverse('customers:workspace',args=[self.organization.pk,'overview']))
-        self.assertContains(overview,'Open Relationship')
+        self.assertContains(overview,'>All touchpoints</a>')
 
     def test_all_view_keeps_audience_records_and_edit_authority_separate(self):
         stamp=timezone.now()-timedelta(days=1)

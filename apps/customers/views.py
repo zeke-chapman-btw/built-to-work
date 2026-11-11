@@ -19,9 +19,9 @@ from .models import (CustomerOrganization as Org, CustomerContact, CustomerLocat
                      Campaign, WorkforceNeed as Need, WorkforceNeedRevision as Revision,
                      CustomerAuditScope, TERM_FIELD_NAMES)
 
-TABS = (("overview", "Overview"), ("company", "Company Profile"), ("needs", "Workforce Needs"),
-        ("campaigns", "Campaigns"), ("matches", "Matches"), ("users", "Users & Contacts"),
-        ("crm", "Relationship"), ("access", "Access & Plan"), ("history", "History"))
+TABS = (("overview", "Overview"), ("company", "Company details"), ("needs", "Open positions"),
+        ("campaigns", "Campaigns"), ("matches", "Matches"), ("users", "Users & contacts"),
+        ("crm", "Touchpoints"), ("access", "Plan & access"), ("history", "History"))
 
 
 def staff_view(view):
@@ -102,7 +102,14 @@ def workspace(request, org_id, tab="overview"):
         data.update(needs=org.workforce_needs.filter(status__in=["active", "hold"]).select_related("effective_revision", "working_revision")[:5], campaigns=org.campaigns.exclude(status__in=["completed", "cancelled"])[:5], recent=activity(org)[:5], pending_count=org.workforce_needs.filter(working_revision__state__in=["submitted", "review"]).count())
         from apps.crm.presentation import history_context
         relationship = history_context(request, organization=org)
-        data.update({key: relationship[key] for key in ("crm_summary", "crm_subject_is_company", "crm_previous_url") if key in relationship})
+        data.update({key: relationship[key] for key in ("crm_summary", "crm_subject_is_company", "crm_previous_url", "crm_can_add", "crm_new_url", "crm_btw_allowed") if key in relationship})
+        data.update(
+            overview_contacts=org.contacts.filter(is_active=True).order_by("last_name", "first_name", "pk")[:4],
+            overview_contact_total=org.contacts.filter(is_active=True).count(),
+            overview_locations=org.locations.filter(is_active=True).order_by("name", "pk")[:3],
+            open_need_total=org.workforce_needs.filter(status__in=["active", "hold"]).count(),
+            active_campaign_total=org.campaigns.exclude(status__in=["completed", "cancelled"]).count(),
+        )
     elif tab == "crm":
         from apps.crm.presentation import history_context
         data.update(history_context(request, organization=org))

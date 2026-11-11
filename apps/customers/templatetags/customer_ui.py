@@ -13,3 +13,16 @@ def customer_url(context, name, *args):
     request = context["request"]
     back = local_return(request, context.get("back_url"), reverse("customers:directory"))
     return url + "?" + urlencode({"return_to": back})
+
+
+@register.filter
+def customer_initials(name):
+    """Two letters for the customer avatar, skipping a leading SAMPLE marker."""
+    words = [w for w in str(name or "").split() if w.upper() != "SAMPLE"] or str(name or "?").split()
+    return "".join(word[0] for word in words[:2]).upper() or "?"
+
+
+@register.filter
+def customer_status_tone(status):
+    """Shared badge tones: active is positive, prospect is informational, the rest neutral."""
+    return {"active": "success", "prospect": "info"}.get(str(status), "neutral")
