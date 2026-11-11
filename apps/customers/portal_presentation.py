@@ -30,16 +30,16 @@ def effective_access(user, organization_id, *, preview=False):
 def record_restriction(record, kind):
     if kind == 'need':
         if record.status in {'closed', 'cancelled'}:
-            return 'This position is closed or cancelled. Its history remains available; editing is restricted by the existing workflow.'
+            return 'This position is closed. You can still see its history.'
         working = record.working_revision
         if working and working.state != 'draft':
-            return 'This proposed revision is frozen for BTW review. Use the available withdrawal action or wait for review; approved details remain effective.'
-        return 'Draft changes remain proposed until BTW review and approval. Only BTW may approve, close or cancel a position.'
+            return 'Changes are frozen while BTW reviews them. Withdraw them to keep editing.'
+        return ''
     if record.status in {'completed', 'cancelled'}:
-        return 'This Campaign is complete or cancelled. Its planning history is retained and direct editing is unavailable.'
+        return 'This campaign is closed. You can still see its history.'
     if record.review_state in {'submitted', 'review'}:
-        return 'This planning version is frozen for BTW review. Use the available withdrawal action or wait for review.'
-    return 'Saving planning does not approve or activate a Campaign. Material changes invalidate approval and may place an active Campaign on hold.'
+        return 'Changes are frozen while BTW reviews them. Withdraw them to keep editing.'
+    return ''
 
 def need_prerequisites(organization, revision=None):
     contacts = organization.contacts.filter(is_active=True)
