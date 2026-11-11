@@ -26,3 +26,22 @@ def customer_initials(name):
 def customer_status_tone(status):
     """Shared badge tones: active is positive, prospect is informational, the rest neutral."""
     return {"active": "success", "prospect": "info"}.get(str(status), "neutral")
+
+
+POSITION_STATUS = {"draft": ("Draft", "neutral"), "submitted": ("To review", "warning"), "review": ("To review", "warning"),
+                   "active": ("Open", "success"), "hold": ("On hold", "warning"), "closed": ("Filled", "neutral"),
+                   "cancelled": ("Cancelled", "neutral")}
+CAMPAIGN_STATUS = {"planning": ("Planning", "info"), "active": ("Active", "success"), "hold": ("On hold", "warning"),
+                   "completed": ("Completed", "neutral"), "cancelled": ("Cancelled", "neutral")}
+
+
+@register.filter
+def position_status(status):
+    """Plain label and badge tone for a customer's open position."""
+    return POSITION_STATUS.get(str(status), (str(status).title(), "neutral"))
+
+
+@register.filter
+def campaign_status(status):
+    """Plain label and badge tone for a customer campaign."""
+    return CAMPAIGN_STATUS.get(str(status), (str(status).title(), "neutral"))

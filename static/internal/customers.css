@@ -62,3 +62,11 @@
 .has-customer-page .customer-back{color:var(--muted,#56616d);font-size:13px;text-decoration:none}
 .cx-card .customer-empty{margin:0;padding:12px 0;text-align:left;font-size:14px}
 .cx-actions .button.secondary{color:var(--ink,#252830);border-color:#c9ced4;background:#fff}
+.cx-rows{display:grid;gap:0}
+.cx-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #eceef1;color:var(--ink,#252830);text-decoration:none}
+.cx-row:last-child{border-bottom:0}
+.cx-row:hover strong{text-decoration:underline}
+.cx-row-main{display:grid;gap:2px;min-width:0}
+.cx-row-main small{font-size:13px;color:var(--muted,#56616d)}
+.cx-row-side{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.has-customer-page .customer-list.cx-rows{padding:0 16px}

@@ -1,6 +1,6 @@
 {% extends "internal/base.html" %}{% load customer_ui ui_patterns %}{% load static %}
 {% block title %}{% if organization %}{{ organization.name }} · {% endif %}Customers · Built to Work{% endblock %}
-{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/customers.css' %}?v=cx-layout-3">{% endblock %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/customers.css' %}?v=cx-layout-4">{% endblock %}
 {% block body_class %}{{ block.super }} customer-app{% if organization %} has-customer-page{% endif %}{% endblock %}
 {% block page_heading %}{% endblock %}{% block page_actions %}{% endblock %}
 {% block content %}<div class="customer-page">
