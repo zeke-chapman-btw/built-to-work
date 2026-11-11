@@ -199,7 +199,7 @@ class EventWorkspaceContextTests(TestCase):
         response = self.client.get(reverse("events:registration_detail", args=[self.event.pk, registration.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "event-record-header")
-        self.assertContains(response, 'id="registration_void_reason"')
+        self.assertContains(response, '>Void registration</button>')
         self.assertContains(response, 'name="reason"')
         self.assertNotContains(response, 'id="ticket_reissue_reason"')
 
