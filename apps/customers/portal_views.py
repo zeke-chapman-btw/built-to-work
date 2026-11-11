@@ -16,8 +16,8 @@ from .presentation import HIRING_LABELS
 from .models import WorkforceNeed as Need, WorkforceNeedRevision as Revision, Campaign, CustomerMembership as Membership, TERM_FIELD_NAMES
 
 TABS = [('overview', 'Dashboard'), ('recruiting', 'Recruiting'), ('candidates', 'Candidates'), ('company', 'Company')]
-SECONDARY_TABS = {'needs':'Positions', 'campaigns':'Campaigns', 'users':'Team & Membership',
-    'access':'Company Access', 'history':'History & Feedback', 'account':'Account & Security'}
+SECONDARY_TABS = {'needs':'Positions', 'campaigns':'Campaigns', 'users':'Team',
+    'access':'Access', 'history':'History & feedback', 'account':'Account & security'}
 TAB_GROUPS = {'needs':'recruiting', 'campaigns':'recruiting', 'users':'company', 'access':'company', 'history':'company', 'account':'account'}
 
 
@@ -212,7 +212,7 @@ def need_editor(request, record_id=None):
     instance = working or Revision(organization=org, **({key: getattr(source, key) for key in TERM_FIELD_NAMES} if source else {}))
     form = f.NeedForm(request.POST if request.method == 'POST' else None, actor=request.user, org_id=org.pk, instance=instance,
         initial={'org_revision': org.revision, 'record_revision': need.revision if need else None, 'working_id': working.pk if working else None})
-    return form_page(request, 'Edit position draft' if need else 'Add a position', form, tab='needs',
+    return form_page(request, 'Edit position draft' if need else 'New position', form, tab='needs',
         notice='',
         save=lambda d: s.save_hiring_draft(actor=request.user, org_id=org.pk, expected_org_revision=d['org_revision'], need_id=record_id,
             expected_need_revision=d['record_revision'], expected_working_id=d['working_id'], data={k:d[k] for k in f.EDITABLE_TERM_FIELDS}, why='Customer saved hiring-term draft.'),
@@ -256,7 +256,7 @@ def campaign_editor(request, record_id=None):
         raise PermissionDenied('This planning version is frozen. Withdraw the submission or wait for BTW review.')
     form = f.CampaignForm(request.POST if request.method == 'POST' else None, actor=request.user, org_id=org.pk, instance=obj,
         initial={'org_revision': org.revision, 'record_revision': obj.revision if record_id else None})
-    return form_page(request, 'Edit Campaign planning' if record_id else 'New Campaign', form, tab='campaigns',
+    return form_page(request, 'Edit campaign' if record_id else 'New campaign', form, tab='campaigns',
         notice='Saving does not submit or approve this Campaign. Material planning changes invalidate approval and place an active Campaign on hold.',
         save=lambda d: s.save_campaign(actor=request.user, org_id=org.pk, expected_org_revision=d['org_revision'], campaign_id=record_id, expected_revision=d['record_revision'], data={k:d[k] for k in s.CAMPAIGN_FIELDS}, why='Customer saved Campaign planning.'),
         success=lambda obj: reverse('customer_portal:campaign', args=[obj.pk]),
