@@ -1,6 +1,6 @@
 {% extends 'operations/design_base.html' %}{% load ui_patterns static %}
 {% block design_actions %}{% if can_edit and question_set.status == 'draft' %}<a class="button button-primary" href="{% url 'assessments:question_create' question_set.pk %}?return_to={{ request.get_full_path|urlencode }}">+ New question</a>{% endif %}{% endblock %}
-{% block design_content %}<link rel="stylesheet" href="{% static 'internal/css/quiz_builder.css' %}?v=qb-4">
+{% block design_content %}<link rel="stylesheet" href="{% static 'internal/css/quiz_builder.css' %}?v=qb-5">
 <div class="qb-page">
 <a class="event-back" href="{{ back_url }}">← Question sets</a>
 <section class="card qb-card"><header class="qb-head"><div><h2>{{ question_set.category.name }} · version {{ question_set.version }}</h2><p class="qb-muted">{% if question_set.status == 'draft' %}Draft — staff can't see it until you publish{% elif question_set.is_scheduled %}Goes live {{ question_set.effective_at|date:'M j, Y · g:i A' }}{% elif question_set.status == 'published' %}Live on the kiosks{% if question_set.effective_at %} since {{ question_set.effective_at|date:'M j, Y' }}{% endif %}{% else %}Retired — kept for past results{% endif %}</p></div>{% if question_set.is_scheduled %}{% ui_badge 'Scheduled' 'info' %}{% elif question_set.status == 'published' %}{% ui_badge 'Live' 'success' %}{% elif question_set.status == 'draft' %}{% ui_badge 'Draft' 'warning' %}{% else %}{% ui_badge question_set.get_status_display 'neutral' %}{% endif %}</header>

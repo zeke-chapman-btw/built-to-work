@@ -69,3 +69,8 @@ body.internal-app #main-content .ib-history > summary { font-weight:600; cursor:
 body.internal-app #main-content .ib-version { display:flex; align-items:center; gap:12px; padding:8px 0; border-top:1px solid var(--line,#e5e7eb); }
 body.internal-app #main-content .qb-head form { flex-shrink:0; }
 body.internal-app #main-content :is(.wd-more,.qb-publish) > summary.button { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 16px; box-sizing:border-box; }
+body.internal-app #main-content a.ib-row { color:var(--ink,#252830); text-decoration:none; align-items:center; }
+body.internal-app #main-content a.ib-row:hover { background:#fafafa; }
+body.internal-app #main-content .ib-new { position:relative; }
+body.internal-app #main-content .ib-new[open] > form { position:absolute; right:0; top:calc(100% + 6px); z-index:20; width:320px; padding:14px; background:#fff; border:1px solid var(--line,#e5e7eb); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.08); display:flex; flex-direction:column; gap:8px; }
+body.internal-app #main-content .ib-new[open] { flex-basis:auto; }

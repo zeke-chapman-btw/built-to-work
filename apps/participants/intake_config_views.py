@@ -68,7 +68,7 @@ def index(request):
     from apps.events.models import CentralEventDownload
     staged = CentralEventDownload.objects.exclude(config={}).order_by("-updated_at")[:50]
     return render(request, "participants/intake_config_index.html", context(request,
-        page_title="Form Builder", forms=RegistrationForm.objects.filter(is_smart_intake=True).prefetch_related(
+        page_title="Forms", forms=RegistrationForm.objects.filter(is_smart_intake=True).prefetch_related(
             "versions").order_by("name"), staged_downloads=staged, error=error))
 
 
