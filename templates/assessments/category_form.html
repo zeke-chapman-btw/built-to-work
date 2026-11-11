@@ -1,3 +1,3 @@
-{% extends 'operations/design_base.html' %}{% load static %}{% block design_content %}<link rel="stylesheet" href="{% static 'internal/css/quiz_builder.css' %}?v=qb-7">
+{% extends 'operations/design_base.html' %}{% load static %}{% block design_content %}<link rel="stylesheet" href="{% static 'internal/css/quiz_builder.css' %}?v=qb-8">
 <a class="event-back" href="{{ back_url }}">← Quiz categories</a>
 <section class="card btw-form-card qb-form">{% if historical_usage %}<p class="btw-inline-notice">Already used in past quizzes. Past results won't change.</p>{% endif %}<form method="post">{% csrf_token %}{% include 'internal/ui/event_form_fields.html' %}{% include 'internal/ui/form_actions.html' with submit_label="Save" cancel_url=back_url %}</form></section>{% endblock %}

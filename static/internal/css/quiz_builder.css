@@ -103,3 +103,11 @@ body.internal-app #main-content .ie-arrow { color:var(--btw-muted,#6b7280); text
   body.internal-app #main-content .ie-arrow { display:none; }
 }
 body.internal-app #main-content .qb-q-actions .qb-more > summary { min-width:44px; padding:0 12px; display:inline-flex; align-items:center; justify-content:center; }
+/* Event notes (nt-) */
+body.internal-app #main-content .nt-page{display:grid;gap:16px}
+body.internal-app #main-content .nt-form{padding:4px 16px 16px;display:grid;gap:12px}
+body.internal-app #main-content .nt-form .button{justify-self:start;width:auto}
+body.internal-app #main-content .nt-meta{margin:0 0 4px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:14px}
+body.internal-app #main-content .nt-note .event-note-body{white-space:normal}
+body.internal-app #main-content .el-count{font-size:13px;color:#6b7280;font-weight:500}
+body.internal-app #main-content:has(.nt-page) .btw-standard-workspace,body.internal-app #main-content .btw-standard-workspace:has(.nt-page){max-width:none !important}

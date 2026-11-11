@@ -202,7 +202,7 @@ class Build10CTests(TestCase):
 
     def test_registration_scope_is_registration_tickets_and_checkin_not_profiles(self):
         self.login();response=self.client.get(self.url('registrations'))
-        self.assertContains(response,'Event registrations &amp; tickets')
+        self.assertContains(response,'+ Register participant')
         self.assertContains(response,'Register and issue ticket');self.assertContains(response,'name="action" value="register"')
         self.assertNotContains(response,'Edit participant profile')
 

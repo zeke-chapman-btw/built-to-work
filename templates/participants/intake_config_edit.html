@@ -1,4 +1,4 @@
-{% extends 'participants/intake_operations_base.html' %}{% load ui_patterns static %}{% block intake_content %}<link rel="stylesheet" href="{% static 'internal/css/quiz_builder.css' %}?v=qb-7">
+{% extends 'participants/intake_operations_base.html' %}{% load ui_patterns static %}{% block intake_content %}<link rel="stylesheet" href="{% static 'internal/css/quiz_builder.css' %}?v=qb-8">
 <a class="event-back" href="{% url 'participants:intake-config-detail' intake_form.pk %}">← {{ intake_form.name }}</a>
 <form method="post" class="ie-form ie-{{ mode }}" data-section-form{% if save_conflict %} data-save-blocked{% endif %}>{% csrf_token %}<input type="hidden" name="revision" value="{{ revision }}">
 {% include 'internal/ui/form_errors.html' %}

@@ -1,4 +1,4 @@
-{% extends 'operations/design_base.html' %}{% load ui_patterns static %}{% block design_content %}<link rel="stylesheet" href="{% static 'internal/css/quiz_builder.css' %}?v=qb-7">
+{% extends 'operations/design_base.html' %}{% load ui_patterns static %}{% block design_content %}<link rel="stylesheet" href="{% static 'internal/css/quiz_builder.css' %}?v=qb-8">
 <a class="event-back" href="{% url 'assessments:question_set_list' %}">← Quizzes</a>
 <div class="qb-page">
 <section class="card qb-card"><header class="qb-head"><h2>All categories</h2>{% if can_edit %}<a class="button button-primary" data-record-editor href="{% url 'assessments:category_new' %}?return_to={{ request.get_full_path|urlencode }}">+ New category</a>{% endif %}</header>
