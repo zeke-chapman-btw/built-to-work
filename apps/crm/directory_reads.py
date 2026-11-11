@@ -297,13 +297,14 @@ def directory_panel(request, subject):
         'latest_url': panel_url(request, view=view, audience=audience)}}
 
 
-def directory_sections(request):
+def directory_sections(request, labels=None):
     """Navigation only: record selectors and audience guards remain unchanged."""
+    labels = {'search': 'Search', 'activity': 'Recent Activity', 'followups': 'Follow-ups', **(labels or {})}
     listing = request.GET.get('listing') or request.GET.get('rel_view', 'search')
     if listing not in {'search', 'activity', 'followups'}:
         listing = 'search'
     links = []
-    for key, label in [('search', 'Search'), ('activity', 'Recent Activity'), ('followups', 'Follow-ups')]:
+    for key, label in [(key, labels[key]) for key in ('search', 'activity', 'followups')]:
         params = request.GET.copy()
         for field in ('listing', 'rel_view', 'rel_cursor', 'rel_audience', 'page'):
             params.pop(field, None)

@@ -3,7 +3,7 @@
 .cleanup-sections a { display:inline-flex; align-items:center; min-height:44px; padding:8px 0; box-sizing:border-box; border-bottom:2px solid transparent; color:#343439; text-decoration:none; font-weight:500; }
 .cleanup-sections a[aria-current=page] { border-color:#c9252c; color:#222; }
 .cleanup-sections a:focus-visible, .cleanup-edit-link:focus-visible { outline:2px solid #2563eb; outline-offset:3px; }
-body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form>.ex-search { grid-template-columns:minmax(0,3fr) minmax(140px,1fr) minmax(80px,.45fr); gap:10px; }
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form>.ex-search { grid-template-columns:minmax(0,1fr); gap:10px; }
 body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-unified-filters .ex-filter-content { gap:10px; }
 body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .cleanup-filter-controls { display:flex; flex-direction:row-reverse; align-items:flex-start; justify-content:space-between; gap:10px; grid-column:1/-1; }
 body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .cleanup-filter-controls>.ex-advanced-disclosure { flex:1; min-width:0; }
@@ -40,7 +40,7 @@ body.internal-app.btw-platform.has-participants-explorer #main-content .people-e
 .btw-editor-body .crm-field { min-width:0; }
 .btw-editor-body .crm-field textarea { min-height:72px; }
 @media(max-width:800px) {
- body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form>.ex-search { grid-template-columns:minmax(0,1fr) minmax(80px,.45fr); }
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form>.ex-search { grid-template-columns:minmax(0,1fr); }
  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-query-form>.ex-search>div:first-child { grid-column:1/-1; }
  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-directory-record { padding:12px; gap:8px 16px; }
  .crm-row .crm-row-content { column-gap:10px; }
@@ -64,3 +64,10 @@ body.internal-app.has-crm-ux-profile .crm-filter-tools form.crm-filters { margin
 body.internal-app.has-crm-ux-profile .crm-filter-tools .cleanup-secondary-filters { margin:0; padding:4px 0; }
 body.internal-app.has-crm-ux-profile .crm-unified-history .crm-panel-heading { padding:0; }
 .cleanup-work-edit { float:right; font-size:12px; }
+
+/* Participants list: name, ID, location, interest, travel, optional type. */
+@media(min-width:801px) {
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer :is(.ex-directory-record,.ex-result-head) { grid-template-columns:minmax(160px,1.6fr) minmax(48px,.4fr) minmax(120px,1.1fr) minmax(150px,1fr) minmax(70px,.6fr); }
+ body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-has-type :is(.ex-directory-record,.ex-result-head) { grid-template-columns:minmax(160px,1.6fr) minmax(48px,.4fr) minmax(120px,1.1fr) minmax(150px,1fr) minmax(70px,.6fr) minmax(100px,.9fr); }
+}
+body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-results .btw-result-heading h2 { font-size:15px; }

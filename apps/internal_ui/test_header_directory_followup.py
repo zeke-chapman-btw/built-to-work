@@ -76,19 +76,17 @@ class HeaderDirectoryFollowupTests(ReportingFixtures):
         self.assertIn('ex-person-id', article)
         self.assertIn('Seeking work', article)
         self.assertIn('>No</span>', article)
-        self.assertIn('Type', article)
+        self.assertIn('Location', article)
         for unwanted in ['SYNTHETIC_HIDDEN_TRADE','SYNTHETIC_HIDDEN_SKILLS','<details','<small']:
             self.assertNotIn(unwanted, article)
         doc = landing.Document(article)
         links = [n for n in doc.nodes if n['tag']=='a']
-        self.assertEqual(len(links), 2)
-        self.assertIn('>View</a>', article)
-        self.assertEqual(links[0]['attrs']['href'],links[1]['attrs']['href'])
-        origin = parse_qs(urlsplit(links[1]['attrs']['href']).query)['from'][0]
+        self.assertEqual(len(links), 1)
+        origin = parse_qs(urlsplit(links[0]['attrs']['href']).query)['from'][0]
         self.assertIn('location=NY', origin)
         self.assertIn('sort=name_desc', origin)
         self.assertNotIn('assessment_source', origin)
-        profile = self.client.get(links[1]['attrs']['href'])
+        profile = self.client.get(links[0]['attrs']['href'])
         self.assertEqual(profile.status_code, 200)
         self.assertEqual(profile.context['directory_origin'], origin)
 

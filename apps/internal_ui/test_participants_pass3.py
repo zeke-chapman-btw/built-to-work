@@ -136,13 +136,12 @@ class ParticipantsPass3Tests(TestCase):
         start = html.index('p3-directory-row')
         row = html[start:html.index('</article>', start)]
         self.assertIn('class="ex-person-name"', row)
-        self.assertIn('>View</a>', row)
-        self.assertEqual(row.count('</a>'), 2)
+        self.assertEqual(row.count('</a>'), 1)
         self.assertNotIn('onclick=', row)
         self.assertNotIn('<details', row)
         self.assertNotIn('data-ui-menu', row)
         self.assertNotIn('<small', row)
-        for label in ['ID', 'Interest in work', 'Willing to travel', 'Type']:
+        for label in ['ID', 'Location', 'Interested in work', 'Travel']:
             self.assertIn(label, row)
 
     def test_filters_preserve_every_authorized_field_and_reader_restrictions(self):

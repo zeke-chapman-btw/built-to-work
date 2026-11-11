@@ -76,12 +76,11 @@ class PersonIdDirectoryTests(TestCase):
     def test_missing_table_facts_are_accessible_dashes_and_view_is_compactly_named(self):
         response=self.client.get(self.route,{'q':str(self.person.pk)})
         row,=re.findall(r'<article class="ex-result ex-directory-record.*?</article>',response.content.decode(),re.S)
-        self.assertEqual(row.count('class="ex-empty-value"'),3)
-        self.assertEqual(row.count('aria-label="Not recorded"'),3)
+        self.assertEqual(row.count('class="ex-empty-value"'),2)
+        self.assertEqual(row.count('aria-label="Not recorded"'),2)
         self.assertIn('ex-person-id',row)
         self.assertIn('<span>'+str(self.person.pk)+'</span>',row)
-        self.assertIn('>View</a>',row)
-        self.assertNotIn('>View profile</a>',row)
+        self.assertIn('aria-label="View profile for '+str(self.person)+'"',row)
         self.assertNotIn('Trailer code',row)
         self.assertNotIn(str(self.person.identity_uuid),row)
 
@@ -99,7 +98,8 @@ class PersonIdDirectoryTests(TestCase):
         response=self.client.get(self.route,{'q':'#'+str(person.pk)})
         self.assertEqual(response.status_code,200)
         row,=re.findall(r'<article class="ex-result ex-directory-record.*?</article>',response.content.decode(),re.S)
-        self.assertEqual(row.count('class="ex-empty-value"'),4)
+        self.assertEqual(row.count('class="ex-empty-value"'),3)
+        self.assertIn('>ID '+str(person.pk)+'</a>',row)
         self.assertIn('aria-label="View profile for ID '+str(person.pk)+'"',row)
 
     def test_type_edit_is_obvious_audited_and_does_not_change_person_id(self):

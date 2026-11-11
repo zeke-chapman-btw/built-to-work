@@ -624,7 +624,8 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
                 attrs.update({"aria-invalid":"true", "aria-describedby":identifier + "-errors"})
             return dict(label={"trade_interest":"Trade / work interest"}.get(key, bound.label),
                         identifier=identifier, widget=bound.as_widget(attrs=attrs), errors=bound.errors)
-        common_panels[device] = [presentation_field(key) for key in ("identifier","location") if key in form.fields]
+        common_panels[device] = [presentation_field(key) for key in ("location",) if key in form.fields]
+        type_fields = [presentation_field(key) for key in ("identifier",) if key in form.fields]
         advanced = []
         for title, names in definitions:
             fields = []
@@ -657,7 +658,7 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
     origin_values.pop("assessment_source", None)
     origin_query = urlencode(origin_values)
     directory_origin = request.path + ("?" + origin_query if origin_query else "")
-    return dict(explorer_reset=route, explorer_chips=chips, explorer_groups=groups, explorer_panels=panels, explorer_common=common_panels,
+    return dict(explorer_reset=route, explorer_chips=chips, explorer_groups=groups, explorer_panels=panels, explorer_common=common_panels, explorer_type_fields=type_fields,
                 explorer_hidden=hidden, explorer_filter_hidden=filter_hidden, explorer_charts=charts,
                 explorer_origin=directory_origin, explorer_clear=route,
                 explorer_unified=True, explorer_include_analysis=include_analysis,
@@ -676,6 +677,9 @@ def analytics(request):
     return _participant_explorer(request, include_analysis=True)
 
 
+PARTICIPANT_LIST_TABS = {'search': 'All participants', 'activity': 'Recent activity'}
+
+
 def _participant_explorer(request, *, include_analysis):
     """One discovery pipeline and presentation for the directory and opt-in analysis."""
     # Dedicated activity sections use only the existing relationship selectors.
@@ -684,7 +688,7 @@ def _participant_explorer(request, *, include_analysis):
         from apps.crm.directory_reads import directory_sections, directory_panel
         return render(request, 'participants/intelligence.html', context(request,
             page_title='Participants', active_participant_tab='directory', explorer_unified=True,
-            explorer_include_analysis=False, **directory_sections(request), **directory_panel(request, 'participants')))
+            explorer_include_analysis=False, **directory_sections(request, PARTICIPANT_LIST_TABS), **directory_panel(request, 'participants')))
     try:
         params = _criteria_from_request(request)
         form, population, criteria = discover(request.user, params, strict=bool(request.GET.get("saved")))
@@ -708,17 +712,18 @@ def _participant_explorer(request, *, include_analysis):
             effective_travel(career, travel_states.get(person.pk),
                 (person._travel_preference_id, person._travel_preference_at, person._travel_preference_value) if person._travel_preference_id else None), "Unknown")
     page.object_list = rows
+    explorer_has_type = any(person.primary_identifier for person in rows)
     from .intelligence import build_intelligence
     alternative = request.GET.get("view") == "alternatives"
     data = build_intelligence(request.user, population, criteria, current_group=not alternative) if include_analysis and form.is_valid() else {}
     presentation = _explorer_presentation(request, form, population, criteria, data, page, include_analysis=include_analysis)
     from apps.crm.directory_reads import directory_panel, directory_sections
-    panel = directory_sections(request)
+    panel = directory_sections(request, PARTICIPANT_LIST_TABS)
     if panel['directory_listing'] != 'search':
         panel.update(directory_panel(request, 'participants'))
     return render(request, "participants/intelligence.html", context(request, page_title="Participants",
         active_participant_tab="analytics" if include_analysis else "directory", filter_form=form, criteria=criteria, page_obj=page,
         total_participants=page.paginator.count, result_pages=page.paginator.get_elided_page_range(page.number, on_each_side=2, on_ends=1), query_without_page=query_string(criteria),
         directory_url=reverse("participants:staff-directory") + "?" + query_string(criteria),
-        explorer_details_open=request.GET.get("view") == "details", **presentation, **data, **panel),
+        explorer_details_open=request.GET.get("view") == "details", explorer_has_type=explorer_has_type, **presentation, **data, **panel),
         status=400 if form.errors else 200)
