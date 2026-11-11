@@ -27,9 +27,12 @@ class IntakeAuthoringPresentationTests(TestCase):
 
     def test_friendly_labels_keep_all_existing_destination_codes(self):
         form = QuestionConfigForm(contract=self.version.snapshot)
-        self.assertEqual({value for value, label in form.fields['destination'].choices}, {'submission_only'} | set(DESTINATIONS))
-        self.assertEqual(dict(form.fields['destination'].choices)['dob'], 'Date of birth')
-        self.assertEqual(form.fields['destination'].label, 'Save answer to')
+        flat = {}
+        for value, label in form.fields['destination'].choices:
+            flat.update(dict(label) if isinstance(label, (list, tuple)) else {value: label})
+        self.assertEqual(set(flat), {'submission_only'} | set(DESTINATIONS))
+        self.assertEqual(flat['dob'], 'Date of birth')
+        self.assertEqual(form.fields['destination'].label, 'Saves to profile')
 
     def test_order_change_moves_within_participant_step_and_retains_published_version(self):
         from .intake_lifecycle import revision

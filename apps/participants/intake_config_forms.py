@@ -4,6 +4,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from apps.events.models import Event, TrailerInstance
 from .models import QualificationCatalogEntry, IntakeFormAssignment
+from .intake_labels import destination_choices
 from .intake_contracts import DESTINATIONS, KINDS, PROTECTED, validate_contract
 
 
@@ -31,7 +32,7 @@ class QuestionConfigForm(forms.Form):
     step = forms.TypedChoiceField(label='Participant step', coerce=int, choices=[(1, "Step 1 — Personal information"), (2, "Step 3 — Education and employment"),
         (3, "Step 4 — Trade interests and experience"), (4, "Step 5 — Career preferences")])
     required = forms.BooleanField(required=False, label='Answer required')
-    destination = forms.ChoiceField(label="Save answer to", help_text='Choose an existing participant field or retain the answer only in submission history. Original saved answers are preserved.')
+    destination = forms.ChoiceField(label="Saves to profile", help_text='')
     options = forms.CharField(required=False, label='Answer choices', widget=forms.Textarea(attrs={"rows": 6}),
         help_text="One choice code | displayed answer per line. Keep existing codes to preserve recorded answers.")
     condition_mode = forms.ChoiceField(label='When to show this question', choices=[
@@ -51,9 +52,8 @@ class QuestionConfigForm(forms.Form):
                      if child else contract["questions"])
         self.question = next((q for q in questions if q["key"] == key), None)
         super().__init__(*args, **kwargs)
-        destination_labels = {'dob': 'Date of birth', 'current_situation': 'Reported situation'}
-        self.fields["destination"].choices = [("submission_only", "Submission history only")] + [
-            (key, destination_labels.get(key, key.replace("_", " ").title())) for key in sorted(DESTINATIONS)]
+        self.fields["destination"].choices = destination_choices(
+            DESTINATIONS, child=child, current=(self.question or {}).get("destination"))
         prior = []
         for q in questions:
             if q["key"] == key:
@@ -139,7 +139,7 @@ class QualificationMappingsForm(forms.Form):
         old = {(m["question"], m["value"]): m["catalog_uuid"] for m in contract["qualification_mappings"]}
         self.pairs = {}
         for key, kind in [("skills", "skill"), ("license_class", "license"), ("certification_choices", "certification")]:
-            choices = [("", "Keep as intake answer only")] + [(str(e.stable_id), e.name)
+            choices = [("", "Don't add to profile")] + [(str(e.stable_id), e.name)
                 for e in QualificationCatalogEntry.objects.filter(is_active=True, category__is_active=True, kind=kind).order_by("name")]
             for index, option in enumerate(questions[key]["options"]):
                 name = key + "_" + str(index)

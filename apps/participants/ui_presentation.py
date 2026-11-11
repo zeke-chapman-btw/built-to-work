@@ -6,13 +6,13 @@ def intake_editor_groups(form, mode):
         groups = [
             ('Question', ('label', 'help_text', 'type', 'step', 'required', 'destination'), False),
             ('Choices', ('options',), True),
-            ('Display conditions and selection limits', ('condition_mode', 'condition_field', 'condition_values', 'max_selections', 'min_selections', 'exclusive'), True),
+            ('When to show it', ('condition_mode', 'condition_field', 'condition_values', 'max_selections', 'min_selections', 'exclusive'), True),
         ]
     elif mode == 'skills':
         groups = [(field.label, (field.name,), True) for field in form.visible_fields()]
     else:
         groups = [(title, tuple(name for name in form.fields if name.startswith(prefix)), True)
-                  for title, prefix in [('Practiced skills', 'skills_'), ('Driver licenses', 'license_class_'), ('Certifications', 'certification_choices_')]]
+                  for title, prefix in [('Skills', 'skills_'), ("Driver's license class", 'license_class_'), ('Certifications', 'certification_choices_')]]
     result = []
     for title, names, optional in groups:
         fields = [form[name] for name in names if name in form.fields]

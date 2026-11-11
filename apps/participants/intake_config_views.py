@@ -14,6 +14,7 @@ from django.views.decorators.http import require_http_methods
 from .models import RegistrationForm, RegistrationFormVersion
 from .intake_lifecycle import (require_admin, create_form, duplicate_form, save_draft, publish,
                                retire, assign, revision)
+from .intake_labels import destination_text
 from .intake_config_forms import (QuestionConfigForm, SkillRelationsForm, QualificationMappingsForm, AssignmentForm)
 from .intake_contracts import validate_contract, PROTECTED
 from .intake_wizard import IntakeStepForm, STEP_NAMES, UI_STEP_NAMES, contract_step_for
@@ -123,7 +124,7 @@ def detail(request, form_id):
     for question in latest.snapshot['questions']:
         number = participant_step(question)
         # Display-only copy: the stored snapshot is never changed.
-        grouped.setdefault(number, []).append({**question, 'kind_label': kind_labels.get(question.get('type'), str(question.get('type', '')).replace('_', ' ').capitalize())})
+        grouped.setdefault(number, []).append({**question, 'destination_text': destination_text(question.get('destination')), 'kind_label': kind_labels.get(question.get('type'), str(question.get('type', '')).replace('_', ' ').capitalize())})
     question_groups = [{'number': number, 'title': labels.get(number, 'Other retained questions'),
                         'questions': grouped[number]} for number in sorted(grouped) if grouped[number]]
     return render(request, "participants/intake_config_detail.html", context(request,
@@ -165,8 +166,8 @@ def edit(request, form_id, key=None, child=False, mode="question"):
             messages.success(request, "Draft saved. Review and publish it before assigning.")
             return redirect("participants:intake-config-detail", form_id=draft.form_id)
     return render(request, "participants/intake_config_edit.html", context(request,
-        page_title={"question": "Edit intake question", "skills": "Approved trade skills",
-                    "mappings": "Qualification field mappings"}[mode],
+        page_title={"question": "Edit question" if key else "New question", "skills": "Trade skills",
+                    "mappings": "Profile qualifications"}[mode],
         intake_form=model, version=version, form=form, revision=request.POST.get("revision") if form.is_bound else revision(version), save_conflict=has_edit_conflict(form),
         is_protected=key in PROTECTED or child, mode=mode, editor_groups=intake_editor_groups(form,mode)))
 
