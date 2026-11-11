@@ -216,7 +216,7 @@ class HomeDashboard9G2ETests(TestCase):
         self.assertContains(response, '<details class="filter-advanced" open>', status_code=400)
         response = self.client.get(reverse('events:event_list'), {'view':'all','date_from':'2030-07-01','event_type':'rodeo'})
         self.assertContains(response, '<details class="filter-advanced" open>')
-        self.assertContains(response, 'UTC calendar dates')
+        self.assertContains(response, 'From date (UTC)')
 
     def test_pass_b_promotes_attention_and_events_without_widening_task_scope(self):
         from .test_home_dashboard_phase1b import Markup

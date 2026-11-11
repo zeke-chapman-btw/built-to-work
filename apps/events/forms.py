@@ -169,14 +169,18 @@ class EventForm(forms.ModelForm):
 
 class EventFilterForm(forms.Form):
     view = forms.ChoiceField(choices=(("upcoming", "Upcoming"), ("current", "Current"), ("completed", "Completed"), ("draft", "Draft"), ("cancelled", "Cancelled"), ("archived", "Archived"), ("all", "All events")))
-    q = forms.CharField(required=False, max_length=200, label="Search events")
-    event_type = forms.ChoiceField(required=False, choices=(("", "All event types"), *Event.EventType.choices))
+    q = forms.CharField(required=False, max_length=200, label="Event, venue or city")
+    event_type = forms.ChoiceField(required=False, label="Type", choices=(("", "Any type"), *Event.EventType.choices))
     date_from = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}), label="From date (UTC)")
     date_to = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}), label="Through date (UTC)")
 
     location = forms.CharField(required=False,max_length=100,label='Location')
-    details = forms.ChoiceField(required=False,label='Event details',choices=(('', 'Any details'),('progress','Details in progress'),('finalized','Details finalized')))
+    details = forms.ChoiceField(required=False,label='Details',choices=(('', 'Any details'),('progress','Details in progress'),('finalized','Details finalized')))
     sort = forms.ChoiceField(required=False,label='Sort',choices=(('date','Date'),('name','Name A–Z'),('-name','Name Z–A')))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.label_suffix = ""
 
     def clean(self):
         data = super().clean()

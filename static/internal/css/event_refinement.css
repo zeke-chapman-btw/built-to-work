@@ -301,3 +301,18 @@ form:has(input[name=purpose][value=general]:checked) .field-customer,
 form:has(input[name=purpose][value=general]:checked) .field-campaign,
 form:has(input[name=purpose][value=customer]:checked) .field-campaign,
 form:has(input[name=purpose][value=campaign]:checked) .field-customer { display:none; }
+/* Events list (el-) */
+body.internal-app #main-content .el-tabs{display:flex;gap:4px;border-bottom:1px solid var(--line,#e5e7eb);overflow-x:auto;margin-bottom:16px}
+body.internal-app #main-content .el-tabs a{display:inline-flex;align-items:center;gap:6px;padding:10px 12px;color:#4b5563;text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;font-weight:500}
+body.internal-app #main-content .el-tabs a[aria-current=page]{color:var(--btw-red,#d32f2f);border-bottom-color:var(--btw-red,#d32f2f)}
+body.internal-app #main-content .el-count{font-size:12px;color:#6b7280;font-weight:500}
+body.internal-app #main-content .el-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}
+body.internal-app #main-content .el-tile{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;column-gap:8px;align-items:center;padding:14px 16px;background:#fff;border:1px solid var(--line,#e5e7eb);border-radius:12px;text-decoration:none;color:inherit}
+body.internal-app #main-content .el-tile strong{font-size:22px;line-height:1.1}
+body.internal-app #main-content .el-tile span{grid-column:1;font-size:13px;color:#4b5563}
+body.internal-app #main-content .el-tile .btw-badge,body.internal-app #main-content .el-tile [class*=badge]{grid-column:2;grid-row:1/3}
+body.internal-app #main-content .el-tile.is-alert strong{color:var(--btw-red,#b91c1c)}
+body.internal-app #main-content .el-tile.is-warn strong{color:#b45309}
+body.internal-app #main-content .el-caption{caption-side:top;text-align:left;font-weight:600;padding:14px 16px;font-size:15px}
+body.internal-app #main-content .el-sub{display:block;color:#6b7280;font-size:12.5px;margin-top:2px}
+@media (max-width:720px){body.internal-app #main-content .el-tiles{grid-template-columns:1fr;gap:8px}}

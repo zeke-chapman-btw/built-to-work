@@ -105,7 +105,7 @@ def event_list(request):
             events = events.filter(start_at__lt=datetime.combine(values["date_to"] + timedelta(days=1), time.min, tzinfo=UTC))
     else:
         events = events.none()
-    events = events.order_by("-start_at" if selected in ("completed", "cancelled", "archived") else "start_at", "name", "pk")
+    events = events.select_related("customer", "campaign").order_by("-start_at" if selected in ("completed", "cancelled", "archived") else "start_at", "name", "pk")
     if valid and values.get('sort') in ('name','-name'):
         events=events.order_by(values['sort'],'start_at','pk')
     can_view_staffing = request.user.has_perm("staffing.manage_event_staffing")
@@ -121,12 +121,45 @@ def event_list(request):
     for event in rows:
         event.directory_registered = counts.get(event.pk, {}).get("registered")
         event.directory_checked_in = counts.get(event.pk, {}).get("checked_in")
+    now = timezone.now(); today = timezone.localdate()
+    from apps.events.models import Event as _E
+    _base = {"upcoming": Q(status="upcoming", start_at__gt=now), "current": Q(status="upcoming", start_at__lte=now, end_at__gte=now)}
+    tab_counts = {}
+    for value, _label in EventFilterForm.base_fields["view"].choices:
+        if value in ("all", "archived", "cancelled"):
+            continue
+        tab_counts[value] = _E.objects.filter(_base.get(value, Q(status=value))).count()
+    list_alerts = None
+    if can_view_staffing:
+        from apps.staffing import services as staffing_services
+        from apps.staffing.models import AvailabilityRequest
+        def _cov(e):
+            try:
+                return staffing_services.coverage(e)
+            except Exception:
+                return None
+        for event in rows:
+            cov = _cov(event) if event.status in ("upcoming", "draft") else None
+            event.staff_cov = cov if cov and cov["required"] else None
+        short = 0
+        for e in _E.objects.filter(status="upcoming", end_at__gte=now).order_by("start_at")[:50]:
+            cov = _cov(e)
+            if cov and cov["unfilled"]:
+                short += 1
+        list_alerts = {"short": short,
+                       "requests": AvailabilityRequest.objects.filter(status="pending", event__status__in=("upcoming", "draft")).count(),
+                       "details": _E.objects.filter(status="upcoming", end_at__gte=now, details_finalized_at__isnull=True).count()}
+    for event in rows:
+        try:
+            event.days_until = (timezone.localtime(event.start_at).date() - today).days
+        except Exception:
+            event.days_until = None
     page.object_list = rows
     parameters = request.GET.copy(); parameters.pop("page", None)
     tabs = []
     for value, label in EventFilterForm.base_fields["view"].choices:
         query = parameters.copy(); query["view"] = value
-        tabs.append({"id": value, "label": label, "url": "?" + query.urlencode()})
+        tabs.append({"id": value, "label": label, "url": "?" + query.urlencode(), "count": tab_counts.get(value)})
     active_filters=[]
     if valid:
         for key,label in (("q","Search"),("event_type","Type"),("date_from","From (UTC)"),("date_to","Through (UTC)"),("location","Location"),("details","Details")):
@@ -136,7 +169,7 @@ def event_list(request):
                 display=dict(filters.fields[key].choices).get(value,value) if key=="event_type" else value
                 active_filters.append(dict(label=label,value=display,url="?"+query.urlencode()))
     return render(request, "events/event_list.html", {"active_filters":active_filters,"events": page, "page_obj": page, "filters": filters,
-        "can_view_staffing": can_view_staffing, "view_tabs": tabs, "selected_view": selected, "view_label": dict(EventFilterForm.base_fields["view"].choices).get(selected, "Events"),
+        "can_view_staffing": can_view_staffing, "list_alerts": list_alerts, "view_tabs": tabs, "selected_view": selected, "view_label": dict(EventFilterForm.base_fields["view"].choices).get(selected, "Events"),
         "page_query": parameters.urlencode(), "page_title": "Events", "page_description": "Plan, publish and manage event operations."}, status=200 if valid else 400)
 
 
