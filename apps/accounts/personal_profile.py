@@ -21,7 +21,7 @@ class PersonalProfileForm(forms.Form):
     first_name = forms.CharField(max_length=100, required=False)
     last_name = forms.CharField(max_length=100, required=False)
     contact_email = forms.EmailField(required=False, label='Contact email',
-        help_text='For staff contact. Your sign-in and password-recovery email stays unchanged.')
+        help_text='')
     phone = forms.CharField(max_length=40, required=False)
     shirt_size = forms.ChoiceField(required=False, choices=[('', 'Not recorded')] + list(StaffProfile._meta.get_field('shirt_size').choices))
     revision = forms.CharField(widget=forms.HiddenInput)
@@ -41,7 +41,7 @@ class PersonalProfileForm(forms.Form):
         else:
             self.fields['first_name'].required = True
             self.fields['last_name'].required = True
-            self.fields['first_name'].help_text = 'Editing your staff name also updates your account display name.'
+            self.fields['first_name'].help_text = ''
             sizes = {value for value, label in self.fields['shirt_size'].choices}
             if profile.shirt_size and profile.shirt_size not in sizes:
                 self.fields['shirt_size'].choices = list(self.fields['shirt_size'].choices) + [(profile.shirt_size, profile.shirt_size + ' (existing)')]
