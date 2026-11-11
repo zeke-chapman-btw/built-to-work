@@ -46,7 +46,7 @@ class Post16A1Tests(EmployerFixtures, TestCase):
     def test_access_copy_does_not_claim_working_recruiting_is_unavailable(self):
         self.staff_login()
         response = self.client.get(reverse('customers:workspace', args=[self.organization.pk, 'access']))
-        self.assertContains(response, 'explicit candidate releases')
+        self.assertContains(response, 'Plan &amp; access')
         self.assertNotContains(response, 'remain unavailable regardless of entitlement')
 
     def test_participant_history_uses_the_event_local_date_without_changing_instants(self):

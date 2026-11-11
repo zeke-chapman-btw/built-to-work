@@ -161,7 +161,7 @@ def workspace(request, org_id, tab="overview"):
         data.update(memberships=org.memberships.select_related("identity", "contact"), membership_rows=membership_rows(org), contacts=org.contacts.all())
     elif tab == "access":
         plan = org.access_plan
-        data.update(plan=plan, capabilities=[(plan._meta.get_field(name).verbose_name, "Enabled" if getattr(plan, name) is True else "Disabled" if getattr(plan, name) is False else "Unconfigured") for name in s.PLAN_FIELDS[2:]], recent=activity(org).filter(audit__action="customer.access_plan.updated")[:5])
+        data.update(plan=plan, capabilities=[(plan._meta.get_field(name).verbose_name, "On" if getattr(plan, name) is True else "Off" if getattr(plan, name) is False else "Not set") for name in s.PLAN_FIELDS[2:]], recent=activity(org).filter(audit__action="customer.access_plan.updated")[:5])
     elif tab == "history":
         query = activity(org)
         term = request.GET.get("q", "").strip()

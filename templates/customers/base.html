@@ -1,6 +1,6 @@
 {% extends "internal/base.html" %}{% load customer_ui ui_patterns %}{% load static %}
 {% block title %}{% if organization %}{{ organization.name }} · {% endif %}Customers · Built to Work{% endblock %}
-{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/customers.css' %}?v=cx-layout-5">{% endblock %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/customers.css' %}?v=cx-layout-6">{% endblock %}
 {% block body_class %}{{ block.super }} customer-app{% if organization %} has-customer-page{% endif %}{% endblock %}
 {% block page_heading %}{% endblock %}{% block page_actions %}{% endblock %}
 {% block content %}<div class="customer-page">
@@ -19,6 +19,7 @@
 {% if organization.status != 'archived' %}<a class="button secondary" href="{% customer_url 'customers:edit' organization.pk %}">Edit customer</a>{% endif %}
 <details class="cx-more" data-ui-menu><summary>More</summary><div>
 {% for item in customer_tabs %}<a href="{{ item.url }}"{% if item.key == active_tab %} aria-current="page"{% endif %}>{{ item.label }}</a>{% endfor %}
+{% if organization.status != 'archived' %}<hr><a class="cx-danger" href="{% customer_url 'customers:organization-action' organization.pk 'archive' %}">Archive customer</a>{% endif %}
 </div></details>
 </div>
 </header>

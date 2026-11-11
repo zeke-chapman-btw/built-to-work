@@ -94,3 +94,27 @@
   .customer-app .cx-list-field { display:flex; flex-direction:column; gap:2px; }
   .customer-app .cx-list-label { display:block; font-size:.72rem; color:var(--muted,#6b7280); }
 }
+.customer-app .cx-list .btw-result-heading { border-bottom:0; padding-bottom:8px; }
+.customer-app .cx-list-field { align-items:flex-start; }
+.customer-app .cx-list-field .badge { justify-self:start; width:auto; }
+
+/* Customer sub-pages */
+.customer-app .cx-panel { padding:20px 24px; }
+.customer-app .cx-panel-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:0 0 12px; }
+.customer-app .cx-panel-head h2 { margin:0; font-size:1rem; font-weight:600; text-transform:none; letter-spacing:0; }
+.customer-app .cx-head-actions { display:flex; gap:16px; flex-wrap:wrap; }
+.customer-app .cx-link { font-weight:600; white-space:nowrap; }
+.customer-app .cx-page-actions { display:flex; justify-content:flex-end; margin:0 0 12px; }
+.customer-app .cx-seats { color:var(--muted,#56616d); margin:0 0 8px; }
+.customer-app .cx-user { display:flex; justify-content:space-between; gap:16px; padding:12px 0; border-top:1px solid var(--line,#e5e7eb); }
+.customer-app .cx-user .cx-row-main { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.customer-app .cx-user small { color:var(--muted,#56616d); }
+.customer-app .cx-user-actions { display:flex; flex-direction:column; align-items:flex-end; gap:4px; white-space:nowrap; }
+.customer-app .cx-more hr { border:0; border-top:1px solid var(--line,#e5e7eb); margin:4px 0; }
+.customer-app .cx-more .cx-danger { color:var(--danger,#b42318); }
+@media (max-width:639px) {
+  .customer-app .cx-panel { padding:16px; }
+  .customer-app .cx-user { flex-direction:column; gap:8px; }
+  .customer-app .cx-user-actions { flex-direction:row; flex-wrap:wrap; align-items:flex-start; gap:12px; }
+  .customer-app .cx-page-actions .button { width:100%; justify-content:center; }
+}

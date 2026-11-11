@@ -44,7 +44,7 @@ class CustomerUICorrectionsTests(PortalFixtures, TestCase):
         rows={row['member'].pk:row for row in response.context['membership_rows']}
         self.assertEqual([(rows[m.pk]['member'].manage_needs,rows[m.pk]['member'].manage_campaigns) for m in members],
                          [(False,False),(True,False),(False,True),(True,True)])
-        self.assertContains(response,'Workforce Needs:')
+        self.assertContains(response,'Open positions:')
         self.assertContains(response,'Campaigns:')
 
     def test_invitation_acceptance_and_membership_are_separate_facts(self):
