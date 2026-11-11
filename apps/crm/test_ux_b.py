@@ -42,9 +42,9 @@ class RelationshipUxTests(EmployerFixtures, TestCase):
         self.assertContains(response, '14 days')
         self.assertEqual(response.context['crm_summary']['btw_customer_count'], 0)
         self.assertEqual(response.context['crm_summary']['employer_count'], 1)
-        self.assertContains(response, 'BTW-recorded customer activity')
-        self.assertContains(response, 'Employer-owned activity')
-        self.assertContains(response, 'not confirmed delivery')
+        self.assertContains(response, 'Customer touchpoints')
+        self.assertContains(response, 'Logged by employers')
+        self.assertNotContains(response, 'not confirmed delivery')
 
     def test_archived_interactions_are_not_summary_facts_even_in_archived_view(self):
         row=self.create()

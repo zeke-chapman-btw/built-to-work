@@ -126,10 +126,10 @@ class CrmUxProfileTests(TestCase):
             self.assertNotContains(response, 'aria-label="BTW relationship summary"')
         relationship = self.client.get(self.url, {'section': 'relationship'})
         self.assertContains(relationship, 'aria-label="BTW relationship summary"', count=1)
-        self.assertContains(relationship, 'Relationship Summary')
-        self.assertContains(relationship, 'Interaction History')
-        self.assertContains(relationship, 'BTW-recorded customer activity')
-        self.assertContains(relationship, 'Employer-owned activity')
+        self.assertContains(relationship, 'Touchpoints</h2>')
+        self.assertContains(relationship, '<h2>History</h2>')
+        self.assertContains(relationship, 'Customer touchpoints')
+        self.assertContains(relationship, 'Logged by employers')
 
     def test_profile_leads_with_personal_facts_and_preserves_separate_reported_skills(self):
         response = self.client.get(self.url)
@@ -186,7 +186,7 @@ class CrmUxProfileTests(TestCase):
         self.assertNotContains(response, 'Interaction shortcuts')
         for label in ['Log call','Record email','Record text','Log meeting','Relationship note']:
             self.assertNotContains(response,label)
-        for label in ['Last BTW contact','Recent BTW activity','Next follow-up','BTW-recorded customer activity']:
+        for label in ['Last contact','Recent touchpoints','Next follow-up','Customer touchpoints']:
             self.assertContains(response,label)
         self.assertContains(response,'SYNTHETIC retained contact')
         self.assertContains(response,'Manually recorded')

@@ -6,4 +6,4 @@
 {% if item.outcome %}<p><strong>Outcome:</strong> {{ item.outcome }}</p>{% endif %}
 {% if item.next_step %}<p><strong>Next step:</strong> {{ item.next_step }}{% if item.follow_up_on %} · {{ item.follow_up_on|date:'M j, Y' }}{% endif %}</p>{% elif item.follow_up_on %}<p>Follow-up date: {{ item.follow_up_on|date:'M j, Y' }}</p>{% endif %}
 {% if item.notes %}<div class="crm-notes">{{ item.notes|linebreaksbr }}</div>{% endif %}<div class="crm-actions"><a href="{{ item.url }}">Details &amp; history</a>{% if item.can_edit and not item.archived %}<a href="{{ item.followup_url }}">+ Task</a><a href="{{ item.link_task_url }}">Link existing task</a>{% endif %}{% for link in item.tasks %}<a href="{% url 'operations:task' link.task_id %}?crm_return_to={{ request.get_full_path|urlencode }}">{{ link.task.title }}</a>{% endfor %}</div></details>
-</div></article>{% empty %}<p class="crm-empty">No interactions match this view.</p>{% endfor %}
+</div></article>{% empty %}<p class="crm-empty">No touchpoints yet</p>{% endfor %}

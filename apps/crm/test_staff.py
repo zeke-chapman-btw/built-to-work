@@ -47,8 +47,8 @@ class StaffCrmTests(EmployerFixtures, TestCase):
         self.assertContains(profile, payload["summary"])  # recent touchpoints show on the profile
         relationship = self.client.get(reverse("participants:staff-profile", args=[self.person.pk]), {"section": "relationship"})
         self.assertContains(relationship, payload["summary"])
-        self.assertContains(relationship, "BTW Interactions")
-        self.assertContains(relationship, "Employer Interactions")
+        self.assertContains(relationship, "BTW touchpoints")
+        self.assertContains(relationship, "From employers")
         self.assertContains(profile, 'id="profile-skills"')
         self.assertContains(profile, 'id="profile-documents"')
 

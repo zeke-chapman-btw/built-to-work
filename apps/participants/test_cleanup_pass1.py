@@ -205,7 +205,7 @@ class ParticipantCleanupTests(EmployerFixtures, TestCase):
         self.client.force_login(staff,backend='django.contrib.auth.backends.ModelBackend')
         r=self.client.get(self.profile,{'section':'relationship'})
         self.assertIsNone(r.context['crm_summary']['employer_count'])
-        self.assertContains(r,'Not available')
+        self.assertContains(r,'<strong>—</strong>')
         self.assertNotContains(r,'SYNTHETIC employer record')
 
     def test_source_event_comes_from_acquisition_not_later_registration(self):
@@ -243,7 +243,7 @@ class ParticipantCleanupTests(EmployerFixtures, TestCase):
         r=self.client.get(reverse('customers:workspace',args=[self.organization.pk,'overview']))
         self.assertTrue(r.context['crm_summary']['btw_allowed'])
         self.assertEqual(r.context['crm_summary']['btw_customer_count'],1)
-        self.assertContains(r,'Last BTW contact')
+        self.assertContains(r,'Last contact')
         self.assertContains(r,'Phone call')
         self.assertNotContains(r,'Contact context')
         relationship=self.client.get(reverse('customers:workspace',args=[self.organization.pk,'crm']))
