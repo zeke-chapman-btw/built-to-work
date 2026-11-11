@@ -48,16 +48,16 @@ class PortalProfileExpansionTests(TestCase):
         response = self.client.get(self.path('profile'))
         self.assertEqual(response.status_code, 200)
         for text in ('Work Experience', 'Skills &amp; Trades', 'Education &amp; Training', 'Licenses &amp; Certifications',
-                     'Edit Information', 'Add Your Work Experience', 'Add Your Skills', 'Upload Your Resume', 'Job Opportunities'):
+                     'Edit Information', 'Add Your Work Experience', 'Add Your Skills', 'Upload Your Resume', 'Jobs'):
             self.assertContains(response, text)
         self.assertNotContains(response, '<input type="text"')
         self.assertNotContains(response, '<textarea')
         jobs = self.client.get(self.path('portal-jobs'))
-        self.assertContains(jobs, 'Job Opportunities')
-        self.assertContains(jobs, 'Browse opportunities')
+        self.assertContains(jobs, '<h1 class="page-title">Jobs</h1>', html=True)
+        self.assertContains(jobs, 'Open positions')
         self.assertNotContains(jobs, 'Coming soon')
         self.assertRegex(jobs.content.decode(), r'<a\b(?=[^>]*href="' + re.escape(self.path('portal-jobs')) + r'")(?=[^>]*aria-current="page")[^>]*>')
-        self.assertNotContains(self.client.get(self.path('portal-events')), '<h2>Job Opportunities</h2>')
+        self.assertNotContains(self.client.get(self.path('portal-events')), '<h2>Jobs</h2>')
 
     def test_each_current_section_updates_only_its_fields(self):
         from apps.recruiting.models import Classification, RecruitingProfile

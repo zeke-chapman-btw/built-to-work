@@ -68,7 +68,7 @@ class ProfileRefinementTests(TestCase):
 
     def test_name_led_read_first_profile_and_natural_empty_assessments(self):
         response = self.client.get(reverse('participants:profile'))
-        self.assertContains(response, '<h1 class="page-title">My Profile</h1>', html=True)
+        self.assertContains(response, '<h1 class="page-title">My profile</h1>', html=True)
         self.assertContains(response, '<h2 class="profile-name">Alex Profile</h2>', html=True)
         self.assertContains(response, 'Example City, GA')
         self.assertContains(response, 'Assessment Results')
@@ -181,7 +181,7 @@ class ProfileRefinementTests(TestCase):
         response=self.client.get(reverse('participants:portal-document-add'))
         self.assertContains(response,'enctype="multipart/form-data"')
         self.assertContains(response,'href="/participants/profile/#documents">Cancel')
-        self.assertContains(response,'Job Opportunities')
+        self.assertContains(response,'Jobs')
         self.assertNotContains(response,'Back to sign in')
 
     def test_unauthenticated_and_plain_staff_cannot_read_assessments(self):

@@ -1,7 +1,7 @@
 {% extends 'shared/application_base.html' %}{% load static %}
 {% block title %}My Built to Work{% endblock %}
 {% block meta %}<meta name="referrer" content="same-origin">{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'participants/portal.css' %}">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'participants/portal.css' %}?v=pp-1">{% endblock %}
 {% block preview_notice %}{% if request.portal_preview %}<div class="application-notice-frame"><aside class="application-preview-notice" aria-label="Admin preview"><strong>Admin Preview — Participant Portal</strong><p>Interactive synthetic data only · Your administrator account stays signed in.</p></aside></div>{% endif %}{% endblock %}
 {% block workspace_tabs %}<div class="portal-page portal-main">{% endblock %}
 {% block content_end %}</div>{% endblock %}

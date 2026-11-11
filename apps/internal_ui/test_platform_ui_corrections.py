@@ -15,7 +15,7 @@ class PortalDocumentCorrectionsTests(SimpleTestCase):
             with self.subTest(populated=bool(rows)):
                 body=render_to_string('participants/portal/activity.html',{'recorded_sessions':rows,'registrations':[],
                     'interests':[],'section':'activity'})
-                self.assertEqual(re.search(r'<title>(.*?)</title>',body,re.S).group(1),'My Activity · Built to Work')
+                self.assertEqual(re.search(r'<title>(.*?)</title>',body,re.S).group(1),'My activity · Built to Work')
                 self.assertEqual(body.count('<h2>Recorded participation</h2>'),1)
                 if rows:self.assertEqual(body.count(event.name),1)
 
@@ -25,7 +25,7 @@ class PortalDocumentCorrectionsTests(SimpleTestCase):
             get_public_registration_status_display=lambda:'Open')
         body=render_to_string('participants/portal/events.html',{'events':[event]})
         self.assertIn(reverse('participants:portal-event',args=[event.pk]),body)
-        self.assertIn('View Event Details',body)
+        self.assertIn('View details',body)
         self.assertIn('View registration',body)
 
     def test_activity_does_not_link_to_no_longer_public_event(self):

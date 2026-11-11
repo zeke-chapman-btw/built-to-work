@@ -181,5 +181,5 @@ class WorkflowTests(WorkflowFixtures,TestCase):
         for url in urls:self.assertEqual(self.client.get(url).status_code,200,url)
         self.client.force_login(self.portal,backend='apps.participants.auth.ParticipantAuthenticationBackend')
         for url in [reverse('participants:portal-jobs'),reverse('recruiting:portal-job',args=[self.opportunity.pk])]:
-            response=self.client.get(url);self.assertEqual(response.status_code,200,url);self.assertContains(response,'Job Opportunities')
+            response=self.client.get(url);self.assertEqual(response.status_code,200,url);self.assertContains(response,'Jobs')
         self.assertEqual(self.client.get(reverse('recruiting:pipeline')).status_code,403)

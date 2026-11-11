@@ -130,7 +130,7 @@ class ParticipantSharedShellTests(TestCase):
         self.assertContains(profile,'My Profile sections');self.assertContains(profile,'#documents')
         self.assertContains(profile,'profile-name');self.assertContains(profile,'SYNTHETIC Shell Participant')
         activity=self.client.get(reverse('participants:portal-activity'))
-        self.assertContains(activity,'<title>My Activity · Built to Work</title>',html=True)
+        self.assertContains(activity,'<title>My activity · Built to Work</title>',html=True)
         self.assertContains(activity,'Recorded participation',count=1)
 
     def test_independent_editor_retains_values_and_active_profile_navigation(self):
