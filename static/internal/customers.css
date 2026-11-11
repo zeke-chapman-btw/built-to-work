@@ -118,3 +118,8 @@
   .customer-app .cx-user-actions { flex-direction:row; flex-wrap:wrap; align-items:flex-start; gap:12px; }
   .customer-app .cx-page-actions .button { width:100%; justify-content:center; }
 }
+.customer-app .cx-button-row { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
+.customer-app .cx-context { margin:0 0 12px; color:var(--muted,#56616d); }
+.customer-app .cx-muted { color:var(--muted,#56616d); }
+.customer-app .cx-chips { display:flex; gap:6px; flex-wrap:wrap; }
+.customer-app .cx-form-heading h2 { margin:0; font-size:1.125rem; }

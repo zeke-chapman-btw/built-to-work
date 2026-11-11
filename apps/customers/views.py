@@ -308,15 +308,15 @@ def need_detail(request, org_id, record_id):
     working, actions = obj.working_revision, []
     if working:
         if obj.status not in {"closed", "cancelled"} and working.state == "draft":
-            actions.append(("submit", "Submit for BTW review"))
+            actions.append(("submit", "Submit for review"))
         if obj.status != "cancelled" and working.state == "submitted":
-            actions += [("review", "Start BTW review"), ("return", "Return for correction")]
+            actions += [("review", "Start review"), ("return", "Send back")]
         if obj.status != "cancelled" and working.state == "review":
-            actions += [("approve", "Approve this revision"), ("return", "Return for correction")]
-        actions.append(("withdraw", "Withdraw pending revision"))
-    actions += {"active": [("hold", "Place on hold"), ("close", "Close / complete")], "hold": [("resume", "Resume approved Need"), ("close", "Close / complete")]}.get(obj.status, [])
+            actions += [("approve", "Approve changes"), ("return", "Send back")]
+        actions.append(("withdraw", "Withdraw changes"))
+    actions += {"active": [("hold", "Put on hold"), ("close", "Close position")], "hold": [("resume", "Reopen"), ("close", "Close position")]}.get(obj.status, [])
     if obj.status not in {"closed", "cancelled"}:
-        actions.append(("cancel", "Cancel Need"))
+        actions.append(("cancel", "Cancel position"))
     return render(request, "customers/need.html", context(request, org, "needs", need=obj, effective_sections=revision_sections(obj.effective_revision), working_sections=revision_sections(working), actions=actions, editable=obj.status not in {"closed", "cancelled"} and (not working or working.state == "draft"), revisions=[{"revision": rev, "sections": revision_sections(rev)} for rev in obj.revisions.all()], recent=activity(org, need=obj)[:30]))
 
 
@@ -373,9 +373,9 @@ def campaign_directory(request):
 def campaign_detail(request, org_id, record_id):
     org = org_for(request, org_id)
     obj = get_object_or_404(Campaign, organization=org, pk=record_id)
-    actions = {"planning": [("approve_activate", "Approve & activate"), ("hold", "Place on hold"), ("cancel", "Cancel")], "active": [("hold", "Place on hold"), ("complete", "Complete"), ("cancel", "Cancel")], "hold": [("approve_activate", "Approve & activate"), ("planning", "Return to planning"), ("cancel", "Cancel")]}.get(obj.status, [])
+    actions = {"planning": [("approve_activate", "Approve & activate"), ("hold", "Put on hold"), ("cancel", "Cancel campaign")], "active": [("hold", "Put on hold"), ("complete", "Mark complete"), ("cancel", "Cancel campaign")], "hold": [("approve_activate", "Approve & activate"), ("planning", "Return to planning"), ("cancel", "Cancel campaign")]}.get(obj.status, [])
     if obj.status == "hold" and obj.approved_planning_version == obj.planning_version:
-        actions.append(("complete", "Complete"))
+        actions.append(("complete", "Mark complete"))
     return render(request, "customers/campaign.html", context(request, org, "campaigns", campaign=obj, actions=actions, needs=obj.workforce_needs.select_related("effective_revision", "working_revision"), recent=activity(org, campaign=obj)[:30]))
 
 
