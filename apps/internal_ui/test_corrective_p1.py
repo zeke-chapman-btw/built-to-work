@@ -147,7 +147,7 @@ class CorrectivePassOneTests(TestCase):
                     self.assertNotContains(response, 'planned-workspace')
                     continue
                 self.assertContains(response, 'id="approvals-workspace"')
-                for category in ('Events', 'Verification', 'Customer Approval', 'Job Postings'):
+                for category in ('Events', 'Verification', 'Customer approval', 'Job postings'):
                     self.assertContains(response, category)
                 self.assertContains(response, reverse('staffing:queue'))
                 self.assertNotContains(response, '<form method="post"')

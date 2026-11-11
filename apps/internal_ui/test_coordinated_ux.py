@@ -25,7 +25,7 @@ class CoordinatedSettingsTests(TestCase):
         self.assertContains(response,'data-workspace-header',count=1)
         self.assertContains(response,'data-workspace-content',count=1)
         self.assertContains(response,'Your account')
-        self.assertContains(response,'Portal Preview')
+        self.assertContains(response,'Portal preview')
         self.assertContains(response,'href="'+reverse('internal:portal-preview')+'"',count=1)
         for text in ['future home','home to be reviewed','empty-state card','Other destinations']:
             self.assertNotContains(response,text)

@@ -83,7 +83,7 @@ def pipeline(request):
     columns=[{'stage':s,'count':rows.filter(stage=s).count(),'rows':rows.filter(stage=s)[:15]} for s in RecruitingStage.objects.filter(Q(is_active=True)|Q(candidateopportunity__in=rows)).distinct()] if view=='board' else []
     query=request.GET.copy();query.pop('page',None)
     view_query=query.copy();view_query.pop('view',None)
-    return page(request,'recruiting/pipeline.html',page_title='Recruiting Pipelines',rows=Paginator(rows,30).get_page(request.GET.get('page')),query_without_page=query.urlencode(),
+    return page(request,'recruiting/pipeline.html',page_title='Pipelines',rows=Paginator(rows,30).get_page(request.GET.get('page')),query_without_page=query.urlencode(),
         columns=columns,view=view,q=q,opportunities=opportunities,filters=request.GET,view_query=view_query.urlencode())
 
 

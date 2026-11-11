@@ -25,7 +25,7 @@ def _sections(user):
     sections = [{'key': 'account', 'label': 'Account', 'groups': []}]
     if staff:
         sections.append({'key': 'staff', 'label': 'Staff', 'url': reverse('staffing:directory'), 'groups': []})
-    for key, label in [('portal', 'Portal Preview'), ('compensation', 'Compensation Settings')]:
+    for key, label in [('portal', 'Portal preview'), ('compensation', 'Compensation')]:
         if key in direct:
             sections.append({'key': key, 'label': label, 'url': direct[key]['url'], 'groups': []})
     # Preserve the existing Administrator-only catalog visibility and guards.

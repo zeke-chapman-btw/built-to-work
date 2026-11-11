@@ -15,7 +15,7 @@ from apps.recruiting.selection import opportunities_for
 from apps.participants.verification_services import can_view_qualification_approvals
 
 CATEGORIES = (('events', 'Events'), ('verification', 'Verification'),
-              ('customer', 'Customer Approval'), ('jobs', 'Job Postings'))
+              ('customer', 'Customer approval'), ('jobs', 'Job postings'))
 
 
 def access_flags(user):

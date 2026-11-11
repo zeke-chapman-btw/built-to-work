@@ -109,7 +109,7 @@ def directory(request):
         request_query = query.copy()
         request_query['request'] = str(item.pk)
         item.filter_url = '?' + request_query.urlencode()
-    return page(request, 'recruiting/workforce_needs.html', page_title='Workforce Needs',
+    return page(request, 'recruiting/workforce_needs.html', page_title='Positions',
         filters=form, needs_page=records, need_rows=rows, requests=request_rows, request_count=requests.count(),
         can_manage_requests=can_customers, query_without_page=query.urlencode(),
         active_filters=(sum(bool(form.cleaned_data.get(k)) for k in ('q', 'customer', 'request'))

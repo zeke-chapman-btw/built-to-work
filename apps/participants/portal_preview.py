@@ -181,7 +181,7 @@ def index(request):
     require_admin(request.user)
     from apps.internal_ui.views import _staff_context
     return render(request, 'internal/portal_preview.html', _staff_context(request,
-        page_title='Portal Preview', preview_enabled=enabled()))
+        page_title='Portal preview', preview_enabled=enabled()))
 
 
 @never_cache

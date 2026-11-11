@@ -83,7 +83,7 @@ class DomainApprovalsHubTests(EmployerFixtures,TestCase):
         self.client.force_login(self.admin,backend=BACKEND)
     def test_all_four_tabs_are_real_and_no_placeholder_remains(self):
         response=self.client.get(URL)
-        self.assertEqual([t['label']for t in response.context['approval_tabs']],['Events','Verification','Customer Approval','Job Postings'])
+        self.assertEqual([t['label']for t in response.context['approval_tabs']],['Events','Verification','Customer approval','Job postings'])
         self.assertNotContains(response,'Approvals is planned')
         self.assertContains(response,'aria-current="page"')
         self.assertEqual(self.client.get(URL,{'tab':'unknown'}).status_code,404)
