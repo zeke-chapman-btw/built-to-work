@@ -228,3 +228,4 @@ button,a{font-family:var(--font-interface)}
 .question-screen .question-text,.question-screen .question-stage.no-image .question-text,.question-screen .question-stage.has-image .question-text{color:#000}
 .question-screen .question-timer{top:calc(14 * var(--u));width:calc(150 * var(--u));height:calc(84 * var(--u));font-size:calc(66 * var(--u));transition:background-color .3s,color .3s}
 .kiosk-screen .home-alert{top:calc(305 * var(--u));min-height:calc(400 * var(--u));justify-content:center}
+.kiosk-screen .scan-guide{width:calc(520 * var(--u))}.kiosk-screen .scan-guide-art{width:calc(440 * var(--u));height:calc(314 * var(--u))}
