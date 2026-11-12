@@ -427,3 +427,9 @@ body.internal-app #main-content .sl-item figcaption span{color:var(--muted)}
 body.internal-app #main-content .sl-item figcaption a{color:var(--brand-red-dark,#a51d24);font-weight:500}
 body.internal-app #main-content .sl-note{margin:0;padding:12px 16px 0;font-size:13px}
 body.internal-app #main-content .sl-unused .sl-frame{opacity:.75}
+body.internal-app #main-content .sl-phone-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;padding:16px}
+body.internal-app #main-content .sl-phone-item{margin:0;display:flex;gap:14px;align-items:center}
+body.internal-app #main-content .sl-phone-item img{width:110px;height:110px;flex:0 0 110px;background:#fff;border:1px solid var(--line,#e5e7eb);border-radius:8px;padding:6px}
+body.internal-app #main-content .sl-phone-item figcaption{display:flex;flex-direction:column;gap:4px;font-size:13px;min-width:0}
+body.internal-app #main-content .sl-phone-item figcaption span{color:var(--muted)}
+body.internal-app #main-content .sl-phone-item a,body.internal-app #main-content .sl-copy{color:var(--brand-red-dark,#a51d24);font-weight:500;font-size:13px;background:none;border:0;padding:0;text-align:left;cursor:pointer}

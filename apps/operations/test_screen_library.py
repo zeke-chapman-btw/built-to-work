@@ -26,3 +26,9 @@ class ScreenLibraryTests(TestCase):
         self.assertEqual(self.client.get(reverse("operations:screens")).status_code, 403)
         self.client.logout()
         self.assertEqual(self.client.get(reverse("operations:screens")).status_code, 302)
+
+    def test_library_lists_phone_signup_links(self):
+        self.client.force_login(self.admin, backend="django.contrib.auth.backends.ModelBackend")
+        response = self.client.get(reverse("operations:screens"))
+        self.assertContains(response, "Try it on your phone")
+        self.assertContains(response, reverse("participants:registration-start"))

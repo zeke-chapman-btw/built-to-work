@@ -185,7 +185,22 @@ def index(request):
         groups.setdefault(group, []).append({"key": key, "title": title, "device": device[0], "width": device[1], "height": device[2], "image": True})
     if NOT_IN_USE in groups:
         groups[NOT_IN_USE] = groups.pop(NOT_IN_USE)
-    return render(request, "operations/screen_library.html", {"page_title": "Screens", "groups": groups.items(), "not_in_use": NOT_IN_USE})
+    return render(request, "operations/screen_library.html", {"page_title": "Screens", "groups": groups.items(), "not_in_use": NOT_IN_USE,
+                                                              "phone_links": _phone_links(request)})
+
+
+def _phone_links(request):
+    """Real sign-up links, with QR codes, so staff can walk through the intake form on their own phone."""
+    from django.urls import reverse
+    from apps.events.models import Event
+    links = [{"label": "General sign-up (no event)", "url": request.build_absolute_uri(reverse("participants:registration-start"))}]
+    upcoming = Event.objects.filter(end_at__gte=timezone.now()).order_by("start_at")[:4]
+    for event in upcoming:
+        links.append({"label": event.name, "when": event.start_at,
+                      "url": request.build_absolute_uri(reverse("participants:registration-event-start", args=[event.pk]))})
+    for link in links:
+        link["qr"] = _qr(link["url"])
+    return links
 
 
 @login_required(login_url="/admin/login/")
