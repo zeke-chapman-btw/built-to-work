@@ -215,3 +215,16 @@ button,a{font-family:var(--font-interface)}
 .category-page .category-grid:not(.is-many){grid-auto-rows:calc(130 * var(--u));row-gap:calc(30 * var(--u));top:calc(400 * var(--u))}
 .category-page .category-grid.is-many{display:flex;flex-wrap:wrap;justify-content:center;gap:calc(20 * var(--u)) calc(40 * var(--u))}
 .category-page .category-grid.is-many .category-choice{flex:0 0 calc(480 * var(--u));width:calc(480 * var(--u));height:calc(96 * var(--u))}
+.kiosk-screen .home-primary h1{top:calc(30 * var(--u))}
+.kiosk-screen .home-instruction{top:calc(165 * var(--u))}
+.kiosk-screen .home-support{top:calc(245 * var(--u));font-size:calc(38 * var(--u))}
+.kiosk-screen .scan-guide{position:absolute;top:calc(320 * var(--u));left:50%;width:calc(400 * var(--u));transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
+.kiosk-screen .scan-guide-art{width:calc(330 * var(--u));height:calc(330 * var(--u));display:block}
+.kiosk-screen .scan-guide p{margin:calc(6 * var(--u)) 0 0;color:#000;font:700 calc(34 * var(--u))/1 var(--font-display);letter-spacing:.05em;text-transform:uppercase}
+.kiosk-screen .scan-feedback{position:absolute;top:calc(715 * var(--u));left:0;width:100%;margin:0;color:var(--brand-red);font:700 calc(34 * var(--u))/1 var(--font-display);text-align:center;text-transform:uppercase}
+.kiosk-screen .home-alert{position:absolute;top:calc(330 * var(--u));left:50%;z-index:5;width:calc(1100 * var(--u));transform:translateX(-50%);padding:calc(40 * var(--u)) calc(50 * var(--u));box-sizing:border-box;background:#fff;border:calc(6 * var(--u)) solid var(--brand-red);border-radius:calc(16 * var(--u));box-shadow:0 calc(14 * var(--u)) calc(40 * var(--u)) rgba(0,0,0,.25);display:flex;flex-direction:column;gap:calc(14 * var(--u));text-align:center}
+.kiosk-screen .home-alert strong{color:var(--brand-red);font:700 calc(72 * var(--u))/1 var(--font-display);text-transform:uppercase}
+.kiosk-screen .home-alert span{color:#000;font:400 calc(38 * var(--u))/1.3 var(--font-interface)}
+.question-screen .question-text,.question-screen .question-stage.no-image .question-text,.question-screen .question-stage.has-image .question-text{color:#000}
+.question-screen .question-timer{top:calc(14 * var(--u));width:calc(150 * var(--u));height:calc(84 * var(--u));font-size:calc(66 * var(--u));transition:background-color .3s,color .3s}
+.kiosk-screen .home-alert{top:calc(305 * var(--u));min-height:calc(400 * var(--u));justify-content:center}

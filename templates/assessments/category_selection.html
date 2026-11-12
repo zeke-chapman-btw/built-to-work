@@ -2,7 +2,7 @@
 {% block title %}Choose Your Skills{% endblock %}
 {% block content %}
 <section class="screen category-page" data-idle-screen data-ignore-scans="true" aria-labelledby="category-title">
-  <h1 id="category-title" class="category-question">PICK 2 SKILLS</h1><p class="category-help">Tap the two you're most interested in.</p>
+  <h1 id="category-title" class="category-question">PICK 2 SKILLS</h1><p class="category-help">Tap the two you're most interested in. You can't change them once you start.</p>
   <form method="post" id="category-form" class="category-form">
     {% csrf_token %}
     <div class="category-grid{% if configs|length > 6 %} is-many{% endif %}" role="group" aria-label="Choose exactly two skill categories">

@@ -122,6 +122,8 @@ def _image_url():
 # (key, group, title, device, template, context builder)
 SCREENS = [
     ("kiosk-home", "Kiosk", "Home: scan your ticket", KIOSK, "stations/kiosk_home.html", lambda: _kiosk_base()),
+    ("kiosk-home-error", "Kiosk", "Home: ticket problem", KIOSK, "stations/kiosk_home.html",
+     lambda: {**_kiosk_base(), "friendly_error": "This ticket isn't for today's event. Please ask a Built to Work team member for help."}),
     ("kiosk-signup", "Kiosk", "Sign up here", KIOSK, "stations/kiosk_signup.html",
      lambda: {**_kiosk_base(), "signup_qr_data": _qr_png("https://example.org/sign-up")}),
     ("kiosk-not-ready", "Kiosk", "Station not ready", KIOSK, "assessments/not_ready.html", lambda: _kiosk_base()),

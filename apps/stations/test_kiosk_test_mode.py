@@ -299,7 +299,7 @@ class KioskTestModeTests(TestCase):
         self.assertNotIn("test_kiosk_session", self.client.session)
         self.assertNotIn("participant_kiosk_session", self.client.session)
         self.assertNotContains(response, "TEST MODE")
-        self.assertContains(response, "Please try scanning")
+        self.assertContains(response, "Hold it under the scanner on the desk and try again.")
         self.assertNotContains(response, "input.value='';form.requestSubmit()")
 
     def test_development_setup_is_repeatable_and_preserves_active_context(self):

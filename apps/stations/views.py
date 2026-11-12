@@ -188,13 +188,13 @@ def participant_kiosk(request, station_code):
         else:
             ticket_error_code = status
             friendly_error = {
-                "wrong_event": "Please ask a Built to Work team member for help.",
-                "expired": "Please try scanning your Built to Work QR ticket again.",
-                "revoked": "Please try scanning your Built to Work QR ticket again.",
+                "wrong_event": "This ticket is for a different event. Please ask a Built to Work team member for help.",
+                "expired": "This ticket has expired. Please ask a Built to Work team member for help.",
+                "revoked": "This ticket is no longer active. Please ask a Built to Work team member for help.",
                 "registration_inactive": "Please try scanning your Built to Work QR ticket again.",
                 "prior_activity_required": "Please ask a Built to Work team member for help.",
                 "check_in_unavailable": "Please ask a Built to Work team member for help.",
-                "not_found": "Please try scanning your Built to Work QR ticket again.",
+                "not_found": "We couldn't read that ticket. Hold it under the scanner on the desk and try again.",
                 "station_unconfigured": "This kiosk is not ready yet. Please ask a Built to Work team member for help.",
             }.get(status, "Please ask a Built to Work team member for help before continuing.")
     return render(request, "stations/kiosk_home.html", {
