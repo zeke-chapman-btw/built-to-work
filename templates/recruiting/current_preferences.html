@@ -1,7 +1,7 @@
 {% load current_preferences %}{% current_preferences_for participant as preferences %}
 <dl class="current-preference-facts">
-<div><dt>Current employment situation</dt><dd>{{ preferences.employment.value }}<small class="p2-source">{{ preferences.employment.source }}</small></dd></div>
-<div><dt>Availability</dt><dd>{{ preferences.availability.value }}<small class="p2-source">{{ preferences.availability.source }}</small></dd></div>
+<div><dt>Current employment situation</dt><dd>{{ preferences.employment.value }}{% if preferences.employment.source != 'Current preference' %}<small class="p2-source">{{ preferences.employment.source }}</small>{% endif %}</dd></div>
+<div><dt>Availability</dt><dd>{{ preferences.availability.value }}{% if preferences.availability.source != 'Current preference' %}<small class="p2-source">{{ preferences.availability.source }}</small>{% endif %}</dd></div>
 <div><dt>Employment interest</dt><dd>{{ preferences.interest }}</dd></div>
 <div><dt>Willing to travel</dt><dd>{{ preferences.travel }}</dd></div>
 <div><dt>Willing to relocate</dt><dd>{{ preferences.relocation }}</dd></div>

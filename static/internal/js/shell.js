@@ -76,3 +76,15 @@
   });
   closeMenu(false);
 })();
+
+// Scrolling tab rows (phones): bring the current tab into view instead of leaving it cut off.
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('nav').forEach(function (nav) {
+    if (nav.scrollWidth <= nav.clientWidth + 1) return;
+    var current = nav.querySelector('[aria-current="page"], .is-active');
+    if (!current) return;
+    var left = current.offsetLeft - nav.offsetLeft;
+    var target = left - (nav.clientWidth - current.offsetWidth) / 2;
+    nav.scrollLeft = Math.max(0, target);
+  });
+});
