@@ -475,9 +475,10 @@ def game_handoff(request, station_code, session_id):
     attempt = _current_attempt(session)
     if not attempt or attempt.status != QuizAttempt.Status.COMPLETE:
         return redirect("assessments:station_start", station_code=station.code, session_id=session.pk)
-    if configured_game(session.event):
-        return redirect("games:launch", station_code=station.code, session_id=session.pk)
-    return redirect("games:simulator_next", station_code=station.code, session_id=session.pk)
+    config = configured_game(session.event)
+    if config is None:
+        return redirect("games:simulator_next", station_code=station.code, session_id=session.pk)
+    return render(request, "assessments/duck_handoff.html", {"station": station, "session": session, "first_name": _participant_first_name(session), "game_configuration": config})
 
 def finish(request, station_code, session_id):
     station, session = _kiosk_session(request, station_code, session_id)

@@ -305,6 +305,16 @@ class DuckHuntTests(TestCase):
         result = duck.evaluate_shots([{"t": 1, "x": 0, "y": 0}, {"t": 2, "x": 0, "y": 0}], self.run.configuration_snapshot["duck_hunt"])
         self.assertEqual(result["shots"], 2)
 
+    def test_handoff_screen_points_to_duck_hunt_launch(self):
+        url = reverse("assessments:duck_handoff", kwargs={"station_code": self.station.code, "session_id": self.experience.pk})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "NEXT UP: DUCK HUNT")
+        self.assertContains(response, "Grab the orange gun on the right of the kiosk")
+        self.assertContains(response, reverse("games:launch", kwargs={"station_code": self.station.code, "session_id": self.experience.pk}))
+        self.event.game_configuration.delete()
+        self.assertRedirects(self.client.get(url), reverse("games:simulator_next", kwargs={"station_code": self.station.code, "session_id": self.experience.pk}), fetch_redirect_response=False)
+
     def test_quiz_results_show_configured_game_and_no_game_handoff(self):
         url = reverse("assessments:results", kwargs={"station_code": self.station.code, "session_id": self.experience.pk})
         response = self.client.get(url)

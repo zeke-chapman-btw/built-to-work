@@ -171,3 +171,15 @@ button,a{font-family:var(--font-interface)}
 .kiosk-screen .screen-message.screen-signup{gap:calc(22 * var(--u));padding-top:calc(30 * var(--u))}
 .kiosk-screen .screen-message.screen-signup .screen-title{font-size:calc(110 * var(--u))}
 .kiosk-screen .screen-message.screen-signup .signup-qr{width:calc(340 * var(--u));height:calc(340 * var(--u))}
+.kiosk-screen a.screen-tap-anywhere{color:inherit;text-decoration:none;cursor:crosshair}
+.kiosk-screen .screen-tap-anywhere .screen-copy{max-width:calc(1300 * var(--u))}
+.kiosk-screen .ready-screen .confirm-categories{display:flex;gap:calc(40 * var(--u));justify-content:center;margin:calc(10 * var(--u)) 0 0}
+.kiosk-screen .ready-screen .confirm-card{width:calc(560 * var(--u));padding:calc(36 * var(--u)) calc(30 * var(--u));border:calc(4 * var(--u)) solid #000;border-radius:calc(12 * var(--u));background:#fff;box-sizing:border-box;display:flex;flex-direction:column;gap:calc(16 * var(--u))}
+.kiosk-screen .ready-screen .confirm-rank{margin:0;color:var(--brand-red);font:700 calc(34 * var(--u))/1 var(--font-display);letter-spacing:.06em;text-transform:uppercase}
+.kiosk-screen .ready-screen .confirm-card h2{margin:0;color:#000;font:700 calc(64 * var(--u))/1.05 var(--font-display);text-transform:uppercase}
+.kiosk-screen .ready-screen .confirm-detail{margin:0;color:#333;font:400 calc(34 * var(--u))/1.2 var(--font-interface)}
+.kiosk-screen .ready-screen .kiosk-button{font-size:calc(100 * var(--u))}
+.kiosk-screen .ready-screen .ready-countdown{display:flex;flex-direction:column;align-items:center;gap:calc(10 * var(--u))}
+.kiosk-screen .ready-screen .ready-countdown[hidden]{display:none}
+.kiosk-screen .ready-screen .countdown-display{color:var(--brand-red);font:700 calc(150 * var(--u))/1 var(--font-display)}
+.kiosk-screen .ready-screen .countdown-message{margin:0;font:700 calc(44 * var(--u))/1 var(--font-display);text-transform:uppercase}
