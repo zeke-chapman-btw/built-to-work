@@ -87,6 +87,16 @@ def _leaderboard():
             "board": NS(groups=[NS(profile="Standard", simulator="Excavator", version="1", rows=rows)])}
 
 
+def _duck(state):
+    from apps.games import duck_hunt
+    from copy import deepcopy
+    seed = 12345
+    snap = {"seed": seed, "rules": deepcopy(duck_hunt.RULES), "targets": duck_hunt.opportunity_schedule(seed)}
+    return {**_kiosk_base(), "experience": NS(pk=SAMPLE_ID), "game_session": None, "test_mode": False, "state": state,
+            "result": {"score": 770, "kills": 35, "accuracy": 95},
+            "game_data": {"state": "preview", "startUrl": "#", "finishUrl": "#", "snapshot": snap}}
+
+
 def _intake_finish(pending=False):
     ticket = _ticket()
     ctx = {"event": ticket.registration.event}
@@ -125,6 +135,9 @@ SCREENS = [
      lambda: {**_kiosk_base(), "first_name": "Taylor", "session": NS(id=SAMPLE_ID)}),
     ("game-placeholder", "Games", "Game start", KIOSK, "games/placeholder.html",
      lambda: {**_kiosk_base(), "game": NS(display_name="Duck Hunt"), "game_session": NS(id=SAMPLE_ID), "test_mode": False}),
+    ("duck-ready", "Games", "Duck Hunt: shoot to start", KIOSK, "games/duck_hunt.html", lambda: _duck("ready")),
+    ("duck-results", "Games", "Duck Hunt: results", KIOSK, "games/duck_hunt.html", lambda: _duck("results")),
+    ("duck-problem", "Games", "Duck Hunt: something went wrong", KIOSK, "games/duck_hunt.html", lambda: _duck("interrupted")),
     ("game-simulator-next", "Games", "Go to the simulator", KIOSK, "games/simulator_next.html", lambda: {**_kiosk_base(), "test_mode": False}),
     ("display-leaderboard", "Trailer displays", "Simulator leaderboard", DISPLAY, "trailer_control/leaderboard.html", _leaderboard),
     ("display-video", "Trailer displays", "Video display (no video loaded)", DISPLAY, "trailer_control/video.html",
