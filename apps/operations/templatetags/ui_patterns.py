@@ -158,3 +158,10 @@ def ui_field(field, field_id=""):
     if field.errors:
         attrs["aria-invalid"] = "true"
     return {"field": field, "field_id": field_id, "is_group": is_group, "widget": field.as_widget(attrs=attrs)}
+
+
+@register.filter
+def action_label(value):
+    """Turn an audit code like 'recruiting.candidate.stage_changed' into 'Stage changed'."""
+    text=str(value or "").rsplit(".",1)[-1].replace("_"," ").strip()
+    return text[:1].upper()+text[1:] if text else ""

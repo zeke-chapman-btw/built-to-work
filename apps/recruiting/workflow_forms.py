@@ -26,7 +26,7 @@ class VersionReasonForm(OptionalReasonMixin, forms.Form):
 
 class StageChangeForm(VersionReasonForm):
     stage=forms.ModelChoiceField(queryset=RecruitingStage.objects.filter(is_active=True))
-    confirm_hired=forms.BooleanField(required=False,label='BTW confirms that the actual hiring outcome occurred')
+    confirm_hired=forms.BooleanField(required=False,label='They were actually hired (tick this when moving to Hired)')
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs);self.fields['stage'].label_from_instance=lambda obj:obj.label
 

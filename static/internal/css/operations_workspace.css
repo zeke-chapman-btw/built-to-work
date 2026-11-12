@@ -307,3 +307,22 @@ body.internal-app #main-content .ops-facts-list dd{margin:0;font-size:14px}
  body.internal-app #main-content .ops-facts-list>div{grid-template-columns:1fr;gap:2px}
 }
 body.internal-app #main-content .ops-list-head .ops-quiet-link{color:var(--brand-red-dark,#a51d24);font-size:13px;font-weight:500}
+/* Recruiting candidate page (rc-) */
+body.internal-app #main-content .rc-links{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0 0 16px;font-size:14px}
+body.internal-app #main-content .rc-links a{color:var(--brand-red-dark,#a51d24);font-weight:500}
+body.internal-app #main-content .rc-cols{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,1fr);gap:16px;align-items:start}
+body.internal-app #main-content .rc-col{display:grid;gap:16px;min-width:0}
+body.internal-app #main-content .rc-col>.card{margin:0}
+body.internal-app #main-content .rc-form{display:grid;gap:12px;padding:14px 16px;margin:0}
+body.internal-app #main-content .ops-inline-add .rc-form{padding:12px 0 4px}
+body.internal-app #main-content .rc-stage-form{border-top:1px solid var(--line,#e5e7eb);grid-template-columns:minmax(0,1fr) auto;align-items:end}
+body.internal-app #main-content .rc-stage-form>.field-confirm_hired{grid-column:1/-1;order:2}
+body.internal-app #main-content .rc-form .field{margin:0}
+body.internal-app #main-content .rc-form :is(select,input:not([type=checkbox]),textarea){width:100%;box-sizing:border-box}
+body.internal-app #main-content .rc-pad{margin:0 16px 12px}
+body.internal-app #main-content .rc-history>summary{padding:14px 16px;font-weight:600;font-size:15px;cursor:pointer}
+body.internal-app #main-content .rc-history[open]>summary{border-bottom:1px solid var(--line,#e5e7eb)}
+@media (max-width:900px){body.internal-app #main-content .rc-cols{grid-template-columns:1fr}}
+@media (max-width:640px){body.internal-app #main-content .rc-stage-form{grid-template-columns:1fr}}
+body.internal-app #main-content .rc-form .btw-field-checkbox{display:flex;align-items:center;gap:8px;flex-direction:row}
+body.internal-app #main-content .rc-form .btw-field-checkbox label{font-weight:400;font-size:13px;color:var(--muted)}
