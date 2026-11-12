@@ -133,7 +133,7 @@ def candidate_foundation(request, participant_id):
         except ValidationError as exc:
             form.add_error(None, exc)
         else:
-            messages.success(request, 'Recruiting information saved with attribution.')
+            messages.success(request, 'Saved.')
             return redirect('recruiting:candidate', participant_id=item.pk)
     duplicates = participant_candidates(email=item.contact_email, phone=item.contact_phone).exclude(pk=item.pk)
     from .selection import opportunities_for

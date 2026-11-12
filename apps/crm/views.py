@@ -204,7 +204,7 @@ def contact(request, organization_id, contact_id):
                 return redirect(back)
     return render(request, "crm/form.html", {"form": form, "page_title": "Contact relationship",
         "subject": person, "back": back,
-        "submit_label": "Save contact settings", "guidance": "Record this contact's role and preferred contact methods. Portal access is managed separately under Users & Contacts; preferences do not record consent."})
+        "submit_label": "Save contact settings", "guidance": "Their role and how they like to be contacted. Portal logins are managed under Users & contacts."})
 
 
 @staff_view

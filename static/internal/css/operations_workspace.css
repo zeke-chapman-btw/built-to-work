@@ -388,3 +388,6 @@ body.internal-app #main-content a.rc-row-link:hover strong{text-decoration:under
 body.internal-app #main-content .rc-bar .ops-list-links a:not(.button){color:var(--brand-red-dark,#a51d24)}
 body.internal-app #main-content .rc-col>.card+.card,body.internal-app #main-content .recruiting-content>.ops-list-card+.ops-list-card{margin-top:0}
 body.internal-app #main-content .ops-list-card+.ops-list-card{margin-top:16px}
+body.internal-app #main-content .crm-wide{max-width:none}
+body.internal-app #main-content .crm-wide .crm-card{border-radius:12px}
+body.internal-app #main-content .crm-wide .crm-card+.crm-card{margin-top:16px}

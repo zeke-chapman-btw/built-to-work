@@ -26,10 +26,10 @@ class CustomerRelationshipUxTests(EmployerFixtures, TestCase):
         html=response.content.decode()
         self.assertLess(html.index('id="relationship-contacts"'),html.index('id="btw-interactions"'))
         self.assertLess(html.index('Recruiting for this customer'),html.index('id="relationship-followups"'))
-        self.assertContains(response,'Primary business contact')
+        self.assertContains(response,'Primary')
         self.assertContains(response,'Hiring coordinator')
-        self.assertContains(response,'Manage Portal users')
-        self.assertContains(response,'Add business contact')
+        self.assertContains(response,'Portal users')
+        self.assertContains(response,'+ Add contact')
 
     def test_gets_preserve_native_contacts_memberships_and_all_customer_destinations(self):
         before=(get_user_model().objects.count(),CustomerMembership.objects.count(),CustomerContact.objects.count())
@@ -71,8 +71,8 @@ class CustomerRelationshipUxTests(EmployerFixtures, TestCase):
         self.organization.status='archived';self.organization.save(update_fields=['status'])
         response=self.client.get(self.url)
         self.assertEqual(response.status_code,200)
-        self.assertNotContains(response,'>Edit business contact</a>')
-        self.assertNotContains(response,'>Role &amp; contact preferences</a>')
+        self.assertNotContains(response,'>Edit</a>')
+        self.assertNotContains(response,'>Preferences</a>')
         self.assertNotContains(response,'>Log interaction</a>')
         self.assertEqual(self.client.get(reverse('crm:contact',args=[self.organization.pk,self.contact.pk])).status_code,403)
 
