@@ -108,7 +108,7 @@ def candidate_foundation(request, participant_id):
                     expected_revision=form.cleaned_data['revision'], why=form.cleaned_data['reason'])
             elif action == 'confirm':
                 service.confirm_profile(actor=request.user, participant_id=item.pk,
-                    expected_fingerprint=request.POST.get('fingerprint'), why=request.POST.get('reason'))
+                    expected_fingerprint=request.POST.get('fingerprint'), why=request.POST.get('reason') or 'No reason given')
             elif action == 'request_update':
                 service.request_update(actor=request.user, participant_id=item.pk, message=request.POST.get('reason'))
             elif action == 'add_list':
@@ -121,7 +121,7 @@ def candidate_foundation(request, participant_id):
                 from .models import CampaignSource
                 from apps.participants.identity import identity_members
                 source=get_object_or_404(CampaignSource,pk=request.POST.get('source'),participant_id__in=identity_members(item.pk))
-                service.release_exclusivity(actor=request.user,source_id=source.pk,why=request.POST.get('reason'))
+                service.release_exclusivity(actor=request.user,source_id=source.pk,why=request.POST.get('reason') or 'No reason given')
             elif action == 'review_selection':
                 from .selection import opportunity_for
                 opportunity = opportunity_for(request.user, request.POST.get('opportunity_id'), write=True)

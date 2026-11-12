@@ -260,7 +260,7 @@ class EmployerTests(EmployerFixtures,TestCase):
         response=self.client.post(reverse('recruiting:candidate',args=[self.person.pk]),{'operation':'source_campaign','campaign':str(own.pk),'exclusive':'on','reason':'SYNTHETIC original Campaign source'})
         self.assertEqual(response.status_code,302)
         row=self.person.campaign_sources.get(campaign=own);self.assertEqual(row.sourced_by,self.recruiter)
-        response=self.client.get(reverse('recruiting:candidate',args=[self.person.pk]));self.assertContains(response,'Campaign sourcing');self.assertContains(response,'completion/duration setup needed')
+        response=self.client.get(reverse('recruiting:candidate',args=[self.person.pk]));self.assertContains(response,'Campaigns');self.assertContains(response,'completion/duration setup needed')
 
     def test_prior_employer_approval_does_not_expand_staff_evidence_permissions(self):
         from apps.simulators.models import SimulatorCaptureProfile,SimulatorCapture

@@ -157,7 +157,7 @@ def interests(request):
     rows=CandidateInterest.objects.filter(opportunity__in=opportunities_for(request.user),active=True).select_related('participant','opportunity__need__effective_revision','publication').order_by('-created_at')
     if request.GET.get('status'):rows=rows.filter(status=request.GET['status'])
     query=request.GET.copy();query.pop('page',None)
-    return page(request,'recruiting/interests.html',page_title='Incoming Job Interest',rows=Paginator(rows,30).get_page(request.GET.get('page')),query_without_page=query.urlencode())
+    return page(request,'recruiting/interests.html',page_title='Incoming interest',rows=Paginator(rows,30).get_page(request.GET.get('page')),query_without_page=query.urlencode())
 
 
 @staff

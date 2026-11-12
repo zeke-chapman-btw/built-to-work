@@ -33,7 +33,7 @@ def matching_directory(request):
             try:item=selection.create_opportunity(actor=request.user,need_id=form.cleaned_data['need'].pk,owner_id=form.cleaned_data['owner'].pk)
             except ValidationError as exc:form.add_error(None,exc)
             else:return redirect('recruiting:matching',opportunity_id=item.pk)
-    return page(request,'recruiting/matching_directory.html',page_title='Candidate Matching',
+    return page(request,'recruiting/matching_directory.html',page_title='Matching',
         opportunities=selection.opportunities_for(request.user),form=form,can_create=manager(request.recruiting_actor))
 
 
