@@ -3,6 +3,11 @@ from django.urls import include, path
 from apps.core.views import health, home
 from apps.events import public_views
 
+admin.site.site_header = "Built to Work admin"
+admin.site.site_title = "Built to Work admin"
+admin.site.index_title = "Admin"
+admin.site.site_url = "/internal/"
+
 urlpatterns = [
     path("crm/", include("apps.crm.urls")),
     path("recruiting/", include("apps.recruiting.urls")),

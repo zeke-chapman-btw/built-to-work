@@ -1,0 +1,13 @@
+{% extends "admin/base.html" %}{% load static %}
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | Built to Work admin{% endblock %}
+{% block extrastyle %}{{ block.super }}<style>
+@font-face{font-family:Jost;src:url('{% static "internal/fonts/Jost-Variable.ttf" %}') format('truetype');font-weight:100 900;font-display:swap}
+:root,html[data-theme="light"]{--primary:#171717;--secondary:#262626;--accent:#d71932;--primary-fg:#fff;--header-color:#fff;--header-branding-color:#fff;--header-bg:#171717;--header-link-color:#fff;--breadcrumbs-bg:#2b2b2b;--breadcrumbs-link-fg:#fff;--link-fg:#a51228;--link-hover-color:#7d0d1d;--link-selected-fg:#a51228;--button-bg:#d71932;--button-hover-bg:#a51228;--default-button-bg:#a51228;--default-button-hover-bg:#7d0d1d;--selected-row:#fff4f5;--font-family-primary:Jost,Arial,sans-serif}
+#header{border-bottom:3px solid #d71932}
+#branding h1 img{height:22px;width:auto;display:block}
+#site-name a{display:flex;align-items:center;gap:10px}
+#site-name small{font-size:13px;font-weight:500;color:#d4d4d8;letter-spacing:0}
+.module caption,.module h2{background:#2b2b2b}
+</style>{% endblock %}
+{% block branding %}<div id="site-name"><a href="{% url 'admin:index' %}"><img src="{% static 'internal/images/built-to-work-linear.svg' %}" alt="Built to Work" style="height:22px;width:auto"><small>Admin</small></a></div>{% if user.is_anonymous %}{% include "admin/color_theme_toggle.html" %}{% endif %}{% endblock %}
+{% block nav-global %}{% endblock %}
