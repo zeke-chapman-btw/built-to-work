@@ -171,7 +171,7 @@ def _ticket_message(delivery):
     if not destination or _hash(destination) != delivery.destination_hash:
         raise ValueError("Contact details changed; staff review required")
     # The ten digits remain the QR payload; messaging never issues another ticket.
-    return destination, f"Built to Work ticket for {registration.event.name}", f"Your Built to Work ticket number is {ticket.ticket_number}. Present your ticket at the event.", ticket
+    return destination, f"Built to Work ticket for {registration.event.name}", f"You're registered for {registration.event.name}. Your ticket number is {ticket.ticket_number}. Show it at check-in when you arrive. - Built to Work", ticket
 
 
 def _claim(model, pk):

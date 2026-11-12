@@ -1,3 +1,4 @@
+from apps.core.email_text import link_email
 from functools import wraps
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -30,7 +31,7 @@ def deliver_invitation(request, item):
     url = request.build_absolute_uri(reverse('accounts:activate', args=[invitation_token(item)]))
     def deliver():
         try:
-            send_mail('Set up your Built to Work staff account', 'Set your own password using this private link within 24 hours:\n' + url, None, [target.email], fail_silently=False)
+            send_mail('Set up your Built to Work staff account', link_email('A Built to Work staff account has been created for you.', 'Choose your password', url), None, [target.email], fail_silently=False)
         except Exception:
             return
     transaction.on_commit(deliver)

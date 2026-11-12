@@ -51,8 +51,9 @@ class StaffLoginTests(TestCase):
         self.assertEqual(len(mail.outbox),1)
     def test_recovery_token_is_single_use(self):
         self.client.post(reverse('accounts:recovery'),{'username':self.worker.username,'email':self.worker.email})
-        url=mail.outbox[0].body.split('https://')[-1] if 'https://' in mail.outbox[0].body else mail.outbox[0].body.split('http://')[-1]
-        path='/'+url.split('/',1)[1].strip()
+        import re
+        link=re.search(r'https?://\S+',mail.outbox[0].body).group(0)
+        path='/'+link.split('://',1)[1].split('/',1)[1].strip()
         r=self.client.post(path,{'new_password1':'New-Synthetic-Test-Password-123','new_password2':'New-Synthetic-Test-Password-123'})
         self.assertEqual(r.status_code,302);self.assertContains(self.client.get(path),'invalid, expired or already used')
     def test_password_change_keeps_current_session_revokes_other(self):

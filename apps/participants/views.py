@@ -1,3 +1,4 @@
+from apps.core.email_text import link_email
 from apps.internal_ui.people_editors import people_render, people_review_saved
 from django.contrib import messages
 from django.contrib.auth import login as auth_login, logout as auth_logout
@@ -107,7 +108,7 @@ def request_email_change(request):
             change, _ = ParticipantEmailChange.objects.update_or_create(account=account, defaults={"new_email": email, "verified_at": None})
             token = make_token(change.pk, EMAIL_CHANGE_SALT)
             url = request.build_absolute_uri(reverse("participants:verify-email-change", kwargs={"token": token}))
-            send_mail("Verify your new participant account email", f"Verify within 24 hours: {url}", None, [email])
+            send_mail("Confirm your new email address", link_email("Please confirm the new email address for your Built to Work account.", "Confirm your email", url), None, [email])
             return render(request, "participants/message.html", {"title": "Check your new email", "message": "A verification link has been sent. Your login email changes only after verification."})
     return render(request, "participants/form.html", {"title": "Change login email", "form": form})
 
@@ -132,7 +133,7 @@ def password_reset_request(request):
         if account:
             token = make_token(account.user_id, SET_PASSWORD_SALT + ".reset")
             url = request.build_absolute_uri(reverse("participants:password-reset-confirm", kwargs={"token": token}))
-            send_mail("Reset your participant password", f"Reset within 24 hours: {url}", None, [email])
+            send_mail("Reset your Built to Work password", link_email("We got a request to reset your password.", "Choose a new password", url), None, [email])
         return render(request, "participants/message.html", {"title": "Check your email", "message": "If an active participant account matches, a reset link has been sent."})
     return render(request, "participants/form.html", {"title": "Reset password", "form": form, "password_reset": True, "submit_label": "Send reset link"})
 def password_reset_confirm(request, token):

@@ -402,3 +402,12 @@ body.internal-app #main-content .crm-wide .crm-card+.crm-card{margin-top:16px}
   text-transform:none !important;letter-spacing:0 !important;font-size:15px !important;line-height:22px !important;font-weight:600 !important}
 :is(.btw-result-heading,.btw-panel-heading>div,.approval-card-heading,.dashboard-section-heading)>h2,.btw-panel-heading>div>h2{
   text-transform:none !important;letter-spacing:0 !important;font-size:15px !important;line-height:22px !important;font-weight:600 !important}
+/* Printing any staff page: just the content, no menus, tabs or buttons; details opened. */
+@media print{
+ body.internal-app :is(.sidebar,.app-sidebar,.btw-sidebar,.topbar,.app-topbar,.shell-header,.app-footer,footer,.btw-task-fab,.task-fab,[data-task-create],.event-navigation-shell,.btw-workspace-nav,.ops-resource-navigation,.ops-execution-navigation,.wd-tabs,.rc-links,.rc-toggle,.er-print,.button,button,form.rc-filters,.messages){display:none !important}
+ body.internal-app{background:#fff !important}
+ body.internal-app #main-content{padding:0 !important;margin:0 !important;max-width:none !important}
+ body.internal-app .card{box-shadow:none !important;break-inside:avoid}
+ body.internal-app details>*:not(summary){display:revert !important}
+ body.internal-app a{color:inherit !important;text-decoration:none !important}
+}

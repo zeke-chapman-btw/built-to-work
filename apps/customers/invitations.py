@@ -1,4 +1,5 @@
 """Expiring, single-use customer links and serialized membership reservations."""
+from apps.core.email_text import link_email
 import hashlib
 import secrets
 from datetime import timedelta
@@ -52,8 +53,10 @@ def _deliver(token_id, raw, origin):
     item = Token.objects.select_related('membership__organization', 'identity').get(pk=token_id)
     path = reverse('customer_portal:accept' if item.purpose == 'invite' else 'customer_portal:reset-confirm', args=[raw])
     subject = 'Your Built to Work company invitation' if item.purpose == 'invite' else 'Recover your Built to Work customer access'
-    text = ('Use this private single-use link within 24 hours:\n' + origin + path
-            + '\nIf you did not expect this message, ignore it or contact BTW. Never share this link.')
+    if item.purpose == 'invite':
+        text = link_email("You've been invited to your company's Built to Work account, where you can manage positions and see candidates.", 'Accept your invitation', origin + path)
+    else:
+        text = link_email('We got a request to reset your Built to Work access.', 'Choose a new password', origin + path)
     try:
         sent = send_mail(subject, text, None, [item.email], fail_silently=False)
         status = 'captured' if settings.EMAIL_BACKEND in {

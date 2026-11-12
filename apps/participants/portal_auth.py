@@ -1,4 +1,5 @@
 """Recovery links are expiring, bound to current account state and consumed on use."""
+from apps.core.email_text import link_email
 import hashlib
 from django import forms
 from django.contrib import messages
@@ -31,7 +32,7 @@ def _message(request, title, text, status=200):
 
 def _mail(subject, email, url):
     try:
-        send_mail(subject, 'Use this private link within 24 hours:\n' + url, None, [email], fail_silently=False)
+        send_mail(subject, link_email('Here is the private link you asked for.', 'Open this link', url), None, [email], fail_silently=False)
     except Exception:
         # No account enumeration or secrets/provider strings in error pages.
         return False

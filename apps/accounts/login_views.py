@@ -1,4 +1,5 @@
 """Staff username authentication. Participant portal identities stay separate."""
+from apps.core.email_text import link_email
 from django import forms
 from django.contrib import messages
 from django.contrib.auth import login,logout,get_user_model,update_session_auth_hash
@@ -166,7 +167,7 @@ def _staff_recovery(request):
             if user and user.has_usable_password():
                 item=issue_invitation(user=user,purpose='reset',reason='Account holder requested staff recovery.')
                 url=request.build_absolute_uri(reverse('accounts:activate',args=[invitation_token(item)]))
-                try:send_mail('Reset your Built to Work staff password','Use this private single-use link within 24 hours:\n'+url,None,[user.email],fail_silently=False)
+                try:send_mail('Reset your Built to Work password',link_email('We got a request to reset your staff password.','Choose a new password',url),None,[user.email],fail_silently=False)
                 except Exception:pass
         return page(request,'Check your email',mode='sent',notice='If the details match an eligible staff account, recovery instructions will be sent. Contact an Administrator if you still need help.')
     return page(request,'Recover staff access',form,mode='recovery',submit_label='Send recovery instructions')

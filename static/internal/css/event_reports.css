@@ -96,3 +96,6 @@ body.internal-app #main-content .er-pay-detail summary{padding:0;margin:0}
  body.internal-app #main-content .er-pay .ex-table tfoot td{padding:0;background:transparent}
  body.internal-app #main-content .er-pay .ex-table tfoot{display:block;background:#fafafa}
 }
+body.internal-app #main-content .er-print{all:unset;cursor:pointer;color:var(--brand-red-dark,#a51d24);font-weight:500}
+body.internal-app #main-content .er-print:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+@media print{body.internal-app #main-content .er-pay-note{display:none}}

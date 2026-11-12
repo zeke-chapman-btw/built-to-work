@@ -1,4 +1,5 @@
 """Intake-bound invitations. Email proves inbox control, never an ambiguous identity match."""
+from apps.core.email_text import link_email
 import hashlib
 import uuid
 from datetime import timedelta
@@ -223,9 +224,8 @@ def deliver_invitation(delivery_id, *, base_url=None):
     url = base + reverse('participants:portal-activate', kwargs={'token': token})
     try:
         # Same Django transport as existing messages; deliberately no unrelated campaign engine.
-        message = EmailMessage('Your Built to Work participant portal',
-            'Put your skills to work. Activate your existing BTW profile using this private link within 24 hours:\n'
-            + url + '\nIf you did not request this, ignore it. Need help? Contact Built to Work.',
+        message = EmailMessage('Set up your Built to Work account',
+            link_email('Your Built to Work account is ready to set up. Choose a password to see your events, jobs and profile.', 'Set up your account', url),
             getattr(settings, 'DEFAULT_FROM_EMAIL', None), [invitation.email],
             headers={'Message-ID': '<portal-' + str(delivery.pk) + '@btw.local>'})
         if message.send(fail_silently=False) != 1:

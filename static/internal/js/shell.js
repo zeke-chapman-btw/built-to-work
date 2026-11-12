@@ -88,3 +88,9 @@ document.addEventListener('DOMContentLoaded', function () {
     nav.scrollLeft = Math.max(0, target);
   });
 });
+
+// Print buttons: <button data-print> prints the current page with the print stylesheet.
+document.addEventListener('click', function (event) {
+  var button = event.target.closest && event.target.closest('[data-print]');
+  if (button) { event.preventDefault(); window.print(); }
+});

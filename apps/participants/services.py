@@ -1,3 +1,4 @@
+from apps.core.email_text import link_email
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
@@ -23,7 +24,7 @@ def find_participant_matches(email="", phone=""):
 def send_signed_link(subject, email, path, token, request=None):
     reverse_path = reverse(path, kwargs={'token': token})
     url = request.build_absolute_uri(reverse_path) if request else f"{getattr(settings, 'PARTICIPANT_PORTAL_BASE_URL', '').rstrip('/')}{reverse_path}"
-    send_mail(subject, f"Use this secure link within 24 hours: {url}", settings.DEFAULT_FROM_EMAIL, [email], fail_silently=False)
+    send_mail(subject, link_email("Here's the secure link you asked for.", "Open this link", url), settings.DEFAULT_FROM_EMAIL, [email], fail_silently=False)
 
 @transaction.atomic
 def begin_account_request(request_obj, request=None):
