@@ -22,6 +22,8 @@ KIOSK = ("Kiosk", 1920, 1080)
 DISPLAY = ("Trailer display", 1920, 1080)
 PHONE = ("Phone", 390, 844)
 
+NOT_IN_USE = "Not in use"
+
 SAMPLE_ID = uuid.UUID("00000000-0000-4000-8000-000000000001")
 
 
@@ -115,8 +117,6 @@ SCREENS = [
     ("quiz-instructions", "Quiz", "Instructions", KIOSK, "assessments/instructions.html", lambda: _kiosk_base()),
     ("quiz-categories", "Quiz", "Choose categories", KIOSK, "assessments/category_selection.html",
      lambda: {**_kiosk_base(), "configs": [_config(1, "Tool Knowledge"), _config(2, "Safety"), _config(3, "Math"), _config(4, "Reading Plans")]}),
-    ("quiz-ready", "Quiz", "Ready to start", KIOSK, "assessments/ready.html",
-     lambda: {**_kiosk_base(), "chosen": [_config(1, "Tool Knowledge"), _config(2, "Safety")]}),
     ("quiz-question", "Quiz", "Question", KIOSK, "assessments/question.html", _question),
     ("quiz-transition", "Quiz", "Between categories", KIOSK, "assessments/transition.html",
      lambda: {**_kiosk_base(), "attempt": NS(experience_session_id=SAMPLE_ID), "next_category": "Safety"}),
@@ -138,6 +138,9 @@ SCREENS = [
     ("ticket-page", "Ticket", "Ticket page (link from text/email)", PHONE, "events/ticket_present.html", _ticket_page),
     ("ticket-unavailable", "Ticket", "Ticket can't be used", PHONE, "events/ticket_unavailable.html",
      lambda: {"resolution": NS(status="expired")}),
+    # Not in use: kept for reference, not reached in the live flow.
+    ("quiz-ready", NOT_IN_USE, "Quiz: ready to start (the quiz now starts right after picking categories)", KIOSK, "assessments/ready.html",
+     lambda: {**_kiosk_base(), "chosen": [_config(1, "Tool Knowledge"), _config(2, "Safety")]}),
 ]
 IMAGES = [
     ("ticket-image-phone", "Ticket", "Saved ticket image (phone)", PHONE),
@@ -162,7 +165,9 @@ def index(request):
         groups.setdefault(group, []).append({"key": key, "title": title, "device": device[0], "width": device[1], "height": device[2], "image": False})
     for key, group, title, device in IMAGES:
         groups.setdefault(group, []).append({"key": key, "title": title, "device": device[0], "width": device[1], "height": device[2], "image": True})
-    return render(request, "operations/screen_library.html", {"page_title": "Screens", "groups": groups.items()})
+    if NOT_IN_USE in groups:
+        groups[NOT_IN_USE] = groups.pop(NOT_IN_USE)
+    return render(request, "operations/screen_library.html", {"page_title": "Screens", "groups": groups.items(), "not_in_use": NOT_IN_USE})
 
 
 @login_required(login_url="/admin/login/")

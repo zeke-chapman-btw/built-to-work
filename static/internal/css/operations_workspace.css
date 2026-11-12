@@ -425,3 +425,5 @@ body.internal-app #main-content .sl-item figcaption{display:flex;flex-direction:
 body.internal-app #main-content .sl-item figcaption strong{font-size:14px}
 body.internal-app #main-content .sl-item figcaption span{color:var(--muted)}
 body.internal-app #main-content .sl-item figcaption a{color:var(--brand-red-dark,#a51d24);font-weight:500}
+body.internal-app #main-content .sl-note{margin:0;padding:12px 16px 0;font-size:13px}
+body.internal-app #main-content .sl-unused .sl-frame{opacity:.75}
