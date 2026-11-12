@@ -76,8 +76,9 @@ class PersonIdDirectoryTests(TestCase):
     def test_missing_table_facts_are_accessible_dashes_and_view_is_compactly_named(self):
         response=self.client.get(self.route,{'q':str(self.person.pk)})
         row,=re.findall(r'<article class="ex-result ex-directory-record.*?</article>',response.content.decode(),re.S)
-        self.assertEqual(row.count('class="ex-empty-value"'),2)
-        self.assertEqual(row.count('aria-label="Not recorded"'),2)
+        # Trade interest, seeking work and travel are all unrecorded.
+        self.assertEqual(row.count('class="ex-empty-value"'),3)
+        self.assertEqual(row.count('aria-label="Not recorded"'),3)
         self.assertIn('ex-person-id',row)
         self.assertIn('<span>'+str(self.person.pk)+'</span>',row)
         self.assertIn('aria-label="View profile for '+str(self.person)+'"',row)
@@ -89,7 +90,8 @@ class PersonIdDirectoryTests(TestCase):
         ParticipantCareerProfile.objects.create(participant=self.person,employment_interest='not_seeking',willing_to_travel=False)
         response=self.client.get(self.route,{'q':str(self.person.pk)})
         row,=re.findall(r'<article class="ex-result ex-directory-record.*?</article>',response.content.decode(),re.S)
-        self.assertNotIn('class="ex-empty-value"',row)
+        # Only trade interest is unrecorded; a recorded "No" is a value, not a dash.
+        self.assertEqual(row.count('class="ex-empty-value"'),1)
         self.assertIn('>No</span>',row)
         self.assertIn('>Student</span>',row)
 

@@ -48,7 +48,8 @@ class HeaderDirectoryFollowupTests(ReportingFixtures):
         for form in forms:
             for key in ['employment','travel','channel','assessment','archived']:
                 controls = [n for n in doc.nodes if form in n['parents'] and n['tag'] in ['select','input'] and n['attrs'].get('name')==key]
-                self.assertEqual([n['tag'] for n in controls], ['select'], key)
+                # Seeking work / Will travel are chip links now; the chosen value rides along as one hidden input.
+                self.assertEqual([n['tag'] for n in controls], ['input'] if key in ('employment','travel') else ['select'], key)
             form_links=[n for n in doc.nodes if n['tag']=='a' and form in n['parents']]
             self.assertIn(response.context['explorer_reset'],[n['attrs']['href'] for n in form_links])
             self.assertContains(response,'Save current search')
@@ -76,8 +77,9 @@ class HeaderDirectoryFollowupTests(ReportingFixtures):
         self.assertIn('ex-person-id', article)
         self.assertIn('Seeking work', article)
         self.assertIn('>No</span>', article)
-        self.assertIn('Location', article)
-        for unwanted in ['SYNTHETIC_HIDDEN_TRADE','SYNTHETIC_HIDDEN_SKILLS','<details','<small']:
+        # Owner design (Nov 2026) adds a Trade interest column; skills stay off the row.
+        self.assertIn('SYNTHETIC_HIDDEN_TRADE', article)
+        for unwanted in ['SYNTHETIC_HIDDEN_SKILLS','<details']:
             self.assertNotIn(unwanted, article)
         doc = landing.Document(article)
         links = [n for n in doc.nodes if n['tag']=='a']
