@@ -1,2 +1,2 @@
 {% extends 'assessments/kiosk_base.html' %}
-{% block content %}<main class='kiosk-screen game-placeholder'>{% if test_mode %}<p class='test-mode-indicator'>TEST MODE</p>{% endif %}<p class='eyebrow'>NEXT UP</p><h1>SIMULATOR</h1><p>Your next experience is ready. The simulator interface will be available in a future build.</p></main>{% endblock %}
+{% block content %}<section class="screen screen-message game-placeholder">{% if test_mode %}<p class="test-mode-indicator">TEST MODE</p>{% endif %}<p class="screen-eyebrow">Next up</p><h1 class="screen-title">SIMULATOR</h1><p class="screen-copy">You're ready for the simulator. A Built to Work team member will get you started.</p></section>{% endblock %}

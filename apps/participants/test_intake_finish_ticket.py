@@ -29,9 +29,10 @@ class IntakeFinishTicketTests(TestCase):
         self.assertEqual(ticket, QrTicket.objects.get(registration__event=event, is_current=True))
         self.assertTrue(extra["ticket_qr_data"].startswith("data:image/svg+xml;base64,"))
         html = render_to_string("participants/intake_complete.html", {"event": event, **extra}, request=request)
-        self.assertIn("You're registered", html)
+        self.assertIn("Here's your ticket", html)
         self.assertIn(ticket.ticket_number, html)
-        self.assertIn("Save ticket image", html)
+        self.assertIn(extra["ticket_image_url"], html)
+        self.assertIn("Save ticket to my phone", html)
 
     def test_finish_page_without_event_has_no_ticket(self):
         self.assertEqual(_finished_ticket(RequestFactory().get("/"), type("S", (), {"submission": None})()), {})

@@ -12,11 +12,11 @@
   function draw() {
     const host = document.getElementById("board"); if (!host) return;
     host.replaceChildren();
-    if (!groups.length) { const e = text("div", "No published accepted scores yet."); e.className = "empty"; host.append(e); return; }
+    if (!groups.length) { const e = text("div", "Scores will show up here soon."); e.className = "empty"; host.append(e); return; }
     const group = groups[index % groups.length];
-    document.getElementById("board-group").textContent = group.simulator + " · " + group.profile + " v" + group.version + " · TOTAL SCORE (%)";
+    document.getElementById("board-group").textContent = "Top scores · " + group.simulator;
     const table = document.createElement("table"), head = document.createElement("thead"), header = document.createElement("tr");
-    ["Rank", "Player", "TOTAL SCORE (%)"].forEach(v => { const th = text("th", v); th.scope = "col"; header.append(th); });
+    ["Rank", "Player", "Score"].forEach(v => { const th = text("th", v); th.scope = "col"; header.append(th); });
     head.append(header); table.append(head); const body = document.createElement("tbody");
     group.rows.forEach(row => { const tr = document.createElement("tr"); [row.rank, row.alias, Number(row.score).toFixed(2) + "%"].forEach(v => tr.append(text("td", v))); body.append(tr); });
     table.append(body); host.append(table);

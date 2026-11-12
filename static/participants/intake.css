@@ -92,3 +92,26 @@
 .intake-page .notice-card p{margin:0 0 8px}
 .intake-page .reg-main a:not(.button){color:#a51228}
 @media(max-width:520px){.intake-page .hero{font-size:28px}}
+/* Participant phone screens (ticket, finish, notices) — same feel as the kiosk: centered, condensed caps, red accents. */
+.ps-page .reg-shell{display:flex;flex-direction:column;min-height:100vh;min-height:100svh}
+.ps-page .ps-screen{flex:1;text-align:center;padding:32px 24px 40px;max-width:520px;margin:0 auto;width:100%;box-sizing:border-box}
+.ps-page .ps-eyebrow{margin:0 0 10px;color:#b3132c;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-family:var(--font-interface)}
+.ps-page .ps-title{margin:0 0 8px;font-family:var(--font-display);font-size:clamp(40px,11vw,56px);line-height:.98;font-weight:500;text-transform:uppercase}
+.ps-page .ps-sub{margin:0 0 20px;color:#344054;font-size:16px}
+.ps-page .ps-ticket{display:flex;flex-direction:column;align-items:center;gap:14px;margin:0 0 24px}
+.ps-page .ps-ticket-image{display:block;width:100%;max-width:340px;height:auto;border-radius:14px;box-shadow:0 8px 28px #0000001f;border:1px solid #e4e7ec;-webkit-touch-callout:default}
+.ps-page .ps-button{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:12px 26px;border:0;border-radius:8px;background:#d71936;color:#fff;font-family:var(--font-display);font-size:24px;line-height:1.1;text-transform:uppercase;letter-spacing:.02em;cursor:pointer;box-shadow:0 5px 14px #d7193624;width:100%;max-width:340px}
+.ps-page .ps-button:hover{background:#b3132c}
+.ps-page .ps-button:focus-visible{outline:3px solid #1e68ae;outline-offset:3px}
+.ps-page .ps-hint{margin:0;color:#667085;font-size:14px;line-height:1.5}
+.ps-page .ps-box{background:#f1f1f1;border:1px solid #d0d5dd;border-radius:10px;padding:18px 20px;margin:12px 0 24px;text-align:center}
+.ps-page .ps-box p{margin:0 0 6px}.ps-page .ps-box p:last-child{margin:0}
+.ps-page .ps-next{border-top:1px solid #e4e7ec;padding-top:20px;color:#475467;font-size:15px}
+.ps-page .ps-next h2{font-family:var(--font-display);font-size:24px;font-weight:500;text-transform:uppercase;color:#111;margin:0 0 6px}
+.ps-page .ps-next p{margin:0 0 8px}
+.ps-page .ps-account{margin:0;font-size:15px}
+.ps-page a:not(.button){color:#a51228;font-weight:500}
+.ps-page .ps-staff{margin:16px 0 0;font-size:13px}
+.intake-page .intake-step-heading h1{text-transform:uppercase;letter-spacing:.01em}
+.ps-page a.ps-button{color:#fff;text-decoration:none;font-weight:400}
+.intake-welcome-page .intake-welcome .button{text-transform:uppercase}

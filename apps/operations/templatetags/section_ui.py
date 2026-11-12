@@ -45,7 +45,7 @@ def operations_navigation(context):
     games = request.path == home and request.GET.get('resource') == 'games'
     primary = [dict(label='Overview', url=home, active=request.path == home and not games)]
     definitions = (('Station Management', 'Stations'), ('Quizzes & Tests', 'Quizzes'),
-                   ('Games / Duck Hunt', 'Games'), ('Form Builder', 'Forms'), ('Consents', 'Consents'))
+                   ('Games / Duck Hunt', 'Games'), ('Form Builder', 'Forms'), ('Consents', 'Consents'), ('Screen library', 'Screens'))
     remaining = list(links)
     for source_label, label in definitions:
         item = next((link for link in links if link['label'] == source_label), None)

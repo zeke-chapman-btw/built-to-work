@@ -47,7 +47,7 @@ class OperationsReferenceRefinementTests(TestCase):
     def test_direct_tabs_follow_reference_order_and_keep_more_destinations(self):
         url=reverse('internal:workspace',args=['operations'])
         nav=self.nav(url)
-        self.assertEqual([x['label'] for x in nav['primary_tabs']],['Overview','Stations','Quizzes','Games','Forms','Consents'])
+        self.assertEqual([x['label'] for x in nav['primary_tabs']],['Overview','Stations','Quizzes','Games','Forms','Consents','Screens'])
         self.assertTrue(nav['primary_tabs'][0]['active'])
         self.assertEqual(next(x for x in nav['primary_tabs'] if x['label']=='Games')['url'],url+'?resource=games')
         remaining=[x for group in nav['groups'] for x in group['links']]

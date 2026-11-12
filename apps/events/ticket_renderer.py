@@ -63,8 +63,9 @@ def ticket_png_bytes(ticket) -> bytes:
     participant = ticket.registration.participant
     event = ticket.registration.event
     name = f'{participant.preferred_name or participant.first_name} {participant.last_name}'.strip()
-    local_date = timezone.localtime(event.start_at, ZoneInfo(event.timezone_name))
-    event_date = f'{local_date:%B} {local_date.day}, {local_date.year}'
+    from .ticket_text import event_dates, event_place
+    event_date = event_dates(event)
+    place = event_place(event)
     def fit(value, font, width=555):
         value = str(value)
         while value and draw.textbbox((0, 0), value, font=font)[2] > width:
@@ -72,12 +73,14 @@ def ticket_png_bytes(ticket) -> bytes:
         return value
     draw.text((500, 255), fit(name, heading), font=heading, fill='#111111')
     draw.text((500, 325), fit(event.name, medium), font=medium, fill='#111111')
-    draw.text((500, 378), event_date, font=body, fill='#333333')
+    draw.text((500, 372), fit(event_date, body), font=body, fill='#333333')
+    if place:
+        draw.text((500, 410), fit(place, small), font=small, fill='#333333')
     if event.group_mode != 'disabled' and ticket.registration.group_id:
-        draw.text((500, 420), fit(f'{event.group_label}: {ticket.registration.group.name}', small), font=small, fill='#333333')
+        draw.text((500, 440), fit(f'{event.group_label}: {ticket.registration.group.name}', small), font=small, fill='#333333')
     draw.text((500, 465), 'TICKET NUMBER', font=small, fill='#555555')
     draw.text((500, 505), 'PREVIEW ONLY' if synthetic_preview else number, font=ImageFont.truetype(bold, 51), fill='#111111')
-    draw.text((500, 595), 'Not valid for event admission.' if synthetic_preview else 'Present this ticket at the BTW kiosk.', font=small, fill='#333333')
+    draw.text((500, 595), 'Not valid for event admission.' if synthetic_preview else 'Show this ticket at check-in.', font=small, fill='#333333')
     output = BytesIO()
     canvas.save(output, format='PNG', optimize=True)
     return output.getvalue()
@@ -119,8 +122,9 @@ def ticket_phone_png_bytes(ticket) -> bytes:
     participant = ticket.registration.participant
     event = ticket.registration.event
     name = f'{participant.preferred_name or participant.first_name} {participant.last_name}'.strip()
-    local_date = timezone.localtime(event.start_at, ZoneInfo(event.timezone_name))
-    event_date = f'{local_date:%A}, {local_date:%B} {local_date.day}, {local_date.year}'
+    from .ticket_text import event_dates, event_place
+    event_date = event_dates(event)
+    place = event_place(event)
 
     def fit(value, font, width=W - 100):
         value = str(value)
@@ -138,6 +142,9 @@ def ticket_phone_png_bytes(ticket) -> bytes:
     centered(356, event.name, medium, '#111111')
     centered(408, event_date, body, '#333333')
     y = 452
+    if place:
+        centered(y, place, small, '#333333')
+        y += 40
     if event.group_mode != 'disabled' and ticket.registration.group_id:
         centered(y, f'{event.group_label}: {ticket.registration.group.name}', small, '#333333')
         y += 40

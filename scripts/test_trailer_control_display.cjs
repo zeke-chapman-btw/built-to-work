@@ -35,7 +35,7 @@ const flush=()=>new Promise(resolve=>setImmediate(resolve));
   assert.equal(heartbeat.options.headers['X-CSRFToken'],'synthetic-csrf');
   assert.deepEqual(Object.keys(JSON.parse(heartbeat.options.body)).sort(),['boot_id','event_id','sequence','state']);
   mode='revoked';const next=timers.find(x=>x.ms===5000);await next.fn();await flush();
-  assert(nodes.board.children.some(x=>x.textContent==='No published accepted scores yet.'),'Revoked session must clear prior scores');
+  assert(nodes.board.children.some(x=>x.textContent==='Scores will show up here soon.'),'Revoked session must clear prior scores');
   assert(nodes['display-status'].textContent.includes('Connection interrupted'));
   assert(timers.some(x=>x.ms===10000),'Reconnect delay increases after failure');
   console.log('PASS: display text rendering, restricted heartbeat, revocation clearing, reconnect behavior and source privacy guards');
@@ -57,7 +57,7 @@ async function verifyOfflineDisplay() {
   assert.equal(nodes.board.children[0].tag,'table','Brief interruption retains the last anonymous frame');
   assert(nodes['display-status'].textContent.includes('Connection interrupted'));
   clock+=300001;await poll();
-  assert.equal(nodes.board.children[0].textContent,'No published accepted scores yet.','Expired offline frame is cleared');
+  assert.equal(nodes.board.children[0].textContent,'Scores will show up here soon.','Expired offline frame is cleared');
   await poll();assert(timers.some(x=>x.ms===30000),'Offline reconnect backoff is capped');
   offline=false;await poll();assert.equal(nodes.board.children[0].tag,'table','Successful local reconnect restores rankings');
   assert(nodes['display-status'].textContent.includes('Local update'));

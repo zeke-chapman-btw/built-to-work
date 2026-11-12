@@ -1,3 +1,6 @@
 {% extends "participants/registration_base.html" %}
+{% block page_class %}intake-page reg-public ps-page{% endblock %}
 {% block title %}Ticket unavailable · Built to Work{% endblock %}
-{% block content %}<main class="reg-main"><h1 class="hero">This ticket can't be used</h1><div class="card"><p>{% if resolution.status == 'expired' %}This ticket has expired.{% elif resolution.status == 'revoked' or resolution.status == 'void' %}This ticket was cancelled.{% elif resolution.status == 'used' or resolution.status == 'redeemed' %}This ticket has already been used.{% else %}This ticket isn't valid.{% endif %}</p><p class="muted">Please ask a Built to Work team member at the event for help.</p></div></main>{% endblock %}
+{% block content %}<main class="reg-main ps-screen"><p class="ps-eyebrow">Event ticket</p><h1 class="ps-title">This ticket can't be used</h1>
+<div class="ps-box"><p><strong>{% if resolution.status == 'expired' %}This ticket has expired.{% elif resolution.status == 'revoked' or resolution.status == 'void' %}This ticket was cancelled.{% elif resolution.status == 'used' or resolution.status == 'redeemed' %}This ticket has already been used.{% else %}This ticket isn't valid.{% endif %}</strong></p><p>Please ask a Built to Work team member at the event for help.</p></div></main>
+<footer class="intake-welcome-footer">Powering the American Workforce</footer>{% endblock %}

@@ -1,12 +1,11 @@
 {% extends "assessments/kiosk_base.html" %}
 {% block title %}Next Category{% endblock %}
 {% block content %}
-<section class="screen transition-screen" data-transition-countdown="true" data-ignore-scans="true" aria-live="polite">
+<section class="screen screen-message transition-screen" data-transition-countdown="true" data-ignore-scans="true" aria-live="polite">
   <div class="transition-panel">
-    <p class="screen-eyebrow">Skills Assessment</p>
-    <h1 class="screen-title">NEXT UP</h1>
-    <p class="screen-copy">{{ next_category }}</p>
-    <p class="transition-label">Get ready</p>
+    <p class="screen-eyebrow">Next category</p>
+    <h1 class="screen-title">{{ next_category }}</h1>
+    <p class="screen-subtitle">Get ready</p>
     <div class="transition-count" data-transition-count aria-live="assertive">3</div>
     <form method="post" id="transition-start-form" action="{% url 'assessments:attempt_start' station_code=station.code session_id=attempt.experience_session_id %}">{% csrf_token %}</form>
   </div>

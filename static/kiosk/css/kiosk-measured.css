@@ -153,3 +153,21 @@ button,a{font-family:var(--font-interface)}
 
 /* Center the Home signup group within its existing divider. */
 .kiosk-screen .home-secondary{justify-content:center;padding-left:0}
+/* Shared message screen (not ready, hand-offs, next up, sign up, transitions) — same type scale as Instructions. */
+.kiosk-screen .screen-message{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(34 * var(--u));padding:calc(40 * var(--u)) calc(160 * var(--u)) calc(70 * var(--u));box-sizing:border-box;text-align:center;overflow:hidden}
+.kiosk-screen .screen-message .transition-panel{display:contents}
+.kiosk-screen .screen-message .screen-eyebrow{margin:0;color:var(--brand-red);font:700 calc(40 * var(--u))/1 var(--font-display);letter-spacing:.06em;text-transform:uppercase}
+.kiosk-screen .screen-message .screen-title{margin:0;color:#000;font:700 calc(130 * var(--u))/1 var(--font-display);font-synthesis:weight;letter-spacing:0;text-transform:uppercase}
+.kiosk-screen .screen-message .screen-subtitle{margin:0;color:var(--brand-red);font:700 calc(64 * var(--u))/1.05 var(--font-display);text-transform:uppercase}
+.kiosk-screen .screen-message .screen-copy{margin:0;max-width:calc(1400 * var(--u));color:#000;font:400 calc(46 * var(--u))/1.3 var(--font-interface)}
+.kiosk-screen .screen-message .kiosk-actions{margin:calc(10 * var(--u)) 0 0;padding:0;display:flex;gap:calc(28 * var(--u));justify-content:center;flex-wrap:wrap}
+.kiosk-screen .screen-message .kiosk-actions form{margin:0}
+.kiosk-screen .screen-message .kiosk-button{display:inline-flex;align-items:center;justify-content:center;min-width:calc(400 * var(--u));height:calc(110 * var(--u));min-height:0;padding:0 calc(48 * var(--u));border:0;border-radius:calc(12 * var(--u));background:var(--brand-red);box-shadow:none;color:#fff;font:700 calc(64 * var(--u))/1 var(--font-display);text-transform:uppercase;text-decoration:none}
+.kiosk-screen .screen-message .kiosk-button-secondary{background:#000}
+.kiosk-screen .screen-message .countdown-message{margin:0;color:#555;font:400 calc(34 * var(--u))/1.2 var(--font-interface)}
+.kiosk-screen .screen-message .signup-qr{display:block;width:calc(380 * var(--u));height:calc(380 * var(--u));border:calc(4 * var(--u)) solid #000;border-radius:calc(16 * var(--u));padding:calc(14 * var(--u));background:#fff}
+.kiosk-screen .screen-message .transition-count{color:var(--brand-red);font:500 calc(220 * var(--u))/1 var(--font-display)}
+.kiosk-screen .screen-message .test-mode-indicator{position:absolute;top:calc(20 * var(--u));left:calc(24 * var(--u));margin:0;background:var(--brand-yellow);color:#000;font:700 calc(26 * var(--u))/1 var(--font-interface);padding:calc(8 * var(--u)) calc(14 * var(--u));border-radius:calc(6 * var(--u))}
+.kiosk-screen .screen-message.screen-signup{gap:calc(22 * var(--u));padding-top:calc(30 * var(--u))}
+.kiosk-screen .screen-message.screen-signup .screen-title{font-size:calc(110 * var(--u))}
+.kiosk-screen .screen-message.screen-signup .signup-qr{width:calc(340 * var(--u));height:calc(340 * var(--u))}

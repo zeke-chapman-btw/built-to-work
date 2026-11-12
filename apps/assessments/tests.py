@@ -885,9 +885,9 @@ class AssessmentEventConfigurationTests(TestCase):
         self.assertEqual(instructions.status_code, 200)
         self.assertContains(instructions, "HERE’S HOW IT WORKS")
         response = client.post(station_start_url, follow=True)
-        self.assertContains(response, "ASSESSMENT UNAVAILABLE", status_code=503)
+        self.assertContains(response, "STATION NOT READY", status_code=503)
         self.assertEqual(response.status_code, 503)
-        self.assertContains(response, "ASSESSMENT UNAVAILABLE", status_code=503)
+        self.assertContains(response, "STATION NOT READY", status_code=503)
         self.assertContains(response, "Please ask a Built to Work team member for help.", status_code=503)
         for internal_value in ("Traceback", "Exception", "ValidationError", "IntegrityError", "QuestionSet", "question_set", "single-ready-category", "not_ready"):
             self.assertNotContains(response, internal_value, status_code=503)

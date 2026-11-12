@@ -1,4 +1,8 @@
-{% extends "participants/registration_base.html" %}
+{% extends "participants/registration_base.html" %}{% load ticket_ui %}
+{% block page_class %}intake-page reg-public ps-page{% endblock %}
 {% block title %}Your ticket · {{ event.name }}{% endblock %}
-{% block content %}<main class="reg-main ticket-page"><h1 class="hero">Your ticket</h1>
-{% include "events/ticket_card.html" %}</main>{% endblock %}
+{% block content %}<main class="reg-main ps-screen"><p class="ps-eyebrow">{{ event.name }}</p><h1 class="ps-title">Your ticket</h1>
+<p class="ps-sub">{{ event|event_dates }}</p>
+{% include "events/ticket_card.html" %}
+<p class="ps-account"><a href="{% url 'participants:login' %}" target="_blank" rel="noopener">Go to my Built to Work account</a></p></main>
+<footer class="intake-welcome-footer">Powering the American Workforce</footer>{% endblock %}

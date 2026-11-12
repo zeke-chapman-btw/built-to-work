@@ -1,11 +1,13 @@
-{% extends "participants/intake_base.html" %}{% block content %}
-<main class="reg-main intake-complete ticket-page">{% if ticket %}<h1 class="hero">You're registered</h1>
-<p>Thanks for signing up with Built to Work. Here's your ticket.</p>
+{% extends "participants/intake_base.html" %}{% load ticket_ui %}
+{% block page_class %}intake-page ps-page{% endblock %}
+{% block content %}<main class="reg-main ps-screen">{% if ticket %}<p class="ps-eyebrow">You're registered</p><h1 class="ps-title">Here's your ticket</h1>
+<p class="ps-sub">{{ ticket.registration.event.name }} · {{ ticket.registration.event|event_dates }}</p>
 {% include "events/ticket_card.html" with event=ticket.registration.event %}
-{% else %}<h1 class="hero">Thanks, you're all set</h1>
-<p>We've received your information.</p>
-{% if ticket_pending %}<div class="ticket-card notice-card"><p><strong>Your ticket is on its way.</strong></p><p class="muted">We need to double-check a few details first. We'll send your ticket as soon as that's done, or a BTW team member can help you at the event.</p></div>{% endif %}{% endif %}
-<div class="intake-next"><p>Want to see your events and job opportunities? We'll email you a link to set up your Built to Work account.</p>
-<p><a class="button secondary" href="{% url 'participants:login' %}">Sign in</a> <a href="{% url 'participants:portal-recover' %}">Didn't get the link?</a></p></div>
-{% if registration %}<p><a class="button secondary" href="{% url 'events:registration_detail' registration.event_id registration.pk %}">Open registration (staff)</a></p>{% endif %}
-{% if intake_review %}<p><a class="button secondary" href="{% url 'participants:intake-review-detail' intake_review.pk %}">Review this pending intake (staff)</a></p>{% endif %}</main>{% endblock %}
+{% elif ticket_pending %}<p class="ps-eyebrow">Thanks for signing up</p><h1 class="ps-title">You're all set</h1>
+<div class="ps-box"><p><strong>Your ticket is on its way.</strong></p><p>We need to double-check a few details first. We'll send your ticket as soon as that's done, or a BTW team member can help you at the event.</p></div>
+{% else %}<p class="ps-eyebrow">Thanks for signing up</p><h1 class="ps-title">You're all set</h1>
+<div class="ps-box"><p>We've received your information. Welcome to Built to Work!</p></div>{% endif %}
+<div class="ps-next"><h2>Your Built to Work account</h2><p>We'll email you a link to set up your account. That's where you'll find {% if ticket %}this ticket, {% endif %}your events and job openings.</p><p><a href="{% url 'participants:login' %}" target="_blank" rel="noopener">Go to my account</a> · <a href="{% url 'participants:portal-recover' %}" target="_blank" rel="noopener">Didn't get the email?</a></p></div>
+{% if registration %}<p class="ps-staff"><a href="{% url 'events:registration_detail' registration.event_id registration.pk %}">Open registration (staff)</a></p>{% endif %}
+{% if intake_review %}<p class="ps-staff"><a href="{% url 'participants:intake-review-detail' intake_review.pk %}">Review this pending intake (staff)</a></p>{% endif %}</main>
+<footer class="intake-welcome-footer">Powering the American Workforce</footer>{% endblock %}

@@ -1,8 +1,11 @@
 from django.urls import path
-from . import views, task_workspace_views, notification_views, template_views, execution_views, equipment_views
+from . import views, task_workspace_views, notification_views, template_views, execution_views, equipment_views, screen_library
 app_name="operations"
 urlpatterns=[
  path("trailers/",equipment_views.trailer_list,name="trailers"),
+ path("screens/",screen_library.index,name="screens"),
+ path("screens/<slug:key>/",screen_library.preview,name="screen-preview"),
+ path("screens/<slug:key>/image.png",screen_library.image,name="screen-image"),
  path("trailers/<uuid:trailer_id>/edit/",equipment_views.trailer_edit,name="trailer-edit"),
  path("execution/",execution_views.execution_index,name="execution-index"),
  path("execution/events/<uuid:event_id>/",execution_views.board,name="execution"),

@@ -399,6 +399,7 @@ def ticket_present(request, token):
             "page_title": "Events",
             "ticket": ticket, "event": ticket.registration.event,
             "ticket_qr_data": _ticket_qr_data(request, ticket),
+            "ticket_image_url": reverse("events:ticket_image", kwargs={"token": ticket.token}),
             "already_checked_in": resolution.status == "already_checked_in",
         })
 

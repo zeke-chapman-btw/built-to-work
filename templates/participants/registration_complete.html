@@ -1,9 +1,9 @@
-{% extends "participants/registration_base.html" %}
-{% block title %}Registration complete{% endblock %}
-{% block content %}
-<main class="reg-main"><h1 class="hero">You're registered</h1>
-<div class="card"><p>Your information has been saved.</p>
-{% if event %}<p class="muted">Event: <strong>{{ event.name }}</strong></p>{% if ticket %}<p class="ticket-number">Your ticket number: <strong>{{ ticket.ticket_number }}</strong></p><p class="muted">Save this ticket for your visit. You can show it at the kiosk.</p><p><a class="button" href="{% url 'events:ticket_present' token=ticket.token %}">View ticket</a> <a class="button" href="{% url 'events:ticket_image' token=ticket.token %}" download="btw-ticket.png">Download ticket</a></p>{% endif %}{% endif %}
-{% if legal_pending %}<p class="muted">Your registration is saved.</p>{% endif %}
-<a class="button" href="{% url 'participants:registration-start' %}">Done</a></div></main>
-{% endblock %}
+{% extends "participants/registration_base.html" %}{% load ticket_ui %}
+{% block page_class %}intake-page reg-public ps-page{% endblock %}
+{% block title %}You're registered · Built to Work{% endblock %}
+{% block content %}<main class="reg-main ps-screen"><p class="ps-eyebrow">You're registered</p>
+{% if event and ticket %}{% url 'events:ticket_image' token=ticket.token as ticket_image_url %}<h1 class="ps-title">Here's your ticket</h1><p class="ps-sub">{{ event.name }} · {{ event|event_dates }}</p>
+{% include "events/ticket_card.html" %}
+{% else %}<h1 class="ps-title">You're all set</h1><div class="ps-box"><p>Your information has been saved.{% if event %} You're signed up for <strong>{{ event.name }}</strong>.{% endif %}</p></div>{% endif %}
+<p class="ps-account"><a href="{% url 'participants:login' %}" target="_blank" rel="noopener">Go to my Built to Work account</a></p></main>
+<footer class="intake-welcome-footer">Powering the American Workforce</footer>{% endblock %}

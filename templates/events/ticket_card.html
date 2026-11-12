@@ -1,6 +1,5 @@
-<div class="card ticket-card"><h2>{{ event.name }}</h2>
-<p class="muted">{{ ticket.registration.participant.preferred_name|default:ticket.registration.participant.first_name }} {{ ticket.registration.participant.last_name }} · {{ event.start_at|date:"l, F j, Y" }}</p>
-<img class="ticket-qr" src="{{ ticket_qr_data }}" alt="Event QR ticket">
-{% if ticket.ticket_number %}<p class="ticket-number">Ticket <strong>{{ ticket.ticket_number }}</strong></p>{% endif %}
-<p>Show this at check-in. Take a screenshot or save the image so you have it offline.</p>
-<a class="button" href="{% url 'events:ticket_image' token=ticket.token %}" download="ticket-{{ ticket.ticket_number|default:ticket.token }}.png">Save ticket image</a></div>
+{% load static ticket_ui %}<section class="ps-ticket">
+<img class="ps-ticket-image" src="{{ ticket_image_url }}" width="750" height="1334" alt="Your ticket for {{ event.name }}. Ticket number {{ ticket.ticket_number }}.">
+<button type="button" class="ps-button" data-save-ticket data-file="{{ ticket_image_url }}" data-filename="btw-ticket-{{ ticket.ticket_number|default:'ticket' }}.png">Save ticket to my phone</button>
+<p class="ps-hint">Or press and hold the ticket and choose “Save to Photos.”</p>
+</section><script src="{% static 'participants/ticket.js' %}?v=1" defer></script>

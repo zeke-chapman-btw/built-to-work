@@ -246,4 +246,6 @@ def _finished_ticket(request, session):
                       revoked_at__isnull=True, expires_at__gte=tz.now()).first())
     if not ticket:
         return {"ticket_pending": True}
-    return {"ticket": ticket, "ticket_qr_data": _ticket_qr_data(request, ticket)}
+    from django.urls import reverse
+    return {"ticket": ticket, "ticket_qr_data": _ticket_qr_data(request, ticket),
+            "ticket_image_url": reverse("events:ticket_image", kwargs={"token": ticket.token})}

@@ -332,7 +332,7 @@ class TrailerControlTests(TestCase):
         b,code=services.create_display(self.admin,device,channel="video")
         self.client.post(reverse("trailer_control:display",args=[b.pk]),{"code":code})
         page=self.client.get(reverse("trailer_control:display",args=[b.pk]))
-        self.assertContains(page,"Video not configured");self.assertNotContains(page,"<video")
+        self.assertContains(page,"Video coming soon");self.assertNotContains(page,"<video")
         self.assertEqual(self.client.get(reverse("trailer_control:media",args=[b.pk])).status_code,404)
 
     def test_approved_video_range_hash_and_traversal_guards(self):
@@ -390,7 +390,7 @@ class TrailerControlTests(TestCase):
         self.client.post(reverse("trailer_control:display",args=[binding.pk]),{"code":code})
         self.assertEqual(self.client.get(reverse("trailer_control:display-data",args=[self.binding.pk])).status_code,200)
         self.assertEqual(self.client.get(reverse("trailer_control:display-data",args=[binding.pk])).status_code,404)
-        self.assertContains(self.client.get(reverse("trailer_control:display",args=[binding.pk])),"Video not configured")
+        self.assertContains(self.client.get(reverse("trailer_control:display",args=[binding.pk])),"Video coming soon")
 
     def test_context_chooser_shows_event_name_not_model_identifier(self):
         response=self.client.get(reverse("trailer_control:index"))
