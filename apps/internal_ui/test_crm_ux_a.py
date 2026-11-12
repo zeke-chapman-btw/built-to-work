@@ -193,4 +193,4 @@ class CrmUxProfileTests(TestCase):
         self.assertContains(response,'BTW staff')
         self.assertContains(response,'datetime=')
         self.assertContains(response,'crm-channel-icon')
-        self.assertContains(response,'UTC')
+        self.assertNotContains(response,'UTC')

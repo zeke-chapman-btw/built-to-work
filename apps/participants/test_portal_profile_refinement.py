@@ -98,7 +98,7 @@ class ProfileRefinementTests(TestCase):
     def test_accepted_simulator_uses_recorded_score_and_capture_date(self):
         capture = self.capture()
         row = list(self.results()['assessment_page'])[0]
-        self.assertEqual((row['type'], row['score'], row['date']), ('Simulator', '83.33%', capture.captured_at))
+        self.assertEqual((row['type'], row['score'], row['date']), ('Simulator', '83%', capture.captured_at))
         capture.status='resolved';capture.total_score=Decimal('0');capture.save()
         self.assertEqual(list(self.results()['assessment_page'])[0]['score'], '0%')
 
@@ -198,7 +198,7 @@ class ProfileRefinementTests(TestCase):
         session=self.session(fixture.participant,fixture.event);self.quiz(session=session);self.capture(session=session)
         before=(QrTicket.objects.count(),TicketAllocationBlock.objects.count())
         response=self.client.get(reverse('participants:profile'))
-        self.assertContains(response,'2 correct');self.assertContains(response,'83.33%')
+        self.assertContains(response,'2 correct');self.assertContains(response,'83%')
         self.assertContains(response,'Admin Preview — Participant Portal');self.assertContains(response,'Return to Admin')
         self.assertEqual(before,(QrTicket.objects.count(),TicketAllocationBlock.objects.count()))
         self.assertEqual(self.client.session['_auth_user_id'],str(admin.pk))

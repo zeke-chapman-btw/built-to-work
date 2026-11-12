@@ -145,7 +145,7 @@ class ParticipantCleanupTests(EmployerFixtures, TestCase):
         r=self.client.get(url,{'return_to':origin},HTTP_X_BTW_EDITOR='1')
         self.assertEqual(r.status_code,200)
         self.assertContains(r,'data-editor-form')
-        f=r.context['form'];data={'operation_id':str(f.initial.get('operation_id') or uuid.uuid4()),'activity_type':'call','occurred_at':timezone.now().strftime('%Y-%m-%dT%H:%M'),'summary':'SYNTHETIC modal touchpoint','return_to':origin}
+        f=r.context['form'];data={'operation_id':str(f.initial.get('operation_id') or uuid.uuid4()),'activity_type':'call','occurred_at':timezone.localtime().strftime('%Y-%m-%dT%H:%M'),'summary':'SYNTHETIC modal touchpoint','return_to':origin}
         invalid=self.client.post(url,{**data,'summary':''},HTTP_X_BTW_EDITOR='1')
         self.assertEqual(invalid.status_code,400)
         r=self.client.post(url,data,HTTP_X_BTW_EDITOR='1')

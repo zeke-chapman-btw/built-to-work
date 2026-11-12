@@ -19,7 +19,7 @@ class ActivityForm(OptionalReasonMixin, forms.Form):
     operation_id = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
     revision = forms.IntegerField(widget=forms.HiddenInput, required=False, min_value=1)
     activity_type = forms.ChoiceField(label="Interaction", choices=ActivityType.choices)
-    occurred_at = forms.DateTimeField(label="When (UTC)", input_formats=["%Y-%m-%dT%H:%M"],
+    occurred_at = forms.DateTimeField(label="When", input_formats=["%Y-%m-%dT%H:%M"],
         widget=forms.DateTimeInput(format="%Y-%m-%dT%H:%M", attrs={"type": "datetime-local"}))
     summary = forms.CharField(max_length=240)
     outcome = forms.CharField(max_length=240, required=False)

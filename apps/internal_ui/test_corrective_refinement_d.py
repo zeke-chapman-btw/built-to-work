@@ -32,14 +32,14 @@ class NamedControls(HTMLParser):
 
 class CorrectiveDDisplayTests(SimpleTestCase):
     def test_score_display_keeps_human_precision_and_original_evidence(self):
-        for raw, label in [('83.330000','83.33%'),('100.000000','100%'),('0.000000','0%'),('83.339999','83.34%')]:
+        for raw, label in [('83.330000','83%'),('100.000000','100%'),('0.000000','0%'),('83.500000','84%'),('73.125000','73%')]:
             value=Decimal(raw)
             self.assertEqual(people_score(value),label)
             self.assertEqual(str(value),raw)
         self.assertEqual(people_score(None),'Unavailable')
         self.assertEqual(people_score(Decimal('NaN')),'Unavailable')
         rendered=render_to_string('participants/score_summary.html',{'result':dict(total_score=Decimal('83.330000'),get_status_display='Accepted',get_mode_display='Official')})
-        self.assertIn('83.33%',rendered);self.assertIn('83.330000',rendered)
+        self.assertIn('83%',rendered);self.assertIn('83.330000',rendered)
         self.assertIn('Score source',rendered);self.assertNotIn('Unavailable%',rendered)
 
     def test_audit_label_is_readable_without_mutating_source(self):

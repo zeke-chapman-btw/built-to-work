@@ -1,3 +1,4 @@
+from apps.core.scores import whole_number
 import hashlib
 import json
 from django.db.models import F
@@ -20,7 +21,7 @@ def leaderboard_data(binding):
         snapshot=json.dumps(row.profile_snapshot,sort_keys=True,separators=(",",":"))
         key=(str(row.station_id),str(row.profile_id),row.profile_version,hashlib.sha256(snapshot.encode()).hexdigest())
         group=groups.setdefault(key,{"simulator":row.station.name,"profile":row.profile.name,"version":row.profile_version,"rows":[]})
-        group["rows"].append({"alias":grants[row.participant_id],"score":str(row.total_score)})
+        group["rows"].append({"alias":grants[row.participant_id],"score":whole_number(row.total_score)})
     for group in groups.values():
         prior=None;rank=0
         for index,row in enumerate(group["rows"],1):

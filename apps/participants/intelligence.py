@@ -62,7 +62,7 @@ def build_intelligence(user, population, criteria, *, current_group=False):
         "Top eight recorded response groups, as entered. A response may contain multiple interests. Long responses remain searchable in the directory."))
     months = list(base("acquisition_month").filter(acquisition__acquired_at__isnull=False).annotate(month=TruncMonth("acquisition__acquired_at")).values("month").annotate(n=Count("pk", distinct=True)).order_by("-month")[:24])
     charts.append(_chart("Original acquisition over time", "acquisition_month", [segment("acquisition_month", row["month"].strftime("%Y-%m"), row["month"].strftime("%b %Y")) for row in reversed(months)],
-        "Most recent 24 recorded acquisition months (UTC). Missing dates are excluded, not inferred from record creation."))
+        "Most recent 24 recorded acquisition months (Eastern time). Missing dates are excluded, not inferred from record creation."))
     charts.append(_chart("Profile data coverage", "completeness", [segment("completeness", b, label) for b, label in
         [("complete", "Six groups recorded"), ("partial", "Some groups unknown")]], "Six defined data-entry groups; this is not a qualification or suitability score."))
     if user.has_perm("participants.view_participantqualification"):

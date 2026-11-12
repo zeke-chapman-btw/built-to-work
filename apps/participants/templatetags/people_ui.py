@@ -186,10 +186,8 @@ def people_score(value):
         score = Decimal(str(value))
         if not score.is_finite():
             return "Unavailable"
-        with localcontext() as context:
-            context.prec = max(28, len(score.as_tuple().digits) + 4)
-            display = format(score.quantize(Decimal("0.01")), "f").rstrip("0").rstrip(".")
-        return display + "%"
+        from apps.core.scores import whole_percent
+        return whole_percent(score)
     except (InvalidOperation, ValueError, TypeError):
         return "Unavailable"
 

@@ -94,7 +94,7 @@ class Post16B1Tests(EmployerFixtures, TestCase):
         from apps.crm.models import Interaction
         data = {'operation_id': str(uuid.uuid4()), 'activity_type': 'call',
             'summary': 'SYNTHETIC B1 company follow-up',
-            'occurred_at': timezone.now().strftime('%Y-%m-%dT%H:%M')}
+            'occurred_at': timezone.localtime().strftime('%Y-%m-%dT%H:%M')}
         response = self.client.post(reverse('crm:employer-new', args=[self.grant.pk]), data)
         self.assertEqual(response.status_code, 302)
         record = Interaction.objects.get(audience='employer')

@@ -11,7 +11,7 @@
         <a class="crm-directory-summary" href="{{ item.url }}">{{ item.summary }}</a>
         <p class="crm-meta">{{ item.type }} · {{ item.author }} · {{ item.audience }}{% if item.company %} · {{ item.company }}{% endif %} · {{ item.source }}</p>
       </div>
-      <time class="crm-directory-time" datetime="{{ item.at|utc|date:'c' }}" aria-label="{{ item.at|utc|date:'M j, Y · g:i:s A' }} UTC; {{ item.relative }}" title="{{ item.at|utc|date:'M j, Y · g:i:s A' }} UTC">{{ item.relative }}</time>
+      <time class="crm-directory-time" datetime="{{ item.at|utc|date:'c' }}" aria-label="{{ item.at|date:'M j, Y · g:i:s A T' }}; {{ item.relative }}" title="{{ item.at|date:'M j, Y · g:i:s A T' }}">{{ item.relative }}</time>
     </article>{% empty %}<p class="crm-directory-empty">{{ directory_panel.empty }}</p>{% endfor %}
   {% else %}
     {% for item in directory_panel.rows %}{% ifchanged item.due_group %}<h3 class="crm-directory-due-group{% if item.due_group == 'Overdue' %} crm-directory-overdue{% endif %}">{{ item.due_group }}</h3>{% endifchanged %}

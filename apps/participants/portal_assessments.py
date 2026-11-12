@@ -3,6 +3,7 @@
 Quiz output follows the existing kiosk result labels. Simulator display is an
 explicit owner-approved policy (2026-10-23); acceptance is not a legacy release flag.
 """
+from apps.core.scores import whole_percent
 from django.core.paginator import Paginator
 from apps.event_reports.activity import activity_sources
 from .identity import identity_members
@@ -42,7 +43,7 @@ def profile_assessment_results(user, page=1):
         # evaluator notes are deliberately absent from this allowlisted payload.
         results.append({'key': 'simulator-' + str(capture.pk), 'type': 'Simulator',
             'date': capture.captured_at, 'event': capture.event.name, 'timezone': capture.event.timezone_name,
-            'score': format(capture.total_score.normalize(), 'f') + '%', 'categories': []})
+            'score': whole_percent(capture.total_score), 'categories': []})
     results.sort(key=lambda row: (row['date'], row['key']), reverse=True)
     paginator = Paginator(results, 10)
     return {'assessment_page': paginator.get_page(page), 'assessment_count': paginator.count}

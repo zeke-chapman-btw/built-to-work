@@ -29,7 +29,7 @@ class Event(models.Model):
     description = models.TextField(blank=True)
     start_at = models.DateTimeField()
     end_at = models.DateTimeField()
-    timezone_name = models.CharField(max_length=64, default="UTC")
+    timezone_name = models.CharField(max_length=64, default="America/New_York")
     location_name = models.CharField(max_length=200, blank=True)
     address_line_1 = models.CharField(max_length=200, blank=True)
     address_line_2 = models.CharField(max_length=200, blank=True)

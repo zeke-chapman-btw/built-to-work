@@ -1,4 +1,5 @@
 """Explicit scoped releases; Customer templates receive allowlisted dictionaries only."""
+from apps.core.scores import whole_percent
 import hashlib,json
 from django.core.exceptions import ValidationError,PermissionDenied,ObjectDoesNotExist
 from django.utils import timezone
@@ -65,7 +66,7 @@ def build_projection(actor,item,categories):
                     'date':attempt.completed_at.isoformat()})
         for capture in source['captures'].filter(participant_id__in=ids,total_score__isnull=False,total_score__gte=0,total_score__lte=100).select_related('profile').order_by('pk'):
             if not capture.profile_id or not capture.profile_version:continue
-            results.append({'type':'Simulator','label':capture.profile.name,'result':format(capture.total_score.normalize(),'f')+'%',
+            results.append({'type':'Simulator','label':capture.profile.name,'result':whole_percent(capture.total_score),
                 'version':capture.profile_version,'date':capture.captured_at.isoformat()})
         data['assessments']=results
     return data
