@@ -202,10 +202,10 @@ def recover_invitation(request):
                 candidates = Participant.objects.filter(contact_email__iexact=email, kind='person', archived_at__isnull=True)
                 if candidates.count() == 1:
                     queue_invitation(candidates.get(), resend=True)
-        return render(request, 'participants/portal/message.html', {'title': 'Request received',
-            'message': 'If your completed intake and communication preference allow an invitation, it has been queued. Already activated? Use password recovery. If you share an email or need help, contact BTW staff.'})
-    return render(request, 'participants/portal/form.html', {'title': 'Need an invitation?', 'form': form,
-        'intro': 'Complete your BTW intake first. You can request a fresh activation link here.', 'submit_label': 'Request a fresh link'})
+        return render(request, 'participants/portal/public_message.html', {'page_title': 'Request received',
+            'message': "If we have your email on file, we've sent you a new sign-up link. Already set up your account? Reset your password instead. Need help? Contact the BTW team."})
+    return render(request, 'participants/portal/public_form.html', {'page_title': 'Need a sign-up link?', 'form': form,
+        'intro': "Enter the email you used when you signed up with BTW and we'll send you a new link.", 'submit_label': 'Send me a link'})
 
 
 @participant_view

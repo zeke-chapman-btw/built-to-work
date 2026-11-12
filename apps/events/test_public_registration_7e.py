@@ -48,6 +48,11 @@ class PublicRegistrationTests(TestCase):
         self.staff = get_user_model().objects.create_superuser(username="public-admin", email="admin@example.test", password="test")
         self.url = reverse("public-event-registration", kwargs={"slug": "macon-career-day"})
 
+
+    def test_event_registration_start_redirects_to_form_for_that_event(self):
+        response = self.client.post(reverse("participants:registration-event-start", args=[self.event.pk]))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], reverse("participants:registration-form") + "?event=" + str(self.event.pk))
     def payload(self, **updates):
         data = {"registration_request_key": str(uuid4()), "event": str(self.event.pk), "consent_document_id": str(self.document.pk),
                 "first_name": "Taylor", "last_name": "Example", "contact_phone": "5555550111",
@@ -104,7 +109,7 @@ class PublicRegistrationTests(TestCase):
         data = self.payload(event_answer_trade="Welding", ticket_email_opt_in="on", ticket_sms_opt_in="on")
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "You are registered")
+        self.assertContains(response, "You're registered")
         registration = EventRegistration.objects.get()
         ticket = QrTicket.objects.get(registration=registration)
         submission = RegistrationSubmission.objects.get()

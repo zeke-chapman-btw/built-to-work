@@ -1,0 +1,1 @@
+{% extends 'accounts/access_base.html' %}{% block access_content %}<p>{{ message }}</p><nav><a href="{% url 'accounts:login' %}">Sign in</a><a href="{% url 'accounts:recovery' %}">Reset password</a></nav>{% endblock %}

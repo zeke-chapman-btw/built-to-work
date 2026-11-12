@@ -1,3 +1,4 @@
+from django.urls import reverse
 import json
 import uuid
 from datetime import date
@@ -68,7 +69,7 @@ def registration_start(request, event_id=None):
     if smart:
         return redirect("participants:intake-start", assignment_id=smart.pk)
     if request.method == "POST":
-        return redirect("participants:registration-form" + (("?event=" + str(event.pk)) if event else ""))
+        return redirect(reverse("participants:registration-form") + (("?event=" + str(event.pk)) if event else ""))
     return render(request, "participants/registration_start.html", {"event": event})
 
 def _registration_complete(request, submission):
