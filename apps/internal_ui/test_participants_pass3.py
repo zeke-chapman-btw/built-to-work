@@ -140,8 +140,8 @@ class ParticipantsPass3Tests(TestCase):
         self.assertNotIn('onclick=', row)
         self.assertNotIn('<details', row)
         self.assertNotIn('data-ui-menu', row)
-        self.assertNotIn('<small', row)
-        for label in ['ID', 'Location', 'Interested in work', 'Travel']:
+        # The city sits under the name in a <small> line (owner design, Nov 2026).
+        for label in ['ID', 'Seeking work', 'Travel']:
             self.assertIn(label, row)
 
     def test_filters_preserve_every_authorized_field_and_reader_restrictions(self):

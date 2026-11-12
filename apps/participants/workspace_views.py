@@ -717,6 +717,13 @@ def _participant_explorer(request, *, include_analysis):
     alternative = request.GET.get("view") == "alternatives"
     data = build_intelligence(request.user, population, criteria, current_group=not alternative) if include_analysis and form.is_valid() else {}
     presentation = _explorer_presentation(request, form, population, criteria, data, page, include_analysis=include_analysis)
+    if "q" in form.fields:
+        form.fields["q"].widget.attrs.setdefault("placeholder", "Search by name, phone, email or ID")
+    if not include_analysis:
+        from .list_presentation import decorate_rows, insights
+        presentation.update(decorate_rows(request.user, rows))
+        if form.is_valid():
+            presentation["list_insights"] = insights(request.user, population, presentation.get("explorer_groups", []))
     from apps.crm.directory_reads import directory_panel, directory_sections
     panel = directory_sections(request, PARTICIPANT_LIST_TABS)
     if panel['directory_listing'] != 'search':
