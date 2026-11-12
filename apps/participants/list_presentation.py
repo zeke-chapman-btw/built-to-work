@@ -4,6 +4,10 @@ Every read here is bounded (one query per column or chart, never per row) and
 respects the same permissions the profile uses for that kind of record.
 """
 from django.db.models import Count, Q
+from django.db.models.functions import Coalesce
+
+# Catalog certifications/licenses, plus ones staff typed in as "License or certification".
+CERT_FILTER = Q(catalog_entry__kind__in=("certification", "license")) | Q(catalog_entry__isnull=True, reported_kind="credential")
 
 INSIGHT_LIMIT = 5
 
@@ -13,7 +17,7 @@ def _qualification_names(rows):
     names = {}
     records = (ParticipantQualification.objects
                .filter(participant_id__in=[p.pk for p in rows], is_active=True)
-               .filter(Q(catalog_entry__kind__in=("certification", "license")) | Q(reported_kind__in=("certification", "license")))
+               .filter(CERT_FILTER)
                .select_related("catalog_entry").order_by("participant_id", "-created_at"))
     for record in records:
         label = record.catalog_entry.name if record.catalog_entry_id else record.custom_name
@@ -82,9 +86,10 @@ def insights(user, population, groups):
         charts.append(dict(title="Seeking work", rows=_bars(rows, total)))
     if user.has_perm("participants.view_participantqualification"):
         from .qualification_models import ParticipantQualification
-        records = ParticipantQualification.objects.filter(participant__in=base.values("pk"), is_active=True, catalog_entry__kind__in=("certification", "license"))
-        rows = [dict(label=r["catalog_entry__name"], count=r["n"]) for r in
-                records.values("catalog_entry__name").annotate(n=Count("participant", distinct=True)).order_by("-n", "catalog_entry__name")[:INSIGHT_LIMIT - 1]]
+        records = ParticipantQualification.objects.filter(CERT_FILTER, participant__in=base.values("pk"), is_active=True)
+        rows = [dict(label=r["cert_name"], count=r["n"]) for r in
+                records.annotate(cert_name=Coalesce("catalog_entry__name", "custom_name")).exclude(cert_name="")
+                .values("cert_name").annotate(n=Count("participant", distinct=True)).order_by("-n", "cert_name")[:INSIGHT_LIMIT - 1]]
         holders = records.values("participant").distinct().count()
         if total - holders:
             rows.append(dict(label="None recorded", count=total - holders))

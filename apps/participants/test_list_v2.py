@@ -29,3 +29,16 @@ class ParticipantListV2Tests(TestCase):
         response = self.client.get(reverse('participants:staff-directory'), {'employment': 'open'})
         self.assertEqual(response.context['total_participants'], 1)
         self.assertContains(response, 'pl-toggle is-on')
+
+    def test_typed_in_certifications_show_on_rows_and_in_insights(self):
+        from apps.participants.models import ParticipantQualification
+        person = Participant.objects.get(first_name='Derrick')
+        ParticipantQualification.objects.create(participant=person, custom_name='Forklift operator', reported_kind='credential',
+                                                source='staff', created_by=self.admin, updated_by=self.admin)
+        ParticipantQualification.objects.create(participant=person, custom_name='Blueprint reading', reported_kind='skill',
+                                                source='staff', created_by=self.admin, updated_by=self.admin)
+        response = self.client.get(reverse('participants:staff-directory'))
+        self.assertContains(response, '<span class="pl-chip">Forklift operator</span>', html=False)
+        self.assertNotContains(response, '<span class="pl-chip">Blueprint reading</span>', html=False)
+        certs = next(c for c in response.context['list_insights'] if c['title'] == 'Certifications')
+        self.assertEqual({r['label']: r['count'] for r in certs['rows']}, {'Forklift operator': 1, 'None recorded': 2})

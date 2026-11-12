@@ -24,6 +24,105 @@ SAMPLE_NAMES = ("Avery Johnson", "Jordan Davis", "Morgan Lee", "Taylor Williams"
     "Harper Wright", "Logan Scott", "Payton Green", "Sage Adams", "Blake Baker", "Charlie Nelson", "Empty Profile")
 
 
+CITIES = (("Augusta", "30901"), ("Savannah", "31401"), ("Macon", "31201"), ("Evans", "30809"), ("Aiken", "29801"), ("Statesboro", "30458"))
+TRADES = ("welding", "electrical", "hvac", "equipment", "plumbing", "diesel", "carpentry", "maintenance")
+TRADE_LABELS = {"welding": "Welding", "electrical": "Electrical", "hvac": "HVAC", "equipment": "Heavy equipment",
+    "plumbing": "Plumbing", "diesel": "Diesel mechanic", "carpentry": "Carpentry", "maintenance": "Industrial maintenance"}
+CREDENTIALS = (("OSHA 10", "SAMPLE OSHA Training Institute"), ("Forklift operator", "SAMPLE Augusta Tech"),
+    ("CPR / First aid", "SAMPLE Red Cross"), ("AWS D1.1 welding", "SAMPLE American Welding Society"), ("Class A CDL", "SAMPLE Georgia DDS"),
+    ("NCCER Core", "SAMPLE NCCER"), ("EPA 608 (HVAC)", "SAMPLE EPA"), ("OSHA 30", "SAMPLE OSHA Training Institute"))
+SKILLS = (("Blueprint reading", ""), ("MIG welding", ""), ("Hand and power tools", ""), ("Equipment maintenance", ""),
+    ("Electrical wiring basics", ""), ("TIG welding", ""), ("Crew leadership", ""), ("Measuring and layout", ""))
+TRAINING = (("Welding certificate program", "SAMPLE Augusta Technical College"), ("HVAC program", "SAMPLE Savannah Technical College"),
+    ("Construction CTE pathway", "SAMPLE Richmond County high school"), ("Carpentry training", "SAMPLE Job Corps"))
+NOTES = ("Very interested in welding. Asked about evening classes so he can keep his current job.",
+    "Prefers texts over calls. Best time to reach is after 3 PM.",
+    "Came to the trailer with a friend. Scored well on the simulator and wants to try again.",
+    "Looking for something with benefits. Open to a 30–45 minute commute.",
+    "Has reliable transportation. Can start within two weeks.",
+    "Finishing high school in May. Parent asked for apprenticeship info.",
+    "Recently moved to the area. Has forklift experience from a warehouse job.",
+    "Wants to work outdoors. Not interested in shop or factory work.")
+JOBS = ((("Regional Fabrication", "Shop assistant", "Augusta, GA", 2, 3, False, "Assisted with layout, tool care and material handling."),),
+    (("Peach State Logistics", "Warehouse associate", "Savannah, GA", 1.5, 0, True, "Loads and unloads trucks; forklift certified."),),
+    (("Main Street Diner", "Line cook", "Macon, GA", 1, 4, False, "Fast-paced kitchen work; opened and closed the line."),
+     ("Big Box Home Store", "Sales associate", "Macon, GA", 2, 0, True, "Lumber and tools department.")),
+    (("Garden City Builders", "Laborer", "Savannah, GA", 3, 0, True, "Framing, concrete prep and site cleanup."),),
+    (("Quick Lube Plus", "Lube technician", "Evans, GA", 1, 6, False, "Oil changes, tire rotations and basic inspections."),),
+    (("Southeast Poultry", "Maintenance helper", "Statesboro, GA", 2.5, 0, True, "Helps mechanics with conveyor repairs and PM work."),))
+TOUCHES = (
+    ("call", "outbound", "Intro call after trailer visit", "Talked about welding interest and next steps.", "Interested", "Send class schedule"),
+    ("sms", "outbound", "Texted hiring event details", "Sent date, time and address for the hiring event.", "Replied yes", "Confirm attendance"),
+    ("voicemail", "outbound", "Left voicemail about open roles", "Mentioned two openings near Augusta.", "No answer", "Try again Thursday"),
+    ("email", "outbound", "Sent apprenticeship info packet", "Included program dates and pay range.", "Sent", "Check if they read it"),
+    ("call", "inbound", "Called asking about CDL training", "Wants to know about cost and schedule.", "Answered questions", "Share CDL school list"),
+    ("meeting", "outbound", "Met at Augusta job fair", "Good conversation; brought a resume.", "Strong fit", "Introduce to Riverbend"),
+    ("recruiting", "outbound", "Discussed welding apprentice role", "Walked through role, pay and shift.", "Wants to apply", "Submit to employer"),
+    ("attempt", "outbound", "Tried to reach by phone", "Line was busy.", "No contact", "Text instead"),
+    ("video", "outbound", "Video check-in on training", "Halfway through the OSHA 10 course.", "On track", "Check back in two weeks"),
+    ("event", "inbound", "Stopped by the trailer", "Tried the simulator and quiz.", "Registered", "Follow up next week"),
+    ("interview", "outbound", "Mock interview practice", "Practiced common questions; needs work on examples.", "Improving", "Schedule a second practice"),
+    ("follow_up", "outbound", "Followed up on site tour", "Tour went well; asked about start dates.", "Positive", "Arrange a site tour"))
+
+
+def intake_answers(i, first, last):
+    city, postal = CITIES[i % len(CITIES)]
+    situation = ("unemployed", "employed_other", "employed_trade", "trade_school", "unemployed", "employed_other")[i % 6]
+    answers = {"first_name": "SAMPLE " + first, "last_name": last,
+        "dob": f"{1978 + (i * 3) % 26}-{1 + i % 12:02d}-{10 + i:02d}",
+        "email": f"sample.person{i+1:02d}@example.test", "phone": f"70655501{i+20:02d}",
+        "street_address": f"{100 + i * 17} SAMPLE {('Oak', 'Pine', 'Maple', 'Cedar')[i % 4]} St",
+        "city": city, "state": "GA", "postal_code": postal, "consent": True,
+        "current_situation": situation,
+        "education_level": ("diploma", "ged", "some_college", "trade", "diploma", "associate")[i % 6],
+        "industry_interests": [TRADES[i % len(TRADES)]] + ([TRADES[(i + 3) % len(TRADES)]] if i % 2 else []),
+        "hands_on": ("yes", "yes", "not_sure")[i % 3],
+        "license_status": ("valid", "valid", "permit", "none")[i % 4],
+        "certifications": ("yes", "no", "yes", "not_sure")[i % 4],
+        "career_timeline": ("asap", "1_3_months", "3_6_months", "exploring", "asap", "over_6_months")[i % 6],
+        "opportunity_types": [("full_time", "apprenticeship", "trade_school", "full_time", "part_time", "apprenticeship")[i % 6]],
+        "career_priorities": list(dict.fromkeys([("pay", "learning", "security", "advancement")[i % 4], ("balance", "enjoyment", "pay")[i % 3]])),
+        "travel_willingness": ("yes", "maybe", "no")[i % 3],
+        "desired_pay": ("20_24", "25_29", "15_19", "30_34", "open")[i % 5],
+        "referral_source": ("social", "school", "family", "community", "search", "employer")[i % 6],
+        "updates_preference": "yes"}
+    if answers["hands_on"] == "yes":
+        answers["experiences"] = [{"entry_id": str(uuid.uuid4()), "area": TRADES[i % len(TRADES)] if TRADES[i % len(TRADES)] != "maintenance" else "maintenance",
+            "source": ("employment", "school", "personal", "training")[i % 4], "paid": "paid" if i % 4 == 0 else "unpaid",
+            "duration": ("1_2_years", "under_6_months", "6_12_months", "3_5_years")[i % 4],
+            "skills": [("mig", "blueprints", "tools", "fabrication")[i % 4]] if TRADES[i % len(TRADES)] == "welding" else [], "proficiency": ("intermediate", "beginner", "advanced")[i % 3],
+            "description": "SAMPLE Hands-on work on small projects."}]
+    if answers["license_status"] == "valid":
+        answers["license_class"] = ("standard", "cdl_a", "standard", "cdl_b")[i % 4]
+    if answers["certifications"] == "yes":
+        answers["certification_choices"] = [("osha10", "forklift", "cpr", "aws")[i % 4]]
+    if situation in ("employed_other", "employed_trade"):
+        answers["current_industry"] = ("logistics", "retail", "construction", "manufacturing")[i % 4]
+        answers["job_title"] = ("Warehouse associate", "Sales associate", "Laborer", "Machine operator")[i % 4]
+        answers["employment_duration"] = ("1_2_years", "6_12_months", "3_5_years")[i % 3]
+    if situation == "trade_school":
+        answers["school_name"] = "SAMPLE Augusta Technical College"
+    if answers["travel_willingness"] != "no":
+        answers["travel_range"] = ("regional", "statewide", "local")[i % 3]
+    return answers
+
+
+def fill_staff_profile(admin, person, i):
+    from apps.participants.workspace_services import save_profile, profile_revision
+    city, postal = CITIES[i % len(CITIES)]
+    trade = TRADE_LABELS[TRADES[i % len(TRADES)]]
+    save_profile(actor=admin, participant_id=person.pk, revision=profile_revision(person), reason=WHY,
+        person_data={"first_name": person.first_name, "last_name": person.last_name, "preferred_name": "",
+            "contact_email": person.contact_email or f"sample.person{i+1:02d}@example.test",
+            "contact_phone": person.contact_phone or (f"70655501{i+20:02d}" if i % 3 else ""),
+            "city": city, "state": "GA", "postal_code": postal},
+        career_data={"employment_status": ("Unemployed", "Employed, not in a trade", "Part-time")[i % 3],
+            "employment_interest": "", "career_interests": trade, "skills_interests": "Hands-on work, " + trade.lower(),
+            "years_of_experience": Decimal(str(i % 6)), "education_training": ("High school diploma", "GED", "Some college")[i % 3],
+            "work_availability": ("Weekdays", "Any shift", "Evenings and weekends")[i % 3], "willing_to_travel": None,
+            "preferred_locations": city + " area", "preferred_work_type": ("full_time", "any", "part_time")[i % 3]})
+
+
 def audited(model, audit_actor, **values):
     """For configuration/evidence which has no standalone creation service.
 
@@ -147,13 +246,7 @@ def people(admin, event):
         first, last = name.split(" ", 1)
         if i < 12:
             session = start_session(assignment=assignment, browser_key=secrets.token_hex(32), actor=admin, event=event)
-            session.answers = {"first_name": "SAMPLE " + first, "last_name": last, "dob": "2002-04-15",
-                "email": f"sample.person{i+1:02d}@example.test", "phone": f"70655501{i+20:02d}",
-                "city": ("Augusta", "Savannah", "Macon")[i % 3], "state": "GA", "postal_code": "30901",
-                "consent": True, "current_situation": "unemployed", "career_timeline": "exploring",
-                "opportunity_types": ["exploration"], "travel_willingness": ("yes", "maybe", "no")[i % 3]}
-            if i % 3 != 2:
-                session.answers["travel_range"] = "regional"
+            session.answers = intake_answers(i, first, last)
             session.current_step = 4
             session.consent_accepted_at = timezone.now()
             session.save()
@@ -161,6 +254,8 @@ def people(admin, event):
         else:
             person = create_person(actor=admin, data={"first_name": "SAMPLE " + first, "last_name": last,
                 "audit_reason": WHY, **({"contact_email": f"sample.person{i+1:02d}@example.test", "city": "Augusta", "state": "GA"} if i % 2 and i != 24 else {})})
+        if 12 <= i < 21:
+            fill_staff_profile(admin, person, i)
         if i != 24:
             person.refresh_from_db()
             recruiting = RecruitingProfile.objects.filter(participant=person).first()
@@ -169,11 +264,15 @@ def people(admin, event):
             save_preferences(actor=admin, participant_id=person.pk, expected_revision=recruiting.revision if recruiting else 0,
                 data={"employment_interest": ("seeking", "open", "not_seeking")[i % 3],
                     "willing_to_travel": (True, "maybe", False)[i % 3], "fingerprint": profile_fingerprint(person)}, why=WHY)
-        if i < 8:
-            save_note(actor=admin, participant_id=person.pk, data={"content": "SAMPLE Interested in a site tour; prefers an afternoon call.", "request_key": uuid.uuid4(), "audit_reason": WHY})
-            save_work(actor=admin, participant_id=person.pk, data={"employer": "SAMPLE Regional Fabrication", "role": "SAMPLE Shop assistant",
-                "location": "SAMPLE Augusta site", "started_on": timezone.localdate()-timedelta(days=730), "ended_on": timezone.localdate()-timedelta(days=90),
-                "is_current": False, "description": "SAMPLE Assisted with layout, tool care and material handling.", "source_reference": WHY, "audit_reason": WHY})
+        if i < 20:
+            for note in [NOTES[i % len(NOTES)]] + ([NOTES[(i + 3) % len(NOTES)]] if i % 3 == 0 else []):
+                save_note(actor=admin, participant_id=person.pk, data={"content": "SAMPLE " + note, "request_key": uuid.uuid4(), "audit_reason": WHY})
+        if i < 18:
+            for k, (employer, role, place, years, months_ago, current, text) in enumerate(JOBS[i % len(JOBS)]):
+                save_work(actor=admin, participant_id=person.pk, data={"employer": "SAMPLE " + employer, "role": role,
+                    "location": place, "started_on": timezone.localdate()-timedelta(days=int(365*years)+30*months_ago),
+                    "ended_on": None if current else timezone.localdate()-timedelta(days=30*months_ago),
+                    "is_current": current, "description": text, "source_reference": WHY, "audit_reason": WHY})
         result.append(person)
     return result
 
@@ -182,28 +281,42 @@ def qualifications(admin, persons):
     from apps.participants.models import ParticipantQualification
     from apps.participants.verification_models import ParticipantVerificationRecord
     from apps.participants.verification_services import qualification_snapshot
-    for person in persons[:10]:
-        for kind, label in [("skill", "Blueprint reading"), ("training", "Technical college welding"), ("credential", "OSHA 10"), ("credential", "Class B driving license")]:
-            item = audited(ParticipantQualification, admin, participant=person, custom_name="SAMPLE " + label,
-                reported_kind=kind, reported_provider="SAMPLE Technical College", source="staff",
-                experience_details="SAMPLE Review evidence", notes=WHY, created_by=admin, updated_by=admin)
-            if kind == "credential" and person in persons[:4]:
+    for n, person in enumerate(persons[:20]):
+        picks = ([("credential", CREDENTIALS[(n + k) % len(CREDENTIALS)]) for k in range((n + 3) % 4)] +
+                 [("skill", SKILLS[(n * 2 + k) % len(SKILLS)]) for k in range(1 + n % 3)] +
+                 ([("training", TRAINING[n % len(TRAINING)])] if n % 2 == 0 else []))
+        for k, (kind, (label, provider)) in enumerate(picks):
+            item = audited(ParticipantQualification, admin, participant=person, custom_name=label,
+                reported_kind=kind, reported_provider=provider, source="staff",
+                experience_details="SAMPLE Reported during a follow-up call", notes=WHY, created_by=admin, updated_by=admin)
+            if kind == "credential" and (n + k) % 3 == 0:
                 audited(ParticipantVerificationRecord, admin, participant=person, qualification=item, status="verified",
                     method="staff_confirmed", evidence_notes="SAMPLE Fictional certificate confirmed for screen review.", reason=WHY,
-                    reviewer=admin, reviewed_at=timezone.now(), qualification_snapshot=qualification_snapshot(item))
+                    reviewer=admin, reviewed_at=timezone.now()-timedelta(days=n * 3), qualification_snapshot=qualification_snapshot(item))
 
 
-def touchpoints(admin, staff, persons):
+def touchpoints(admin, users, persons):
     from apps.crm.services import create_internal, create_followup
-    for i, kind in enumerate(("call", "sms", "email", "meeting")):
-        interaction = create_internal(actor=admin, participant_id=persons[0].pk, operation_id=uuid.uuid4(), data={
-            "activity_type": kind, "direction": "outbound", "summary": "SAMPLE " + kind.title() + " about next steps",
-            "notes": "SAMPLE Manual observation only; no message was sent.", "occurred_at": timezone.now()-timedelta(days=i),
-            "outcome": "SAMPLE Discussed a site visit", "next_step": "SAMPLE Arrange a tour", "responsible_staff": staff.staff_profile})
-        if i == 0:
-            saved(create_followup(actor=admin, interaction_id=interaction.pk, operation_id=uuid.uuid4(), data={
-                "title": "SAMPLE Arrange Avery's site tour", "description": WHY, "assigned_staff": staff.staff_profile.pk,
-                "due_date": timezone.localdate(), "priority": "normal", "reason": WHY, "revision": "new"}))
+    team = [u for u in users if getattr(u, "staff_profile", None)] or [admin]
+    today = timezone.localdate()
+    for n, person in enumerate(persons[:22]):
+        count = (4, 3, 2, 5, 1, 3, 2, 1, 4, 2, 3, 1, 2, 1, 3, 1, 2, 1, 1, 2, 1, 1)[n]
+        days_ago = 2 + (n * 5) % 40
+        for k in range(count):
+            kind, direction, summary, notes, outcome, next_step = TOUCHES[(n * 3 + k) % len(TOUCHES)]
+            author = team[(n + k) % len(team)]
+            owner = team[(n + k + 1) % len(team)]
+            interaction = create_internal(actor=author, participant_id=person.pk, operation_id=uuid.uuid4(), data={
+                "activity_type": kind, "direction": direction, "summary": summary,
+                "notes": notes + " (SAMPLE, no message was sent.)",
+                "occurred_at": timezone.now() - timedelta(days=days_ago, hours=(n * 7 + k * 3) % 9),
+                "outcome": outcome, "next_step": next_step, "responsible_staff": owner.staff_profile if owner.staff_profile else None})
+            days_ago += 6 + (n + k) % 18
+            if k == 0 and n in (0, 3, 5, 8, 10, 14):
+                saved(create_followup(actor=author, interaction_id=interaction.pk, operation_id=uuid.uuid4(), data={
+                    "title": "SAMPLE " + next_step + " – " + person.first_name.replace("SAMPLE ", ""), "description": WHY,
+                    "assigned_staff": owner.staff_profile.pk, "due_date": today + timedelta(days=(-3, 2, 5, -1, 7, 1)[(0, 3, 5, 8, 10, 14).index(n)]),
+                    "priority": ("high" if n in (0, 8) else "normal"), "reason": WHY, "revision": "new"}))
 
 
 def customers(admin, persons):
@@ -250,7 +363,7 @@ def customers(admin, persons):
                 transition(actor=admin, candidate_id=row.pk, stage_key=stage.pk, expected_revision=row.revision, why=WHY)
 
 
-def documents(admin, person):
+def documents(admin, persons):
     from apps.participants.participant_document_models import ParticipantDocumentCategory, ParticipantDocument, ParticipantDocumentAudit
     category = audited(ParticipantDocumentCategory, admin, name="SAMPLE Certificates", slug="sample-certificates")
     # A small valid PDF: fictional text only. No real files are copied.
@@ -264,7 +377,8 @@ def documents(admin, person):
     start = len(data)
     data += b"xref\n0 6\n0000000000 65535 f \n" + b"".join(f"{n:010d} 00000 n \n".encode() for n in offsets[1:])
     data += b"trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n"+str(start).encode()+b"\n%%EOF\n"
-    for title in ("SAMPLE Certificate", "SAMPLE Resume"):
+    for person, title in ((persons[0], "SAMPLE Certificate"), (persons[0], "SAMPLE Resume"), (persons[1], "SAMPLE Resume"),
+                          (persons[3], "SAMPLE OSHA 10 card"), (persons[5], "SAMPLE Resume"), (persons[8], "SAMPLE Forklift certificate")):
         item = audited(ParticipantDocument, admin, participant=person, category=category, file=ContentFile(data, name=title+".pdf"),
             original_filename=title+".pdf", content_type="application/pdf", file_size=len(data), uploaded_by=admin,
             description=title, participant_visible=True)
@@ -377,9 +491,9 @@ def create_samples():
     sample_events = events(admin, users)
     persons = people(admin, sample_events[2])
     qualifications(admin, persons)
-    touchpoints(admin, users[2], persons)
+    touchpoints(admin, users, persons)
     customers(admin, persons)
-    documents(admin, persons[0])
+    documents(admin, persons)
     trailer_results(admin, persons, sample_events)
     historical_score(admin, persons[0])
     return credentials
