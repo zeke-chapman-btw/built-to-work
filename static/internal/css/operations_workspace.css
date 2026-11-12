@@ -275,3 +275,35 @@ body.internal-app.has-event-context #main-content .workdays-page:has(>.wd-page){
 body.internal-app #main-content .operations-design.btw-event-surface .ops-link-button{all:unset;cursor:pointer;color:var(--brand-red-dark,#a51d24);font-size:13px;line-height:20px}
 body.internal-app #main-content .operations-design.btw-event-surface .ops-link-button:hover{text-decoration:underline}
 body.internal-app #main-content .operations-design.btw-event-surface .ops-link-button:focus-visible{outline:2px solid var(--brand-red-dark,#a51d24);outline-offset:2px;border-radius:3px}
+body.internal-app.has-operations-context #main-content>.page-header.btw-section-heading{max-width:none !important}
+/* Shared list card for Operations resource pages (stations, trailers) */
+body.internal-app #main-content .ops-list-card{padding:0 !important;overflow:hidden;border-radius:12px}
+body.internal-app #main-content .ops-list-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line,#e5e7eb);margin:0}
+body.internal-app #main-content .ops-list-head h2{margin:0;font:600 15px/22px var(--font);text-transform:none;letter-spacing:0;border:0;padding:0}
+body.internal-app #main-content .ops-list-row{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 16px;border-top:1px solid var(--line,#e5e7eb)}
+body.internal-app #main-content .ops-list-head+.ops-list-row,body.internal-app #main-content .ops-inline-add+.ops-list-row{border-top:0}
+body.internal-app #main-content .ops-list-main{display:flex;flex-direction:column;gap:2px;min-width:0;color:inherit;text-decoration:none}
+body.internal-app #main-content a.ops-list-main:hover strong{text-decoration:underline}
+body.internal-app #main-content .ops-list-main strong{font-weight:600;font-size:14px}
+body.internal-app #main-content .ops-list-main strong a{color:inherit}
+body.internal-app #main-content .ops-list-main small{color:var(--muted);font-size:13px}
+body.internal-app #main-content .ops-list-links{display:flex;align-items:center;gap:14px;white-space:nowrap;font-size:13px}
+body.internal-app #main-content .ops-list-links form{margin:0}
+body.internal-app #main-content .ops-list-links a,body.internal-app #main-content .ops-inline-add summary{color:var(--brand-red-dark,#a51d24);font-weight:500}
+body.internal-app #main-content .ops-list-card .ops-link-button{all:unset;cursor:pointer;color:var(--brand-red-dark,#a51d24);font-weight:500;font-size:13px}
+body.internal-app #main-content .ops-list-card .ops-link-button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+body.internal-app #main-content .ops-list-empty{margin:0;padding:14px 16px;color:var(--muted);font-size:14px}
+body.internal-app #main-content .ops-inline-add{padding:10px 16px;border-bottom:1px solid var(--line,#e5e7eb)}
+body.internal-app #main-content .ops-inline-add summary{cursor:pointer;font-size:13px;list-style:none}
+body.internal-app #main-content .ops-inline-add summary::-webkit-details-marker{display:none}
+body.internal-app #main-content .ops-inline-add[open] form{margin-top:12px;max-width:480px}
+body.internal-app #main-content .ops-facts-list{margin:0;padding:4px 16px 8px}
+body.internal-app #main-content .ops-facts-list>div{display:grid;grid-template-columns:160px minmax(0,1fr);gap:12px;padding:9px 0;border-bottom:1px solid #f0f1f3}
+body.internal-app #main-content .ops-facts-list>div:last-child{border-bottom:0}
+body.internal-app #main-content .ops-facts-list dt{color:var(--muted);font-size:13px}
+body.internal-app #main-content .ops-facts-list dd{margin:0;font-size:14px}
+@media (max-width:640px){
+ body.internal-app #main-content .ops-list-row{flex-direction:column;align-items:flex-start;gap:6px}
+ body.internal-app #main-content .ops-facts-list>div{grid-template-columns:1fr;gap:2px}
+}
+body.internal-app #main-content .ops-list-head .ops-quiet-link{color:var(--brand-red-dark,#a51d24);font-size:13px;font-weight:500}
