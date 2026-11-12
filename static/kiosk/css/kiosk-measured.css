@@ -213,3 +213,5 @@ button,a{font-family:var(--font-interface)}
 .kiosk-screen .home-secondary{gap:calc(60 * var(--u));align-items:center}
 .kiosk-screen .home-secondary .home-signup-button{flex:0 0 auto;width:auto;min-width:calc(340 * var(--u));height:calc(90 * var(--u));padding:0 calc(36 * var(--u));font-size:calc(50 * var(--u));display:inline-flex;align-items:center;justify-content:center}
 .category-page .category-grid:not(.is-many){grid-auto-rows:calc(130 * var(--u));row-gap:calc(30 * var(--u));top:calc(400 * var(--u))}
+.category-page .category-grid.is-many{display:flex;flex-wrap:wrap;justify-content:center;gap:calc(20 * var(--u)) calc(40 * var(--u))}
+.category-page .category-grid.is-many .category-choice{flex:0 0 calc(480 * var(--u));width:calc(480 * var(--u));height:calc(96 * var(--u))}

@@ -128,7 +128,7 @@ SCREENS = [
     ("quiz-instructions", "Quiz", "Instructions", KIOSK, "assessments/instructions.html", lambda: _kiosk_base()),
     ("quiz-categories", "Quiz", "Choose categories", KIOSK, "assessments/category_selection.html",
      lambda: {**_kiosk_base(), "configs": [_config(1, "Tool Knowledge"), _config(2, "Safety"), _config(3, "Math"), _config(4, "Reading Plans")]}),
-    ("quiz-categories-many", "Quiz", "Choose categories (7+ options)", KIOSK, "assessments/category_selection.html",
+    ("quiz-categories-many", "Quiz", "Choose categories (7+ options, last row centered)", KIOSK, "assessments/category_selection.html",
      lambda: {**_kiosk_base(), "configs": [_config(i, n) for i, n in enumerate(("Auto Mechanic", "Civil Construction", "Electrical", "Plumbing", "Welding", "Construction Labor", "HVAC", "Warehouse"), 1)]}),
     ("quiz-question", "Quiz", "Question", KIOSK, "assessments/question.html", _question),
     ("quiz-transition", "Quiz", "Between categories", KIOSK, "assessments/transition.html",
