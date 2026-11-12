@@ -29,7 +29,7 @@ class QuickActionsTests(TestCase):
         self.assertNotContains(self.client.get(self.home), 'Create customer')
 
     def test_editor_is_accessible_from_home_with_nine_ordered_slots(self):
-        self.assertContains(self.client.get(self.home), 'href="'+self.editor+'">Edit</a>')
+        self.assertContains(self.client.get(self.home), 'href="'+self.editor+'">Customize</a>')
         response = self.client.get(self.editor)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'name="actions"', count=9)

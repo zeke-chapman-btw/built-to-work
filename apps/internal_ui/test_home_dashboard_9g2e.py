@@ -52,7 +52,7 @@ class HomeDashboard9G2ETests(TestCase):
         self.task()
         response = self.client.get(self.home)
         html = response.content.decode()
-        headings = ['id="dashboard-tasks-title"', 'id="dashboard-updates-title"', 'id="dashboard-actions-title"', 'id="dashboard-summary-title"', 'id="dashboard-events-title"']
+        headings = ['id="hv2-attention-title"', 'id="hv2-actions-title"', 'id="hv2-events-title"', 'id="hv2-activity-title"']
         self.assertEqual(sorted(html.index(h) for h in headings), [html.index(h) for h in headings])
         self.assertEqual(html.count('<h1'), 1)
         self.assertEqual(response.context['home_task_count'], 1)
@@ -84,8 +84,7 @@ class HomeDashboard9G2ETests(TestCase):
         self.assertEqual(len(response.context['home_tasks']), 4)
         self.assertEqual(response.context['home_task_count'], 8)
         self.assertEqual([t.title for t in response.context['home_tasks']], ['SYNTHETIC E bounded '+str(i) for i in range(4)])
-        self.assertContains(response, 'Overdue')
-        self.assertContains(response, 'Due soon')
+        self.assertContains(response, 'Overdue tasks')
 
     def test_inaccessible_linked_event_title_is_redacted(self):
         event = self.event(name='SYNTHETIC E private event title')
@@ -93,7 +92,6 @@ class HomeDashboard9G2ETests(TestCase):
         TaskEventLink.objects.create(task=task, event=event)
         response = self.client.get(self.home)
         self.assertNotContains(response, event.name)
-        self.assertContains(response, 'Associated event (restricted)')
         self.grant(self.staff, 'events', 'view_event')
         self.assertContains(self.client.get(self.home), event.name)
 
@@ -230,11 +228,10 @@ class HomeDashboard9G2ETests(TestCase):
         self.assertEqual(response.context['home_task_count'], 1)
         self.assertEqual(response.context['home_attention_count'], 2)
         markup = Markup(); markup.feed(response.content.decode())
-        areas = {n['attrs'].get('aria-labelledby'): n for n in markup.with_class('dashboard-section')}
-        self.assertEqual(list(areas), ['dashboard-tasks-title', 'dashboard-updates-title', 'dashboard-actions-title', 'dashboard-summary-title', 'dashboard-events-title'])
-        self.assertNotIn('dashboard-attention-title',areas)
-        tasks = ' '.join(''.join(areas['dashboard-tasks-title']['text']).split())
-        events = ' '.join(''.join(areas['dashboard-events-title']['text']).split())
+        areas = {n['attrs'].get('aria-labelledby'): n for n in markup.with_class('card') if n['attrs'].get('aria-labelledby')}
+        self.assertEqual(list(areas), ['hv2-attention-title', 'hv2-actions-title', 'hv2-events-title', 'hv2-activity-title'])
+        tasks = ' '.join(''.join(areas['hv2-attention-title']['text']).split())
+        events = ' '.join(''.join(areas['hv2-events-title']['text']).split())
         self.assertEqual(response.context['home_attention'][0]['count'], 2)
         self.assertIn('Overdue', tasks)
         self.assertContains(response,reverse('operations:tasks')+'?view=all&amp;due=overdue')

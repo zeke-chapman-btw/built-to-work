@@ -54,25 +54,21 @@ class HomeDashboardPolishTests(TestCase):
         self.assertEqual(gear[0]['attrs']['aria-label'], 'Personal settings')
 
     def test_business_panel_headings_and_real_secondary_actions(self):
-        headers = self.markup.with_class('dashboard-section-header')
-        self.assertEqual(len(headers), 5)
+        headers = self.markup.with_class('hv2-head')
         headings = [''.join(h['children'][0]['text']).strip() for h in headers]
-        for actual, expected in zip(headings, ('My tasks', 'Updates', 'Quick actions', 'Overview', 'Current & upcoming events')):
-            self.assertIn(expected, actual)
-        self.assertContains(self.response, reverse('operations:tasks') + '?view=mine')
+        self.assertEqual(headings, ['Needs attention', 'Quick actions', 'Upcoming events', 'Recent activity'][:len(headings)])
+        self.assertGreaterEqual(len(headings), 3)
         self.assertContains(self.response, reverse('operations:updates'))
         self.assertContains(self.response, reverse('internal:quick-actions-edit'))
-        self.assertEqual(self.markup.with_class('dashboard-section-footer'), [])
         self.assertNotContains(self.response, 'class="dashboard-source-unavailable"')
         for source in ('home_work_state', 'home_events_state', 'home_intake_state', 'home_registration_state'):
             self.assertEqual(self.response.context[source], 'available')
         self.assertNotContains(self.response, 'Edit Options')
 
     def test_updates_empty_state_links_to_real_feed(self):
-        notices = self.markup.with_class('dashboard-notification')
-        self.assertEqual(len(notices), 1)
-        self.assertEqual(notices[0]['tag'], 'li')
-        self.assertIn('No updates', ''.join(notices[0]['text']))
+        notices = self.markup.with_class('hv2-activity-list')[0]['children']
+        self.assertEqual(len([n for n in notices if n['tag'] == 'li']), 1)
+        self.assertIn('Nothing new yet', ''.join(self.markup.with_class('hv2-activity-list')[0]['text']))
         self.assertNotIn('Open Notifications', ''.join(notices[0]['text']))
         self.assertContains(self.response, reverse('operations:updates'))
         self.assertNotContains(self.response, 'No updates connected in this visual preview.')

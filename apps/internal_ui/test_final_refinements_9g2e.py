@@ -52,11 +52,10 @@ class FinalRefinementTests(TestCase):
     def test_home_labels_and_central_analytics_destination(self):
         response = self.client.get(reverse('internal:home'))
         self.assertContains(response, '>Notifications</h2>')
-        self.assertContains(response, '>Overview</h2>')
+        self.assertContains(response, '>Needs attention</h2>')
         self.assertContains(response, 'aria-label="Notifications, 0 unread notifications"')
         self.assertContains(response, 'href="'+reverse('operations:updates')+'"')
         self.assertNotContains(response,'Open notifications')
-        self.assertContains(response, 'href="'+reverse('internal:reports')+'">Reports</a>')
         self.assertNotContains(response, 'Recent Updates')
         self.assertNotContains(response, 'At a Glance')
         self.assertEqual(len(response.context['home_metrics']), 2)

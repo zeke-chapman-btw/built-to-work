@@ -1,42 +1,48 @@
 {% extends 'internal/base.html' %}{% load static event_ui tz %}
-{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/dashboard.css' %}?v=home-cleanup-1"><link rel="stylesheet" href="{% static 'internal/css/workspace_ui.css' %}?v=pass-b-business-2"><link rel="stylesheet" href="{% static 'internal/css/corrective_p2.css' %}">{% endblock %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/dashboard.css' %}?v=home-v2-1"><link rel="stylesheet" href="{% static 'internal/css/workspace_ui.css' %}?v=pass-b-business-2"><link rel="stylesheet" href="{% static 'internal/css/corrective_p2.css' %}">{% endblock %}
 {% block body_class %}{{ block.super }} home-dashboard-page has-corrective-p2 has-shared-workspace{% endblock %}
-{% block page_heading %}<header class="page-header"><h1>Home</h1></header>{% endblock %}
+{% block page_heading %}<header class="page-header home-greeting"><h1>{{ home_greeting }}</h1><span class="home-date">{{ home_today|date:'l, F j, Y' }}</span></header>{% endblock %}
 {% block content %}
-<div class="p2-home home-dashboard btw-standard-workspace">
-  <div class="dashboard-personal">
-    <section class="card dashboard-section dashboard-tasks" aria-labelledby="dashboard-tasks-title">
-      <header class="dashboard-section-header"><div class="dashboard-section-heading">{% include 'shared/result_heading.html' with label='My tasks' count=home_task_count heading_id='dashboard-tasks-title' %}</div><a class="dashboard-edit" href="{% url 'operations:tasks' %}?view=mine">View all tasks</a></header>
-      {% if home_overdue_attention %}<a class="home-overdue-link" href="{{ home_overdue_attention.url }}">Overdue: <strong>{{ home_overdue_attention.count }}</strong></a>{% endif %}
-      {% if home_work_state == 'unavailable' %}<div class="dashboard-empty" role="status"><strong>Couldn't load your tasks</strong><a href="{% url 'operations:tasks' %}?view=mine">Open tasks</a></div>{% else %}
-        <ul class="p2-task-list">{% for task in home_tasks|slice:':2' %}<li><a class="p2-home-link" href="{% url 'operations:task' task.pk %}"><div class="dashboard-row-heading"><strong>{{ task.title }}</strong><span class="status-pill">{{ task.get_status_display }}</span></div><div class="dashboard-row-meta"><span>{% if task.due_date %}Due {{ task.due_date|date:'M j, Y' }}{% else %}No due date{% endif %}</span>{% if task.is_overdue %}<span class="task-overdue">Overdue</span>{% elif task.is_due_soon %}<span class="task-due-soon">Due soon</span>{% endif %}<span>{{ task.get_priority_display }} priority</span></div>{% if task.linked_event_count %}<p class="dashboard-context">{{ task.event_label|truncatechars:100 }}</p>{% endif %}</a></li>{% endfor %}{% if not home_tasks %}<li class="dashboard-empty"><strong>No open tasks</strong></li>{% endif %}</ul>
-        {% if home_tasks|length > 2 %}<details class="dashboard-personal-more"><summary>More tasks</summary><ul class="p2-task-list">{% for task in home_tasks|slice:'2:' %}<li><a class="p2-home-link" href="{% url 'operations:task' task.pk %}"><div class="dashboard-row-heading"><strong>{{ task.title }}</strong><span class="status-pill">{{ task.get_status_display }}</span></div><div class="dashboard-row-meta"><span>{% if task.due_date %}Due {{ task.due_date|date:'M j, Y' }}{% else %}No due date{% endif %}</span>{% if task.is_overdue %}<span class="task-overdue">Overdue</span>{% elif task.is_due_soon %}<span class="task-due-soon">Due soon</span>{% endif %}<span>{{ task.get_priority_display }} priority</span></div>{% if task.linked_event_count %}<p class="dashboard-context">{{ task.event_label|truncatechars:100 }}</p>{% endif %}</a></li>{% endfor %}</ul></details>{% endif %}
-      {% endif %}
+<div class="hv2 btw-standard-workspace">
+  <div class="hv2-top">
+    <section class="card hv2-attention" aria-labelledby="hv2-attention-title">
+      <header class="hv2-head"><h2 id="hv2-attention-title">Needs attention</h2><span class="hv2-muted">{% with n=home_attention|length %}{{ n }} item{{ n|pluralize }}{% endwith %}</span></header>
+      {% if home_work_state == 'unavailable' %}<p class="hv2-muted hv2-note hv2-warn">Couldn't load your tasks</p>{% endif %}
+      {% if home_attention %}
+      <ul class="hv2-att-list">{% for item in home_attention %}<li><span class="hv2-count{% if item.id == 'event-end' or item.id == 'short-staffed' %} is-red{% elif item.id == 'tasks' %} is-grey{% else %} is-amber{% endif %}">{{ item.count }}</span><span class="hv2-att-label">{{ item.label }}</span><a href="{{ item.url }}">{{ item.action|default:'Review' }} <span aria-hidden="true">→</span></a></li>{% endfor %}</ul>
+      {% else %}<p class="hv2-empty">You're all caught up.</p>{% endif %}
+      {% for note in home_attention_unavailable %}<p class="hv2-muted hv2-note">{{ note }}</p>{% endfor %}
     </section>
-    <section class="card dashboard-section dashboard-updates" aria-labelledby="dashboard-updates-title">
-      <header class="dashboard-section-header"><div class="dashboard-section-heading">{% include 'shared/result_heading.html' with label='Updates' count=task_updates.unread heading_id='dashboard-updates-title' %}</div><a class="dashboard-edit" href="{% url 'operations:updates' %}">View all</a></header>
-      <ul class="dashboard-list dashboard-notifications" aria-label="Recent task notifications">{% for notice in task_updates.recent|slice:':2' %}<li class="dashboard-notification{% if not notice.read_at %} is-unread{% endif %}"><a class="dashboard-notice-link" href="{% url 'operations:task' notice.task_id %}" aria-describedby="dashboard-notice-state-{{ notice.pk }}"><strong>{{ notice.task.title }}</strong><p>{{ notice.message }}</p><time datetime="{{ notice.created_at|date:'c' }}">{{ notice.created_at|date:'M j, g:i A T' }}</time></a><span class="notification-read-state" id="dashboard-notice-state-{{ notice.pk }}">{% if notice.read_at %}Read{% else %}New{% endif %}</span>{% if not notice.read_at %}<form class="dashboard-notice-read" method="post" action="{% url 'operations:updates-read' notice.pk %}">{% csrf_token %}<input type="hidden" name="return_to" value="home"><button class="dashboard-read" type="submit">Mark as read<span class="notification-sr-only">: {{ notice.task.title }}</span></button></form>{% endif %}</li>{% endfor %}{% if not task_updates.recent %}<li class="dashboard-notification dashboard-empty"><strong>No updates</strong></li>{% endif %}</ul>
-      {% if task_updates.recent|length > 2 %}<details class="dashboard-personal-more"><summary>More updates</summary><ul class="dashboard-list dashboard-notifications">{% for notice in task_updates.recent|slice:'2:3' %}<li class="dashboard-notification{% if not notice.read_at %} is-unread{% endif %}"><a class="dashboard-notice-link" href="{% url 'operations:task' notice.task_id %}" aria-describedby="dashboard-notice-state-{{ notice.pk }}"><strong>{{ notice.task.title }}</strong><p>{{ notice.message }}</p><time datetime="{{ notice.created_at|date:'c' }}">{{ notice.created_at|date:'M j, g:i A T' }}</time></a><span class="notification-read-state" id="dashboard-notice-state-{{ notice.pk }}">{% if notice.read_at %}Read{% else %}New{% endif %}</span>{% if not notice.read_at %}<form class="dashboard-notice-read" method="post" action="{% url 'operations:updates-read' notice.pk %}">{% csrf_token %}<input type="hidden" name="return_to" value="home"><button class="dashboard-read" type="submit">Mark as read<span class="notification-sr-only">: {{ notice.task.title }}</span></button></form>{% endif %}</li>{% endfor %}</ul></details>{% endif %}
-      {% if task_updates.unread %}<form class="dashboard-section-footer" method="post" action="{% url 'operations:updates-read-all' %}">{% csrf_token %}<input type="hidden" name="return_to" value="home"><button class="dashboard-read" type="submit">Mark all as read</button></form>{% endif %}
-    </section>
+    <aside class="card hv2-actions" aria-labelledby="hv2-actions-title">
+      <header class="hv2-head"><h2 id="hv2-actions-title">Quick actions</h2><a class="hv2-link" href="{{ quick_actions_edit_url }}">Customize</a></header>
+      <div class="hv2-action-list">{% for action in quick_actions %}<a class="hv2-action"{% if action.id == 'create-task' %} data-task-create{% endif %} href="{{ action.url }}">{{ action.label }}</a>{% empty %}<p class="hv2-empty">No quick actions yet</p>{% endfor %}</div>
+    </aside>
   </div>
 
+  <div class="hv2-stats">{% for metric in home_summary_metrics %}{% if metric.state != 'restricted' %}<{% if metric.url %}a href="{{ metric.url }}"{% else %}div{% endif %} class="card hv2-stat"><span class="hv2-stat-label">{{ metric.label }}</span><strong>{{ metric.value|default_if_none:'—' }}</strong>{% if metric.period %}<small>{{ metric.period }}</small>{% endif %}</{% if metric.url %}a{% else %}div{% endif %}>{% endif %}{% endfor %}</div>
 
-  <aside class="card dashboard-section dashboard-shortcuts" aria-labelledby="dashboard-actions-title">
-    <header class="dashboard-section-header"><h2 id="dashboard-actions-title">Quick actions</h2><a class="dashboard-edit" href="{{ quick_actions_edit_url }}">Edit</a></header>
-    <div class="dashboard-actions">{% for action in quick_actions %}<a class="button dashboard-action"{% if action.id == 'create-task' %} data-task-create{% endif %} href="{{ action.url }}">{{ action.label }}<span aria-hidden="true">↗</span></a>{% endfor %}{% if not quick_actions %}<p class="dashboard-empty">No quick actions yet</p>{% endif %}</div>
-
-  </aside>
-
-
-
-
-  <section class="card dashboard-section dashboard-summary" aria-labelledby="dashboard-summary-title"><header class="dashboard-section-header"><h2 id="dashboard-summary-title">Overview</h2><a class="dashboard-edit" href="{% url 'internal:reports' %}">Reports</a></header><div class="home-metric-grid">{% for metric in home_summary_metrics %}{% if metric.state != 'restricted' %}<div class="home-metric">{% if metric.url %}<a href="{{ metric.url }}">{% endif %}<span>{{ metric.label }}</span><strong>{{ metric.value|default_if_none:'Unavailable' }}</strong>{% if metric.url %}</a>{% endif %}{% if metric.period %}<small>{{ metric.period }}</small>{% endif %}</div>{% endif %}{% endfor %}</div></section>
-  {% if home_events or home_event_index_url or home_events_state == 'unavailable' %}  <section class="card dashboard-section dashboard-events" aria-labelledby="dashboard-events-title">
-    <header class="dashboard-section-header"><h2 id="dashboard-events-title">Current &amp; upcoming events</h2>{% if home_event_index_url %}<a class="dashboard-edit" href="{{ home_event_index_url }}">View events</a>{% endif %}</header>
-    {% if home_events_state == 'unavailable' %}<div class="dashboard-empty" role="status"><strong>Couldn't load events</strong></div>{% else %}
-      <ul class="dashboard-event-list">{% for event in home_events %}{% timezone event.timezone_name %}<li><a class="dashboard-event-link" href="{{ event.home_url }}"><span class="dashboard-event-info"><strong>{{ event.name }}</strong><span class="dashboard-event-meta">{{ event.local_start_at|date:'M j, Y' }}{% if event.local_start_at.date != event.local_end_at.date %} – {{ event.local_end_at|date:'M j, Y' }}{% endif %}</span><span class="dashboard-event-meta">{% if event.city or event.state %}{{ event.city }}{% if event.city and event.state %}, {% endif %}{{ event.state }}{% endif %}</span></span></a></li>{% endtimezone %}{% empty %}<li class="dashboard-empty"><p>No upcoming events</p></li>{% endfor %}</ul>
+  <div class="hv2-bottom">
+    {% if home_events or home_event_index_url or home_events_state == 'unavailable' %}
+    <section class="card hv2-events" aria-labelledby="hv2-events-title">
+      <header class="hv2-head"><h2 id="hv2-events-title">Upcoming events</h2>{% if home_event_index_url %}<a class="hv2-link" href="{{ home_event_index_url }}">View all <span aria-hidden="true">→</span></a>{% endif %}</header>
+      {% if home_events_state == 'unavailable' %}<p class="hv2-empty" role="status">Couldn't load events</p>{% elif home_events %}
+      <div class="hv2-table-wrap"><table class="hv2-table"><thead><tr><th>Date</th><th>Event</th>{% if home_registration_state == 'available' %}<th>Registered</th>{% endif %}<th>Staff</th><th>Status</th></tr></thead><tbody>
+      {% for event in home_events %}{% timezone event.timezone_name %}<tr>
+        <td class="hv2-date"><span>{{ event.local_start_at|date:'M'|upper }}</span><strong>{{ event.local_start_at|date:'j' }}</strong></td>
+        <td><a href="{{ event.home_url }}"><strong>{{ event.name }}</strong></a><small>{% if event.local_start_at.date != event.local_end_at.date %}{{ event.local_start_at|date:'M j, Y' }} – {{ event.local_end_at|date:'M j, Y' }}{% if event.daily_start_time and event.daily_end_time %} · {{ event.daily_start_time|time:'g:i A' }} – {{ event.daily_end_time|time:'g:i A' }}{% endif %}{% elif event.daily_start_time and event.daily_end_time %}{{ event.daily_start_time|time:'g:i A' }} – {{ event.daily_end_time|time:'g:i A' }}{% else %}{{ event.local_start_at|date:'g:i A' }} – {{ event.local_end_at|date:'g:i A' }}{% endif %}{% if event.city or event.state %} · {{ event.city }}{% if event.city and event.state %}, {% endif %}{{ event.state }}{% endif %}</small></td>
+        {% if home_registration_state == 'available' %}<td>{{ event.directory_registered|default_if_none:'—' }}</td>{% endif %}
+        <td>{% if event.staff_needed %}<span class="{% if event.staff_short %}hv2-short{% endif %}">{{ event.staff_assigned }} / {{ event.staff_needed }}</span>{% elif event.staff_needed == 0 or event.staff_needed is None %}<span class="hv2-muted">Not set</span>{% endif %}</td>
+        <td><span class="hv2-pill">{{ event.get_status_display }}</span></td>
+      </tr>{% endtimezone %}{% endfor %}
+      </tbody></table></div>
+      {% else %}<p class="hv2-empty">No upcoming events</p>{% endif %}
+    </section>
     {% endif %}
-  </section>{% endif %}
+    <section class="card hv2-activity" aria-labelledby="hv2-activity-title">
+      <header class="hv2-head"><h2 id="hv2-activity-title">Recent activity</h2>{% if task_updates.unread %}<span class="hv2-new">{{ task_updates.unread }} new</span>{% endif %}</header>
+      <ul class="hv2-activity-list">{% for notice in task_updates.recent %}<li class="{% if not notice.read_at %}is-unread{% endif %}"><a href="{% url 'operations:task' notice.task_id %}"><strong>{{ notice.message|default:notice.task.title }}</strong><small>{{ notice.task.title }} · {{ notice.created_at|timesince }} ago</small></a>{% if not notice.read_at %}<form class="hv2-read" method="post" action="{% url 'operations:updates-read' notice.pk %}">{% csrf_token %}<input type="hidden" name="return_to" value="home"><button type="submit" class="hv2-linkbtn">Mark read<span class="notification-sr-only">: {{ notice.task.title }}</span></button></form>{% endif %}</li>{% empty %}<li class="hv2-empty">Nothing new yet</li>{% endfor %}</ul>
+      <footer class="hv2-foot"><a class="hv2-link" href="{% url 'operations:updates' %}">View all activity <span aria-hidden="true">→</span></a>{% if task_updates.unread %}<form method="post" action="{% url 'operations:updates-read-all' %}">{% csrf_token %}<input type="hidden" name="return_to" value="home"><button class="hv2-linkbtn" type="submit">Mark all as read</button></form>{% endif %}</footer>
+    </section>
+  </div>
 </div>
 {% endblock %}

@@ -27,9 +27,9 @@ class HomeDashboardPhaseOneTests(TestCase):
     def test_dashboard_sections_use_live_data_and_existing_routes(self):
         response = self.client.get(reverse('internal:home'))
         self.assertEqual(response.status_code, 200)
-        for section in ('Upcoming events', 'My tasks', 'Updates', 'Quick actions', 'Overview'):
+        for section in ('Needs attention', 'Quick actions', 'Upcoming events', 'Recent activity'):
             self.assertContains(response, section)
-        self.assertContains(response, 'No updates')
+        self.assertContains(response, 'Nothing new yet')
         self.assertContains(response, reverse('operations:updates'))
         self.assertNotContains(response, 'analytics data is not connected')
         self.assertEqual(len(response.context['quick_actions']), 9)

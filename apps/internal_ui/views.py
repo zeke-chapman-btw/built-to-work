@@ -1,4 +1,4 @@
-from .home_data import home_data
+from .home_data import home_data, greeting
 from .dashboard import MAX_QUICK_ACTIONS, available_quick_actions, quick_actions_for
 from .forms import QuickActionsForm
 from django.contrib import messages
@@ -31,7 +31,7 @@ def _require_staff(request):
 @login_required
 def home(request):
     _require_staff(request)
-    return render(request, "internal/dashboard.html", _staff_context(request, page_title="Dashboard", quick_actions=quick_actions_for(request.user), **home_data(request.user), quick_actions_edit_url=reverse("internal:quick-actions-edit")))
+    return render(request, "internal/dashboard.html", _staff_context(request, page_title="Dashboard", quick_actions=quick_actions_for(request.user), **home_data(request.user), **greeting(request.user), quick_actions_edit_url=reverse("internal:quick-actions-edit")))
 
 
 @login_required

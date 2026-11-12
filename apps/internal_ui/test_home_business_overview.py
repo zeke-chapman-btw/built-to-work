@@ -84,8 +84,8 @@ class HomeBusinessOverviewTests(TestCase):
         self.assertEqual(response.context['home_attention'][0]['count'], expected)
         self.assertNotContains(response, hidden.title)
         markup = Markup(); markup.feed(response.content.decode())
-        task_area = markup.with_class('dashboard-tasks')[0]
-        self.assertIn('Overdue', ''.join(task_area['text']))
+        attention_area = markup.with_class('hv2-attention')[0]
+        self.assertIn('Overdue tasks', ''.join(attention_area['text']))
 
     def test_intake_count_matches_default_queue_including_held_but_not_deferred(self):
         for state, held in [('open',False),('resolved',True),('rejected',True),
@@ -132,7 +132,7 @@ class HomeBusinessOverviewTests(TestCase):
             response = self.page()
         self.assertEqual([a['id'] for a in response.context['home_attention']], ['intake'])
         self.assertIn('Overdue task check unavailable', response.context['home_attention_unavailable'])
-        self.assertContains(response, 'My tasks')
+        self.assertContains(response, "Couldn't load your tasks")
         self.assertIsNone(response.context['home_attention_count'])
 
     def test_zero_connected_sources_use_limited_truthful_empty_state(self):
@@ -151,7 +151,7 @@ class HomeBusinessOverviewTests(TestCase):
         for state in ('draft','cancelled','archived','completed'):
             self.event(name='SYNTHETIC hidden '+state, status=state)
         response = self.page()
-        self.assertEqual([e.pk for e in response.context['home_events']], [current.pk,future[0].pk,future[1].pk])
+        self.assertEqual([e.pk for e in response.context['home_events']], [current.pk]+[f.pk for f in future])
         self.assertContains(response, current.name)
         self.assertNotContains(response, '>Current</span>')
         self.assertNotContains(response, 'SYNTHETIC ended')
@@ -163,9 +163,10 @@ class HomeBusinessOverviewTests(TestCase):
             end_at=datetime(2026,10,28,1,30,tzinfo=UTC), timezone_name='America/New_York')
         with patch('django.utils.timezone.now', return_value=fixed):
             response = self.page()
-        self.assertContains(response, 'Oct 27, 2026')
-        self.assertNotContains(response, '8:30 PM')
-        self.assertNotContains(response, '9:30 PM')
+        # The date block and times use the event's own time zone (Oct 27, 8:30 PM Eastern), not UTC (Oct 28).
+        self.assertContains(response, '<span>OCT</span><strong>27</strong>', html=False)
+        self.assertContains(response, '8:30 PM')
+        self.assertNotContains(response, '12:30 AM')
         detail = self.client.get(reverse('events:event_detail', args=[event.pk]))
         self.assertContains(detail, '8:30 PM')
         self.assertContains(detail, '9:30 PM')
@@ -241,11 +242,12 @@ class HomeBusinessOverviewTests(TestCase):
             EventRegistration.objects.create(event=event,participant=person)
             self.review()
         with CaptureQueriesContext(connection) as large:data=home_data(self.admin)
-        self.assertEqual(len(data['home_events']),3)
+        self.assertEqual(len(data['home_events']),5)
         self.assertLessEqual(len(large),len(small)+1)
         # Four canonical report metrics add a fixed set of authorized reads.
         # The small/large assertion above still forbids per-record query growth.
-        self.assertLessEqual(len(large),55)
+        # Home v2 adds a fixed handful of reads (staff requests, staffing coverage, job requests).
+        self.assertLessEqual(len(large),65)
 
     def test_manager_destination_queries_are_bulk_not_per_event(self):
         first=self.event();EventExecution.objects.create(event=first,primary_manager=self.profiles[self.staff.pk])
@@ -253,7 +255,7 @@ class HomeBusinessOverviewTests(TestCase):
         with CaptureQueriesContext(connection) as small:home_data(self.staff)
         for i in range(5):EventExecution.objects.create(event=self.event(),primary_manager=self.profiles[self.staff.pk])
         with CaptureQueriesContext(connection) as large:data=home_data(self.staff)
-        self.assertEqual(len(data['home_events']),3)
+        self.assertEqual(len(data['home_events']),5)
         self.assertLessEqual(len(large),len(small)+1)
 
     def test_add_participant_uses_staff_flow_or_explicit_admin_fallback_without_new_grants(self):
@@ -284,11 +286,9 @@ class HomeBusinessOverviewTests(TestCase):
             TaskNotification.objects.create(recipient=self.staff,task=task,source_event=audit,kind='assigned',message='SYNTHETIC task update')
         response=self.page(self.staff);markup=Markup();markup.feed(response.content.decode())
         self.assertEqual([a['id'] for a in response.context['quick_actions']],['settings','create-task'])
-        self.assertEqual(len([x for x in markup.with_class('p2-task-list')[0]['children'] if x['tag']=='li']),2)
-        self.assertEqual(len([x for x in markup.with_class('dashboard-notifications')[0]['children'] if x['tag']=='li']),2)
+        self.assertEqual(len([x for x in markup.with_class('hv2-activity-list')[0]['children'] if x['tag']=='li']),4)
         self.assertEqual(response.context['task_updates']['unread'],4)
-        self.assertEqual(len(markup.with_class('dashboard-notice-read')),3)
-        self.assertContains(response,'More tasks');self.assertContains(response,'More updates')
+        self.assertContains(response,'Mark all as read')
         ids=[x['attrs']['id'] for x in markup.nodes if 'id' in x['attrs']]
         self.assertEqual(len(ids),len(set(ids)))
         self.assertNotContains(response,'Hiring Activity')

@@ -47,6 +47,67 @@ def _event_destinations(user, events):
         event.home_url = reverse(route, args=[event.pk])
 
 
+def greeting(user, now=None):
+    now = timezone.localtime(now)
+    part = "morning" if now.hour < 12 else "afternoon" if now.hour < 17 else "evening"
+    name = (getattr(user, "first_name", "") or getattr(user, "username", "")).split(" ")[0]
+    return {"home_greeting": f"Good {part}, {name}" if name else f"Good {part}", "home_today": now}
+
+
+def _staff_counts(user, events):
+    """Confirmed people vs. the event-level staffing plan; only for staffing managers."""
+    if not events or not user.has_perms(("staffing.manage_event_staffing", "events.view_event")):
+        return
+    from django.db.models import Count, Q
+    from apps.staffing.models import StaffingPlan, StaffAssignment
+    plans = {p.event_id: p.required_staff + p.required_drivers for p in StaffingPlan.objects.filter(event_id__in=[e.pk for e in events])}
+    assigned = dict(StaffAssignment.objects.filter(event_id__in=[e.pk for e in events], status="confirmed")
+                    .values("event_id").annotate(n=Count("staff_id", distinct=True)).values_list("event_id", "n"))
+    for event in events:
+        event.staff_needed = plans.get(event.pk)
+        event.staff_assigned = assigned.get(event.pk, 0)
+        event.staff_short = bool(event.staff_needed) and event.staff_assigned < event.staff_needed
+
+
+def _more_attention(user, unavailable):
+    """Extra Needs-attention rows from existing queues; each read uses that queue's own access rule."""
+    from django.db import DatabaseError
+    from apps.internal_ui.approvals import access_flags
+    rows = []
+    flags = access_flags(user)
+    if flags.get("events"):
+        try:
+            from apps.events.models import Event
+            from apps.staffing.models import AvailabilityRequest, StaffingPlan, StaffAssignment
+            from django.db.models import Count
+            pending = AvailabilityRequest.objects.filter(status="pending").count()
+            if pending:
+                rows.append(dict(id="staff-requests", count=pending, label="Staff requests to approve",
+                                 action="Review", url=reverse("internal:workspace", args=["approvals"]) + "?tab=events"))
+            soon = Event.objects.filter(status=Event.Status.UPCOMING, start_at__gte=timezone.now(),
+                                        start_at__lte=timezone.now() + __import__('datetime').timedelta(days=30))
+            plans = {p.event_id: p.required_staff + p.required_drivers for p in StaffingPlan.objects.filter(event__in=soon)}
+            got = dict(StaffAssignment.objects.filter(event_id__in=plans, status="confirmed").values("event_id")
+                       .annotate(n=Count("staff_id", distinct=True)).values_list("event_id", "n"))
+            short = sum(1 for event_id, need in plans.items() if need and got.get(event_id, 0) < need)
+            if short:
+                rows.append(dict(id="short-staffed", count=short, label="Upcoming events short on staff",
+                                 action="Assign staff", url=reverse("events:event_list") + "?view=upcoming"))
+        except DatabaseError:
+            unavailable.append("Staffing check unavailable")
+    try:
+        from apps.customers.access import is_manager
+        if flags.get("jobs") and is_manager(user):
+            from apps.customers.models import WorkforceNeedRevision
+            waiting = WorkforceNeedRevision.objects.filter(state__in=("submitted", "review")).count()
+            if waiting:
+                rows.append(dict(id="positions", count=waiting, label="Customer job requests to approve",
+                                 action="Review", url=reverse("internal:workspace", args=["approvals"]) + "?tab=jobs"))
+    except DatabaseError:
+        unavailable.append("Job request check unavailable")
+    return rows
+
+
 def home_data(user):
     """Bounded existing sources; independent failures never become zero."""
     from django.core.exceptions import PermissionDenied
@@ -62,7 +123,7 @@ def home_data(user):
         result.update(home_work_state="available", home_attention_count=result["home_metrics"][1]["value"])
         if result["home_attention_count"]:
             attention.append(dict(id="tasks", count=result["home_attention_count"],
-                label="Accessible overdue tasks", scope="Open tasks you can access",
+                label="Overdue tasks", action="View tasks", scope="Open tasks you can access",
                 url=reverse("operations:tasks") + "?view=all&due=overdue"))
     except DatabaseError:
         result = dict(home_tasks=[], home_task_count=None, home_metrics=[],
@@ -79,7 +140,7 @@ def home_data(user):
             count = _intake_review_count(user)
             result.update(home_intake_state="available", home_intake_count=count)
             if count:
-                attention.append(dict(id="intake", count=count, label="Intake review cases",
+                attention.append(dict(id="intake", count=count, label="Sign-ups to review", action="Review",
                     scope="Current review queue · includes held registrations",
                     url=reverse("participants:intake-review-queue") + "?status=open"))
         except DatabaseError:
@@ -90,7 +151,7 @@ def home_data(user):
     try:
         end_count = end_attention_events(user).count()
         if end_count:
-            attention.append(dict(id="event-end", count=end_count, label="Events past scheduled end",
+            attention.append(dict(id="event-end", count=end_count, label="Events ended but not closed out", action="Close out",
                 scope="Not marked ended · your existing end-action access",
                 url=reverse("operations:execution-index") + "?view=attention"))
     except DatabaseError:
@@ -120,6 +181,7 @@ def home_data(user):
     except DatabaseError:
         result.update(home_recruiting_state='unavailable')
         unavailable.append('Recruiting review check unavailable')
+    attention.extend(_more_attention(user, unavailable))
     result.update(home_attention=attention, home_attention_unavailable=unavailable)
     # Unique source signals remain links, not invented Tasks or replayed notices.
     result['home_unique_attention'] = [item for item in attention if item['id'] != 'tasks']
@@ -128,7 +190,8 @@ def home_data(user):
 
     try:
         events = list(task_access.events_for(user).filter(status=Event.Status.UPCOMING,
-            end_at__gte=timezone.now()).order_by("start_at", "pk")[:3])
+            end_at__gte=timezone.now()).order_by("start_at", "pk")[:5])
+        _staff_counts(user, events)
         _event_destinations(user, events)
         result.update(home_events=events, home_events_state="available",
             home_event_index_url=reverse("events:event_list") if user.has_perm("events.view_event")
