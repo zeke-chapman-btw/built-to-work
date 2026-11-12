@@ -1,4 +1,5 @@
 {% extends 'reporting/base.html' %}{% load reporting_ui %}{% block content %}
+{% if my_tabs %}{% include 'internal/ui/my_tabs.html' %}{% endif %}
 <div class="mypay">
 <form method="get" class="mypay-year" aria-label="Choose a year">
 <label for="earnings-year">Year</label>

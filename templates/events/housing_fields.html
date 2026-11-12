@@ -1,0 +1,2 @@
+{% load ui_patterns %}<div class="btw-editor-grid">{% for field in form.visible_fields %}<div class="{% if field.name in 'name address_line_1 notes' %}btw-editor-wide{% endif %}">{% ui_field field %}</div>{% endfor %}</div>
+{% if can_remove %}<p class="ev-housing-remove"><button class="button secondary" type="submit" name="remove" value="1" formnovalidate>Remove this housing</button></p>{% endif %}

@@ -111,6 +111,8 @@ ICON_PATHS = {
 ICON_PATHS.update({
     "home": ["M3 10l9-7 9 7", "M5 9v12h14V9M9 21v-7h6v7"],
     "people": ICON_PATHS["staff"],
+    "sop": ["M4 19.5A2.5 2.5 0 0 1 6.5 17H20", "M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z", "M9 7h7M9 11h7"],
+    "me": ["M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2", "M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"],
     "customers": ["M3 21h18M5 21V5h14v16M9 9h1m4 0h1M9 13h1m4 0h1M10 21v-4h4v4"],
     "campaigns": ["M3 10v4h4l10 5V5L7 10H3", "M7 14l2 7h3l-2-6M21 9v6"],
     "approvals": ["M12 3l8 4v6c0 5-8 9-8 9s-8-4-8-9V7l8-4", "M8 12l3 3 5-6"],

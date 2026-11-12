@@ -19,7 +19,7 @@ def event_header(context, event):
             back_url=candidate
     except ValueError:pass
     return dict(request=request,event=event,report_url=reverse("event_reports:detail",args=[event.pk]) if can_report(user) else None,
-        edit_url=reverse("events:event_edit",args=[event.pk])+"?return_to="+quote(request.get_full_path(),safe="") if user.has_perm("events.change_event") and event.status!="archived" else None,
+        edit_url=reverse("events:section-edit",args=[event.pk,"event"])+"?return_to="+quote(request.get_full_path(),safe="") if user.has_perm("events.change_event") and event.status!="archived" else None,
         management_actions=available_actions(event) if user.has_perm("events.change_event") else [],
         back_label="Events" if user.has_perm("events.view_event") else "My staff schedule",
         back_url=back_url,

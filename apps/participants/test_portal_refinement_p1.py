@@ -19,7 +19,8 @@ class PortalRefinementTests(TestCase):
         links=re.findall(r'href="#([^"]+)"',nav)
         sections=re.findall(r'<section id="([^"]+)"',html)
         self.assertEqual(links,sections)
-        self.assertEqual(links,['personal','skills','assessments','work','training','credentials','preferences','availability','documents'])
+        # Two columns: work history on the left, contact and the rest on the right.
+        self.assertEqual(links,['skills','assessments','work','training','personal','credentials','preferences','availability','documents'])
 
     def test_editor_keeps_anchored_return_and_validation(self):
         url=reverse('participants:portal-profile-edit',args=['personal'])

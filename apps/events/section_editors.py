@@ -13,12 +13,33 @@ from .event_management import save_event, require_event_permission
 from .views import staff_permission_required
 
 SECTIONS={
- 'event':('Event & location',('name','event_type','event_type_other','description','location_name','address_line_1','address_line_2','city','state','postal_code','country')),
- 'schedule':('Schedule',('timezone_name','start_at','end_at','daily_start_time','daily_end_time','setup_date','staff_arrival_time','return_date')),
+ 'event':('Event details',('name','event_type','event_type_other','description','simulator_qualification_threshold')),
+ 'location':('Location',('location_name','address_line_1','address_line_2','city','state','postal_code','country')),
+ 'schedule':('Schedule',('timezone_name','setup_date','staff_arrival_time','start_at','end_at','daily_start_time','daily_end_time','return_date')),
  'contact':('Event contact',('contact_name','contact_email','contact_phone')),
- 'housing':('Housing',('housing_information',)),
+ 'housing':('Housing notes',('housing_information',)),
  'logistics':('Travel & setup',('logistics_instructions',)),
  'purpose':('Purpose',('purpose','customer','campaign')),
+ 'signup':('Participant sign-up',('registration_opens_at','registration_closes_at','registration_deadline_at','registration_capacity','group_mode','group_label')),
+}
+
+# Plain labels and help for the pop-up editors. Validation is unchanged.
+LABELS={
+ 'name':('Event name',''),'event_type':('Event type',''),'event_type_other':('Describe the event type',''),
+ 'simulator_qualification_threshold':('Simulator passing score (%)','Scores at or above this count as qualified. Usually 50.'),
+ 'location_name':('Venue',''),'address_line_1':('Street address',''),'address_line_2':('Address line 2',''),'postal_code':('ZIP code',''),
+ 'timezone_name':('Time zone','Every time on this event uses this time zone.'),
+ 'setup_date':('Setup day',''),'staff_arrival_time':('Staff arrive (setup day)',''),
+ 'start_at':('Event starts','Tickets and trailer stations work between the start and end.'),'end_at':('Event ends',''),
+ 'daily_start_time':('Staff start (each day)','Used when a staff assignment has no times of its own.'),'daily_end_time':('Staff end (each day)',''),
+ 'return_date':('Arrive home',''),
+ 'contact_name':('Contact name',''),'contact_email':('Email',''),'contact_phone':('Phone',''),
+ 'housing_information':('Housing notes','For anything not covered by a housing entry.'),
+ 'logistics_instructions':('Travel & setup notes','Directions, parking, load-in, what to bring.'),
+ 'registration_opens_at':('Sign-up opens','Leave blank to open right away.'),'registration_closes_at':('Sign-up closes','Leave blank to stay open until the event ends.'),
+ 'registration_deadline_at':('Last day to sign up','Optional. Use if sign-up should stop before it closes.'),
+ 'registration_capacity':('Sign-up limit','Leave blank for no limit.'),
+ 'group_mode':('Ask for a group','For example, which school or company they came with.'),'group_label':('Group name','What to call the group, such as School.'),
 }
 
 class SectionForm(forms.Form):
@@ -29,6 +50,9 @@ class SectionForm(forms.Form):
   self.initial['revision']=event.updated_at.isoformat()
   for name in SECTIONS[section][1]:
    self.fields[name]=deepcopy(full.fields[name]);self.initial[name]=full[name].value()
+   label,help_text=LABELS.get(name,(None,None))
+   if label:self.fields[name].label=label
+   if help_text is not None:self.fields[name].help_text=help_text
 
 @transaction.atomic
 def save_section(*,actor,event_id,section,data):
@@ -67,3 +91,41 @@ def edit(request,event_id,section):
   'event':event,'form':form,'page_title':'Edit '+SECTIONS[section][0],'editor_context':event.name,'back':back,
   'save_label':'Save changes','save_conflict':conflict,'cautious_save':True,'editor_return_label':'event',
   'fields_template':'internal/ui/section_fields.html','full_page_editor':request.headers.get('X-BTW-Editor')!='1'})
+
+
+QUICK_FIELDS=('name','event_type','event_type_other','timezone_name','start_at','end_at','location_name','city','state')
+
+
+class QuickCreateForm(forms.Form):
+ quick_create=forms.CharField(widget=forms.HiddenInput,initial='1')
+ def __init__(self,*args,**kwargs):
+  super().__init__(*args,**kwargs)
+  full=EventForm()
+  for name in QUICK_FIELDS:
+   self.fields[name]=deepcopy(full.fields[name]);self.initial.setdefault(name,full[name].value())
+   label,help_text=LABELS.get(name,(None,None))
+   if label:self.fields[name].label=label
+   if help_text is not None:self.fields[name].help_text=help_text
+  self.fields['start_at'].help_text='You can add setup days, staff, housing and everything else after it is created.'
+  for name in ('location_name','city','state'):self.fields[name].required=False
+
+
+def quick_create(request):
+ """New events start from a short pop-up; every other detail is edited from the event's cards."""
+ from django.urls import reverse
+ from .event_management import save_event
+ actor=fresh_staff(request.user);require_event_permission(actor,'events.add_event')
+ back=event_return(request)
+ form=QuickCreateForm(request.POST if request.method=='POST' else None)
+ if request.method=='POST' and form.is_valid():
+  full=EventForm()
+  payload={name:(full[name].value() if full[name].value() is not None else '') for name in full.fields}
+  payload.update({name:request.POST.get(name,'') for name in QUICK_FIELDS})
+  payload.update(action='save_draft',revision='')
+  event,checked=save_event(data=payload,actor=actor)
+  if event:return editor_success(request,reverse('events:event_detail',args=[event.pk]))
+  for key,errors in checked.errors.items():form.add_error(key if key in form.fields else None,errors)
+ return editor_response(request,template='events/section_form.html',panel='internal/ui/record_form_panel.html',context={
+  'form':form,'page_title':'New event','editor_context':'Saved as a draft. Add the rest from the event page.','back':back,
+  'save_label':'Create event','editor_return_label':'events','fields_template':'internal/ui/section_fields.html',
+  'full_page_editor':request.headers.get('X-BTW-Editor')!='1'})

@@ -193,7 +193,7 @@
 
 @media(max-width:639px){.portal-page .profile-section>.profile-guidance{font-size:14px;line-height:20px}}
 /* Participant portal – shared layout (pp-) */
-.portal-page .pp-stack{display:grid;gap:16px;max-width:960px}
+.portal-page .pp-stack{display:grid;gap:16px;max-width:none}
 .portal-page .pp-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px 20px;margin:0}
 .portal-page .pp-card h2{font-family:inherit;font-size:1.05rem;font-weight:600;margin:0}
 .portal-page .pp-card-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
@@ -213,7 +213,7 @@
 .portal-page .pp-tile{display:grid;gap:4px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:14px 16px;text-decoration:none;color:#111827}
 .portal-page .pp-tile span{color:#6b7280;font-size:.85rem}
 .portal-page .pp-tile:hover{border-color:#b20d27}
-.portal-page .pp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;max-width:960px}
+.portal-page .pp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;max-width:none}
 .portal-page .pp-event{display:grid;gap:8px;align-content:start}
 .portal-page .pp-event h2{font-size:1.15rem}
 .portal-page .pp-when{margin:0}
@@ -243,3 +243,15 @@
 .portal-page .profile-section-links a{font-weight:500}
 .portal-page .profile-rejection{margin:6px 0 0;padding:8px 10px;border-radius:8px;background:#fdecec;color:#7f1d1d;font-size:.9rem}
 .portal-page .pp-stack>*{min-width:0}.portal-page .pp-search .pp-field{min-width:0}.portal-page .pp-search input{width:100%;box-sizing:border-box}
+
+/* My profile: two columns like the staff participant profile */
+.portal-page .pp-cols{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:16px;align-items:start}
+.portal-page .pp-cols>.pp-main,.portal-page .pp-cols>.pp-side{display:flex;flex-direction:column;gap:16px;min-width:0}
+.portal-page .pp-cols .profile-section{margin:0 !important}
+@media(max-width:900px){.portal-page .pp-cols{grid-template-columns:1fr}}
+/* Profile add/edit forms: comfortable width, two-column fields */
+.portal-page .profile-editor-page{max-width:860px}
+.portal-page .profile-editor-page .ux-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px}
+.portal-page .profile-editor-page .ux-form>:not(.ux-field):not(.field){grid-column:1/-1}
+.portal-page .profile-editor-page .ux-form>.ux-field:has(textarea){grid-column:1/-1}
+@media(max-width:700px){.portal-page .profile-editor-page .ux-form{grid-template-columns:1fr}}

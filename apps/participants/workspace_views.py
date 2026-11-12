@@ -351,7 +351,17 @@ def add_person(request):
                 form.data = mutable
         else:
             messages.success(request, "Participant added.")
-            return people_saved(request,"participants:staff-profile", participant_id=person.pk)
+            saved = people_saved(request,"participants:staff-profile", participant_id=person.pk)
+            if request.headers.get("X-BTW-Editor") == "1":
+                from apps.internal_ui.record_editors import editor_success
+                return editor_success(request, saved.url)
+            return saved
+    if request.headers.get("X-BTW-Editor") == "1":
+        from apps.internal_ui.record_editors import editor_response
+        return editor_response(request, template="participants/workspace_form.html", panel="internal/ui/record_form_panel.html",
+            context={"form": form, "possible_matches": matches, "page_title": "Add participant", "back": reverse("participants:staff-directory"),
+                     "save_label": "Add participant", "fields_template": "participants/add_person_fields.html", "editor_return_label": "participants",
+                     "editor_context": "Name is all you need. You can add the rest later.", "full_page_editor": False})
     return render(request, "participants/workspace_form.html", context(request, form=form, possible_matches=matches,
         page_title="Add participant", submit_label="Add participant", return_url=reverse("participants:staff-directory")),
         status=400 if form.is_bound and form.errors else 200)
@@ -719,9 +729,9 @@ def _participant_explorer(request, *, include_analysis):
     presentation = _explorer_presentation(request, form, population, criteria, data, page, include_analysis=include_analysis)
     if "q" in form.fields:
         form.fields["q"].widget.attrs.setdefault("placeholder", "Search by name, phone, email or ID")
+    from .list_presentation import decorate_rows, insights
+    presentation.update(decorate_rows(request.user, rows))
     if not include_analysis:
-        from .list_presentation import decorate_rows, insights
-        presentation.update(decorate_rows(request.user, rows))
         if form.is_valid():
             presentation["list_insights"] = insights(request.user, population, presentation.get("explorer_groups", []))
     from apps.crm.directory_reads import directory_panel, directory_sections

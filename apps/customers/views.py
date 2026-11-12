@@ -359,13 +359,9 @@ def need_action(request, org_id, record_id, action):
 @staff_view
 @require_http_methods(["GET"])
 def campaign_directory(request):
-    query = Campaign.objects.select_related("organization").all()
-    term, status = request.GET.get("q", "").strip(), request.GET.get("status", "")
-    if term:
-        query = query.filter(Q(name__icontains=term) | Q(organization__name__icontains=term))
-    if status in Campaign.Status.values:
-        query = query.filter(status=status)
-    return render(request, "customers/campaign_directory.html", context(request, tab="campaigns", rows=page(request, query), q=term, status=status, statuses=Campaign.Status.choices))
+    # One campaign list: show the Recruiting > Campaigns page here too.
+    from apps.recruiting.workflow_views import campaigns
+    return campaigns(request)
 
 
 @staff_view

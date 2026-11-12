@@ -74,7 +74,8 @@ class InternalShellTests(TestCase):
                     self.assertContains(response, "people-directory")
                     self.assertContains(response, reverse("participants:staff-directory"))
                 elif workspace_id in ("customers", "campaigns"):
-                    self.assertRegex(response.content.decode(), r'class="[^"]*\bcustomer-page\b[^"]*"')
+                    # Campaigns now shows the one Recruiting > Campaigns list.
+                    self.assertRegex(response.content.decode(), r'class="[^"]*\bcustomer-page\b[^"]*"' if workspace_id == "customers" else r'ops-list-card')
                     self.assertNotContains(response, 'planned-workspace')
                 elif workspace_id == "approvals":
                     self.assertContains(response, 'id="approvals-workspace"')

@@ -42,6 +42,11 @@ def form_page(request,form,title,back,event=None,section='overview'):
     if is_task:
         if back==reverse('operations:tasks'):back=task_return_to
         elif back.startswith(reverse('operations:tasks')):back+='?'+urlencode({'return_to':task_return_to})
+    if request.headers.get('X-BTW-Editor')=='1' and isinstance(form,(StatusForm,TaskRevisionForm)):
+        from apps.internal_ui.record_editors import editor_response
+        return editor_response(request,template=template,panel='internal/ui/record_form_panel.html',context=dict(form=form,page_title=title,back=back,
+            task_return_to=task_return_to,save_label='Save' if isinstance(form,StatusForm) else title,fields_template='internal/ui/section_fields.html',
+            editor_return_label='task',full_page_editor=False))
     return render(request,template,dict(form=form,page_title=title,back=back,task_return_to=task_return_to,event=event,section=section),status=400 if form.is_bound else 200)
 @staff_view
 def task_list(request,mine=False):
@@ -87,7 +92,8 @@ def task_status(request,task_id):
         saved, form = svc.task_status(actor=request.user, task_id=obj.pk, data=request.POST)
         if saved:
             messages.success(request,"Task status updated.")
-            return redirect(task_destination(request, obj))
+            from apps.internal_ui.record_editors import editor_success
+            return editor_success(request,task_destination(request, obj))
     return form_page(request,form,"Change status",reverse("operations:task", args=[obj.pk]))
 
 @staff_view
@@ -98,7 +104,8 @@ def task_archive(request,task_id,restore=False):
         saved, form = svc.task_archive(actor=request.user, task_id=obj.pk, data=request.POST, restore=restore)
         if saved:
             messages.success(request, "Task restored." if restore else "Task archived. History is retained.")
-            return redirect(task_destination(request, obj))
+            from apps.internal_ui.record_editors import editor_success
+            return editor_success(request, task_destination(request, obj))
     return form_page(request, form, "Restore task" if restore else "Archive task", reverse("operations:task", args=[obj.pk]))
 @staff_view
 def task_link_add(request,task_id):

@@ -3,9 +3,8 @@
 {% block extra_head %}<link rel="stylesheet" href="{% static 'internal/css/quick_actions_editor.css' %}"><script src="{% static 'internal/js/quick_actions_editor.js' %}" defer></script>{% endblock %}
 {% block content %}
 <section class="card content-admin quick-actions-editor" aria-labelledby="quick-actions-editor-title">
-  <h2 id="quick-actions-editor-title">Your Quick Actions</h2>
-  <p>Choose up to nine actions. Slots set the order on your dashboard. Choose “No action” to remove an action. Unused slots stay empty.</p>
-  <p>Only actions allowed by your current permissions are available.</p>
+  <h2 id="quick-actions-editor-title">Quick actions on your Home page</h2>
+  <p class="qa-help">Pick up to nine. They show on Home in this order.</p>
   <form method="post">
     {% csrf_token %}
     {% if form.errors %}<div class="alert" role="alert">{{ form.actions.errors }}</div>{% endif %}
@@ -17,13 +16,13 @@
           {% for action in available_actions %}<option value="{{ action.id }}"{% if action.id == selected %} selected{% endif %}>{{ action.label }}</option>{% endfor %}
         </select>
         <div class="quick-action-order" hidden>
-          <button class="button muted" type="button" data-direction="-1" aria-label="Move action {{ forloop.counter }} up"{% if forloop.first %} disabled{% endif %}>Up</button>
-          <button class="button muted" type="button" data-direction="1" aria-label="Move action {{ forloop.counter }} down"{% if forloop.last %} disabled{% endif %}>Down</button>
-          <button class="button muted" type="button" data-remove aria-label="Remove action {{ forloop.counter }}">Remove</button>
+          <button class="qa-icon" type="button" data-direction="-1" aria-label="Move action {{ forloop.counter }} up"{% if forloop.first %} disabled{% endif %}>↑</button>
+          <button class="qa-icon" type="button" data-direction="1" aria-label="Move action {{ forloop.counter }} down"{% if forloop.last %} disabled{% endif %}>↓</button>
+          <button class="qa-icon qa-remove" type="button" data-remove aria-label="Remove action {{ forloop.counter }}">×</button>
         </div>
       </div>{% endfor %}
     </div>
-    <div class="quick-action-editor-controls"><button class="button" type="submit" name="operation" value="save">Save Quick Actions</button><button class="button secondary" type="submit" name="operation" value="restore">Restore Defaults</button><a href="{% url 'internal:home' %}">Cancel</a></div>
+    <div class="quick-action-editor-controls"><button class="button button-primary" type="submit" name="operation" value="save">Save</button><a class="button secondary" href="{% url 'internal:home' %}">Cancel</a><button class="qa-link" type="submit" name="operation" value="restore">Restore defaults</button></div>
   </form>
 </section>
 {% endblock %}

@@ -695,3 +695,54 @@ class CentralEventDownloadPage(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=("download", "page_number"), name="unique_central_download_page")]
+
+
+class EventLodging(models.Model):
+    """One place staff stay for an event (hotel, rental, RV park ...)."""
+
+    class Kind(models.TextChoices):
+        HOTEL = "hotel", "Hotel"
+        MOTEL = "motel", "Motel"
+        RENTAL = "rental", "Airbnb / rental house"
+        RV = "rv_park", "RV park / campground"
+        TRAILER = "trailer", "Staying in the trailer"
+        HOST = "host_provided", "Provided by the host"
+        OTHER = "other", "Other"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="lodgings")
+    kind = models.CharField("Type", max_length=20, choices=Kind.choices, default=Kind.HOTEL)
+    name = models.CharField(max_length=160, blank=True, help_text="For example, Hampton Inn Augusta.")
+    address_line_1 = models.CharField("Address", max_length=200, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    state = models.CharField(max_length=40, blank=True)
+    postal_code = models.CharField("ZIP code", max_length=20, blank=True)
+    phone = models.CharField(max_length=40, blank=True)
+    check_in = models.DateField("Check-in", null=True, blank=True)
+    check_out = models.DateField("Check-out", null=True, blank=True)
+    confirmation_number = models.CharField("Confirmation #", max_length=80, blank=True)
+    rooms = models.CharField("Rooms / beds", max_length=120, blank=True, help_text="For example, 2 rooms, 2 queens each.")
+    booked_under = models.CharField("Booked under", max_length=120, blank=True)
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("check_in", "created_at")
+
+    def clean(self):
+        super().clean()
+        if self.check_in and self.check_out and self.check_out < self.check_in:
+            raise ValidationError({"check_out": "Check-out can't be before check-in."})
+
+    @property
+    def display_name(self):
+        return self.name or self.get_kind_display()
+
+    @property
+    def map_query(self):
+        return " ".join(v for v in (self.name, self.address_line_1, self.city, self.state, self.postal_code) if v)
+
+    def __str__(self):
+        return self.display_name

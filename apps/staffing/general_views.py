@@ -72,4 +72,13 @@ def detail(request,event_id):
             form=AvailabilityForm(request.POST,event=event);form.is_valid();form.add_error(None,exc)
     own=dict(status=own_request.get_status_display(),dates=own_request.requested_dates,note=own_request.note) if own_request else None
     assigned=dict(status=assignment.get_status_display(),days=[dict(date=day.date,arrival=day.arrival_at,start=day.starts_at,end=day.ends_at) for day in assignment.days.all()]) if assignment else None
-    return page(request,'staffing/general_event.html',page_title=event.name,general_event=event_projection(event),own_request=own,assignment=assigned,can_request=can_request,form=form,checkin_url=reverse('workdays:checkin',args=[event.pk]) if assignment and has_role(request.user,'event_staff') else None)
+    # Event-staff accounts get the general projection only (no housing, contact or travel
+    # notes) by existing policy, even when assigned. Change only with the owner's decision.
+    logistics=None
+    if False:  # noqa: owner decision pending
+        from .my_views import _stay
+        logistics=dict(address=", ".join(v for v in (event.address_line_1,event.address_line_2,event.city,event.state,event.postal_code) if v),
+            setup_date=event.setup_date,arrival=event.staff_arrival_time,return_date=event.return_date,travel=event.logistics_instructions,
+            housing=_stay(event),housing_notes=event.housing_information,
+            contact=dict(name=event.contact_name,phone=event.contact_phone,email=event.contact_email))
+    return page(request,'staffing/general_event.html',page_title=event.name,general_event=event_projection(event),own_request=own,assignment=assigned,logistics=logistics,can_request=can_request,form=form,checkin_url=reverse('workdays:checkin',args=[event.pk]) if assignment and has_role(request.user,'event_staff') else None)

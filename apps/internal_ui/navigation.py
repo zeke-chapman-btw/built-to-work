@@ -261,8 +261,13 @@ def staff_destinations(user, current_path=""):
         dict(id="settings", label="Settings", icon="settings", url=reverse("internal:settings"), active=False),
     ])
     from apps.staffing.models import StaffProfile
-    if getattr(user, "is_authenticated", False) and StaffProfile.objects.filter(user=user, my_pay_enabled=True).exists():
-        entries.insert(len(entries) - 1, dict(id="my-pay", label="My pay", icon="event-dollar", url=reverse("reporting:my-pay"), active=False))
+    from apps.sops.access import can_manage as can_manage_sops
+    has_profile = getattr(user, "is_authenticated", False) and StaffProfile.objects.filter(user=user, is_active=True).exists()
+    position = len(entries) - 2  # before Reports & Analytics and Settings
+    if has_profile or can_manage_sops(user):
+        entries.insert(position, dict(id="sops", label="SOPs", icon="sop", url=reverse("sops:index"), active=False))
+    if has_profile:
+        entries.insert(position, dict(id="my-stuff", label="My stuff", icon="me", url=reverse("my:schedule"), active=False))
     if not report_destinations(user):entries=[entry for entry in entries if entry['id']!='reports']
     active = next((entry["id"] for entry in entries if entry["active"]), None)
     if any(legacy.get(key, {}).get("active") for key in ("administration", "platform-tools")):
@@ -271,7 +276,9 @@ def staff_destinations(user, current_path=""):
         active = "events" if current_path.startswith("/reports/events/") else "settings" if current_path.startswith("/reports/categories/") else "reports"
     if current_path.startswith(("/internal/settings/", "/workdays/mine/", "/internal/quick-actions/", "/accounts/staff/", "/workdays/compensation/")):
         active = "settings"
-    if current_path.startswith("/internal/reports/my-pay/"):active="my-pay"
+    if current_path.startswith(("/internal/reports/my-pay/", "/my/", "/workdays/mine/")):active="my-stuff"
+    if current_path.startswith("/sops/") and not current_path.startswith("/sops/library/"):active="sops"
+    if current_path.startswith("/sops/library/"):active="settings"
     for entry in entries:
         entry["active"] = entry["id"] == active
     return entries

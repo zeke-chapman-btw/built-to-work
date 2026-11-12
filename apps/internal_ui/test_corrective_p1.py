@@ -44,7 +44,7 @@ class CorrectivePassOneTests(TestCase):
         self.client.force_login(self.owner, backend='django.contrib.auth.backends.ModelBackend')
 
     def test_approved_destinations_and_legacy_authorization(self):
-        self.assertEqual([row['label'] for row in visible_workspaces(self.owner)], ['Home','Tasks','Participants','Customers','Recruiting','Approvals','Events','Operations','Reports & Analytics','Settings'])
+        self.assertEqual([row['label'] for row in visible_workspaces(self.owner)], ['Home','Tasks','Participants','Customers','Recruiting','Approvals','Events','Operations','SOPs','Reports & Analytics','Settings'])
         self.assertIn('administration', [row['id'] for row in visible_legacy_workspaces(self.owner)])
         for key in ('administration','platform-tools','customers'):
             self.assertEqual(self.client.get(reverse('internal:workspace', kwargs={'workspace_id':key})).status_code, 200)
@@ -143,7 +143,8 @@ class CorrectivePassOneTests(TestCase):
                 self.assertEqual([row['id'] for row in response.context['primary_navigation'] if row['active']], [key])
                 html = response.content.decode()
                 if key in ('customers', 'campaigns'):
-                    self.assertRegex(response.content.decode(), r'class="[^"]*\bcustomer-page\b[^"]*"')
+                    # Campaigns now shows the one Recruiting > Campaigns list.
+                    self.assertRegex(response.content.decode(), r'class="[^"]*\bcustomer-page\b[^"]*"' if key == 'customers' else r'ops-list-card')
                     self.assertNotContains(response, 'planned-workspace')
                     continue
                 self.assertContains(response, 'id="approvals-workspace"')

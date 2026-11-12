@@ -94,7 +94,7 @@
 }
 
 .internal-app.has-event-resource-context{--btw-event-width:920px}
-.internal-app.has-event-resource-context .events-page{max-width:920px;margin-inline:auto}
+.internal-app.has-event-resource-context .events-page{max-width:none;margin-inline:0}
 .internal-app.has-event-resource-context .card{border-radius:12px;box-shadow:none}
 .internal-app.has-event-resource-context .card h2{font:600 15px/1.4 var(--font)}
 .internal-app.has-event-resource-context .ops-template-form{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}

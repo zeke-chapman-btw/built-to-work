@@ -1,0 +1,1 @@
+<nav class="btw-tabs my-tabs" aria-label="My stuff">{% for tab in my_tabs %}<a href="{{ tab.url }}"{% if tab.active %} aria-current="page" class="is-active"{% endif %}>{{ tab.label }}</a>{% endfor %}</nav>

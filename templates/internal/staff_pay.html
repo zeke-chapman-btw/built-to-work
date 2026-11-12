@@ -1,0 +1,9 @@
+{% extends 'shared/workspace_landing.html' %}
+{% block workspace_class %}ux-settings-page{% endblock %}
+{% block workspace_content %}<div class="sop-page">
+<p class="ls-intro">When My pay is on, that person sees their own pay stubs and year-to-date totals under My stuff. They never see anyone else's.</p>
+<form method="get" class="card rc-filters sop-search"><div class="field"><label for="pay-q">Search staff</label><input id="pay-q" name="q" value="{{ q }}" placeholder="Name or email"></div><div class="rc-filter-actions"><button class="button secondary" type="submit">Search</button>{% if q %}<a href="?">Clear</a>{% endif %}</div></form>
+<section class="card ops-list-card"><header class="ops-list-head"><h2>Staff</h2><span class="hv2-muted">My pay on for {{ on_count }} of {{ people|length }}</span></header>
+{% for row in people %}<div class="ops-list-row"><a class="ops-list-main" href="{% url 'staffing:profile' row.profile.pk %}"><strong>{{ row.profile }}</strong><small>{% if row.roles %}{{ row.roles|join:', ' }}{% else %}No login role{% endif %}{% if row.profile.email %} · {{ row.profile.email }}{% endif %}</small></a>
+<form method="post" class="pay-toggle-form">{% csrf_token %}<input type="hidden" name="profile" value="{{ row.profile.pk }}"><input type="hidden" name="revision" value="{{ row.revision }}"><input type="hidden" name="q" value="{{ q }}"><input type="hidden" name="enabled" value="{% if row.profile.my_pay_enabled %}0{% else %}1{% endif %}"><button type="submit" class="pay-toggle{% if row.profile.my_pay_enabled %} is-on{% endif %}" role="switch" aria-checked="{% if row.profile.my_pay_enabled %}true{% else %}false{% endif %}" aria-label="My pay for {{ row.profile }}"><span></span></button><span class="pay-toggle-label">{% if row.profile.my_pay_enabled %}On{% else %}Off{% endif %}</span></form></div>
+{% empty %}<p class="ops-list-empty">No staff found.</p>{% endfor %}</section></div>{% endblock %}

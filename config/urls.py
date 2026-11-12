@@ -29,6 +29,8 @@ urlpatterns = [
     path("quizzes/", include("apps.assessments.urls")),
     path("games/", include("apps.games.urls")),
     path("api/simulator/", include("apps.simulators.urls")),
+    path("sops/", include("apps.sops.urls")),
+    path("my/", include("apps.staffing.my_urls")),
     path("", home, name="home"),
     path("health/", health, name="health"),
 ]

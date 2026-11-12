@@ -115,6 +115,7 @@ def _operator_context(assignment, *, result=None, scan_form=None, mode_form=None
     safe_status = result.get("status") if result else None
     return {
         "assignment": assignment, "station": assignment.station, "event": assignment.event,
+        "page_title": assignment.station.name,
         "session": session, "activities": activities, "current_activity": current,
         "participant_label": _participant_label(session) if session else None,
         "scan_form": scan_form, "mode_form": mode_form or ExperienceModeForm(),

@@ -52,7 +52,8 @@ def mine(request):
     readonly(request);staff=svc.person(request.user)
     if not staff:raise PermissionDenied
     days=Workday.objects.filter(staff=staff).select_related('event','role','updated_by')
-    return page(request,'mine',page_title='My workdays',days=Paginator(days,40).get_page(request.GET.get('page')))
+    from apps.staffing.my_views import my_tabs
+    return page(request,'mine',page_title='My stuff',my_tabs=my_tabs(request,'workdays'),days=Paginator(days,40).get_page(request.GET.get('page')))
 
 @staff_view
 def checkin(request,event_id):

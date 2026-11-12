@@ -43,8 +43,15 @@ class EventManagement9BTests(TestCase):
             data={'revision':execution.updated_at.isoformat(),'confirm':'on','reason':'SYNTHETIC closeout'})
         self.assertIsNotNone(saved,form.errors)
     def test_create_form_renders_grouped_fields_without_existing_instance(self):
+        # New events start from a short form; the rest is edited from the event's cards.
         response=self.client.get(reverse('events:event_create'))
-        self.assertContains(response,'Save draft'); self.assertContains(response,'Event contact'); self.assertContains(response,'Housing'); self.assertContains(response,'Travel &amp; setup'); self.assertContains(response,'Publish to staff')
+        self.assertContains(response,'New event'); self.assertContains(response,'Create event'); self.assertContains(response,'name="quick_create"')
+        for name in ('name','event_type','timezone_name','start_at','end_at','location_name','city','state'):self.assertContains(response,f'name="{name}"')
+        self.assertNotContains(response,'name="housing_information"')
+        response=self.client.post(reverse('events:event_create'),{'quick_create':'1','name':'SYNTHETIC quick event','timezone_name':'America/New_York','start_at':'2031-07-01T09:00','end_at':'2031-07-01T17:00'})
+        event=Event.objects.get(name='SYNTHETIC quick event')
+        self.assertRedirects(response,reverse('events:event_detail',args=[event.pk]),fetch_redirect_response=False)
+        self.assertEqual(event.status,'draft')
     def test_draft_allows_optional_logistics_and_ignores_forged_status(self):
         event=self.create(status='upcoming',public_registration_status='open')
         self.assertEqual(event.status,'draft'); self.assertEqual(event.public_registration_status,'disabled'); self.assertIsNone(event.staff_published_at)

@@ -50,9 +50,17 @@ def overview(request):
 @require_http_methods(['GET'])
 def campaigns(request):
     from apps.customers.models import Campaign
+    from apps.customers.models import CustomerOrganization
+    from django.db.models import Q
     items=Campaign.objects.all() if manager(request.recruiting_actor) else Campaign.objects.filter(workforce_needs__recruiting_opportunity__in=opportunities_for(request.user)).distinct()
-    return page(request,'recruiting/campaigns.html',page_title='Campaigns',campaigns=items,
-        can_manage=manager(request.recruiting_actor),requests=WorkforceRequest.objects.all() if manager(request.recruiting_actor) else WorkforceRequest.objects.none())
+    term,status=request.GET.get('q','').strip(),request.GET.get('status','')
+    if term:items=items.filter(Q(name__icontains=term)|Q(organization__name__icontains=term))
+    if status in Campaign.Status.values:items=items.filter(status=status)
+    can_manage=manager(request.recruiting_actor)
+    customers=CustomerOrganization.objects.exclude(status='archived').order_by('name') if can_manage and request.user.has_perm('customers.change_customerorganization') else CustomerOrganization.objects.none()
+    return page(request,'recruiting/campaigns.html',page_title='Campaigns',campaigns=items.select_related('organization').order_by('-created_at'),
+        q=term,status=status,statuses=Campaign.Status.choices,customers=customers,
+        can_manage=can_manage,requests=WorkforceRequest.objects.all() if can_manage else WorkforceRequest.objects.none())
 
 
 @staff

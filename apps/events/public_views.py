@@ -31,6 +31,12 @@ class PublicEventSettingsForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.event = event
         self.fields["consent_document"].queryset = ConsentDocumentVersion.objects.filter(is_approved=True).order_by("-published_at", "-version")
+        self.fields["consent_document"].label_from_instance = lambda doc: f"{doc.title} (version {doc.version})"
+        self.fields["consent_document"].label = "Consent people agree to"
+        self.fields["slug"].label = "Link name"
+        self.fields["slug"].help_text = "The end of the sign-up link. Leave blank to use the event name."
+        self.fields["status"].label = "Sign-up link"
+        self.fields["status"].choices = [("disabled", "Off"), ("open", "Open"), ("paused", "Paused"), ("closed", "Closed")]
 
     def clean_slug(self):
         slug = (self.cleaned_data["slug"] or slugify(self.event.name)).lower()

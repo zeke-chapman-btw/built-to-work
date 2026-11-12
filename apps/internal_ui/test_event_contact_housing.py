@@ -103,18 +103,12 @@ class EventContactHousingPresentationTests(TestCase):
         self.assertEqual(set(fields), set(EventForm.Meta.fields))
 
     def test_blank_create_sections_are_optional_and_all_fields_remain_submittable(self):
+        # Creating starts from a short form; contact, housing and travel are added from the event's cards.
         response = self.client.get(reverse('events:event_create'))
         self.assertEqual(response.status_code, 200)
-        parsed = self.structure(response)
-        for key in ('event-contact-logistics', 'event-housing', 'event-logistics'):
-            self.assertFalse(parsed.details[key]['open'])
         for name in self.values:
-            self.assertEqual(parsed.fields.count(name), 1)
-        for title in ('Event contact', 'Housing', 'Travel &amp; setup'):
-            self.assertContains(response, title)
-        self.assertContains(response, 'Save the event, then configure daily Staff &amp; Driver needs')
-        for future in ('housing_type', 'hotel_name', 'housing_address', 'provision_status', 'receipt_url'):
-            self.assertNotIn(future, parsed.fields)
+            self.assertNotContains(response, f'name="{name}"')
+        self.assertContains(response, 'You can add setup days, staff, housing and everything else after it is created.')
 
     def test_create_blank_optional_fields_and_reopen(self):
         data = dict(name='SYNTHETIC blank optional fields', start_at='2031-07-01T09:00',

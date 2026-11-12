@@ -1,5 +1,5 @@
 {% extends 'participants/workspace_base.html' %}{% load people_ui ui_patterns %}
-{% block design_actions %}{% if can_add_person %}<a class="button button-primary" href="{% url 'participants:staff-add' %}?return_to={{ request.get_full_path|urlencode }}">+ Add participant</a>{% endif %}{% endblock %}
+{% block design_actions %}{% if can_add_person %}<a class="button button-primary" data-record-editor href="{% url 'participants:staff-add' %}?return_to={{ request.get_full_path|urlencode }}">+ Add participant</a>{% endif %}{% endblock %}
 {% block people_content %}
 {% include 'participants/workspace_filters.html' %}
 <section class="card people-directory-surface">

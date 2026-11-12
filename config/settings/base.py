@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'apps.events.apps.EventsConfig',
     "apps.games.apps.GamesConfig",
     "apps.simulators.apps.SimulatorsConfig",
+    "apps.sops.apps.SopsConfig",
 ]
 
 MIDDLEWARE = [
@@ -43,6 +44,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.accounts.staff_preview.StaffPreviewMiddleware",
     "apps.accounts.middleware.StaffAdministrationBoundary",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

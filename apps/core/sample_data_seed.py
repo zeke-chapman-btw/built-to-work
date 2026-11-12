@@ -472,6 +472,38 @@ def historical_score(admin, person):
     resolve_review(item, actor=admin, decision="link", reason=WHY, participant=person)
 
 
+def staff_extras(admin, users, sample_events):
+    """Housing on the sample events, My pay for the sample staff, and a few SOPs."""
+    from apps.events.models import EventLodging
+    from apps.sops.models import SOP
+    from apps.staffing.models import StaffProfile
+    from apps.accounts.staff_onboarding import set_own_pay_access
+    stays = (("hotel", "SAMPLE Hampton Inn Augusta", "3030 Washington Rd", "Augusta", "30909", "7067371122", "HX49213", "2 rooms, 2 queens each"),
+             ("rental", "SAMPLE Lakeside rental house", "14 SAMPLE Shore Dr", "Evans", "30809", "", "AB-55120", "3 bedrooms"),
+             ("hotel", "SAMPLE Comfort Suites Savannah", "6 SAMPLE Gateway Blvd", "Savannah", "31419", "9129270101", "CS-88231", "2 rooms"))
+    for event, stay in zip(sample_events, stays):
+        kind, name, street, city, postal, phone, conf, rooms = stay
+        audited(EventLodging, admin, event=event, kind=kind, name=name, address_line_1=street, city=city, state="GA", postal_code=postal,
+                phone=phone, confirmation_number=conf, rooms=rooms, booked_under="SAMPLE Administrator",
+                check_in=event.setup_date or event.local_start_at.date(), check_out=event.return_date or event.local_end_at.date(),
+                notes="SAMPLE Park the trailer in the back lot.", created_by=admin)
+    for user in users[1:3]:
+        profile = StaffProfile.objects.filter(user=user).first()
+        if profile and not profile.my_pay_enabled:
+            set_own_pay_access(actor=admin, profile_id=profile.pk, enabled=True, expected_revision=profile.updated_at.isoformat())
+    sops = (("Trailer setup", "SAMPLE Trailer arrival and setup", "Park, level, power up and open the trailer.", "all",
+             "# Before you leave\n- Confirm the venue contact and arrival time\n- Check fuel and tire pressure\n\n# On arrival\n1. Park on level ground, nose toward the exit\n2. Lower the stabilizer jacks\n3. Connect shore power or start the generator\n4. Turn on the kiosk, simulator and game station\n\n## Last check\nScan a test ticket at the kiosk before opening."),
+            ("Trailer setup", "SAMPLE End of day shutdown", "Power down safely and lock up.", "event_staff",
+             "1. Close the kiosk and log out of each station\n2. Put the light gun back in its case\n3. Shut down the simulator, then the generator\n4. Raise the jacks and lock both doors"),
+            ("Participants", "SAMPLE Helping someone sign up", "What to do when a sign-up or ticket doesn't work.", "all",
+             "# Ticket won't scan\n- Turn up the phone brightness\n- Hold the phone 4 to 6 inches from the scanner\n- If it still fails, look them up by name in Participants\n\n# No phone\nPrint a ticket from the event's Registrations tab."),
+            ("Recruiting", "SAMPLE Logging a touchpoint", "Record every call, text and meeting the same day.", "recruiter",
+             "1. Open the person's profile\n2. Click Log touchpoint\n3. Pick the type, add a short summary and the next step\n4. Add a follow-up task if they need a call back"))
+    for n, (category, title, summary, audience, body) in enumerate(sops, 1):
+        audited(SOP, admin, category=category, title=title, summary=summary, audience=audience, kind="page", body=body,
+                position=n, created_by=admin, updated_by=admin)
+
+
 def create_samples():
     # Do not let intake identity matching modify a pre-existing person. Reserved
     # sample contacts must be unused unless an ownership manifest was found.
@@ -496,4 +528,5 @@ def create_samples():
     documents(admin, persons)
     trailer_results(admin, persons, sample_events)
     historical_score(admin, persons[0])
+    staff_extras(admin, users, sample_events)
     return credentials

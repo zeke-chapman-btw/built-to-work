@@ -180,8 +180,17 @@ def block_account_changes(request):
 def index(request):
     require_admin(request.user)
     from apps.internal_ui.views import _staff_context
+    from apps.accounts.staff_preview import eligible_targets
+    from apps.accounts.roles import roles_for, ROLE_GROUPS
+    names = {v: k for k, v in ROLE_GROUPS.items()}
+    label = {'manager': 'Manager', 'recruiter': 'Recruiter', 'event_staff': 'Event staff'}
+    staff_targets = []
+    for person in eligible_targets().prefetch_related('groups'):
+        roles = [label[names[g.name]] for g in person.groups.all() if g.name in names]
+        staff_targets.append({'id': person.pk, 'name': person.get_full_name() or person.get_username(),
+                              'username': person.get_username(), 'roles': ', '.join(sorted(roles)) or 'No role'})
     return render(request, 'internal/portal_preview.html', _staff_context(request,
-        page_title='Portal preview', preview_enabled=enabled()))
+        page_title='Portal preview', preview_enabled=enabled(), staff_targets=staff_targets))
 
 
 @never_cache

@@ -46,3 +46,12 @@ body.internal-app #main-content .btw-workspace.recruiting-workspace{max-width:no
 body.internal-app #main-content .recruiting-workspace .workspace-table a{text-decoration:none;font-weight:600}
 body.internal-app #main-content .recruiting-workspace .workspace-table a:hover{text-decoration:underline}
 body.internal-app #main-content .recruiting-workspace .workspace-table th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280}
+
+/* New campaign: pick the customer first */
+.rc-new-campaign { position:relative; }
+.rc-new-campaign > summary { list-style:none; cursor:pointer; }
+.rc-new-campaign > summary::-webkit-details-marker { display:none; }
+.rc-new-campaign-menu { position:absolute; right:0; top:calc(100% + 6px); z-index:30; min-width:240px; max-height:320px; overflow:auto; background:#fff; border:1px solid var(--line,#e6e8eb); border-radius:8px; padding:6px; box-shadow:0 8px 24px rgba(0,0,0,.12); }
+.rc-new-campaign-menu p { margin:6px 10px; font-size:12px; color:var(--muted,#6b7280); }
+.rc-new-campaign-menu a { display:block; padding:9px 10px; border-radius:6px; text-decoration:none; color:var(--ink,#252830); }
+.rc-new-campaign-menu a:hover { background:#f4f5f6; }

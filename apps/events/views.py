@@ -178,6 +178,9 @@ def event_create(request):
     from .event_management import save_event
     if request.method not in ("GET", "POST"):
         return HttpResponse(status=405)
+    if request.method == "GET" or request.POST.get("quick_create") == "1":
+        from .section_editors import quick_create
+        return quick_create(request)
     form = EventForm()
     back = event_return(request)
     if request.method == "POST":

@@ -318,3 +318,23 @@ body.internal-app #main-content .el-sub{display:block;color:#6b7280;font-size:12
 @media (max-width:720px){body.internal-app #main-content .el-tiles{grid-template-columns:1fr;gap:8px}}
 body.internal-app #main-content .el-table td .btw-record-primary{display:inline !important;padding:0 !important;margin:0 !important;font-weight:600;min-height:0 !important}
 body.internal-app #main-content .el-table td{vertical-align:middle}
+
+/* Housing entries on the event overview */
+body.internal-app.has-event-context #main-content .ev-stay { padding:12px 0; border-top:1px solid var(--line,#e6e8eb); }
+body.internal-app.has-event-context #main-content .ev-stay:first-child { border-top:0; padding-top:0; }
+body.internal-app.has-event-context #main-content .ev-stay-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px; }
+body.internal-app.has-event-context #main-content .ev-stay-head small { display:block; color:var(--muted); font-size:13px; }
+body.internal-app.has-event-context #main-content .ev-stay-head a { font-size:13px; }
+.ev-housing-remove { margin:16px 0 0; }
+
+/* Every event page uses the same full width as the event overview. */
+body.internal-app:is(.has-event-context,.has-event-resource-context) #main-content :is(.event-record-header,.events-page,.event-navigation,.page-header,.btw-event-settings,.staffing-page>.btw-tabs) { max-width:none; }
+body.internal-app #main-content .ev-share-url { width:100%; padding:10px 12px; border:1px solid var(--line,#e6e8eb); border-radius:8px; font:inherit; background:#f7f8f9; }
+body.internal-app #main-content .ev-share-actions { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 0; }
+form:not(:has(select[name=event_type] option[value=other]:checked)) .field-event_type_other { display:none; }
+
+/* Event tool pages that don't use the overview frame: one 24px gutter and full width, like the overview. */
+body.internal-app.has-event-context:not(.has-foundation-event-frame) #main-content { padding-inline:24px !important; }
+body.internal-app.has-event-context:not(.has-foundation-event-frame) #main-content > *,
+body.internal-app.has-event-context:not(.has-foundation-event-frame) #main-content :is(.event-record-header,.event-navigation-shell,.event-navigation,.events-page,.nt-page,.btw-event-settings) { padding-inline:0 !important; max-width:none !important; margin-inline:0 !important; }
+body.internal-app.has-event-context:not(.has-foundation-event-frame) #main-content .events-page > :not(.event-navigation-shell):not(.btw-editor-fallback) { max-width:none !important; margin-inline:0 !important; }

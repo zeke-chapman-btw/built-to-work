@@ -230,7 +230,7 @@ def event_configuration(request, event_id):
     locked = event.is_current or event.status in (Event.Status.COMPLETED, Event.Status.ARCHIVED)
     if request.method == "POST":
         _require_admin(request)
-        if locked and (request.POST.get("override_active") != "on" or not request.POST.get("override_reason", "").strip()):
+        if locked and request.POST.get("override_active") != "on":
             raise PermissionDenied("A locked Event requires an explicit Admin override and reason.")
     config_id = request.GET.get("edit")
     instance = get_object_or_404(EventAssessmentCategory, pk=config_id, event=event) if config_id else None

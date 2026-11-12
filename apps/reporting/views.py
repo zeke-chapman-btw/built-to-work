@@ -322,7 +322,8 @@ def my_pay(request):
                 total=data.get("totals",{}).get("total"),status=data.get("status",""),
                 corrected=str(data.get("status","")).startswith(("Under correction","Superseded")))
            for approval,data in page_obj.object_list]
-    return page(request,'reporting/my_pay.html',page_title="My pay",statements=page_obj,stubs=stubs,year=year,earnings=payroll.earnings_year(actor,year,through=timezone.localdate(timezone.now(),ZoneInfo(REPORT_TIMEZONE)) if year==timezone.localdate(timezone.now(),ZoneInfo(REPORT_TIMEZONE)).year else None),description="Private Contractor Earnings Statements. Approval is not proof of payment. Compensation and reimbursements remain separate.")
+    from apps.staffing.my_views import my_tabs
+    return page(request,'reporting/my_pay.html',page_title="My stuff",my_tabs=my_tabs(request,'pay'),statements=page_obj,stubs=stubs,year=year,earnings=payroll.earnings_year(actor,year,through=timezone.localdate(timezone.now(),ZoneInfo(REPORT_TIMEZONE)) if year==timezone.localdate(timezone.now(),ZoneInfo(REPORT_TIMEZONE)).year else None),description="Private Contractor Earnings Statements. Approval is not proof of payment. Compensation and reimbursements remain separate.")
 
 
 @login_required(login_url="accounts:login")

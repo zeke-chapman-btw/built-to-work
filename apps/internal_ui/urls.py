@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, staff_pay, staff_preview_views
 from apps.participants import portal_preview
 from apps.customers import portal_preview as customer_preview
 
@@ -9,6 +9,9 @@ urlpatterns = [
     path("quick-actions/", views.quick_actions_edit, name="quick-actions-edit"),
     path("settings/", views.settings, name="settings"),
     path("settings/portal-preview/", portal_preview.index, name="portal-preview"),
+    path("settings/staff-pay/", staff_pay.staff_pay, name="staff-pay"),
+    path("settings/staff-preview/", staff_preview_views.enter, name="staff-preview-enter"),
+    path("settings/staff-preview/return/", staff_preview_views.exit, name="staff-preview-exit"),
     path("settings/portal-preview/customer/", customer_preview.enter, name="portal-preview-customer-enter"),
     path("settings/portal-preview/customer/return/", customer_preview.exit, name="portal-preview-customer-exit"),
     path("settings/portal-preview/participant/", portal_preview.enter, name="portal-preview-enter"),

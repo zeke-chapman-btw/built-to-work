@@ -33,7 +33,7 @@ class QuickActionsTests(TestCase):
         response = self.client.get(self.editor)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'name="actions"', count=9)
-        self.assertContains(response, 'Restore Defaults')
+        self.assertContains(response, 'Restore defaults')
         self.assertContains(response, 'csrfmiddlewaretoken')
 
     def test_save_order_and_remove_persist_across_sessions(self):

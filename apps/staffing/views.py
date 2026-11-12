@@ -264,5 +264,11 @@ def staff_event(request,event_id):
                 return redirect("staffing:staff-event",event_id=event.pk)
         except ValidationError as exc:
             form=AvailabilityForm(request.POST,event=event); form.is_valid(); form.add_error(None,exc)
+    logistics=None
+    if assigned:
+        from .my_views import _stay
+        logistics=dict(address=", ".join(v for v in (event.address_line_1,event.address_line_2,event.city,event.state,event.postal_code) if v),
+            setup_date=event.setup_date,arrival=event.staff_arrival_time,return_date=event.return_date,travel=event.logistics_instructions,
+            housing=_stay(event),housing_notes=event.housing_information,contact=dict(name=event.contact_name,phone=event.contact_phone,email=event.contact_email))
     with timezone.override(ZoneInfo(event.timezone_name)):
-        return render(request,"staffing/staff_event.html",dict(page_title=event.name,event=event,plan=plan,own_request=own_request,assignment=assigned,signups_closed=not services.opportunity_open(event,plan),can_request=services.opportunity_open(event,plan) and not assigned and not (own_request and own_request.status in ("pending","approved")),form=form),status=400 if form.is_bound else 200)
+        return render(request,"staffing/staff_event.html",dict(page_title=event.name,event=event,plan=plan,own_request=own_request,assignment=assigned,logistics=logistics,signups_closed=not services.opportunity_open(event,plan),can_request=services.opportunity_open(event,plan) and not assigned and not (own_request and own_request.status in ("pending","approved")),form=form),status=400 if form.is_bound else 200)

@@ -1,0 +1,114 @@
+/* Layout standard (Nov 2026): pages match Home, Participants, Profile and Events.
+   Loaded last on every staff page so these small alignment rules win. */
+
+/* Station dashboard used on the trailer */
+body.internal-app #main-content section.operator { max-width:none; margin:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr)); gap:16px; align-items:start; }
+body.internal-app #main-content section.operator > .operator-context { grid-column:1/-1; margin:0; color:var(--muted,#6b7280); font-size:13px; }
+body.internal-app #main-content section.operator > .card { margin:0; }
+
+/* Settings > Account: details form beside sign-in, two-column fields */
+body.internal-app #main-content .ls-account { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(0,1fr); gap:16px; align-items:start; margin-bottom:16px; }
+body.internal-app #main-content .ls-account > .ux-surface { margin:0; }
+body.internal-app #main-content .ls-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 16px; }
+body.internal-app #main-content .ls-form-grid > :is(.form-error-summary,.ux-actions) { grid-column:1/-1; }
+body.internal-app #main-content .ls-facts { display:grid; gap:10px; margin:0 0 14px; }
+body.internal-app #main-content .ls-facts > div { display:grid; grid-template-columns:96px 1fr; gap:12px; }
+body.internal-app #main-content .ls-facts dt { color:var(--muted,#6b7280); font-size:13px; }
+body.internal-app #main-content .ls-facts dd { margin:0; overflow-wrap:anywhere; }
+@media (max-width:800px){ body.internal-app #main-content .ls-account, body.internal-app #main-content .ls-form-grid { grid-template-columns:1fr; } }
+
+/* Edit quick actions */
+body.internal-app #main-content .quick-actions-editor { max-width:760px; }
+body.internal-app #main-content .quick-actions-editor .qa-help { color:var(--muted,#6b7280); margin:0 0 16px; }
+body.internal-app #main-content .quick-action-slot { display:grid; grid-template-columns:72px minmax(0,1fr) auto; gap:10px; align-items:center; padding:6px 0; }
+body.internal-app #main-content .quick-action-slot label { font-size:13px; color:var(--muted,#6b7280); margin:0; }
+body.internal-app #main-content .quick-action-order { display:flex; gap:4px; }
+body.internal-app #main-content .qa-icon { width:32px; height:32px; border:1px solid var(--line,#e6e8eb); background:#fff; border-radius:8px; cursor:pointer; font-size:15px; line-height:1; color:var(--ink,#252830); }
+body.internal-app #main-content .qa-icon:hover:not(:disabled) { background:#f4f5f6; }
+body.internal-app #main-content .qa-icon:disabled { opacity:.35; cursor:default; }
+body.internal-app #main-content .qa-remove { color:#b20d24; }
+body.internal-app #main-content .quick-action-editor-controls { display:flex; gap:10px; align-items:center; margin-top:18px; }
+body.internal-app #main-content .qa-link { margin-left:auto; background:none; border:0; color:#b20d24; cursor:pointer; font:inherit; font-size:13px; }
+
+body.internal-app #main-content .ls-intro { color:var(--muted,#6b7280); margin:0 0 16px; max-width:820px; }
+body.internal-app #main-content .ls-card-body { padding:12px 16px 16px; }
+body.internal-app #main-content .ops-list-row form { margin:0; }
+
+/* Operations, platform tools and offline pages: full width like the rest of the app */
+body.internal-app.has-event-resource-context:not(.has-event-context) #main-content .events-page { max-width:none !important; margin-inline:0 !important; }
+body.internal-app.has-event-resource-context:not(.has-event-context) #main-content .events-page:not(.btw-standard-workspace) { padding-inline:0 !important; }
+body.internal-app.has-event-resource-context:not(.has-event-context) #main-content .legacy-workspace-context { display:none; }
+body.internal-app #main-content .quick-actions-editor { margin-inline:0 !important; }
+
+/* Participant and customer portals: same full width as the staff app */
+body.internal-app.has-portal-shell #main-content :is(.application-notice-frame,.page-header,.portal-page,.portal-main,.portal-workspace) { max-width:none !important; margin-inline:0 !important; }
+body.internal-app.has-portal-shell #main-content .application-preview-notice { max-width:none; }
+
+/* SOPs */
+body.internal-app #main-content .sop-page { display:flex; flex-direction:column; gap:16px; }
+body.internal-app #main-content .sop-page > .card { margin:0; }
+body.internal-app #main-content .sop-search { grid-template-columns:minmax(0,1fr) auto !important; }
+body.internal-app #main-content a.sop-row { text-decoration:none; color:inherit; }
+body.internal-app #main-content a.sop-row:hover { background:#fafafa; }
+body.internal-app #main-content .sop-kind { font-size:12px; color:var(--muted,#6b7280); border:1px solid var(--line,#e6e8eb); border-radius:999px; padding:2px 10px; }
+body.internal-app #main-content .sop-head { align-items:flex-start; }
+body.internal-app #main-content .sop-back { font-size:13px; color:var(--muted,#6b7280); text-decoration:none; }
+body.internal-app #main-content .sop-meta { color:var(--muted,#6b7280); font-size:13px; margin:4px 0 0; }
+body.internal-app #main-content .sop-body { padding:24px 28px !important; max-width:900px; line-height:1.6; }
+body.internal-app #main-content .sop-body h2 { font-size:18px; margin:22px 0 8px; }
+body.internal-app #main-content .sop-body h3 { font-size:15px; margin:18px 0 6px; }
+body.internal-app #main-content .sop-body :is(ol,ul) { padding-left:22px; margin:8px 0 12px; }
+body.internal-app #main-content .sop-body li { margin:4px 0; }
+body.internal-app #main-content .sop-summary { color:var(--muted,#6b7280); margin-top:0; }
+body.internal-app #main-content .sop-pdf-actions { display:flex; gap:8px; margin:0 0 12px; }
+body.internal-app #main-content .sop-pdf { width:100%; height:75vh; border:1px solid var(--line,#e6e8eb); border-radius:8px; }
+body.internal-app #main-content .sop-doc { padding:16px; }
+body.internal-app #main-content .sop-head-actions, body.internal-app #main-content .sop-row-actions { display:flex; gap:8px; align-items:center; }
+body.internal-app #main-content .sop-row-actions form { margin:0; }
+.sop-field-body textarea { min-height:240px; font-family:inherit; }
+
+/* MY STUFF */
+body.internal-app #main-content .my-page { display:flex; flex-direction:column; gap:16px; }
+body.internal-app #main-content .my-tabs { display:flex; gap:4px; border-bottom:1px solid var(--line,#e6e8eb); margin:0 0 4px; }
+body.internal-app #main-content .my-tabs a { padding:11px 12px; text-decoration:none; color:var(--muted,#6b7280); font-size:14px; border-bottom:2px solid transparent; margin-bottom:-1px; }
+body.internal-app #main-content .my-tabs a.is-active { color:#b20d24; border-bottom-color:#d71936; font-weight:600; }
+body.internal-app #main-content .my-cols { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(0,1fr); gap:16px; align-items:start; }
+body.internal-app #main-content .my-cols > div { display:flex; flex-direction:column; gap:16px; min-width:0; }
+body.internal-app #main-content .my-cols .card { margin:0; }
+body.internal-app #main-content .my-event { padding:14px 16px; border-top:1px solid var(--line,#e6e8eb); }
+body.internal-app #main-content .my-event-head { display:flex; gap:12px; align-items:center; margin-bottom:10px; }
+body.internal-app #main-content .my-event-head .hv2-date { display:flex; flex-direction:column; align-items:center; justify-content:center; width:46px; height:50px; border-radius:8px; background:#fff1f3; color:#b20d24; flex:none; }
+body.internal-app #main-content .my-event-head .hv2-date span { font-size:11px; font-weight:700; }
+body.internal-app #main-content .my-event-head .hv2-date strong { font-size:18px; line-height:1; }
+body.internal-app #main-content .my-event-title { flex:1; min-width:0; }
+body.internal-app #main-content .my-event-title a { color:inherit; text-decoration:none; }
+body.internal-app #main-content .my-event-title small, body.internal-app #main-content .my-stay small { display:block; color:var(--muted,#6b7280); font-size:13px; }
+body.internal-app #main-content .my-facts { margin:0 0 8px; }
+body.internal-app #main-content .my-stay { background:#f7f8f9; border-radius:8px; padding:10px 12px; margin:8px 0 0; }
+body.internal-app #main-content .my-travel { margin-top:8px; font-size:13px; }
+body.internal-app #main-content .my-status-approved { background:#e7f6ec; color:#17673a; }
+body.internal-app #main-content .my-status-declined { background:#fdecee; color:#a31a2c; }
+@media (max-width:900px){ body.internal-app #main-content .my-cols { grid-template-columns:1fr; } }
+
+/* Staff pay switches */
+body.internal-app #main-content .pay-toggle-form { display:flex; align-items:center; gap:8px; margin:0; }
+body.internal-app #main-content .pay-toggle { position:relative; width:42px; height:24px; border-radius:999px; border:0; background:#d4d7dc; cursor:pointer; padding:0; transition:background .15s; }
+body.internal-app #main-content .pay-toggle span { position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.2); transition:left .15s; }
+body.internal-app #main-content .pay-toggle.is-on { background:#1f9d55; }
+body.internal-app #main-content .pay-toggle.is-on span { left:21px; }
+body.internal-app #main-content .pay-toggle-label { font-size:13px; color:var(--muted,#6b7280); min-width:24px; }
+
+/* Staff view banner */
+.staff-preview-frame { padding:12px 24px 0; }
+.staff-preview-notice { display:flex !important; align-items:center; justify-content:space-between; gap:16px; background:#fff8e1; border:1px solid #f0d58a; border-radius:10px; padding:10px 16px; color:#4a3b06; font-size:13px; }
+.staff-preview-notice p { margin:2px 0 0; }
+.staff-preview-notice form { margin:0; flex:none; }
+body.internal-app #main-content .staff-preview-pick { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; }
+body.internal-app #main-content .staff-preview-pick label { width:100%; font-size:13px; font-weight:600; }
+body.internal-app #main-content .staff-preview-pick select { flex:1 1 260px; min-height:42px; padding:8px 10px; border:1px solid var(--line,#e6e8eb); border-radius:8px; font:inherit; }
+
+body.internal-app #main-content .mypay { max-width:none; }
+body.internal-app #main-content .hv2-linkbtn { background:none; border:0; padding:0; color:#b20d24; font:inherit; font-size:13px; cursor:pointer; }
+body.internal-app #main-content .hv2-linkbtn:hover { text-decoration:underline; }
+body.internal-app #main-content :is(.my-page,.sop-page), body.internal-app #main-content .btw-standard-workspace:has(> .my-page,> .sop-page) { max-width:none; }
+body.internal-app #main-content .ls-links { display:flex; gap:14px; flex-wrap:wrap; font-size:13px; margin:12px 0 0; }
