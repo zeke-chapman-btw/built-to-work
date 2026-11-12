@@ -155,6 +155,12 @@ class Reporting9FTests(TestCase):
     def test_approved_staff_costs_distinct_multi_day_trips(self):
         trip=self.trip();self.day(trip=trip);self.day(work_date=self.event.local_start_at.date()+timedelta(days=1),trip=trip);self.trip(staff=self.other_profile);self.trip(number=2)
         cost=reporting.costs(self.event);self.assertEqual(cost['staff_cost'],540);self.assertEqual(cost['approved_days'],2)
+    def test_staff_pay_table_matches_payroll_total(self):
+        trip=self.trip();self.day(trip=trip);self.day(work_date=self.event.local_start_at.date()+timedelta(days=1),trip=trip);self.trip(staff=self.other_profile);self.trip(number=2)
+        self.day(staff=self.other_profile,approval='pending')
+        rows,totals=reporting.staff_payroll(self.event)
+        self.assertEqual(totals['total'],reporting.costs(self.event)['staff_cost']);self.assertEqual(totals['approved_days'],2);self.assertEqual(totals['pending_days'],1)
+        self.assertEqual(len(rows),2)
     def test_pending_void_reopened_excluded(self):
         self.day(approval='pending');self.trip(status='pending',amount=None);self.trip(number=2,status='void');self.day(staff=self.other_profile,is_active=False)
         cost=reporting.costs(self.event);self.assertEqual(cost['recorded'],0);self.assertFalse(cost['complete']);self.assertEqual(cost['pending_days'],1);self.assertEqual(cost['pending_trips'],1)

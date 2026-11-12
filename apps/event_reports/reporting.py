@@ -113,3 +113,28 @@ METRIC_DEFINITIONS=[
 ('Incentive accounting','Count distributed unit value × quantity once. Purchase/reference records are retained but excluded. Do not record distributed incentives again as operating expenses. No legacy gift-card fields existed in the verified Django baseline; no external Base44 amounts were imported.'),
 ('Cross-event totals','Participation totals count participant-event pairs; the same person at two events contributes once to each event. Aggregate cost KPIs divide summed complete costs by summed counts, never average event ratios. An incomplete filtered event keeps aggregate total/cost KPIs unavailable.'),
 ('Limitations','Counts describe central recorded data, not unrecorded physical attendance. Historical manual lead counts/qualifications are not invented. Pending captures/sync and staff skips are disclosed. Preliminary reports are available before event completion.')]
+
+
+def staff_payroll(event):
+    """One row per staff member for the event Report tab.
+
+    Money columns count approved records only, so the grand total matches
+    the Payroll tile; pending days are listed and counted separately.
+    """
+    days=Workday.objects.filter(event=event,is_active=True).select_related('staff','role').order_by('work_date','pk')
+    trips=MileageTrip.objects.filter(event=event).exclude(status='void').select_related('staff').order_by('claim_date','number')
+    rows={}
+    def row(staff):
+        return rows.setdefault(staff.pk,{'name':str(staff),'days':[],'trips':[],'approved_days':0,'pending_days':0,'pay':ZERO,'per_diem':ZERO,'travel':ZERO})
+    for day in days:
+        r=row(day.staff);r['days'].append(day)
+        if day.approval=='approved':
+            r['approved_days']+=1;r['pay']+=day.pay_amount or ZERO;r['per_diem']+=day.per_diem_amount or ZERO
+        else:r['pending_days']+=1
+    for trip in trips:
+        r=row(trip.staff);r['trips'].append(trip)
+        if trip.status=='approved':r['travel']+=trip.amount or ZERO
+    out=sorted(rows.values(),key=lambda r:r['name'].lower())
+    for r in out:r['total']=r['pay']+r['per_diem']+r['travel']
+    totals={key:sum((r[key] for r in out),ZERO if key not in ('approved_days','pending_days') else 0) for key in ('approved_days','pending_days','pay','per_diem','travel','total')}
+    return out,totals

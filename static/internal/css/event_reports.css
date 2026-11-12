@@ -75,3 +75,24 @@ body.internal-app #main-content .er-links{display:flex;gap:12px}
 body.internal-app.has-event-context #main-content :is(.reports-page,.workdays-page):has(.er-page){max-width:none !important;padding:0;grid-template-columns:minmax(0,1fr)}
 body.internal-app #main-content :is(.reports-page,.workdays-page):has(.er-page){--btw-standard-frame:100%}
 body.internal-app #main-content .events-page:has(.er-page) > .event-page-context{display:none}
+/* Staff pay table on the Report tab (matches the Base44 event payroll report) */
+body.internal-app #main-content .er-pay .ex-table td{vertical-align:top}
+body.internal-app #main-content .er-pay-detail summary{cursor:pointer;list-style:none;display:flex;flex-direction:column}
+body.internal-app #main-content .er-pay-detail summary::-webkit-details-marker{display:none}
+body.internal-app #main-content .er-pay-detail summary strong{color:var(--brand-red-dark,#a51d24)}
+body.internal-app #main-content .er-pay-detail summary small{color:#b45309}
+body.internal-app #main-content .er-pay-detail ul{list-style:none;margin:8px 0 0;padding:0;font-size:13px;color:#4b5563;min-width:260px}
+body.internal-app #main-content .er-pay-detail li{display:flex;justify-content:space-between;gap:16px;padding:4px 0;border-top:1px solid #f0f1f3}
+body.internal-app #main-content .er-pay-detail li em{color:#b45309;font-style:normal}
+body.internal-app #main-content .er-pay-note{padding-top:12px}
+@media (max-width:600px){body.internal-app #main-content .er-pay .ex-table td.num::before{content:attr(data-label);color:var(--muted);font-size:12px;margin-right:6px}}
+body.internal-app #main-content .er-rows{display:block !important}
+body.internal-app #main-content .er-pay-detail summary{padding:0;margin:0}
+@media (max-width:600px){
+ body.internal-app #main-content .er-pay .ex-table tbody td.num{display:flex;justify-content:space-between;padding:2px 16px}
+ body.internal-app #main-content .er-pay .ex-table tbody td.num::before{margin:0}
+ body.internal-app #main-content .er-pay .ex-table tfoot td:not(:first-child):not(:last-child){display:none}
+ body.internal-app #main-content .er-pay .ex-table tfoot tr{display:flex;justify-content:space-between;padding:12px 16px}
+ body.internal-app #main-content .er-pay .ex-table tfoot td{padding:0;background:transparent}
+ body.internal-app #main-content .er-pay .ex-table tfoot{display:block;background:#fafafa}
+}

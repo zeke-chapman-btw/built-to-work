@@ -86,6 +86,7 @@ def detail(request,event_id):
         notes=event.operational_notes.filter(archived_at__isnull=True).select_related('author')
         if not ops.manager(request.user,'event_notes'):notes=notes.filter(visibility='staff')
         notes=notes[:50]
+    staff_pay,staff_pay_totals=reporting.staff_payroll(event)
     category_totals=ManualExpense.objects.filter(event=event,is_active=True,treatment='cost').values('category_name').annotate(amount=Sum('amount')).order_by('category_name')
     labels=[('Registered participants','registered'),('Unique participants','unique_participants'),('Kiosk test starts','kiosk_starts'),('Kiosk test completions','kiosk_completions'),('Simulator starts','simulator_starts'),('Simulator completions','simulator_completions'),('Fully completed experiences','completed_experiences'),('Average kiosk score (correct answers)','kiosk_average'),('Highest kiosk score (correct answers)','kiosk_high'),('Average simulator score (%)','simulator_average'),('Highest simulator score (%)','simulator_high'),('Registration-to-kiosk completion (%)','registration_to_kiosk'),('Kiosk-to-simulator completion (%)','kiosk_to_simulator'),('Overall completion rate (%)','overall_completion_rate'),('Registrations without kiosk completion','registration_dropoff'),('Kiosk completers without simulator completion','kiosk_simulator_dropoff')]
     metric_rows=[{'label':label,'value':report['metrics'][key]} for label,key in labels]
@@ -104,7 +105,7 @@ def detail(request,event_id):
                 versioned_report_url = reverse('reporting:event', args=[event.pk])
         except ReportingAccessDenied:
             pass
-    return page(request,'detail',versioned_report_url=versioned_report_url,expense_return_base=expense_list_url(event,request.GET).split('#')[0],page_title=title,report_section=report_section,event=event,report=report,expense_filter=form,expenses=Paginator(expenses,30).get_page(request.GET.get('page')),incentives=Paginator(lines,30).get_page(request.GET.get('incentive_page')),review_form=review_form,notes=notes,notes_access=notes_access,definitions=reporting.METRIC_DEFINITIONS,category_totals=category_totals,metric_rows=metric_rows,status=200 if valid else 400)
+    return page(request,'detail',versioned_report_url=versioned_report_url,expense_return_base=expense_list_url(event,request.GET).split('#')[0],page_title=title,report_section=report_section,event=event,report=report,expense_filter=form,expenses=Paginator(expenses,30).get_page(request.GET.get('page')),incentives=Paginator(lines,30).get_page(request.GET.get('incentive_page')),review_form=review_form,notes=notes,notes_access=notes_access,definitions=reporting.METRIC_DEFINITIONS,category_totals=category_totals,staff_pay=staff_pay,staff_pay_totals=staff_pay_totals,metric_rows=metric_rows,status=200 if valid else 400)
 
 @portal
 def entry(request,event_id=None,record_id=None,kind='expense'):
