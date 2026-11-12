@@ -77,3 +77,20 @@ python manage.py test apps.core.test_sample_data apps.participants.test_intake_s
 Use a short PostgreSQL TEST.NAME in the local harness (for example
 `test_btw_sample_` plus a 12-character job hash). Do not derive a database name
 from a long worktree path or full test label.
+
+## Render preview (owner approved 2026-11-12)
+
+The preview runs production settings, so the loader allows it only when the
+password gate is on, every allowed host names a preview site, and
+`--allow-preview` is passed. The live site is always refused.
+
+To wipe the preview database and load samples in one step, open **Shell** on
+the `btw-preview` service in Render and run:
+
+```sh
+python manage.py reset_preview_database --confirm btw-preview.onrender.com --load-samples
+```
+
+This drops every table (no undo), rebuilds them with `migrate`, and loads the
+SAMPLE dataset. The SAMPLE passwords print once. Uploaded files on the disk are
+left in place.

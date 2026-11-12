@@ -62,6 +62,27 @@ class SampleDataTests(TestCase):
             self.run_command(allow_preview=True)
         self.assertFalse(get_user_model().objects.filter(username__in=USERNAMES).exists())
 
+    @override_settings(SETTINGS_MODULE="config.settings.production", BTW_PREVIEW_GATE_ENABLED=True, ALLOWED_HOSTS=["btw-preview.onrender.com"])
+    def test_preview_site_needs_the_flag_and_the_gate(self):
+        from apps.core.sample_data import is_preview_site, require_safe_environment
+        self.assertTrue(is_preview_site())
+        with self.assertRaisesMessage(CommandError, "forbidden with production settings"):
+            require_safe_environment(False)
+        with override_settings(SETTINGS_MODULE="config.settings.production", BTW_PREVIEW_GATE_ENABLED=False):
+            self.assertFalse(is_preview_site())
+            with self.assertRaisesMessage(CommandError, "forbidden with production settings"):
+                require_safe_environment(True)
+        with override_settings(ALLOWED_HOSTS=["btw-preview.onrender.com", "app.builttowork.com"]):
+            self.assertFalse(is_preview_site())
+
+    def test_reset_preview_database_refuses_off_preview_and_wrong_confirmation(self):
+        with self.assertRaisesMessage(CommandError, "only runs on the password-gated preview site"):
+            call_command("reset_preview_database", confirm="testserver", stdout=io.StringIO())
+        with override_settings(BTW_PREVIEW_GATE_ENABLED=True, ALLOWED_HOSTS=["btw-preview.onrender.com"]):
+            with self.assertRaisesMessage(CommandError, "--confirm must be this site's web address"):
+                call_command("reset_preview_database", confirm="other.example", stdout=io.StringIO())
+        self.assertTrue(Participant.objects.model._meta.db_table)
+
     @override_settings(DEBUG=False)
     def test_non_debug_requires_explicit_override(self):
         with self.assertRaisesMessage(CommandError, "requires DEBUG=True"):

@@ -25,10 +25,20 @@ WHY = "SAMPLE screen-review data; fictional, no messages sent"
 USERNAMES = ("SAMPLE_admin", "SAMPLE_event_lead", "SAMPLE_staff", "SAMPLE_staff_no_docs")
 
 
+def is_preview_site():
+    """True only for the password-gated preview service (every allowed host names a preview site)."""
+    hosts = [h.lower().lstrip(".") for h in getattr(settings, "ALLOWED_HOSTS", []) if h]
+    return bool(getattr(settings, "BTW_PREVIEW_GATE_ENABLED", False)) and bool(hosts) and all("preview" in h for h in hosts)
+
+
 def require_safe_environment(allow_preview):
     modules = (getattr(settings, "SETTINGS_MODULE", ""), os.environ.get("DJANGO_SETTINGS_MODULE", ""))
     if any("production" in (value or "").lower().split(".") for value in modules):
-        raise CommandError("Sample data is forbidden with production settings, including --allow-preview.")
+        # The Render preview runs production settings. It is allowed only with the explicit
+        # flag, the preview password gate on, and every allowed host naming a preview site.
+        if not (allow_preview and is_preview_site()):
+            raise CommandError("Sample data is forbidden with production settings. Only the password-gated "
+                               "preview site may load it, with --allow-preview.")
     if not settings.DEBUG and not allow_preview:
         raise CommandError("Sample data requires DEBUG=True or explicit --allow-preview.")
     if os.environ.get("RENDER_SERVICE_ID") and not allow_preview:
