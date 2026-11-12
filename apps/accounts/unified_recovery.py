@@ -6,9 +6,8 @@ from django.db import transaction
 from .roles import lock_role_groups
 from django.views.decorators.debug import sensitive_variables
 
-NOTICE = ('If these details identify one eligible account, recovery instructions will be sent. '
-          'If you do not receive them, check your details or contact BTW for help. '
-          'If you share an email address, include your username if you have one, or contact BTW.')
+NOTICE = ("If we found your account, we've emailed you a reset link. "
+          "Nothing arrived? Check your spam folder, or contact BTW for help.")
 
 
 class RecoveryRequestForm(forms.Form):
