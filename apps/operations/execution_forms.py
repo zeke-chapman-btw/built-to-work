@@ -27,7 +27,8 @@ class ManagerForm(GuardedForm):
 
 class ExecutionActionForm(GuardedForm):
     event_revision=forms.CharField(required=False,widget=forms.HiddenInput)
-    confirm=forms.BooleanField(label="I confirm this action and its effect on the event checklist and closeout task.")
+    # The confirm page and its button are the confirmation; no extra tick box.
+    confirm=forms.BooleanField(initial=True,widget=forms.HiddenInput,label="Confirm")
     def __init__(self,*args,historical=False,**kwargs):
         super().__init__(*args,**kwargs)
         if historical:
@@ -75,7 +76,7 @@ class ItemForm(OptionalReasonMixin, forms.ModelForm):
 
 
 class ItemActionForm(GuardedForm):
-    confirm=forms.BooleanField(label="I confirm this checklist change.")
+    confirm=forms.BooleanField(initial=True,widget=forms.HiddenInput,label="Confirm")
 
 
 class MasterCategoryForm(OptionalReasonMixin, forms.ModelForm):

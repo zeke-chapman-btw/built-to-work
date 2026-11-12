@@ -272,3 +272,6 @@ body.internal-app #main-content .operations-design.btw-event-surface>.event-navi
 body.internal-app #main-content .operations-design.btw-event-surface>.ops-execution-navigation{margin:0}
 @media(min-width:640px){body.internal-app.btw-platform.has-event-resource-context #main-content:has(>.event-record-header){padding-inline:24px !important;box-sizing:border-box}}
 body.internal-app.has-event-context #main-content .workdays-page:has(>.wd-page){padding-inline:0 !important;max-width:none !important}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-link-button{all:unset;cursor:pointer;color:var(--brand-red-dark,#a51d24);font-size:13px;line-height:20px}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-link-button:hover{text-decoration:underline}
+body.internal-app #main-content .operations-design.btw-event-surface .ops-link-button:focus-visible{outline:2px solid var(--brand-red-dark,#a51d24);outline-offset:2px;border-radius:3px}
