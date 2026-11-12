@@ -19,7 +19,7 @@ from .models import (
     OperationalNotificationRule, QrTicket, TicketDelivery,
 )
 from .operations_views import central_connectivity_status
-from .ticket_renderer import ticket_png_bytes
+from .ticket_renderer import ticket_png_bytes, ticket_phone_png_bytes
 
 
 # Worker commands manage connections outside a per-test atomic wrapper.
@@ -121,7 +121,7 @@ class CommunicationTests(TransactionTestCase):
         self.assertIn("1234567890", mail.outbox[0].body)
         self.assertEqual(mail.outbox[0].attachments[0][2], "image/png")
         self.assertTrue(mail.outbox[0].attachments[0][1].startswith(b"\x89PNG"))
-        self.assertEqual(mail.outbox[0].attachments[0][1], ticket_png_bytes(self.ticket))
+        self.assertEqual(mail.outbox[0].attachments[0][1], ticket_phone_png_bytes(self.ticket))
         self.assertEqual(QrTicket.objects.get(pk=self.ticket.pk).ticket_number, "1234567890")
         call_command("deliver_communications", verbosity=0)
         self.assertEqual(len(mail.outbox), 1)

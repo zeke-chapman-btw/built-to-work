@@ -404,7 +404,7 @@ def ticket_present(request, token):
 
 
 def ticket_image(request, token):
-    from .ticket_renderer import ticket_png_bytes
+    from .ticket_renderer import ticket_phone_png_bytes, ticket_png_bytes
     resolution = resolve_ticket(token)
     if resolution.status == "not_found":
         raise Http404
@@ -413,7 +413,9 @@ def ticket_image(request, token):
     ticket = resolution.ticket
     if not ticket.ticket_number:
         return HttpResponse("This legacy ticket needs staff assistance.", status=409)
-    response = HttpResponse(ticket_png_bytes(ticket), content_type="image/png")
+    # Phones get the tall ticket; staff reprints ask for the wide printable layout.
+    draw_ticket = ticket_png_bytes if request.GET.get("layout") == "print" else ticket_phone_png_bytes
+    response = HttpResponse(draw_ticket(ticket), content_type="image/png")
     response["Content-Disposition"] = f'inline; filename="ticket-{ticket.ticket_number or ticket.token}.png"'
     return response
 
@@ -489,7 +491,7 @@ def ticket_reprint(request, ticket_id):
         return HttpResponse(status=405)
     ticket = get_object_or_404(QrTicket, pk=ticket_id, is_current=True)
     audit_action(actor=request.user, action='ticket.recovery.reprinted', instance=ticket)
-    return redirect('events:ticket_image', token=ticket.token)
+    return redirect(reverse('events:ticket_image', kwargs={'token': ticket.token}) + '?layout=print')
 
 
 @staff_permission_required('events.change_eventregistration')

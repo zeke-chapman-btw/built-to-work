@@ -84,6 +84,7 @@ def wizard(request, session_id):
             if registration_id and request.user.has_perms(("events.view_eventregistration", "events.view_qrticket")):
                 from apps.events.models import EventRegistration
                 result["registration"] = EventRegistration.objects.filter(pk=registration_id, event=session.event).first()
+        result.update(_finished_ticket(request, session))
         return render(request, "participants/intake_complete.html", result)
     try:
         step = int(request.GET.get("step", current_ui_step(session)))
@@ -226,3 +227,23 @@ def review_detail(request, review_id):
         can_update=request.user.has_perm("participants.change_participant"),
         can_retry_registration=request.user.has_perms(("events.change_participantmatchreview", "events.add_eventregistration")),
         decisions=review.decisions.select_related("actor").order_by("-created_at")))
+
+
+def _finished_ticket(request, session):
+    """The ticket for this browser's own intake, shown on the finish page (session is browser-bound)."""
+    from django.utils import timezone as tz
+    from apps.events.models import QrTicket
+    from apps.events.views import _ticket_qr_data
+    submission = session.submission
+    meta = (submission.intake_metadata or {}) if submission else {}
+    if meta.get("registration_status") == "pending_identity_review":
+        return {"ticket_pending": True}
+    registration_id = meta.get("registration_id")
+    if not registration_id:
+        return {}
+    ticket = (QrTicket.objects.select_related("registration__participant", "registration__event")
+              .filter(registration_id=registration_id, registration__status="active", is_current=True,
+                      revoked_at__isnull=True, expires_at__gte=tz.now()).first())
+    if not ticket:
+        return {"ticket_pending": True}
+    return {"ticket": ticket, "ticket_qr_data": _ticket_qr_data(request, ticket)}

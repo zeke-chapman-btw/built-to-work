@@ -171,7 +171,13 @@ def _ticket_message(delivery):
     if not destination or _hash(destination) != delivery.destination_hash:
         raise ValueError("Contact details changed; staff review required")
     # The ten digits remain the QR payload; messaging never issues another ticket.
-    return destination, f"Built to Work ticket for {registration.event.name}", f"You're registered for {registration.event.name}. Your ticket number is {ticket.ticket_number}. Show it at check-in when you arrive. - Built to Work", ticket
+    from django.urls import reverse
+    from apps.participants.portal_accounts import portal_base_url
+    base = portal_base_url()
+    link = f" Open your ticket: {base}{reverse('events:ticket_present', kwargs={'token': ticket.token})}" if base else ""
+    body = (f"You're registered for {registration.event.name}. Your ticket number is {ticket.ticket_number}.{link} "
+            "Show it at check-in when you arrive. - Built to Work")
+    return destination, f"Built to Work ticket for {registration.event.name}", body, ticket
 
 
 def _claim(model, pk):
@@ -227,8 +233,8 @@ def deliver_ticket(pk):
         destination, subject, body, ticket = _ticket_message(row)
         attachment = None
         if row.channel == TicketDelivery.Channel.EMAIL:
-            from .ticket_renderer import ticket_png_bytes
-            attachment = ticket_png_bytes(ticket)
+            from .ticket_renderer import ticket_phone_png_bytes
+            attachment = ticket_phone_png_bytes(ticket)
         reference = _provider_send(row.channel, destination, subject=subject, body=body,
                                    idempotency_key=row.idempotency_key, attachment=attachment)
     except TimeoutError:

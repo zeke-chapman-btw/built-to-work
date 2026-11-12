@@ -34,7 +34,7 @@ class IntakeUI11BTests(TestCase):
             response = self.step(session, url, number)
             self.assertEqual(response.status_code, 302, response.content.decode()[:2000])
         completed = self.client.get(url)
-        self.assertContains(completed, "Your intake has been received")
+        self.assertContains(completed, "Thanks")
         self.assertNotContains(completed, "synthetic@example.test")
         self.assertNotContains(completed, "5550101234")
         self.assertEqual(RegistrationSubmission.objects.count(), 1)

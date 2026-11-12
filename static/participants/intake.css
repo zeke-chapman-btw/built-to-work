@@ -81,3 +81,14 @@
 .reg-public .ticket-card h2{margin:0 0 4px}
 .reg-public .ticket-qr{display:block;width:min(300px,100%);margin:16px auto}
 .reg-public .ticket-number{font-size:18px;margin:0 0 12px}
+.reg-public .ticket-page .card,.intake-page .ticket-page .card{margin:0 0 20px}
+.intake-page .intake-next{border-top:1px solid #e4e7ec;padding-top:20px;margin-top:8px}
+.intake-page .intake-next p{color:#475467}
+.intake-page .ticket-card{display:block;text-align:center;background:#fff;border:1px solid #e4e7ec;border-radius:12px;padding:22px}
+.intake-page .ticket-qr{display:block;width:min(300px,100%);margin:16px auto}
+.intake-page .ticket-number{font-size:18px;margin:0 0 12px}
+.intake-page .hero{text-transform:none;font-family:var(--font-display);font-size:34px;line-height:1.12;font-weight:500;margin:0 0 16px}
+.intake-page .notice-card{text-align:left;margin:0 0 20px}
+.intake-page .notice-card p{margin:0 0 8px}
+.intake-page .reg-main a:not(.button){color:#a51228}
+@media(max-width:520px){.intake-page .hero{font-size:28px}}

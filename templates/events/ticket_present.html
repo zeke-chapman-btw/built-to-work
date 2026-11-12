@@ -1,9 +1,4 @@
 {% extends "participants/registration_base.html" %}
 {% block title %}Your ticket · {{ event.name }}{% endblock %}
 {% block content %}<main class="reg-main ticket-page"><h1 class="hero">Your ticket</h1>
-<div class="card ticket-card"><h2>{{ event.name }}</h2>
-<p class="muted">{{ ticket.registration.participant.preferred_name|default:ticket.registration.participant.first_name }} {{ ticket.registration.participant.last_name }} · {{ event.start_at|date:"l, F j, Y" }}</p>
-<img class="ticket-qr" src="{{ ticket_qr_data }}" alt="Event QR ticket">
-{% if ticket.ticket_number %}<p class="ticket-number">Ticket <strong>{{ ticket.ticket_number }}</strong></p>{% endif %}
-<p>Show this at check-in. Take a screenshot or save the image so you have it offline.</p>
-<a class="button" href="{% url 'events:ticket_image' token=ticket.token %}" download="ticket-{{ ticket.ticket_number|default:ticket.token }}.png">Save ticket image</a></div></main>{% endblock %}
+{% include "events/ticket_card.html" %}</main>{% endblock %}

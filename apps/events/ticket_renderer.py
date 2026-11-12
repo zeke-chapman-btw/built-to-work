@@ -39,13 +39,13 @@ def ticket_png_bytes(ticket) -> bytes:
     canvas = Image.new('RGB', (1100, 700), 'white')
     draw = ImageDraw.Draw(canvas)
     draw.rounded_rectangle((8, 8, 1092, 692), radius=28, outline='#d7d7d7', width=3)
-    if synthetic_preview:
-        # The existing white BTW asset needs a dark panel on preview tickets.
-        draw.rounded_rectangle((10, 10, 1090, 174), radius=24, fill='#111111')
+    # The BTW logo has white lettering, so it always sits on a dark band.
+    draw.rounded_rectangle((10, 10, 1090, 174), radius=24, fill='#111111')
+    draw.rectangle((10, 120, 1090, 174), fill='#111111')
     logo_path = root / 'static' / 'internal' / 'images' / 'built-to-work-linear.svg'
-    logo = Image.open(BytesIO(cairosvg.svg2png(url=str(logo_path), output_width=580))).convert('RGBA')
-    canvas.paste(logo, (65, 40), logo)
-    draw.rectangle((65, 165, 1035, 172), fill='#cf202f')
+    logo = Image.open(BytesIO(cairosvg.svg2png(url=str(logo_path), output_width=480))).convert('RGBA')
+    canvas.paste(logo, (65, 92 - logo.height // 2), logo)
+    draw.rectangle((10, 168, 1090, 174), fill='#cf202f')
     regular = str(root / 'static' / 'kiosk' / 'fonts' / 'roboto-regular.ttf')
     bold = str(root / 'static' / 'kiosk' / 'fonts' / 'roboto-bold.ttf')
     heading = ImageFont.truetype(bold, 43)
@@ -78,6 +78,78 @@ def ticket_png_bytes(ticket) -> bytes:
     draw.text((500, 465), 'TICKET NUMBER', font=small, fill='#555555')
     draw.text((500, 505), 'PREVIEW ONLY' if synthetic_preview else number, font=ImageFont.truetype(bold, 51), fill='#111111')
     draw.text((500, 595), 'Not valid for event admission.' if synthetic_preview else 'Present this ticket at the BTW kiosk.', font=small, fill='#333333')
+    output = BytesIO()
+    canvas.save(output, format='PNG', optimize=True)
+    return output.getvalue()
+
+
+def ticket_phone_png_bytes(ticket) -> bytes:
+    """Tall ticket sized for a phone screen; same QR payload as the printable ticket."""
+    from io import BytesIO
+    from pathlib import Path
+    from zoneinfo import ZoneInfo
+
+    import cairosvg
+    from django.conf import settings
+    from django.utils import timezone
+    from PIL import Image, ImageDraw, ImageFont
+
+    number = ticket.ticket_number
+    from apps.participants.models import PortalPreviewFixture
+    synthetic_preview = PortalPreviewFixture.objects.filter(event_id=ticket.registration.event_id).exists()
+    if not synthetic_preview and (not number or len(number) != 10 or not number.isdigit()):
+        raise ValueError('A ten-digit ticket number is required for a downloadable ticket.')
+    root = Path(settings.BASE_DIR)
+    W, H = 750, 1334
+    canvas = Image.new('RGB', (W, H), 'white')
+    draw = ImageDraw.Draw(canvas)
+    draw.rectangle((0, 0, W, 190), fill='#111111')
+    draw.rectangle((0, 184, W, 192), fill='#cf202f')
+    logo_path = root / 'static' / 'internal' / 'images' / 'built-to-work-linear.svg'
+    logo = Image.open(BytesIO(cairosvg.svg2png(url=str(logo_path), output_width=470))).convert('RGBA')
+    canvas.paste(logo, ((W - logo.width) // 2, 92 - logo.height // 2), logo)
+    regular = str(root / 'static' / 'kiosk' / 'fonts' / 'roboto-regular.ttf')
+    bold = str(root / 'static' / 'kiosk' / 'fonts' / 'roboto-bold.ttf')
+    label = ImageFont.truetype(bold, 28)
+    heading = ImageFont.truetype(bold, 52)
+    medium = ImageFont.truetype(bold, 36)
+    body = ImageFont.truetype(regular, 30)
+    small = ImageFont.truetype(regular, 26)
+    big = ImageFont.truetype(bold, 64)
+    participant = ticket.registration.participant
+    event = ticket.registration.event
+    name = f'{participant.preferred_name or participant.first_name} {participant.last_name}'.strip()
+    local_date = timezone.localtime(event.start_at, ZoneInfo(event.timezone_name))
+    event_date = f'{local_date:%A}, {local_date:%B} {local_date.day}, {local_date.year}'
+
+    def fit(value, font, width=W - 100):
+        value = str(value)
+        while value and draw.textbbox((0, 0), value, font=font)[2] > width:
+            value = value[:-2].rstrip() + '…'
+        return value
+
+    def centered(y, text, font, fill):
+        text = fit(text, font)
+        width = draw.textbbox((0, 0), text, font=font)[2]
+        draw.text(((W - width) // 2, y), text, font=font, fill=fill)
+
+    centered(232, 'SYNTHETIC PREVIEW' if synthetic_preview else 'EVENT TICKET', label, '#cf202f')
+    centered(282, name, heading, '#111111')
+    centered(356, event.name, medium, '#111111')
+    centered(408, event_date, body, '#333333')
+    y = 452
+    if event.group_mode != 'disabled' and ticket.registration.group_id:
+        centered(y, f'{event.group_label}: {ticket.registration.group.name}', small, '#333333')
+        y += 40
+    qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M, border=4, box_size=12)
+    qr.add_data('btw-admin-preview:' + str(ticket.pk) if synthetic_preview else f'tel:{number}')
+    qr.make(fit=True)
+    qr_image = qr.make_image(fill_color='black', back_color='white').convert('RGB').resize((540, 540), Image.Resampling.NEAREST)
+    canvas.paste(qr_image, ((W - 540) // 2, y + 20))
+    y += 580
+    centered(y, 'TICKET NUMBER', small, '#555555')
+    centered(y + 40, 'PREVIEW ONLY' if synthetic_preview else number, big, '#111111')
+    centered(H - 90, 'Not valid for event admission.' if synthetic_preview else 'Show this at check-in.', body, '#333333')
     output = BytesIO()
     canvas.save(output, format='PNG', optimize=True)
     return output.getvalue()

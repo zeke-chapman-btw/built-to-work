@@ -312,8 +312,8 @@ def ticket(request, ticket_id):
     qr = get_object_or_404(owned.select_related('registration__participant', 'registration__event'), pk=ticket_id)
     if getattr(request, 'portal_preview', None) and request.GET.get('image') != '1':
         return render(request, 'participants/portal/preview_ticket.html', {'section':'activity'})
-    from apps.events.ticket_renderer import ticket_png_bytes
-    response = HttpResponse(ticket_png_bytes(qr), content_type='image/png')
+    from apps.events.ticket_renderer import ticket_phone_png_bytes
+    response = HttpResponse(ticket_phone_png_bytes(qr), content_type='image/png')
     response['Content-Disposition'] = 'inline; filename="built-to-work-ticket.png"'
     response['X-Content-Type-Options'] = 'nosniff'
     return response
