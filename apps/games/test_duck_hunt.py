@@ -259,6 +259,26 @@ class DuckHuntTests(TestCase):
         self.assertEqual(self.run.status,GameSession.Status.IN_PROGRESS)
         self.assertIsNone(self.run.raw_score)
 
+    def test_interrupted_round_can_restart_from_the_game_screen(self):
+        duck.activate(self.run)
+        response = self.client.post(self.url("duck_restart"))
+        self.assertRedirects(response, self.url("launch"), fetch_redirect_response=False)
+        self.run.refresh_from_db()
+        self.assertEqual(self.run.status, GameSession.Status.NOT_STARTED)
+        self.assertIn("duck_hunt", self.run.configuration_snapshot)
+        self.assertContains(self.client.get(self.url("launch")), "SHOOT THE TARGET TO START")
+
+    def test_official_round_restarts_only_once(self):
+        experience = self.experience_for(ExperienceSession.Mode.OFFICIAL)
+        run = duck.prepare(resolve_and_start(experience_session=experience))
+        duck.activate(run)
+        run = duck.restart(run)
+        self.assertEqual(run.status, GameSession.Status.NOT_STARTED)
+        self.assertFalse(duck.can_restart(GameSession.objects.get(pk=run.pk)))
+        duck.activate(run)
+        with self.assertRaises(ValidationError):
+            duck.restart(run)
+
     def test_replay_is_nonofficial_and_creates_no_identity_or_attendance(self):
         before=[m.objects.count() for m in (Participant,EventRegistration,QrTicket,Attendance)]
         duck.accept_result(self.elapsed(),[])
@@ -291,7 +311,7 @@ class DuckHuntTests(TestCase):
         self.assertEqual(response.status_code,200)
         self.assertEqual(set(response.json()["result"]),{"score","kills","accuracy"})
         self.assertContains(self.client.get(self.url("launch")),"HUNT COMPLETE")
-        self.assertContains(self.client.get(self.url("launch")), "HEAVY EQUIPMENT SIMULATOR")
+        self.assertContains(self.client.get(self.url("launch")), "<h2>SIMULATOR</h2>")
         self.assertContains(self.client.get(self.url("simulator_next")),"SIMULATOR")
 
     def test_placeholder_completion_cannot_bypass_playable_game(self):
@@ -319,14 +339,14 @@ class DuckHuntTests(TestCase):
         url = reverse("assessments:results", kwargs={"station_code": self.station.code, "session_id": self.experience.pk})
         response = self.client.get(url)
         self.assertContains(response, "Duck Hunt")
-        self.assertContains(response, ">Duck Hunt</a>")
+        self.assertContains(response, "Next up: <strong>Duck Hunt</strong>")
         self.assertContains(response, reverse("games:launch", kwargs={"station_code": self.station.code, "session_id": self.experience.pk}))
         self.assertNotContains(response, reverse("assessments:duck_handoff", kwargs={"station_code": self.station.code, "session_id": self.experience.pk}))
         self.event.game_configuration.delete()
         response = self.client.get(url)
         self.assertContains(response, "SIMULATOR")
         self.assertContains(response, "Please head to the Simulator station to continue.")
-        self.assertContains(response, "RETURN TO KIOSK")
+        self.assertContains(response, ">EXIT TEST</button>")
         self.assertNotContains(response, "data-auto-go")
 
 
@@ -342,7 +362,7 @@ class DuckHuntTests(TestCase):
         response = self.client.get(launch_url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'data-auto-return="10"')
-        self.assertContains(response, "Please head to the Heavy Equipment Simulator station to continue.")
+        self.assertContains(response, "Put the gun back on the right of the kiosk, then head to the Simulator.")
         self.assertNotContains(response, "CONTINUE")
         simulator_url = reverse("games:simulator_next", kwargs={"station_code": self.station.code, "session_id": self.experience.pk})
         self.assertNotContains(response, simulator_url)

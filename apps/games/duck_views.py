@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
-from apps.assessments.views import _kiosk_session
+from apps.assessments.views import _kiosk_session, _participant_first_name
 from . import duck_hunt
 from .models import GameSession
 from .services import reset_nonofficial_session
@@ -25,10 +25,11 @@ def render_game(request, station, experience, run):
         run = duck_hunt.prepare(run)
     except ValidationError:
         return render(request, "games/duck_hunt.html", {"station": station, "experience": experience,
-            "test_mode": experience.mode != "official", "state": "unavailable"}, status=409)
+            "test_mode": experience.mode != "official", "state": "unavailable", "game_data": None}, status=409)
     kwargs = {"station_code": station.code, "session_id": experience.pk, "game_session_id": run.pk}
     state = "results" if run.status == GameSession.Status.COMPLETED else "ready" if run.status == GameSession.Status.NOT_STARTED else "interrupted"
     context = {"station": station, "experience": experience, "game_session": run,
+        "first_name": _participant_first_name(experience), "can_restart": duck_hunt.can_restart(run),
         "test_mode": run.mode != GameSession.Mode.OFFICIAL, "state": state,
         "result": run.result_data.get("duck_hunt", {}),
         "game_data": {"state": state, "startUrl": reverse("games:duck_start", kwargs=kwargs),
@@ -71,4 +72,14 @@ def replay(request, station_code, session_id, game_session_id):
     if run.mode == GameSession.Mode.OFFICIAL:
         raise PermissionDenied
     reset_nonofficial_session(game_session=run)
+    return redirect("games:launch", station_code=station_code, session_id=session_id)
+
+
+@require_POST
+def restart(request, station_code, session_id, game_session_id):
+    _, _, run = _run(request, station_code, session_id, game_session_id)
+    try:
+        duck_hunt.restart(run)
+    except ValidationError:
+        pass  # The game page explains what to do next.
     return redirect("games:launch", station_code=station_code, session_id=session_id)

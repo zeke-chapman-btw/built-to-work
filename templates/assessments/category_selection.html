@@ -2,10 +2,10 @@
 {% block title %}Choose Your Skills{% endblock %}
 {% block content %}
 <section class="screen category-page" data-idle-screen data-ignore-scans="true" aria-labelledby="category-title">
-  <h1 id="category-title" class="category-question">Which 2 skills are you most interested in?</h1>
+  <h1 id="category-title" class="category-question">PICK 2 SKILLS</h1><p class="category-help">Tap the two you're most interested in.</p>
   <form method="post" id="category-form" class="category-form">
     {% csrf_token %}
-    <div class="category-grid" role="group" aria-label="Choose exactly two skill categories">
+    <div class="category-grid{% if configs|length > 6 %} is-many{% endif %}" role="group" aria-label="Choose exactly two skill categories">
       {% for config in configs %}
       <button class="category-choice" type="button" data-category-id="{{ config.id }}" aria-pressed="false">
         <span class="category-choice-order" aria-hidden="true"></span>
@@ -14,8 +14,8 @@
       {% endfor %}
     </div>
     <div id="category-values"></div>
-    <p id="category-status" class="category-status visually-hidden" aria-live="polite">Choose 2 skills to continue.</p>
-    <div class="category-actions"><button id="category-continue" class="kiosk-button" type="submit" disabled>I'M READY</button></div>
+    <p id="category-status" class="category-status" aria-live="polite">Pick 2 more.</p>
+    <div class="category-actions"><button id="category-continue" class="kiosk-button" type="submit" disabled>CONTINUE</button></div>
   </form>
 </section>
 <script>
@@ -37,7 +37,7 @@
     });
     selected.forEach(id=>{const input=document.createElement('input');input.type='hidden';input.name='categories';input.value=id;values.append(input);});
     submit.disabled=selected.length!==2;
-    status.textContent=selected.length===2?'Your skills are ready in the order shown.':'Choose '+(2-selected.length)+' more skill'+(2-selected.length===1?'':'s')+'.';
+    status.textContent=selected.length===2?'Ready! Tap CONTINUE.':'Pick '+(2-selected.length)+' more.';
   }
   cards.forEach(card=>card.addEventListener('click',()=>{
     const id=card.dataset.categoryId, index=selected.indexOf(id);

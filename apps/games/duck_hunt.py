@@ -148,6 +148,39 @@ def activate(game_session):
         return run
 
 
+OFFICIAL_RESTARTS_ALLOWED = 1
+
+
+def restart(game_session):
+    """Start an unfinished round over. Official rounds get one restart so a bad round can't be retried forever."""
+    from apps.core.audit import record_audit
+    with transaction.atomic():
+        run = GameSession.objects.select_for_update().select_related("game", "event", "experience_session").get(pk=game_session.pk)
+        validate_context(run)
+        if run.status in (GameSession.Status.COMPLETED, GameSession.Status.VOIDED):
+            raise ValidationError("This round is already finished.")
+        if run.status == GameSession.Status.NOT_STARTED:
+            return run
+        restarts = int(run.configuration_snapshot.get("duck_hunt_restarts", 0))
+        if run.mode == GameSession.Mode.OFFICIAL and restarts >= OFFICIAL_RESTARTS_ALLOWED:
+            raise ValidationError("This round has already been restarted. Please ask a team member for help.")
+        snapshot = deepcopy(run.configuration_snapshot)
+        snapshot.pop("duck_hunt", None)
+        snapshot["duck_hunt_restarts"] = restarts + 1
+        run.configuration_snapshot = snapshot
+        run.status = GameSession.Status.NOT_STARTED
+        run.started_at = None
+        run.save(update_fields=("configuration_snapshot", "status", "started_at"))
+        record_audit(actor=None, action="game.restarted", instance=run, new_data={"game_key": run.game.key, "mode": run.mode, "restarts": restarts + 1})
+    return prepare(run)
+
+
+def can_restart(run):
+    if run.status not in (GameSession.Status.NOT_STARTED, GameSession.Status.IN_PROGRESS):
+        return False
+    return run.mode != GameSession.Mode.OFFICIAL or int(run.configuration_snapshot.get("duck_hunt_restarts", 0)) < OFFICIAL_RESTARTS_ALLOWED
+
+
 def accept_result(game_session, shots):
     with transaction.atomic():
         run = GameSession.objects.select_for_update().select_related("game", "event", "experience_session").get(pk=game_session.pk)

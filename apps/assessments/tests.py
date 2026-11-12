@@ -391,7 +391,7 @@ class AssessmentEventConfigurationTests(TestCase):
                 "session": session,
             },
         )
-        self.assertIn("1 correct", result_html)
+        self.assertIn('results-score-number">1</p>', result_html)
         self.assertIn("TOTAL: 1 CORRECT", result_html)
         self.assertIn("TOTAL: 1 CORRECT", result_html)
         self.assertNotIn("percentile", result_html.lower())

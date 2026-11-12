@@ -1,6 +1,6 @@
 {% load static %}<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{% block title %}Built to Work{% endblock %}</title><link rel="stylesheet" href="{% static 'kiosk/css/kiosk.css' %}?v=build4-kiosk-visual-polish-6">
-<link rel="stylesheet" href="{% static 'kiosk/css/kiosk-measured.css' %}?v=kiosk-measured-1920-7"></head>
+<link rel="stylesheet" href="{% static 'kiosk/css/kiosk-measured.css' %}?v=kiosk-measured-1920-9"></head>
 <body data-home-url="{% if station %}{% url 'stations:kiosk' station_code=station.code %}{% else %}{% url 'stations:kiosk' station_code=station_code %}{% endif %}" class="kiosk-body{% if request.resolver_match.url_name == 'service_menu' %} service-context{% else %} participant-context{% endif %}{% if request.session.test_kiosk_session %} is-test-mode{% endif %}"><div class="kiosk-viewport"><div class="kiosk-screen kiosk-shell">
 {% if preview_mode %}<div class="test-mode-ribbon" role="status">CONTENT PREVIEW</div>{% endif %} {% if request.session.test_kiosk_session and not preview_mode %}<div class="test-mode-ribbon" role="status">TEST MODE</div>{% endif %}
 <header class="kiosk-header"><img class="kiosk-logo" src="{% static 'kiosk/images/built-to-work-linear.svg' %}" alt="Built to Work" {% if request.resolver_match.url_name == 'kiosk' %}data-service-url="{% url 'stations:service_menu' station_code=station_code %}"{% endif %}></header>

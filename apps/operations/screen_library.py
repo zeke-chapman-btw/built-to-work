@@ -92,7 +92,8 @@ def _duck(state):
     from copy import deepcopy
     seed = 12345
     snap = {"seed": seed, "rules": deepcopy(duck_hunt.RULES), "targets": duck_hunt.opportunity_schedule(seed)}
-    return {**_kiosk_base(), "experience": NS(pk=SAMPLE_ID), "game_session": None, "test_mode": False, "state": state,
+    return {**_kiosk_base(), "experience": NS(pk=SAMPLE_ID), "game_session": NS(pk=SAMPLE_ID), "test_mode": False, "state": state,
+            "first_name": "Taylor", "can_restart": state == "interrupted",
             "result": {"score": 770, "kills": 35, "accuracy": 95},
             "game_data": {"state": "preview", "startUrl": "#", "finishUrl": "#", "snapshot": snap}}
 
@@ -127,6 +128,8 @@ SCREENS = [
     ("quiz-instructions", "Quiz", "Instructions", KIOSK, "assessments/instructions.html", lambda: _kiosk_base()),
     ("quiz-categories", "Quiz", "Choose categories", KIOSK, "assessments/category_selection.html",
      lambda: {**_kiosk_base(), "configs": [_config(1, "Tool Knowledge"), _config(2, "Safety"), _config(3, "Math"), _config(4, "Reading Plans")]}),
+    ("quiz-categories-many", "Quiz", "Choose categories (7+ options)", KIOSK, "assessments/category_selection.html",
+     lambda: {**_kiosk_base(), "configs": [_config(i, n) for i, n in enumerate(("Auto Mechanic", "Civil Construction", "Electrical", "Plumbing", "Welding", "Construction Labor", "HVAC", "Warehouse"), 1)]}),
     ("quiz-question", "Quiz", "Question", KIOSK, "assessments/question.html", _question),
     ("quiz-transition", "Quiz", "Between categories", KIOSK, "assessments/transition.html",
      lambda: {**_kiosk_base(), "attempt": NS(experience_session_id=SAMPLE_ID), "next_category": "Safety"}),
