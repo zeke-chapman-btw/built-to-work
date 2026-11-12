@@ -391,3 +391,14 @@ body.internal-app #main-content .ops-list-card+.ops-list-card{margin-top:16px}
 body.internal-app #main-content .crm-wide{max-width:none}
 body.internal-app #main-content .crm-wide .crm-card{border-radius:12px}
 body.internal-app #main-content .crm-wide .crm-card+.crm-card{margin-top:16px}
+/* One heading style for cards and sections everywhere: sentence case, 15px (matches the Report/Expenses/Staff mock-ups).
+   Overrides the older small all-caps section labels. */
+:is(.owner-card-header,.heading,.customer-section-heading,.btw-panel-heading,.crm-profile-history-heading,.crm-directory-heading,.cx-card-h,.ops-tool-grid,.ops-resource-panel-heading,.task-toolbar,.task-results-heading,.dashboard-section-header,.event-staffing-summary,.people-results-heading,.ex-panel-heading,.approval-card-heading,.event-info-pass2)>h2,
+:is(.card,.task-page .card)>h2,
+.ops-configuration .ops-tool-grid h2,
+.event-info-pass2 h2,
+.p3-reading-section .btw-panel-heading h2,
+.portal-page .profile-workspace .profile-section h2{
+  text-transform:none !important;letter-spacing:0 !important;font-size:15px !important;line-height:22px !important;font-weight:600 !important}
+:is(.btw-result-heading,.btw-panel-heading>div,.approval-card-heading,.dashboard-section-heading)>h2,.btw-panel-heading>div>h2{
+  text-transform:none !important;letter-spacing:0 !important;font-size:15px !important;line-height:22px !important;font-weight:600 !important}

@@ -10,7 +10,7 @@ class DisclosureForm(forms.Form):
     expected_need_revision=forms.UUIDField(widget=forms.HiddenInput)
     expected_projection=forms.CharField(max_length=64,required=False,widget=forms.HiddenInput)
     categories=forms.MultipleChoiceField(choices=CATEGORIES,widget=forms.CheckboxSelectMultiple)
-    purpose=forms.CharField(max_length=500,widget=forms.Textarea(attrs={'rows':2}),label='Purpose / approval reason')
+    purpose=forms.CharField(max_length=500,required=False,empty_value='No reason given',widget=forms.Textarea(attrs={'rows':2}),label='Note (optional)')
     confirmed=forms.BooleanField(required=False,label='BTW explicitly approves releasing the reviewed information to this employer for this position')
     def __init__(self,*args,actor,**kwargs):
         super().__init__(*args,**kwargs)

@@ -27,3 +27,5 @@
 #approvals-workspace .approval-pages{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:4px 16px;gap:8px;font-size:12px;}
 #approvals-workspace a:focus-visible,#approvals-workspace button:focus-visible,#approvals-workspace input:focus-visible{outline:2px solid #2563eb;outline-offset:2px;}
 @media(max-width:639px){#approvals-workspace .approval-row-heading{align-items:flex-start;}#approvals-workspace .approval-tabs{gap:0 6px;}#approvals-workspace .approval-row-heading h3{flex-basis:100%;}}
+#approvals-workspace .approval-card>:is(.approval-help,p,.btw-empty-state,.ui-empty,nav,.pagination){padding-inline:16px}
+#approvals-workspace .approval-card>.approval-help{margin:12px 0}
