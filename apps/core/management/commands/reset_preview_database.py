@@ -17,6 +17,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--confirm", required=True, help="Type the preview web address, e.g. btw-preview.onrender.com")
         parser.add_argument("--load-samples", action="store_true", help="Load SAMPLE data after the wipe.")
+        parser.add_argument("--keep-user", action="append", default=[], metavar="USERNAME_OR_EMAIL",
+                            help="Bring this login back after the wipe with the same password and roles.")
 
     def handle(self, *args, **options):
         if not is_preview_site():
@@ -26,6 +28,7 @@ class Command(BaseCommand):
             raise CommandError("Refused: --confirm must be this site's web address (" + ", ".join(hosts) + ").")
         if connection.vendor != "postgresql":
             raise CommandError("Refused: the preview database is expected to be PostgreSQL.")
+        kept = [self._snapshot(name) for name in options["keep_user"]]
         self.stdout.write("Wiping the preview database...")
         with connection.cursor() as cursor:
             cursor.execute("DROP SCHEMA public CASCADE")
@@ -41,3 +44,28 @@ class Command(BaseCommand):
                 self.stdout.write(f"{username}: {password}")
             if credentials:
                 self.stdout.write("Passwords are shown once. Save them somewhere private.")
+        for snap in kept:
+            self._restore(snap)
+
+    def _snapshot(self, name):
+        from django.contrib.auth import get_user_model
+        from django.db.models import Q
+        user = get_user_model().objects.filter(Q(username__iexact=name) | Q(email__iexact=name)).first()
+        if user is None:
+            raise CommandError(f"Refused: no login matches '{name}', so nothing was wiped.")
+        fields = ("username", "email", "first_name", "last_name", "password", "is_staff", "is_superuser", "is_active")
+        return {"fields": {f: getattr(user, f) for f in fields},
+                "groups": list(user.groups.values_list("name", flat=True)),
+                "perms": list(user.user_permissions.values_list("content_type__app_label", "codename"))}
+
+    def _restore(self, snap):
+        from django.contrib.auth import get_user_model
+        from django.contrib.auth.models import Group, Permission
+        user = get_user_model()(**snap["fields"])
+        user.save()
+        user.groups.set(Group.objects.filter(name__in=snap["groups"]))
+        missing = sorted(set(snap["groups"]) - set(user.groups.values_list("name", flat=True)))
+        user.user_permissions.set([p for app, code in snap["perms"]
+                                   for p in Permission.objects.filter(content_type__app_label=app, codename=code)])
+        note = f" (roles not found: {', '.join(missing)})" if missing else ""
+        self.stdout.write(self.style.SUCCESS(f"Kept login: {user.username} with the same password{note}."))

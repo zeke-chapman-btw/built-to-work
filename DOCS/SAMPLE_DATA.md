@@ -88,8 +88,12 @@ To wipe the preview database and load samples in one step, open **Shell** on
 the `btw-preview` service in Render and run:
 
 ```sh
-python manage.py reset_preview_database --confirm btw-preview.onrender.com --load-samples
+python manage.py reset_preview_database --confirm btw-preview.onrender.com --load-samples --keep-user you@example.com
 ```
+
+`--keep-user` (username or email, repeatable) brings that login back after the
+wipe with the same password hash, roles and direct permissions. If no login
+matches, nothing is wiped. Linked staff/profile records are not kept.
 
 This drops every table (no undo), rebuilds them with `migrate`, and loads the
 SAMPLE dataset. The SAMPLE passwords print once. Uploaded files on the disk are
