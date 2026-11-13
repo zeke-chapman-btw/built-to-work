@@ -1,0 +1,1 @@
+{% extends 'operations/design_base.html' %}{% load static %}{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=rui-1112">{% endblock %}{% block design_content %}<div class="btw-focused-editor"><a class="ux-back" href="{{ back }}">← Games</a>{% include 'internal/ui/record_form_panel.html' %}</div>{% endblock %}

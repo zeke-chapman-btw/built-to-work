@@ -78,6 +78,12 @@ def workspace(request,workspace_id):
             games, filters = list_page(request, GameDefinition.objects.all(),
                 search_fields=("display_name", "key", "implementation_key"), name_field="display_name",
                 newest_field="-updated_at", active_field="active", status_choices=(("active", "Active"), ("inactive", "Inactive")))
+            from django.db.models import Count, Q
+            from django.utils import timezone as _tz
+            usage = dict(GameDefinition.objects.annotate(n=Count("event_configurations", filter=Q(
+                event_configurations__event__status="upcoming", event_configurations__event__end_at__gte=_tz.now()))).values_list("pk", "n"))
+            for game in games:
+                game.upcoming_events = usage.get(game.pk, 0)
             return render(request, "internal/operations_games.html", _staff_context(request,
                 page_title="Operations", page_description="Manage event resources, quizzes, games, forms and consents.",
                 games=games, game_admin_url=game_link["url"], resource_filter="games",
