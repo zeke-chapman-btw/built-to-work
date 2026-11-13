@@ -135,6 +135,8 @@ def workspace(request, org_id, tab="overview"):
             overview_locations=org.locations.filter(is_active=True).order_by("name", "pk")[:3],
             open_need_total=org.workforce_needs.filter(status__in=["active", "hold"]).count(),
             active_campaign_total=org.campaigns.exclude(status__in=["completed", "cancelled"]).count(),
+            overview_notes=org.staff_notes.filter(archived_at__isnull=True).select_related("author")[:4],
+            overview_note_total=org.staff_notes.filter(archived_at__isnull=True).count(),
         )
     elif tab == "crm":
         from apps.crm.presentation import history_context
@@ -415,3 +417,56 @@ def campaign_action(request, org_id, record_id, action):
         raise Http404
     review = {"label": f"Current Campaign planning · Version {obj.planning_version}", "url": reverse("customers:campaign", args=[org.pk, obj.pk]), "sections": [{"title": "Planning details", "values": [{"label": label, "value": value or "Not provided"} for label, value in [("Campaign", obj.name), ("Description", obj.description), ("Objectives", obj.objectives), ("Start", obj.start_date), ("End", obj.end_date), ("Contact snapshot", obj.contact_name)]]}]}
     return form_screen(request, org=org, tab="campaigns", title=action.replace("_", " ").capitalize()+" campaign", form_class=f.ActionForm, initial=initials(request, org, obj), review=review, save=lambda d: s.campaign_action(actor=request.user, org_id=org.pk, campaign_id=obj.pk, expected_org_revision=d["org_revision"], expected_revision=d["record_revision"], action=action, why=d["reason"]), success=lambda unused: reverse("customers:campaign", args=[org.pk, obj.pk]))
+
+
+
+from django import forms as django_forms
+
+
+class CustomerNoteForm(django_forms.Form):
+    content = django_forms.CharField(label="Note", max_length=4000, widget=django_forms.Textarea(attrs={"rows": 5}))
+    remove = django_forms.BooleanField(required=False, label="Remove this note")
+    revision = django_forms.CharField(required=False, widget=django_forms.HiddenInput)
+
+
+@staff_view
+@require_http_methods(["GET", "POST"])
+def note_editor(request, org_id, note_id=None):
+    """Add or edit a private staff note on a customer; opens as a pop-up."""
+    from django.db import transaction
+    from django.utils import timezone
+    from apps.core.audit import record_audit
+    from apps.internal_ui.record_editors import editor_response, editor_success
+    from .models import CustomerNote
+    org = org_for(request, org_id)
+    if org.status == "archived":
+        raise PermissionDenied("Archived customers are read-only.")
+    note = get_object_or_404(CustomerNote, pk=note_id, organization=org, archived_at__isnull=True) if note_id else None
+    form = CustomerNoteForm(request.POST or None, initial={"content": note.content if note else "", "revision": note.updated_at.isoformat() if note else ""})
+    if not note:
+        del form.fields["remove"]
+    if request.method == "POST" and form.is_valid():
+        with transaction.atomic():
+            require_manager(request.user)
+            current = CustomerNote.objects.select_for_update().get(pk=note.pk) if note else None
+            if current and form.cleaned_data["revision"] != current.updated_at.isoformat():
+                form.add_error(None, "This note changed. Reload before saving.")
+            else:
+                before = {"content": current.content} if current else None
+                if current and form.cleaned_data.get("remove"):
+                    current.archived_at = timezone.now(); current.edited_by = request.user; current.save()
+                    action = "customer.note.removed"
+                elif current:
+                    current.content = form.cleaned_data["content"]; current.edited_by = request.user; current.save()
+                    action = "customer.note.updated"
+                else:
+                    current = CustomerNote.objects.create(organization=org, content=form.cleaned_data["content"], author=request.user)
+                    action = "customer.note.created"
+                record_audit(actor=request.user, action=action, instance=current, source="customer_staff_workspace",
+                             old_data=before, new_data={"content": current.content}, reason="Staff note")
+                messages.success(request, "Note saved.")
+                return editor_success(request, workspace_url(org))
+    return editor_response(request, template="customers/form.html", panel="internal/ui/record_form_panel.html", context={
+        "form": form, "organization": org, "page_title": "Edit note" if note else "Add a note", "editor_context": org.name,
+        "back": workspace_url(org), "save_label": "Save note", "fields_template": "internal/ui/section_fields.html",
+        "full_page_editor": request.headers.get("X-BTW-Editor") != "1"})

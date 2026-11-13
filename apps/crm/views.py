@@ -104,18 +104,41 @@ class StartForm(django_forms.Form):
             self.fields["about"].initial = allowed[0][0]
 
 
-def _start_scopes(user):
-    allowed = {}
+def _can_participant_notes(user):
     try:
         access.internal_context(user, participant=Participant(kind=Participant.Kind.PERSON), write=True)
-        allowed["participant"] = True
+        return True
     except PermissionDenied:
-        pass
+        return False
+
+
+def _can_customers(user):
     try:
         require_manager(user)
-        allowed["customer"] = True
+        return True
     except PermissionDenied:
-        pass
+        return False
+
+
+# Home quick actions that first ask "who is this for?", then open the normal pop-up for that record.
+GOALS = {
+    "touchpoint": {"title": "Log a touchpoint", "question": "Who was it with?", "kinds": ("participant", "customer"),
+                   "participant": lambda pk: reverse("crm:participant-new", args=[pk]),
+                   "customer": lambda pk: reverse("crm:customer-new", args=[pk])},
+    "note": {"title": "Add a staff note", "question": "Which participant is it about?", "kinds": ("participant",),
+             "participant": lambda pk: reverse("participants:note-add", args=[pk])},
+    "position": {"title": "Add a position", "question": "Which customer is hiring?", "kinds": ("customer",),
+                 "customer": lambda pk: reverse("customers:need-new", args=[pk])},
+}
+
+
+def _start_scopes(user, goal="touchpoint"):
+    allowed = {}
+    kinds = GOALS[goal]["kinds"]
+    if "participant" in kinds and _can_participant_notes(user):
+        allowed["participant"] = True
+    if "customer" in kinds and _can_customers(user):
+        allowed["customer"] = True
     return allowed
 
 
@@ -148,10 +171,13 @@ def _open_editor(request, url):
 
 @staff_view
 @require_http_methods(["GET", "POST"])
-def start(request):
-    scopes = _start_scopes(request.user)
+def start(request, goal="touchpoint"):
+    if goal not in GOALS:
+        raise Http404
+    spec = GOALS[goal]
+    scopes = _start_scopes(request.user, goal)
     if not scopes:
-        raise PermissionDenied("Your role does not allow logging touchpoints.")
+        raise PermissionDenied("Your role does not allow this.")
     home = reverse("internal:home")
     data = request.POST if request.method == "POST" else None
     form = StartForm(data, choices_for=scopes, initial={"about": request.GET.get("about", "participant") if request.GET.get("about") in scopes else next(iter(scopes))})
@@ -163,19 +189,22 @@ def start(request):
         valid_ids = {key for key, _ in matches}
         if picked and (picked in valid_ids or not form.cleaned_data["find"]):
             try:
-                target = reverse("crm:participant-new", args=[int(picked)]) if about == "participant" else reverse("crm:customer-new", args=[uuid.UUID(picked)])
+                target = spec[about](int(picked) if about == "participant" else uuid.UUID(picked))
             except (ValueError, TypeError):
                 target = ""
             if target:
-                return _open_editor(request, with_context(target, home))
+                return _open_editor(request, with_context(target, home) if goal == "touchpoint" else target)
         if matches:
             form.fields["pick"].choices = matches
             if picked:
-                form.add_error("pick", "Pick who this touchpoint is about.")
+                form.add_error("pick", "Pick one.")
         else:
             form.add_error("find", "No matches. Try part of the name, an email or a phone number.")
-    context = {"form": form, "page_title": "Log a touchpoint", "back": home, "save_label": "Next",
-               "editor_context": "Who was it with?", "fields_template": "internal/ui/section_fields.html",
+    if len(scopes) == 1:
+        form.fields["about"].widget = django_forms.HiddenInput()
+    form.fields["find"].label = "Customer name" if list(scopes) == ["customer"] else "Name"
+    context = {"form": form, "page_title": spec["title"], "back": home, "save_label": "Next",
+               "editor_context": spec["question"], "fields_template": "internal/ui/section_fields.html",
                "full_page_editor": request.headers.get("X-BTW-Editor") != "1"}
     if form.fields["pick"].choices:
         form.fields["find"].widget = django_forms.HiddenInput()

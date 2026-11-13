@@ -83,7 +83,7 @@ class ProfileFollowupTests(EmployerFixtures, TestCase):
         form=ProfileCardForm(card='preferences',person=self.person,actor=self.admin)
         names=list(form.fields)
         visible=[key for key in names if not form.fields[key].widget.is_hidden]
-        self.assertEqual(visible[:4],['employment_interest','preferred_work_type','career_interests','current_employment_status'])
+        self.assertEqual(visible[:4],['employment_interest','preferred_work_type','current_employment_status','travel'])
         self.assertEqual(dict(form.fields['employment_interest'].choices),{'':'Not set','seeking':'Yes','open':'Maybe','not_seeking':'No'})
         self.assertEqual([label for key,label in form.fields['current_employment_status'].choices if key and key!='__retained__'],['Full time','Part time','Self employed','Contract','Unemployed'])
         career=ParticipantCareerProfile.objects.get(participant=self.person)

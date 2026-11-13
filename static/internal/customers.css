@@ -174,3 +174,10 @@ body.internal-app.has-customer-page #main-content .cx-actions-menu > summary { m
 .cx-next a{color:#ac1929;text-decoration:none}
 .cx-person strong{display:flex;align-items:center;gap:8px}
 .cx-row-edit{margin-left:auto;font-size:13px;font-weight:600}
+.cx-card.cx-notes{background:#fffbea;border-color:#f3e3a6}
+.cx-card.cx-notes .cx-card-h{border-bottom-color:#f3e3a6}
+.cx-note{padding:12px 16px;border-bottom:1px solid #f3e9c2;font-size:14px}
+.cx-note:last-child{border-bottom:0}
+.cx-note p{margin:0}
+.cx-note-meta{margin-top:6px!important;font-size:13px;color:var(--muted,#56616d)}
+.cx-note-meta a{color:#ac1929;text-decoration:none;font-weight:600}

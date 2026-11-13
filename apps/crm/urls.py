@@ -5,6 +5,7 @@ app_name = "crm"
 urlpatterns = [
     path("recent/", views.recent, name="recent"),
     path("new/", views.start, name="start"),
+    path("new/<str:goal>/", views.start, name="start-for"),
     path("employer/<uuid:disclosure_id>/new/", portal_views.create, name="employer-new"),
     path("employer/<uuid:disclosure_id>/<uuid:interaction_id>/", portal_views.detail, name="employer-detail"),
     path("employer/<uuid:disclosure_id>/<uuid:interaction_id>/correct/", portal_views.correct, name="employer-correct"),

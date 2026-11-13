@@ -38,20 +38,21 @@
   <header class="btw-panel-heading"><h2 id="profile-details-title">Details</h2>{% if can_manage_acquisition and not participant.archived_at %}<a data-record-editor href="{% url 'participants:acquisition-edit' participant.pk %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit details">Edit</a>{% endif %}</header>
   <dl class="pv-facts">
     <dt>Participant type</dt><dd>{% if participant.primary_identifier %}{% ui_badge participant.get_primary_identifier_display 'info' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>How they found us</dt><dd class="pv-found">{% if acquisition_record and acquisition_record.channel != 'unknown' %}{% if acquisition_record.channel == 'event' %}{% ui_badge 'Event' 'success' %}{% if acquisition_record.event_id %}{% if can_view_events %}<a href="{% url 'events:event_detail' acquisition_record.event_id %}">{{ acquisition_record.event.name }}</a>{% else %}<span>{{ acquisition_record.event.name }}</span>{% endif %}{% endif %}{% else %}{% ui_badge 'Online' 'info' %}{% if acquisition_record.online_source %}<span>{{ acquisition_record.online_source }}</span>{% endif %}{% endif %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>How they found us</dt><dd>{% if acquisition_record and acquisition_record.channel != 'unknown' %}{% if acquisition_record.channel == 'event' %}{% ui_badge 'Event' 'success' %}{% else %}{% ui_badge 'Online' 'info' %}{% endif %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>From</dt><dd>{% if acquisition_record and acquisition_record.channel == 'event' and acquisition_record.event_id %}{% if can_view_events %}<a href="{% url 'events:event_detail' acquisition_record.event_id %}">{{ acquisition_record.event.name }}</a>{% else %}{{ acquisition_record.event.name }}{% endif %}{% elif profile_source_campaign %}{{ profile_source_campaign }} <span class="pv-meta">campaign</span>{% elif acquisition_record and acquisition_record.channel == 'online' %}General{% if acquisition_record.online_source %} <span class="pv-meta">· {{ acquisition_record.online_source }}</span>{% endif %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
     <dt>Date joined</dt><dd>{{ participant.created_at|date:'M j, Y' }}</dd>
   </dl>
 </section>
 
 {% with prefs=current_profile_preferences %}<section id="profile-preferences" tabindex="-1" class="card p3-reading-section" aria-labelledby="profile-work-preferences-title">
   <header class="btw-panel-heading"><h2 id="profile-work-preferences-title">Work preferences</h2>{% if can_edit_profile and not participant.archived_at %}<a data-profile-manager data-record-editor href="{% url 'participants:profile-card-edit' participant.pk 'preferences' %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit work preferences">Edit</a>{% endif %}</header>
-  <dl class="pv-facts">
-    <dt>Looking for work</dt><dd>{% if prefs and prefs.interest != 'Not recorded' %}{% ui_badge prefs.interest prefs.interest|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Work desired</dt><dd>{% if career.preferred_work_type %}{% ui_badge career.get_preferred_work_type_display 'neutral' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Trades wanted</dt><dd>{% if current_interests %}{{ current_interests|truncatechars:80 }}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Currently working</dt><dd>{% if prefs and prefs.employment.value != 'Not recorded' %}{% ui_badge prefs.employment.value 'neutral' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Willing to travel</dt><dd>{% if prefs and prefs.travel != 'Not recorded' %}{% ui_badge prefs.travel prefs.travel|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Willing to relocate</dt><dd>{% if prefs and prefs.relocation != 'Not recorded' %}{% ui_badge prefs.relocation prefs.relocation|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+  <dl class="pv-pref-grid">
+    <div><dt>Looking for work</dt><dd>{% if prefs and prefs.interest != 'Not recorded' %}{% ui_badge prefs.interest prefs.interest|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
+    <div><dt>Work desired</dt><dd>{% if career.preferred_work_type %}{% ui_badge career.get_preferred_work_type_display 'neutral' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
+    <div><dt>Currently working</dt><dd>{% if prefs and prefs.employment.value != 'Not recorded' %}{% ui_badge prefs.employment.value 'neutral' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
+    <div><dt>Willing to travel</dt><dd>{% if prefs and prefs.travel != 'Not recorded' %}{% ui_badge prefs.travel prefs.travel|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
+    <div><dt>Willing to relocate</dt><dd>{% if prefs and prefs.relocation != 'Not recorded' %}{% ui_badge prefs.relocation prefs.relocation|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
+    <div class="pv-pref-wide"><dt>Trades wanted</dt><dd>{% if current_interests %}<span class="pv-chip-list">{% for trade in current_interests|people_split %}{% ui_badge trade 'info' %}{% endfor %}</span>{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
   </dl>
 </section>{% endwith %}
 </div>
@@ -74,6 +75,22 @@
   {% include 'participants/profile_assessment_rows.html' %}
 </section>
 {% endif %}
+
+<section id="profile-references" tabindex="-1" class="card p3-reading-section" aria-labelledby="profile-references-title">
+  <header class="btw-panel-heading"><h2 id="profile-references-title">References{% if profile_references %} <span class="pv-count">{{ profile_references_checked }} of {{ profile_references|length }} checked</span>{% endif %}</h2>{% if can_edit_profile and not participant.archived_at %}<a data-profile-manager data-record-editor href="{% url 'participants:reference-add' participant.pk %}?return_to={{ request.get_full_path|urlencode }}">+ Add reference</a>{% endif %}</header>
+  {% if profile_references %}<div class="pv-ref-grid">{% for ref in profile_references %}<article class="pv-ref">
+    <div class="pv-ref-head"><div><strong>{{ ref.name }}</strong>{% if ref.role or ref.company %}<span>{{ ref.role }}{% if ref.role and ref.company %} · {% endif %}{{ ref.company }}</span>{% endif %}</div>{% ui_badge ref.get_result_display ref.result|people_reference_tone %}</div>
+    <dl class="pv-facts">
+      <dt>Worked together</dt><dd>{{ ref.worked_together|default:'—' }}</dd>
+      <dt>Would rehire</dt><dd>{% if ref.would_rehire %}{% ui_badge ref.get_would_rehire_display ref.get_would_rehire_display|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+      <dt>Phone</dt><dd>{% if ref.phone %}<a href="tel:{{ ref.phone|people_phone_link }}">{{ ref.phone|people_phone }}</a>{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+      <dt>Email</dt><dd>{% if ref.email %}<a href="mailto:{{ ref.email }}">{{ ref.email }}</a>{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    </dl>
+    {% if ref.comment %}<p class="pv-ref-quote">“{{ ref.comment }}”</p>{% endif %}
+    {% if ref.note %}<p class="pv-ref-note">{{ ref.note }}</p>{% endif %}
+    <div class="pv-ref-foot"><span>{% if ref.result != 'not_checked' and ref.checked_on %}Checked {{ ref.checked_on|date:'M j' }}{% if ref.checked_by %} · {{ ref.checked_by|crm_actor }}{% endif %}{% endif %}</span>{% if can_edit_profile and not participant.archived_at %}<a data-profile-manager data-record-editor href="{% url 'participants:reference-edit' participant.pk ref.pk %}?return_to={{ request.get_full_path|urlencode }}">{% if ref.result == 'not_checked' %}Log check{% else %}Edit{% endif %}</a>{% endif %}</div>
+  </article>{% endfor %}</div>{% else %}<p class="p3-empty">No references yet.</p>{% endif %}
+</section>
 
 {% if profile_show_touchpoints %}
 <section id="profile-touchpoints" tabindex="-1" class="card p3-reading-section" aria-labelledby="profile-touchpoints-title">

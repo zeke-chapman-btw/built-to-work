@@ -4,18 +4,21 @@ from django.urls import reverse
 # Administrators grant/revoke these existing permissions on users or groups.
 # No user-supplied URL is stored or rendered. Settings is available to all staff.
 QUICK_ACTIONS = (
+    {"id": "find-person", "label": "Find a person", "route": "participants:staff-directory", "permissions": ("participants.view_participant",), "default": True, "search": True},
     {"id": "create-task", "label": "+ Task", "route": "operations:quick-create", "permissions": (), "default": True, "create": True},
     {"id": "create-event", "label": "+ Event", "route": "events:event_create", "permissions": ("events.add_event",), "default": True, "create": True},
     {"id": "add-participant", "label": "+ Participant", "route": "admin:participants_participant_add", "permissions": ("participants.add_participant",), "default": True, "create": True},
     {"id": "log-touchpoint", "label": "+ Touchpoint", "route": "crm:start", "permissions": (), "check": "touchpoint", "default": True, "create": True, "editor": True},
     {"id": "add-customer", "label": "+ Customer", "route": "customers:new", "permissions": (), "check": "manager", "default": True, "create": True, "editor": True},
-    {"id": "participant-directory", "label": "Participants", "route": "participants:staff-directory", "permissions": ("participants.view_participant",), "default": True},
+    {"id": "add-position", "label": "+ Position", "route": "crm:start-for", "args": ("position",), "permissions": (), "check": "manager", "default": True, "create": True, "editor": True},
+    {"id": "add-note", "label": "+ Note", "route": "crm:start-for", "args": ("note",), "permissions": (), "check": "note", "default": True, "create": True, "editor": True},
+    {"id": "participant-directory", "label": "Participants", "route": "participants:staff-directory", "permissions": ("participants.view_participant",), "default": False},
     {"id": "events", "label": "Events", "route": "events:event_list", "permissions": ("events.view_event",), "default": True},
     {"id": "qualifications", "label": "Qualifications", "route": "participants:staff-qualifications", "permissions": ("participants.view_participantqualification",), "default": False},
     {"id": "documents", "label": "Documents", "route": "participants:staff-document-directory", "permissions": ("participants.view_participantdocument",), "default": False},
     {"id": "operations", "label": "Platform monitoring", "route": "events:operations-dashboard", "permissions": ("events.view_syncoutboxitem",), "default": False},
     {"id": "quizzes", "label": "Quizzes and tests", "route": "assessments:dashboard", "permissions": ("assessments.view_assessmentcategory", "assessments.add_assessmentcategory"), "default": False},
-    {"id": "settings", "label": "Personal settings", "route": "internal:settings", "permissions": (), "default": True},
+    {"id": "settings", "label": "Personal settings", "route": "internal:settings", "permissions": (), "default": False},
     {"id": "stations", "label": "Stations", "route": "stations:list", "permissions": ("stations.view_station",), "default": False},
     {"id": "offline-preparation", "label": "Offline event preparation", "route": "events:offline-preparations", "permissions": ("events.view_offlineeventpreparation",), "default": False},
 )
@@ -28,9 +31,9 @@ def _allowed(user, check):
             from apps.customers.access import require_manager
             require_manager(user)
             return True
-        if check == "touchpoint":
+        if check in ("touchpoint", "note"):
             from apps.crm.views import _start_scopes
-            return bool(_start_scopes(user))
+            return bool(_start_scopes(user, check))
     except PermissionDenied:
         return False
     return False
@@ -51,7 +54,7 @@ def available_quick_actions(user):
                 action["route"] = "participants:staff-add"
             else:
                 action["label"] = "+ Participant (admin)"
-        action["url"] = reverse(action["route"])
+        action["url"] = reverse(action["route"], args=action.get("args", ()))
         actions.append(action)
     return actions
 

@@ -248,3 +248,34 @@ class RecordActionForm(forms.Form):
     revision = forms.CharField(widget=forms.HiddenInput)
     audit_reason = forms.CharField(max_length=500, label="Reason", required=False, widget=forms.HiddenInput)
     confirm = forms.BooleanField(label="I confirm this change; the record and its history will be retained.")
+
+
+class ReferenceForm(forms.ModelForm):
+    """Add or update a work reference; result and rehire answers are tap-to-pick chips."""
+    revision = forms.CharField(required=False, widget=forms.HiddenInput)
+    remove = forms.BooleanField(required=False, label="Remove this reference")
+    class Meta:
+        from .workspace_models import ParticipantReference as model
+        fields = ("name", "role", "company", "phone", "email", "worked_together", "result", "would_rehire", "checked_on", "comment", "note")
+        labels = {"name": "Name", "role": "Their role", "company": "Company", "worked_together": "Worked together",
+                  "result": "How did it go?", "would_rehire": "Would they rehire?", "checked_on": "Checked on",
+                  "comment": "What they said", "note": "Staff note"}
+        widgets = {"checked_on": DATE, "comment": forms.Textarea(attrs={"rows": 3}),
+                   "role": forms.TextInput(attrs={"placeholder": "Former foreman, supervisor..."}),
+                   "worked_together": forms.TextInput(attrs={"placeholder": "4 years · 2020–2024"}),
+                   "note": forms.TextInput(attrs={"placeholder": "Current employer, ask before calling..."})}
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in ("result", "would_rehire"):
+            choices = [(v, l) for v, l in self.fields[name].choices if not (name == "result" and v == "")]
+            self.fields[name].choices = choices
+            self.fields[name].widget = forms.RadioSelect(attrs={"class": "btw-chip-choices"}, choices=choices)
+        self.fields["would_rehire"].required = False
+        self.fields["checked_on"].widget.attrs["data-show-when"] = "result=positive,mixed,concern,no_answer"
+        self.fields["would_rehire"].widget.attrs["data-show-when"] = "result=positive,mixed,concern"
+        if not self.instance.pk:
+            del self.fields["remove"]
+    def clean_phone(self):
+        return normalize_phone(self.cleaned_data["phone"])
+    def clean_email(self):
+        return normalize_email(self.cleaned_data["email"])

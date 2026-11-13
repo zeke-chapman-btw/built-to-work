@@ -149,6 +149,39 @@ def save_work(*, actor, participant_id, data, object_id=None):
     return record
 
 
+REFERENCE_FIELDS = ("name", "role", "company", "phone", "email", "worked_together", "result", "would_rehire", "checked_on", "comment", "note")
+
+
+@transaction.atomic
+def save_reference(*, actor, participant_id, data, object_id=None):
+    from .workspace_models import ParticipantReference
+    require_people(actor, "participants.change_participant")
+    person = lock_person(participant_id)
+    record = (ParticipantReference.objects.select_for_update().get(pk=object_id, participant=person, archived_at__isnull=True)
+              if object_id else ParticipantReference(participant=person, created_by=actor))
+    if object_id and data.get("revision") != record.updated_at.isoformat():
+        raise ValidationError("This reference changed. Reload before saving.")
+    before = snapshot(record, REFERENCE_FIELDS) if object_id else None
+    if object_id and data.get("remove"):
+        record.archived_at = timezone.now()
+        record.save()
+        audit(actor, "reference.removed", record, before=before, reason="Staff removed a reference")
+        return record
+    checked_before = (record.result, record.comment, record.would_rehire) if object_id else None
+    for key in REFERENCE_FIELDS:
+        setattr(record, key, data.get(key) or ("" if key != "checked_on" else None))
+    if record.result == "not_checked":
+        record.would_rehire, record.checked_on = "", None
+    elif (record.result, record.comment, record.would_rehire) != checked_before:
+        record.checked_by = actor
+        record.checked_on = record.checked_on or timezone.localdate()
+    record.full_clean()
+    record.save()
+    audit(actor, "reference.updated" if object_id else "reference.created", record, before=before,
+          after=snapshot(record, REFERENCE_FIELDS), reason="Staff updated a reference")
+    return record
+
+
 def _reject_customer_scope(data):
     if any(data.get(key) for key in ("customer", "customer_id", "organization", "organization_id")) or data.get("audience", "btw_internal") != "btw_internal":
         raise PermissionDenied("Customer-authored notes are not available in Build 11.")

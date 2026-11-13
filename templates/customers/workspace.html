@@ -11,6 +11,11 @@
 </div>
 <div class="cx-cols">
 <div class="cx-stack">
+<section class="customer-card cx-card cx-notes" aria-labelledby="cx-notes-title">
+<header class="cx-card-h"><h2 id="cx-notes-title">Staff notes{% if overview_note_total %} <span class="pv-count">{{ overview_note_total }}</span>{% endif %}</h2><span class="cx-links">{% if organization.status != 'archived' %}<a data-record-editor href="{% url 'customers:note-new' organization.pk %}">+ Add note</a>{% endif %}</span></header>
+{% for note in overview_notes %}<article class="cx-note"><p>{{ note.content|truncatewords:60|linebreaksbr }}</p><p class="cx-note-meta">{{ note.author|crm_actor }} · {{ note.created_at|date:'M j, Y' }}{% if note.edited_by %} · Edited{% endif %}{% if organization.status != 'archived' %} · <a data-record-editor href="{% url 'customers:note-edit' organization.pk note.pk %}">Edit</a>{% endif %}</p></article>
+{% empty %}<p class="cx-empty">No staff notes yet</p>{% endfor %}
+</section>
 <section class="customer-card cx-card" aria-labelledby="cx-needs-title">
 <header class="cx-card-h"><h2 id="cx-needs-title">Open positions</h2><span class="cx-links">{% if organization.status != 'archived' and organization.access_plan.workforce_need_creation %}<a href="{% customer_url 'customers:need-new' organization.pk %}">+ New position</a>{% endif %}<a href="{% customer_url 'customers:workspace' organization.pk 'needs' %}">All positions</a></span></header>
 {% include 'customers/need_rows.html' %}

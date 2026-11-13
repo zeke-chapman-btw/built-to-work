@@ -1,6 +1,6 @@
 {% extends people_base|default:'participants/workspace_base.html' %}{% load static verification_status participant_workspace people_ui crm_ui ui_patterns %}
 {% block body_class %}{{ block.super }} has-participant-profile has-crm-ux-profile{% endblock %}
-{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<link rel="stylesheet" href="{% static 'crm/profile.css' %}?v=profile-v2-9"><script defer src="{% static 'crm/profile_copy.js' %}?v=profile-v2-1"></script><link rel="stylesheet" href="{% static 'participants/identifier.css' %}?v=identifier-1">{% endblock %}
+{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<link rel="stylesheet" href="{% static 'crm/profile.css' %}?v=profile-v2-10"><script defer src="{% static 'crm/profile_copy.js' %}?v=profile-v2-1"></script><link rel="stylesheet" href="{% static 'participants/identifier.css' %}?v=identifier-1">{% endblock %}
 {% block page_heading %}
 <section class="people-profile-hero p3-profile-hero">
   {% if section and section != 'overview' %}<a class="event-back" href="{% people_section_url 'overview' %}">← {{ participant }}</a>{% else %}<a class="event-back" href="{{ directory_origin }}">← {{ directory_origin_label }}</a>{% endif %}

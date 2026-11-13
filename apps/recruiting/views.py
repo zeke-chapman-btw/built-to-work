@@ -190,7 +190,8 @@ def consolidation(request, source_id, target_id):
 def classifications(request, classification_id=None):
     fresh_staff(request.user, administrator=True)
     item = get_object_or_404(Classification, pk=classification_id) if classification_id else None
-    form = ClassificationForm(request.POST or None, instance=item,initial={'expected_revision':item.updated_at.isoformat() if item else 'new'})
+    only_kind = request.GET.get('kind') if request.GET.get('kind') in ('employment', 'availability', 'trade') else ''
+    form = ClassificationForm(request.POST or None, instance=item,initial={'expected_revision':item.updated_at.isoformat() if item else 'new', **({'kind': only_kind} if only_kind and not item else {})})
     if item:
         form.fields['kind'].disabled = True
         form.fields['key'].disabled = True
@@ -215,15 +216,18 @@ def classifications(request, classification_id=None):
         from .ui_context import catalog_url
         from apps.internal_ui.record_editors import editor_response
         return editor_response(request, template='recruiting/editor_page.html', panel='internal/ui/record_form_panel.html', context={
-            'form': form, 'page_title': 'Edit classification' if item else 'New classification',
+            'form': form, 'page_title': ('Edit ' if item else 'New ') + ('trade' if (item and item.kind == 'trade') or only_kind == 'trade' else 'classification'),
             'back': catalog_url(request, 'recruiting:classifications'), 'save_label': 'Save changes',
             'fields_template': 'internal/ui/section_fields.html', 'full_page_editor': request.headers.get('X-BTW-Editor') != '1'})
     from apps.core.models import AuditLog
     from django.contrib.contenttypes.models import ContentType
     history=AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(Classification),action='recruiting.classification.saved')
     if item:history=history.filter(object_id=str(item.pk))
-    return page(request, 'recruiting/classifications.html', form=form, classifications=Classification.objects.all(),
-        page_title='Work classifications', active_workspace='administration',history=history.order_by('-timestamp')[:30])
+    rows = Classification.objects.all()
+    if only_kind:
+        rows = rows.filter(kind=only_kind)
+    return page(request, 'recruiting/classifications.html', form=form, classifications=rows, only_kind=only_kind,
+        page_title='Trades' if only_kind == 'trade' else 'Work classifications', active_workspace='administration',history=history.order_by('-timestamp')[:30])
 
 
 @staff

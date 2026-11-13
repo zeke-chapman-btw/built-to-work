@@ -40,7 +40,7 @@ class ParticipantCleanupTests(EmployerFixtures, TestCase):
         career, _ = ParticipantCareerProfile.objects.get_or_create(participant=self.person)
         career.skills_interests = 'SYNTHETIC preserved skills'; career.education_training = 'SYNTHETIC preserved education'
         career.save()
-        for card, field, value in [('identity','city','Augusta'), ('skills','skills_interests','SYNTHETIC revised skills'), ('education','education_training','SYNTHETIC revised training'), ('preferences','career_interests','SYNTHETIC Welding')]:
+        for card, field, value in [('identity','city','Augusta'), ('skills','skills_interests','SYNTHETIC revised skills'), ('education','education_training','SYNTHETIC revised training'), ('preferences','trades_other','SYNTHETIC Welding')]:
             with self.subTest(card=card):
                 before = ParticipantCareerProfile.objects.get(participant=self.person)
                 payload = self.card_data(card); payload[field] = value
@@ -50,7 +50,7 @@ class ParticipantCleanupTests(EmployerFixtures, TestCase):
                 self.assertEqual(response.status_code, 200, response.content[:800])
                 self.assertEqual(response.json()['url'], origin)
                 current = Participant.objects.get(pk=self.person.pk) if card == 'identity' else ParticipantCareerProfile.objects.get(participant=self.person)
-                self.assertEqual(getattr(current, field), value)
+                self.assertEqual(getattr(current, 'career_interests' if field == 'trades_other' else field), value)
                 if card != 'education':
                     self.assertEqual(ParticipantCareerProfile.objects.get(participant=self.person).education_training, before.education_training)
         self.assertEqual(AuditLog.objects.filter(action='participant.workspace.profile.card_updated').count(), 4)
@@ -93,7 +93,7 @@ class ParticipantCleanupTests(EmployerFixtures, TestCase):
             f, qs, criteria=discover(self.admin,{'q':'#'+str(self.person.pk),'travel':value or 'unknown'})
             self.assertTrue(f.is_valid(),f.errors)
             self.assertEqual(list(qs.values_list('pk',flat=True)),[self.person.pk])
-        data=self.card_data('preferences');data['career_interests']='SYNTHETIC changed trades'
+        data=self.card_data('preferences');data['trades_other']='SYNTHETIC changed trades'
         self.client.post(self.card_url('preferences'),data,HTTP_X_BTW_EDITOR='1')
         self.assertIsNone(ParticipantCareerProfile.objects.get(participant=self.person).willing_to_travel)
 

@@ -287,3 +287,8 @@ body.internal-app #main-content .recruiting-tabs { margin:12px 0 16px !important
 body.internal-app #main-content .btw-landing-selection .recruiting-tabs { margin-top:0 !important; }
 /* Settings tabs line up with the page title on every settings page */
 body.internal-app #main-content > .settings-navigation-frame { padding-left:0 !important; padding-right:0 !important; margin-left:24px !important; margin-right:24px !important; }
+/* No top header row on desktop (staff): the bell sits in the top-right corner of the page instead. */
+@media (min-width:901px){
+  .internal-app:not(.has-portal-shell):not(.has-customer-shell) .main-column{position:relative}
+  .internal-app:not(.has-portal-shell):not(.has-customer-shell) .main-column>.topbar{position:absolute;top:14px;right:24px;left:auto;min-height:0;height:auto;width:auto;padding:0;border:0;background:transparent;box-shadow:none;z-index:40}
+}

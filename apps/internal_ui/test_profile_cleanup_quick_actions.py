@@ -86,6 +86,59 @@ class ProfileCleanupTests(EmployerFixtures, TestCase):
             self.assertContains(page, reverse("customers:child-edit", args=[self.organization.pk, "contact", contact.pk]))
 
 
+class ReferencesNotesAndPickersTests(EmployerFixtures, TestCase):
+    def setUp(self):
+        self.employer_setup()
+        self.client.force_login(self.admin, backend="django.contrib.auth.backends.ModelBackend")
+
+    def test_reference_add_check_and_remove(self):
+        from apps.participants.workspace_models import ParticipantReference
+        url = reverse("participants:reference-add", args=[self.person.pk])
+        response = self.client.post(url, {"name": "SYNTHETIC Dale", "role": "Foreman", "result": "positive", "would_rehire": "yes",
+                                          "comment": "Reliable"}, HTTP_X_BTW_EDITOR="1")
+        self.assertEqual(response.status_code, 200, response.content[:400])
+        ref = ParticipantReference.objects.get()
+        self.assertEqual(ref.checked_by, self.admin)
+        self.assertIsNotNone(ref.checked_on)
+        page = self.client.get(reverse("participants:staff-profile", args=[self.person.pk]))
+        self.assertContains(page, "SYNTHETIC Dale")
+        self.assertContains(page, "1 of 1 checked")
+        edit = reverse("participants:reference-edit", args=[self.person.pk, ref.pk])
+        self.client.post(edit, {"name": ref.name, "result": "positive", "remove": "on", "revision": ref.updated_at.isoformat()}, HTTP_X_BTW_EDITOR="1")
+        self.assertNotContains(self.client.get(reverse("participants:staff-profile", args=[self.person.pk])), "SYNTHETIC Dale")
+
+    def test_customer_staff_note_add_and_edit(self):
+        from apps.customers.models import CustomerNote
+        url = reverse("customers:note-new", args=[self.organization.pk])
+        self.assertEqual(self.client.post(url, {"content": "SYNTHETIC call before 10"}, HTTP_X_BTW_EDITOR="1").status_code, 200)
+        note = CustomerNote.objects.get()
+        page = self.client.get(reverse("customers:workspace", args=[self.organization.pk, "overview"]))
+        self.assertContains(page, "SYNTHETIC call before 10")
+        edit = reverse("customers:note-edit", args=[self.organization.pk, note.pk])
+        self.client.post(edit, {"content": "SYNTHETIC changed", "revision": note.updated_at.isoformat()}, HTTP_X_BTW_EDITOR="1")
+        note.refresh_from_db()
+        self.assertEqual(note.content, "SYNTHETIC changed")
+
+    def test_trades_are_chips_from_the_managed_list(self):
+        from apps.participants.card_editors import ProfileCardForm
+        career, _ = ParticipantCareerProfile.objects.get_or_create(participant=self.person)
+        career.career_interests = "Welding, Underwater basket weaving"
+        career.save()
+        form = ProfileCardForm(card="preferences", person=self.person, actor=self.admin)
+        self.assertIn("Welding/Fabrication", form.initial["trades"])
+        self.assertEqual(form.initial["trades_other"], "Underwater basket weaving")
+        self.assertNotIn("career_interests", form.fields)
+
+    def test_position_and_note_pickers(self):
+        response = self.client.post(reverse("crm:start-for", args=["position"]), {"about": "customer", "find": self.organization.name}, HTTP_X_BTW_EDITOR="1")
+        self.assertEqual(response.json()["next"], reverse("customers:need-new", args=[self.organization.pk]))
+        response = self.client.post(reverse("crm:start-for", args=["note"]), {"about": "participant", "find": self.person.contact_email}, HTTP_X_BTW_EDITOR="1")
+        self.assertEqual(response.json()["next"], reverse("participants:note-add", args=[self.person.pk]))
+        page = self.client.get(reverse("internal:home"))
+        self.assertContains(page, "Find a person")
+        self.assertNotContains(page, "Built to Work · Internal workspace")
+
+
 class ColumnMatchedImportTests(TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()

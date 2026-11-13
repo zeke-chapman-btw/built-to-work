@@ -86,8 +86,28 @@ class ProfileCardForm(forms.Form):
             for key in ('employment_interest', 'travel', 'willing_to_relocate', 'current_employment_status', 'preferred_work_type'):
                 if key in self.fields:
                     self.fields[key].widget = forms.RadioSelect(attrs={'class': 'btw-chip-choices'}, choices=self.fields[key].choices)
+        if card == 'preferences' and 'career_interests' in self.fields:
+            # Trades are picked from the managed list (Settings > Recruiting > Trades); anything else typed stays as "Other".
+            from apps.recruiting.models import Classification
+            import re
+            rows = list(Classification.objects.filter(kind='trade', is_active=True).order_by('position', 'label').values_list('label', 'key'))
+            options = [label for label, key in rows]
+            current = [part.strip() for part in re.split(r'[,;\n]+', self.initial.get('career_interests') or '') if part.strip()]
+            # "Welding" or "welding" (the intake code) both match "Welding/Fabrication".
+            known = {}
+            for label, key in rows:
+                for alias in [label, key, *label.split('/')]:
+                    known.setdefault(alias.strip().casefold(), label)
+            del self.fields['career_interests']
+            self.fields['trades'] = forms.MultipleChoiceField(label='Trades they want to work in', required=False,
+                choices=[(label, label) for label in options], widget=forms.CheckboxSelectMultiple(attrs={'class': 'btw-chip-choices'}))
+            self.fields['trades_other'] = forms.CharField(label='Other trades', required=False, max_length=500,
+                widget=forms.TextInput(attrs={'placeholder': 'Anything not in the list, separated by commas'}))
+            self.initial['trades'] = list(dict.fromkeys(known[item.casefold()] for item in current if item.casefold() in known))
+            self.initial['trades_other'] = ', '.join(item for item in current if item.casefold() not in known)
+            self.trade_options_url = reverse('recruiting:classifications') + '?from=settings&kind=trade'
         if card == 'preferences':
-            self.order_fields(['employment_interest','preferred_work_type','career_interests','current_employment_status','employment_classification','travel','willing_to_relocate'])
+            self.order_fields(['employment_interest','preferred_work_type','current_employment_status','employment_classification','travel','willing_to_relocate','trades','trades_other'])
         self.initial['revision'] = profile_revision(person)
         if card == 'preferences':
             primary=['employment_interest','travel','willing_to_relocate','current_employment_status']
@@ -106,6 +126,10 @@ class ProfileCardForm(forms.Form):
 
     def clean(self):
         data=super().clean()
+        if 'trades' in self.fields:
+            import re
+            extra = [part.strip() for part in re.split(r'[,;\n]+', data.get('trades_other') or '') if part.strip()]
+            data['career_interests'] = ', '.join(list(data.get('trades') or []) + extra)
         if 'current_employment_status' not in self.data:
             data.pop('current_employment_status',None)
         return data

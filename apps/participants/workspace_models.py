@@ -128,3 +128,41 @@ class SavedParticipantView(TimestampedModel, ArchivableModel):
 
     def __str__(self):
         return self.name
+
+
+class ParticipantReference(TimestampedModel, ArchivableModel):
+    """A work reference staff can call, and what they said when checked."""
+    class Result(models.TextChoices):
+        NOT_CHECKED = "not_checked", "Not checked"
+        POSITIVE = "positive", "Positive"
+        MIXED = "mixed", "Mixed"
+        CONCERN = "concern", "Concern"
+        NO_ANSWER = "no_answer", "Couldn't reach"
+
+    class Rehire(models.TextChoices):
+        UNKNOWN = "", "Not asked"
+        YES = "yes", "Yes"
+        MAYBE = "maybe", "Maybe"
+        NO = "no", "No"
+
+    participant = models.ForeignKey("participants.Participant", on_delete=models.PROTECT, related_name="references")
+    name = models.CharField(max_length=160)
+    role = models.CharField("Their role", max_length=160, blank=True)
+    company = models.CharField(max_length=200, blank=True)
+    phone = models.CharField(max_length=32, blank=True)
+    email = models.EmailField(blank=True)
+    worked_together = models.CharField(max_length=160, blank=True)
+    result = models.CharField(max_length=16, choices=Result.choices, default=Result.NOT_CHECKED)
+    would_rehire = models.CharField(max_length=8, choices=Rehire.choices, blank=True, default="")
+    comment = models.TextField("What they said", max_length=2000, blank=True)
+    note = models.CharField("Staff note", max_length=500, blank=True)
+    checked_on = models.DateField(null=True, blank=True)
+    checked_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="participant_references_checked")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="participant_references_added")
+
+    class Meta:
+        ordering = ("created_at", "pk")
+        constraints = [models.CheckConstraint(condition=Q(result__in=["not_checked", "positive", "mixed", "concern", "no_answer"]), name="participant_reference_valid_result")]
+
+    def __str__(self):
+        return self.name

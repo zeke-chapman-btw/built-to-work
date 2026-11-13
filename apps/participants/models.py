@@ -367,7 +367,7 @@ from .verification_models import ParticipantVerificationRecord
 
 from .participant_review_models import ParticipantReviewRecord
 
-from .workspace_models import ParticipantAcquisition, ParticipantWorkExperience, ParticipantNote, SavedParticipantView
+from .workspace_models import ParticipantAcquisition, ParticipantWorkExperience, ParticipantNote, SavedParticipantView, ParticipantReference
 
 from .intake_models import IntakeFormAssignment, TrailerIntakeActivation, IntakeSession, IntakeContactLock, IntakeFieldState, ParticipantHandsOnExperience
 

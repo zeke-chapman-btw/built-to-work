@@ -256,3 +256,20 @@ body.internal-app.has-participant-workspace.has-participants-pass3.has-participa
 .has-crm-ux-profile .pv-row-actions { display:inline-flex; align-items:center; gap:10px; }
 .has-crm-ux-profile .pv-row-edit { font-size:13px; font-weight:600; margin-left:8px; }
 .has-crm-ux-profile .pv-work .pv-row-edit { float:right; }
+.has-crm-ux-profile .pv-ref-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px; }
+.has-crm-ux-profile .pv-ref { border:1px solid var(--line); border-radius:8px; padding:14px 16px; display:flex; flex-direction:column; gap:10px; min-width:0; }
+.has-crm-ux-profile .pv-ref-head { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+.has-crm-ux-profile .pv-ref-head strong { display:block; font-size:15px; }
+.has-crm-ux-profile .pv-ref-head span { display:block; font-size:13px; color:var(--muted); }
+.has-crm-ux-profile .pv-ref-quote { margin:0; background:#fafafa; border-radius:6px; padding:10px 12px; font-size:14px; color:#3f3f46; }
+.has-crm-ux-profile .pv-ref-note { margin:0; background:#fffbeb; border-radius:6px; padding:8px 12px; font-size:13px; color:#92400e; }
+.has-crm-ux-profile .pv-ref-foot { display:flex; justify-content:space-between; gap:8px; font-size:13px; color:var(--muted); }
+.has-crm-ux-profile .pv-ref-foot a { font-weight:600; }
+/* Work preferences: two answers per row, label over chip; trades take the full width last. */
+.has-crm-ux-profile .pv-pref-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px 14px; margin:0; }
+.has-crm-ux-profile .pv-pref-grid > div { min-width:0; }
+.has-crm-ux-profile .pv-pref-grid dt { font-size:12px; color:var(--muted); margin:0 0 4px; }
+.has-crm-ux-profile .pv-pref-grid dd { margin:0; }
+.has-crm-ux-profile .pv-pref-grid .pv-pref-wide { grid-column:1/-1; }
+.has-crm-ux-profile .pv-chip-list { display:flex; flex-wrap:wrap; gap:6px; }
+.has-crm-ux-profile .pv-pref-grid .badge { margin:0; }

@@ -188,6 +188,14 @@ def profile(request, participant_id):
     ctx["career"] = ParticipantCareerProfile.objects.filter(participant=person).first()
     ctx["work_history"] = ParticipantWorkExperience.objects.filter(participant_id__in=member_ids, archived_at__isnull=True).select_related("created_by", "updated_by").order_by("-is_current", "-started_on", "-pk")
     ctx["acquisition_record"] = ParticipantAcquisition.objects.filter(participant=person).select_related("event", "source_submission", "recorded_by").first()
+    from .workspace_models import ParticipantReference
+    ctx["profile_references"] = list(ParticipantReference.objects.filter(participant=person, archived_at__isnull=True).select_related("checked_by"))
+    ctx["profile_references_checked"] = sum(1 for item in ctx["profile_references"] if item.result != "not_checked")
+    ctx["profile_source_campaign"] = ""
+    if ctx.get("can_recruiting"):
+        from apps.recruiting.models import CampaignSource
+        source = CampaignSource.objects.filter(participant=person).select_related("campaign").order_by("created_at").first()
+        ctx["profile_source_campaign"] = source.campaign.name if source else ""
     if section == "acquisition":
         acq = ctx["acquisition_record"]
         if acq:
@@ -389,6 +397,31 @@ def work_edit(request, participant_id, object_id=None):
     return render(request, "participants/workspace_form.html", context(request, participant=person, form=form,
         page_title="Edit job" if row else "Add a job", submit_label="Save job",
         return_url=reverse("participants:staff-profile", args=[person.pk]) + "?section=career"),
+        status=400 if form.is_bound and form.errors else 200)
+
+
+@workspace
+@require_http_methods(["GET", "POST"])
+def reference_edit(request, participant_id, object_id=None):
+    from .workspace_forms import ReferenceForm
+    from .workspace_models import ParticipantReference
+    from .workspace_services import save_reference
+    require_people(request.user, "participants.change_participant")
+    person = person_for(participant_id, editing=True)
+    row = get_object_or_404(ParticipantReference, pk=object_id, participant=person, archived_at__isnull=True) if object_id else None
+    form = ReferenceForm(request.POST if request.method == "POST" else None, instance=row,
+                         initial={"revision": row.updated_at.isoformat() if row else ""})
+    if request.method == "POST" and form.is_valid():
+        try:
+            save_reference(actor=request.user, participant_id=person.pk, data=form.cleaned_data, object_id=object_id)
+        except ValidationError as exc:
+            form.add_error(None, exc)
+        else:
+            messages.success(request, "Reference saved.")
+            return people_saved(request, "participants:staff-profile", participant_id=person.pk)
+    return render(request, "participants/workspace_form.html", context(request, participant=person, form=form,
+        page_title="Edit reference" if row else "Add a reference", submit_label="Save reference",
+        return_url=reverse("participants:staff-profile", args=[person.pk])),
         status=400 if form.is_bound and form.errors else 200)
 
 

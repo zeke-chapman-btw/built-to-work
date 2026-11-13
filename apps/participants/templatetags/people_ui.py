@@ -203,3 +203,15 @@ def profile_evidence_page(context, key, page):
     if key not in allowed:return ''
     query=context['request'].GET.copy();query[key]=str(page)
     return '?'+query.urlencode()
+
+
+@register.filter
+def people_reference_tone(value):
+    return {"positive": "success", "mixed": "warning", "concern": "danger", "no_answer": "neutral"}.get(value, "neutral")
+
+
+@register.filter
+def people_split(value):
+    """Split a stored list ("Welding, Electrical") into separate items."""
+    import re
+    return [part.strip() for part in re.split(r"[,;\n]+", str(value or "")) if part.strip()]

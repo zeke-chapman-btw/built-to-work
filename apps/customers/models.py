@@ -488,3 +488,18 @@ class CustomerFeedback(UUIDModel, TimestampedModel):
     class Meta:
         ordering = ["-created_at", "pk"]
         constraints = [models.CheckConstraint(condition=Q(workforce_need__isnull=False, campaign__isnull=True) | Q(workforce_need__isnull=True, campaign__isnull=False), name="customer_feedback_one_subject")]
+
+
+class CustomerNote(TimestampedModel):
+    """Private BTW staff note about a customer company (never shown in the customer portal)."""
+    organization = models.ForeignKey(CustomerOrganization, on_delete=models.PROTECT, related_name="staff_notes")
+    content = models.TextField(max_length=4000)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="customer_notes_authored")
+    edited_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="customer_notes_edited")
+    archived_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-created_at", "-pk")
+
+    def __str__(self):
+        return self.content[:60]

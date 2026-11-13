@@ -13,7 +13,7 @@ class RecruitingLock(models.Model):
 
 
 class Classification(UUIDModel, TimestampedModel):
-    kind = models.CharField(max_length=16, choices=[('employment', 'Employment'), ('availability', 'Availability')])
+    kind = models.CharField(max_length=16, choices=[('employment', 'Employment'), ('availability', 'Availability'), ('trade', 'Trade')])
     key = models.SlugField(max_length=80)
     label = models.CharField(max_length=120)
     position = models.PositiveSmallIntegerField(default=0)

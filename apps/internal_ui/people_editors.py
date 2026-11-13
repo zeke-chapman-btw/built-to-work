@@ -81,7 +81,7 @@ def people_conflict(form):
     return has_edit_conflict(form) or 'reload' in text
 
 TITLES={'historical_index':'Import participants','historical_map':'Match your columns','historical_batch':'Review import preview','historical_review':'Review historical identity','historical_export':'Export participants','staff_requests':'Account requests','staff_request_resolve':'Review account request','intake_review_queue':'Participant Review Queue','intake_review_detail':'Review intake identity'}
-COMPACT={'NoteForm','RecordActionForm','ParticipantEventForm','WorkExperienceForm','AcquisitionForm'}
+COMPACT={'ReferenceForm','NoteForm','RecordActionForm','ParticipantEventForm','WorkExperienceForm','AcquisitionForm'}
 
 def form_groups(form,career_form=None):
     if not form:return []
