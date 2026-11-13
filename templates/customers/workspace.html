@@ -7,7 +7,7 @@
 <a class="cx-tile" href="{% customer_url 'customers:workspace' organization.pk 'needs' %}"><span>Open positions</span><strong>{{ open_need_total }}</strong>{% if pending_count %}<small>{{ pending_count }} to review</small>{% endif %}</a>
 <a class="cx-tile" href="{% customer_url 'customers:workspace' organization.pk 'campaigns' %}"><span>Active campaigns</span><strong>{{ active_campaign_total }}</strong></a>
 <a class="cx-tile" href="{% customer_url 'customers:workspace' organization.pk 'users' %}"><span>Portal users</span><strong>{{ seats.lead|add:seats.member }}{% with plan=organization.access_plan %}{% if plan and plan.lead_limit is not None and plan.member_limit is not None %} of {{ plan.lead_limit|add:plan.member_limit }}{% endif %}{% endwith %}</strong>{% if not organization.provisioned %}<small>Not set up yet</small>{% endif %}</a>
-<a class="cx-tile" href="{% customer_url 'customers:workspace' organization.pk 'crm' %}"><span>Last contact</span>{% if crm_summary.last %}{% timezone 'America/New_York' %}<strong>{{ crm_summary.last.occurred_at|date:'M j' }}</strong><small>{{ crm_summary.last.get_activity_type_display }}{% if crm_summary.last_author %} · {{ crm_summary.last_author }}{% endif %}</small>{% endtimezone %}{% else %}<strong>None yet</strong>{% endif %}</a>
+<a class="cx-tile" href="{% customer_url 'customers:workspace' organization.pk 'crm' %}"><span>Last contact</span>{% if crm_summary.last %}{% timezone 'America/New_York' %}<strong>{{ crm_summary.last.occurred_at|date:'M j' }}</strong><small>{{ crm_summary.last.get_activity_type_display }}{% if crm_summary.last_author %} · {{ crm_summary.last_author }}{% endif %}</small>{% endtimezone %}{% else %}<strong><span class="pv-unset" aria-label="Not given">—</span></strong>{% endif %}</a>
 </div>
 <div class="cx-cols">
 <div class="cx-stack">
@@ -21,7 +21,12 @@
 </section>
 {% if crm_summary %}<section class="customer-card cx-card" aria-labelledby="cx-touch-title">
 <header class="cx-card-h"><h2 id="cx-touch-title">Touchpoints</h2><span class="cx-links">{% if crm_can_add and crm_new_url %}<a data-record-editor href="{{ crm_new_url }}">+ Log touchpoint</a>{% endif %}<a href="{% customer_url 'customers:workspace' organization.pk 'crm' %}">All touchpoints</a></span></header>
-{% include 'crm/summary.html' %}
+<dl class="cx-facts">
+<div><dt>Last {{ crm_summary.days }} days</dt><dd>{{ crm_summary.recent }} touchpoint{{ crm_summary.recent|pluralize }}</dd></div>
+{% if crm_summary.btw_allowed %}<div><dt>Next follow-up</dt><dd>{% if crm_summary.next %}<a href="{% url 'operations:task' crm_summary.next.pk %}?crm_return_to={{ request.get_full_path|urlencode }}">{{ crm_summary.next.title }}</a> · Due {{ crm_summary.next.due_date|date:'M j' }}{% else %}<span class="pv-unset" aria-label="Not given">—</span>{% endif %}</dd></div>{% endif %}
+<div><dt>Total logged</dt><dd>{% if crm_summary.btw_customer_count != None %}{{ crm_summary.btw_customer_count }}{% else %}<span class="pv-unset" aria-label="Not given">—</span>{% endif %}</dd></div>
+<div><dt>By employers</dt><dd>{% if crm_summary.employer_count != None %}{{ crm_summary.employer_count }}{% else %}<span class="pv-unset" aria-label="Not given">—</span>{% endif %}</dd></div>
+</dl>
 </section>{% endif %}
 </div>
 <div class="cx-stack">
@@ -34,7 +39,7 @@
 <dl class="cx-facts">
 <div><dt>Lead users</dt><dd>{{ seats.lead }}{% with plan=organization.access_plan %}{% if plan and plan.lead_limit is not None %} of {{ plan.lead_limit }}{% endif %}{% endwith %}</dd></div>
 <div><dt>Member users</dt><dd>{{ seats.member }}{% with plan=organization.access_plan %}{% if plan and plan.member_limit is not None %} of {{ plan.member_limit }}{% endif %}{% endwith %}</dd></div>
-<div><dt>Main portal user</dt><dd>{{ organization.primary_lead.identity|default:'Not set' }}</dd></div>
+<div><dt>Main portal user</dt><dd>{% if organization.primary_lead %}{{ organization.primary_lead.identity }}{% else %}<span class="pv-unset" aria-label="Not given">—</span>{% endif %}</dd></div>
 <div><dt>Search participants</dt><dd>{% if organization.access_plan.directory_search %}{% ui_badge 'Yes' 'success' %}{% else %}{% ui_badge 'No' 'neutral' %}{% endif %}</dd></div>
 <div><dt>Contact participants</dt><dd>{% if organization.access_plan.authorized_candidate_contact %}{% ui_badge 'Yes' 'success' %}{% else %}{% ui_badge 'No' 'neutral' %}{% endif %}</dd></div>
 </dl>
@@ -42,11 +47,11 @@
 <section class="customer-card cx-card" aria-labelledby="cx-company-title">
 <header class="cx-card-h"><h2 id="cx-company-title">Company</h2><span class="cx-links">{% if organization.status != 'archived' %}<a data-record-editor href="{% customer_url 'customers:edit' organization.pk %}">Edit</a>{% endif %}</span></header>
 <dl class="cx-facts">
-{% if organization.phone %}<div><dt>Phone</dt><dd><a href="tel:{{ organization.phone|people_phone_link }}">{{ organization.phone|people_phone }}</a></dd></div>{% endif %}
-{% if organization.business_email %}<div><dt>Email</dt><dd><a href="mailto:{{ organization.business_email }}">{{ organization.business_email }}</a></dd></div>{% endif %}
-{% if organization.website %}<div><dt>Website</dt><dd><a href="{{ organization.website }}">{{ organization.website }}</a></dd></div>{% endif %}
-<div><dt>Locations</dt><dd>{% for loc in overview_locations %}{{ loc.name }}{% if loc.city %} · {{ loc.city }}{% if loc.state %}, {{ loc.state }}{% endif %}{% endif %}{% if not forloop.last %}<br>{% endif %}{% empty %}None yet{% endfor %}</dd></div>
-{% if organization.industry %}<div><dt>Industry</dt><dd>{{ organization.industry }}</dd></div>{% endif %}
+<div><dt>Industry</dt><dd>{% if organization.industry %}{{ organization.industry }}{% else %}<span class="pv-unset" aria-label="Not given">—</span>{% endif %}</dd></div>
+<div><dt>Phone</dt><dd>{% if organization.phone %}<a href="tel:{{ organization.phone|people_phone_link }}">{{ organization.phone|people_phone }}</a>{% else %}<span class="pv-unset" aria-label="Not given">—</span>{% endif %}</dd></div>
+<div><dt>Email</dt><dd>{% if organization.business_email %}<a href="mailto:{{ organization.business_email }}">{{ organization.business_email }}</a>{% else %}<span class="pv-unset" aria-label="Not given">—</span>{% endif %}</dd></div>
+<div><dt>Website</dt><dd>{% if organization.website %}<a href="{{ organization.website }}">{{ organization.website }}</a>{% else %}<span class="pv-unset" aria-label="Not given">—</span>{% endif %}</dd></div>
+<div><dt>Locations</dt><dd>{% for loc in overview_locations %}{{ loc.name }}{% if loc.city %} · {{ loc.city }}{% if loc.state %}, {{ loc.state }}{% endif %}{% endif %}{% if not forloop.last %}<br>{% endif %}{% empty %}<span class="pv-unset" aria-label="Not given">—</span>{% endfor %}</dd></div>
 </dl>
 </section>
 </div>

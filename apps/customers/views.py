@@ -214,7 +214,7 @@ def form_screen(request, *, org, tab, title, form_class, initial, save, instance
     if request.headers.get("X-BTW-Editor") == "1" and not review and hasattr(form, "field_groups"):
         from apps.internal_ui.record_editors import editor_response
         return editor_response(request, template="customers/form.html", panel="internal/ui/record_form_panel.html", context={
-            "form": form, "page_title": title, "back": cancel_url, "save_label": "Save", "fields_template": "customers/editor_fields.html",
+            "form": form, "page_title": title, "back": cancel_url, "save_label": "Save changes", "fields_template": "customers/editor_fields.html",
             "editor_return_label": "customer", "editor_has_return_field": "return_to" in form.fields, "editor_context": org.name if org else "",
             "full_page_editor": False})
     return render(request, "customers/form.html", context(request, org, tab, title=title, description=description, form=form, review=review, cancel_url=cancel_url))

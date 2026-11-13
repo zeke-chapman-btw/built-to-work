@@ -212,6 +212,6 @@ def edit(request, participant_id, card):
                 messages.success(request, CARDS[card][0] + ' saved.')
                 return people_saved(request, 'participants:staff-profile', participant_id=person.pk)
     return editor_response(request, template='participants/compact_form.html', panel='internal/ui/record_form_panel.html',
-        context=context(request, participant=person, form=form, page_title='Edit ' + CARDS[card][0],
+        context=context(request, participant=person, form=form, page_title='Edit ' + CARDS[card][0][:1].lower() + CARDS[card][0][1:],
             back=people_return(request, person, reverse('participants:staff-profile', args=[person.pk])), save_label='Save changes', fields_template={'preferences': 'participants/preference_card_fields.html', 'identity': 'participants/identity_card_fields.html'}.get(card, 'internal/ui/section_fields.html'),
             cautious_save=True, editor_return_label='profile', save_conflict=conflict, full_page_editor=request.headers.get('X-BTW-Editor') != '1'))

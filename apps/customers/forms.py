@@ -22,10 +22,16 @@ class AuthorizedForm:
             self.instance.organization = organization
         for name, field in self.fields.items():
             if isinstance(field.widget, forms.Textarea):
-                field.widget.attrs.setdefault("rows", 2)
+                field.widget.attrs["rows"] = 3
             if isinstance(field, forms.DateField):
                 field.widget = forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d")
             field.widget.attrs.setdefault("class", "customer-control")
+            # Short, fixed answer lists show as coloured chips, like the participant editors.
+            if (not getattr(self, "stepper", False) and type(field.widget) is forms.Select and isinstance(field, forms.ChoiceField)
+                    and not isinstance(field, forms.ModelChoiceField) and len(list(field.choices)) <= 7):
+                choices = [(value, "Not set" if value == "" else label) for value, label in field.choices
+                           if value != "" or not field.required]
+                field.widget = forms.RadioSelect(attrs={"class": "btw-chip-choices"}, choices=choices)
         self.label_suffix = ""
 
     def clean(self):
@@ -100,24 +106,26 @@ class RelationshipForm(AuthorizedForm, MutationFields):
 
 
 class AccessPlanForm(CustomerModelForm):
-    sections = (("User allowances", ("lead_limit", "member_limit")),
-                ("Workforce Needs", ("workforce_need_creation",)),
-                ("Future candidate capabilities — not available yet", ("candidate_matching", "directory_search", "expanded_candidate_profile", "authorized_candidate_contact")))
+    sections = (("Portal users", ("lead_limit", "member_limit")),
+                ("Positions", ("workforce_need_creation",)),
+                ("Future features (not available yet)", ("candidate_matching", "directory_search", "expanded_candidate_profile", "authorized_candidate_contact")))
 
     class Meta:
         model = CustomerAccessPlan
         fields = PLAN_FIELDS
-        labels = {"lead_limit": "Maximum Leads", "member_limit": "Maximum Members", "directory_search": "Participant directory search entitlement", "expanded_candidate_profile": "Expanded candidate profile entitlement", "authorized_candidate_contact": "Authorized candidate contact entitlement"}
+        labels = {"lead_limit": "Most lead users", "member_limit": "Most member users", "workforce_need_creation": "Can add new positions", "candidate_matching": "Candidate matching", "directory_search": "Search participants", "expanded_candidate_profile": "See full participant profiles", "authorized_candidate_contact": "Contact participants"}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for name in ("lead_limit", "member_limit"):
-            self.fields[name].help_text = "Blank is unconfigured, not unlimited. Zero is valid. Lowering a limit preserves existing memberships."
+            self.fields[name].help_text = "Leave blank if not decided yet. Lowering it won't remove anyone."
         for name in PLAN_FIELDS[2:]:
-            self.fields[name] = forms.TypedChoiceField(choices=[("", "Unconfigured"), ("yes", "Enabled"), ("no", "Disabled")], coerce=lambda value: {"yes": True, "no": False}.get(value), empty_value=None, required=False, label=self.fields[name].label)
+            choices = [("yes", "Yes"), ("no", "No"), ("", "Not set")]
+            self.fields[name] = forms.TypedChoiceField(choices=choices, coerce=lambda value: {"yes": True, "no": False}.get(value), empty_value=None, required=False, label=self.fields[name].label,
+                                                       widget=forms.RadioSelect(attrs={"class": "btw-chip-choices"}, choices=choices))
             initial = getattr(self.instance, name, None)
             self.initial[name] = "yes" if initial is True else "no" if initial is False else ""
-        self.fields["workforce_need_creation"].help_text = "Controls new Needs for this organization. Existing Needs remain available for authorized staff management."
+        self.fields["workforce_need_creation"].help_text = "Existing positions stay available to staff either way."
 
 
 class MembershipForm(AuthorizedForm, MutationFields):

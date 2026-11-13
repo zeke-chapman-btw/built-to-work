@@ -55,6 +55,14 @@
     let index = 0;
     const firstError = steps.findIndex(function (s) { return s.hasAttribute("data-has-errors"); });
     if (firstError > -1) index = firstError;
+    else {
+      /* "?step=N" on the editor link (card Edit links) opens that section. */
+      let wanted = null;
+      try { wanted = new URL(form.getAttribute("action") || "", window.location.href).searchParams.get("step"); } catch (e) { wanted = null; }
+      if (!wanted) wanted = new URLSearchParams(window.location.search).get("step");
+      const n = parseInt(wanted, 10);
+      if (n > 0) index = Math.min(steps.length, n) - 1;
+    }
     function show(i, focus) {
       index = Math.max(0, Math.min(steps.length - 1, i));
       steps.forEach(function (s, n) { s.hidden = n !== index; });
