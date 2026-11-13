@@ -66,6 +66,9 @@ def context(request, **extra):
     except PermissionDenied:
         result["can_recruiting"] = False
     result.update(extra)
+    # Pop-up editors name the person under the title, like customer editors do.
+    if extra.get("participant") is not None and "editor_context" not in extra:
+        result["editor_context"] = str(extra["participant"])
     return result
 
 
@@ -406,7 +409,7 @@ def acquisition_edit(request, participant_id):
             messages.success(request, "Saved.")
             return people_saved(request, "participants:staff-profile", participant_id=person.pk)
     return render(request, "participants/workspace_form.html", context(request, participant=person, form=form,
-        page_title="How they found us", submit_label="Save", return_url=reverse("participants:staff-profile", args=[person.pk])),
+        page_title="Edit how they found us", submit_label="Save changes", return_url=reverse("participants:staff-profile", args=[person.pk])),
         status=400 if form.is_bound and form.errors else 200)
 
 

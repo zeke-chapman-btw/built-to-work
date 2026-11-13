@@ -25,7 +25,7 @@ class CoordinatedSettingsTests(TestCase):
         self.assertContains(response,'data-workspace-header',count=1)
         self.assertContains(response,'data-workspace-content',count=1)
         self.assertContains(response,'Your account')
-        self.assertContains(response,'Portal preview')
+        self.assertContains(response,'Portals')
         self.assertContains(response,'href="'+reverse('internal:portal-preview')+'"',count=1)
         for text in ['future home','home to be reviewed','empty-state card','Other destinations']:
             self.assertNotContains(response,text)
@@ -48,7 +48,7 @@ class CoordinatedSettingsTests(TestCase):
     def test_staff_create_form_preserves_roles_identity_and_cancel(self):
         self.login();response=self.client.get(reverse('accounts:staff-create'))
         self.assertEqual(response.status_code,200)
-        for text in ['<legend>Sign-in access','name="roles"','I checked the existing profiles','Cancel','ux-form']:
+        for text in ['<legend>Sign-in','name="roles"','already on the staff list','Cancel','ux-form']:
             self.assertContains(response,text)
         self.assertNotContains(response,'<h2>Create staff account</h2>')
         self.assertContains(response,'href="'+reverse('staffing:directory')+'"')
@@ -93,13 +93,13 @@ class CoordinatedSettingsTests(TestCase):
         response=self.client.get(reverse('event_reports:categories'))
         self.assertEqual(response.status_code,200)
         self.assertContains(response,reverse('event_reports:category-edit',args=[category.pk]))
-        self.assertContains(response,'Incentive purchases excluded')
+        self.assertContains(response,'not counted as event cost')
         self.assertEqual(list(ExpenseCategory.objects.values()),before)
 
     def test_account_directory_remains_a_native_table_with_authorized_actions(self):
         self.login();response=self.client.get(reverse('accounts:staff-index'))
         self.assertEqual(response.status_code,200)
-        self.assertContains(response,'<th scope="col">Account</th>')
+        self.assertContains(response,'<th scope="col">Username</th>')
         self.assertContains(response,'btw-table-wrap')
         self.assertContains(response,reverse('accounts:staff-create'))
 

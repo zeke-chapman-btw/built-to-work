@@ -27,3 +27,16 @@
 .intake-workspace fieldset{border:1px solid #d0d5dd;border-radius:12px;padding:18px;margin:18px 0}
 .intake-workspace .card>form>button{justify-self:start}
 @media(max-width:700px){.intake-workspace .card>form>button{justify-self:stretch}.intake-workspace .page-actions>*{flex:1 1 180px}.intake-workspace fieldset{padding:12px}}
+/* Forms page: where people sign up */
+.su-card .su-sub{margin:4px 0 0;font-size:13px}
+.su-card .su-group{margin:0;padding:14px 16px 6px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;border-top:1px solid #eef0f2}
+.su-card .su-note{margin:0;padding:0 16px 8px;font-size:13px}
+.su-card .su-row{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto;gap:12px 16px;align-items:center;padding:12px 16px;border-top:1px solid #f1f2f4}
+.su-card .su-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.su-card .su-main small{font-size:13px}
+.su-card .su-form{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+.su-card .su-warn{font-size:12px;color:#b45309}
+.su-card .su-links{display:flex;gap:14px;font-size:13px;white-space:nowrap}
+.su-card .su-links a{color:#ac1929;text-decoration:none;font-weight:500}
+@media (max-width:760px){.su-card .su-row{grid-template-columns:1fr}.su-card .su-links{white-space:normal;flex-wrap:wrap}}
+.su-card .su-open{color:#15803d;font-weight:500}.su-card .su-closed{color:#9ca3af;font-weight:500}.su-card .su-main a{color:#ac1929;text-decoration:none}

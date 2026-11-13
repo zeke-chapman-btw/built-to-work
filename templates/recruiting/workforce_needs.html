@@ -1,6 +1,6 @@
 {% extends 'recruiting/base.html' %}{% load ui_patterns %}
 {% block recruiting_content %}
-<div class="ux-actions recruiting-need-actions"><a class="button" href="{% url 'recruiting:matching-directory' %}">All candidate matching</a>{% if can_manage_requests %}<a class="button" href="{% url 'recruiting:request-group' %}">Group positions</a>{% endif %}</div>
+<div class="ux-actions recruiting-need-actions"><a class="button" href="{% url 'recruiting:matching-directory' %}">All candidate matching</a>{% if can_manage_requests %}<a class="button" data-record-editor href="{% url 'recruiting:request-group' %}">Group positions</a>{% endif %}</div>
 <div class="btw-filter-panel card rc-need-filter-card" data-workforce-filters{% if filters.errors %} data-filter-errors{% endif %}>
 <form method="get" class="recruiting-need-filters" aria-label="Workforce Need filters">
 {% if filters.errors %}<div class="form-error-summary" role="alert">{{ filters.non_field_errors }}{% for field in filters %}{{ field.errors }}{% endfor %}</div>{% endif %}

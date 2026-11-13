@@ -42,7 +42,7 @@ def index(request):
     users=get_user_model().objects.filter(is_staff=True).order_by('username')
     if not request.user.is_superuser:users=[u for u in users if not protected_target(u)]
     from django.core.paginator import Paginator
-    return page(request,'accounts/staff_accounts.html',page_title='Staff accounts',accounts=Paginator(users,30).get_page(request.GET.get('page')))
+    return page(request,'accounts/staff_accounts.html',page_title='Sign-ins',accounts=Paginator(users,30).get_page(request.GET.get('page')))
 
 @account_manager
 @require_http_methods(['GET','POST'])
@@ -63,9 +63,18 @@ def edit(request,user_id=None):
             try:result=save_account(actor=request.user,data=form.cleaned_data,user_id=user_id)
             except ValidationError as exc:form.add_error(None,exc)
             else:
-                messages.success(request,'Staff account saved. Existing identities were not merged.')
-                return redirect('accounts:staff-detail',user_id=result.pk)
-    return page(request,'accounts/staff_account_form.html',page_title='Edit staff account' if target else 'Create staff account',form=form,target=target)
+                messages.success(request,'Saved.')
+                from apps.staffing.models import StaffProfile
+                linked=StaffProfile.objects.filter(user=result).first()
+                from apps.internal_ui.record_editors import editor_success
+                return editor_success(request,reverse('staffing:profile',args=[linked.pk]) if linked and request.headers.get('X-BTW-Editor')=='1' else reverse('accounts:staff-detail',args=[result.pk]))
+    if request.headers.get('X-BTW-Editor')=='1':
+        from apps.internal_ui.record_editors import editor_response
+        return editor_response(request,template='accounts/staff_account_form.html',panel='internal/ui/record_form_panel.html',context={
+            'form':form,'page_title':'Sign-in & roles' if target else 'Add staff','editor_context':target.get_full_name() or target.username if target else '',
+            'back':reverse('accounts:staff-index'),'save_label':'Save changes','fields_template':'customers/editor_fields.html',
+            'full_page_editor':False,'editor_has_return_field':True,'target':target})
+    return page(request,'accounts/staff_account_form.html',page_title='Edit sign-in & roles' if target else 'Add staff',form=form,target=target)
 
 @account_manager
 @require_http_methods(['GET'])
@@ -74,7 +83,7 @@ def detail(request,user_id):
     from apps.core.models import AuditLog
     from django.contrib.contenttypes.models import ContentType
     logs=AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(target),object_id=str(target.pk),action__startswith='staff.account.').order_by('-timestamp')[:30]
-    return page(request,'accounts/staff_account_detail.html',page_title='Staff account',target=target,roles=sorted(roles_for(target)),history=logs,invite_form=AccountActionForm(initial={'revision':revision(target)},auto_id='invite_%s'),state_form=AccountActionForm(initial={'revision':revision(target)},auto_id='state_%s'))
+    return page(request,'accounts/staff_account_detail.html',page_title='Sign-in & roles',target=target,roles=sorted(roles_for(target)),history=logs,invite_form=AccountActionForm(initial={'revision':revision(target)},auto_id='invite_%s'),state_form=AccountActionForm(initial={'revision':revision(target)},auto_id='state_%s'))
 
 @account_manager
 @require_http_methods(['POST'])

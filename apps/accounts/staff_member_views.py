@@ -38,9 +38,15 @@ def add(request):
             if profile:
                 if invitation:
                     deliver_invitation(request, invitation)
-                messages.success(request, 'Staff member saved.' + (' Secure sign-in invitation requested.' if invitation else ''))
-                return redirect('staffing:profile', profile_id=profile.pk)
-    return page(request, 'accounts/staff_member_form.html', page_title='Add staff member', form=form,
+                messages.success(request, 'Staff member saved.' + (' Sign-in invitation sent.' if invitation else ''))
+                from apps.internal_ui.record_editors import editor_success
+                return editor_success(request, reverse('staffing:profile', args=[profile.pk]))
+    if request.headers.get('X-BTW-Editor') == '1':
+        from apps.internal_ui.record_editors import editor_response
+        return editor_response(request, template='accounts/staff_member_form.html', panel='internal/ui/record_form_panel.html', context={
+            'form': form, 'page_title': 'Add staff', 'back': reverse('staffing:directory'), 'save_label': 'Add staff',
+            'fields_template': 'customers/editor_fields.html', 'full_page_editor': False, 'editor_has_return_field': True})
+    return page(request, 'accounts/staff_member_form.html', page_title='Add staff', form=form,
                 back_url=reverse('staffing:directory'))
 
 

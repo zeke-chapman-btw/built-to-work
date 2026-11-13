@@ -69,6 +69,8 @@ class CategoryForm(forms.ModelForm):
     class Meta:
         model=ExpenseCategory
         fields=['name','is_active','incentive_purchase']
+        labels={'name':'Category name','is_active':'Active','incentive_purchase':'Incentive purchases (gift cards, prizes)'}
+        help_texts={'incentive_purchase':"Not counted as event cost. What's handed out is counted instead."}
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
         self.fields['revision'].initial=self.instance.updated_at.isoformat() if self.instance.updated_at else 'new'

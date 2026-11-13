@@ -95,12 +95,17 @@ class SOPForm(forms.ModelForm):
     class Meta:
         model = SOP
         fields = ("title", "category", "summary", "audience", "kind", "body")
-        widgets = {"body": forms.Textarea(attrs={"rows": 12}), "kind": forms.RadioSelect}
+        widgets = {"body": forms.Textarea(attrs={"rows": 10, "data-show-when": "kind=page"}),
+                   "kind": forms.RadioSelect(attrs={"class": "btw-chip-choices"}),
+                   "audience": forms.RadioSelect(attrs={"class": "btw-chip-choices"})}
+        labels = {"body": "Steps"}
+        help_texts = {"body": "Start a line with # for a heading, - for a bullet, or 1. for a numbered step."}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         categories = sorted({c for c in SOP.objects.exclude(category="").values_list("category", flat=True)})
         self.fields["category"].widget.attrs["list"] = "sop-categories"
+        self.fields["pdf_file"].widget.attrs["data-show-when"] = "kind=pdf"
         self.categories = categories
         self.uploads = storage.uploads_available()
         if not self.uploads:
@@ -134,7 +139,7 @@ class SOPForm(forms.ModelForm):
 
 def _editor(request, form, *, title, back):
     return editor_response(request, template="sops/form_page.html", panel="internal/ui/record_form_panel.html", context={
-        "form": form, "page_title": title, "back": back, "save_label": "Save", "editor_return_label": "SOP library",
+        "form": form, "page_title": title, "back": back, "save_label": "Save changes", "editor_return_label": "SOP library",
         "fields_template": "sops/form_fields.html", "full_page_editor": request.headers.get("X-BTW-Editor") != "1",
         **_staff_context(request)})
 

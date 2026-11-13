@@ -1,6 +1,32 @@
-{% extends "participants/intake_operations_base.html" %}{% load static %}{% block intake_content %}
-<p><a href="{% url 'participants:intake-config-detail' version.form_id %}">← {{ version.form.name }}</a></p><section class="card"><details class="btw-disclosure"><summary>About this preview</summary><p><strong>Admin preview only.</strong> This page uses synthetic examples and does not save participant answers or create submissions. The approved consent document is resolved separately at intake start; this preview creates no legal text. V{{ version.version }} · {{ version.get_status_display }}</p></details>
-<form method="get"><input type="hidden" name="step" value="{{ step }}"><label for="preview-persona">Synthetic example</label><select name="persona" id="preview-persona"><option value="alex"{% if persona == "alex" %} selected{% endif %}>Alex · 17 · High school / CTE</option><option value="jordan"{% if persona == "jordan" %} selected{% endif %}>Jordan · 22 · Retail / electrical interest</option><option value="chris"{% if persona == "chris" %} selected{% endif %}>Chris · 43 · Welding supervisor</option></select><button>Preview example</button></form><nav aria-label="Preview steps">{% for n in '12345' %}<a class="button" href="?step={{ n }}&amp;persona={{ persona }}">Step {{ n }}</a> {% endfor %}</nav><h2>{{ step_name }}</h2>{% if step == 2 %}<p>The exact consent document is selected when an intake starts. <a href="{% url 'participants:consent-index' %}">Open Consents</a> to preview its complete text.</p>{% endif %}
-<form data-intake-form onsubmit="return false">{% for q in questions %}<div class="field" data-question="{{ q.key }}"><label for="{{ q.bound.id_for_label }}">{{ q.label }}{% if q.required %} *{% endif %}</label>{{ q.bound }}<p>{{ q.help_text }}</p></div>{% endfor %}
-{% if experience_question %}<section data-question="experiences"><h3>{{ experience_question.label }}</h3><div data-experience-list>{% for row in experience_rows %}<fieldset data-experience-entry><legend>Experience entry</legend><input type="hidden" name="experience_ids" value="{{ row.entry_id }}">{% for q in row.children %}<div class="field" data-experience-field="{{ q.key }}"><label for="{{ q.bound.id_for_label }}">{{ q.label }}</label>{{ q.bound }}</div>{% endfor %}<button type="button" data-remove-experience>Remove entry</button></fieldset>{% endfor %}</div><button type="button" data-add-experience>Add another experience</button></section>{% endif %}</form>
-{{ contract|json_script:"intake-contract" }}{{ prior_answers|json_script:"intake-prior-answers" }}<script src="{% static 'participants/intake.js' %}" defer></script></section>{% endblock %}
+{% extends "participants/intake_operations_base.html" %}{% load static ui_patterns %}{% block intake_content %}<link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=rui-1112">{% include 'internal/ui/event_editor_assets.html' %}
+<div class="pv-flow">
+<a class="ux-back" href="{% url 'participants:intake-config-detail' version.form_id %}">← {{ version.form.name }}</a>
+<header class="pv-flow-head"><div><h2>What people see</h2><p class="qb-muted">The real sign-up screens, filled in with a made-up person. Nothing is saved.</p></div>
+<div class="pv-flow-actions">{% if version.status == 'draft' %}<span class="btw-badge btw-badge-warning">Draft · version {{ version.version }}</span>{% else %}<span class="btw-badge btw-badge-success">{{ version.get_status_display }} · version {{ version.version }}</span>{% endif %}
+{% for other in other_versions %}<a class="pv-flow-switch" href="{% url 'participants:intake-config-preview' other.pk %}?screen={{ screen }}&amp;persona={{ persona }}">See {{ other.get_status_display|lower }} version {{ other.version }}</a>{% endfor %}
+{% if can_edit_wording %}<a class="button secondary" data-record-editor href="{% url 'participants:intake-config-wording' version.form_id %}">Edit welcome &amp; finish wording</a>{% endif %}<a class="button secondary" href="{% url 'participants:intake-config-detail' version.form_id %}">Edit questions</a></div></header>
+{% if version.status != 'draft' and latest.status == 'draft' %}<p class="btw-inline-notice">You're looking at the published version. There's a newer draft — <a href="{% url 'participants:intake-config-preview' latest.pk %}?screen={{ screen }}&amp;persona={{ persona }}">see the draft</a>.</p>{% elif version.status == 'draft' %}<p class="btw-inline-notice">This is a draft. The public won't see these changes until you publish it on the form page.</p>{% endif %}
+<div class="pv-flow-grid">
+<nav class="pv-flow-steps card" aria-label="Sign-up screens"><h3>Screens</h3><ol>{% for key, label in screens %}<li><a href="?screen={{ key }}&amp;persona={{ persona }}"{% if key == screen %} aria-current="step"{% endif %}>{{ label }}</a></li>{% endfor %}</ol>
+<h3>Example person</h3><div class="pv-flow-people">{% for key, label in personas %}<a href="?screen={{ screen }}&amp;persona={{ key }}"{% if key == persona %} aria-current="true"{% endif %}>{{ label }}</a>{% endfor %}</div>
+<p class="qb-muted pv-flow-note">Questions that depend on earlier answers show or hide the same way they do for participants. The consent step shows the current approved consent.</p></nav>
+<div class="pv-phone"><div class="pv-phone-bezel"><iframe title="Participant screen preview" src="{% url 'participants:intake-config-preview-screen' version.pk %}?screen={{ screen }}&amp;persona={{ persona }}" loading="eager"></iframe></div></div></div>
+</div></div>
+<style>
+.pv-flow .pv-flow-head{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start;margin:12px 0}
+.pv-flow .pv-flow-head h2{margin:0;font-size:18px}.pv-flow .pv-flow-head p{margin:4px 0 0;font-size:13px}
+.pv-flow .pv-flow-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pv-flow .pv-flow-switch{font-size:13px;color:#ac1929;text-decoration:none}
+.pv-flow .pv-flow-grid{display:grid;grid-template-columns:280px minmax(0,1fr);gap:24px;align-items:start;margin-top:12px}
+.pv-flow .pv-flow-steps{padding:16px}.pv-flow .pv-flow-steps h3{margin:0 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#6b7280}
+.pv-flow .pv-flow-steps ol{list-style:none;margin:0 0 18px;padding:0;display:grid;gap:4px}
+.pv-flow .pv-flow-steps ol a,.pv-flow .pv-flow-people a{display:block;padding:8px 10px;border-radius:8px;color:#252830;text-decoration:none;font-size:14px}
+.pv-flow .pv-flow-steps ol a:hover,.pv-flow .pv-flow-people a:hover{background:#f4f4f5}
+.pv-flow .pv-flow-steps a[aria-current]{background:#fde2e4;color:#b3141f;font-weight:600}
+.pv-flow .pv-flow-people{display:grid;gap:4px;margin-bottom:12px}.pv-flow .pv-flow-note{font-size:12px;margin:0}
+.pv-flow .pv-phone{display:flex;flex-direction:column;align-items:center}
+.pv-flow .pv-phone-bezel{width:402px;max-width:100%;height:820px;border-radius:44px;background:#111;padding:14px;box-shadow:0 10px 30px #0002}
+.pv-flow .pv-phone-bezel iframe{width:100%;height:100%;border:0;border-radius:32px;background:#fff}
+.pv-flow .pv-phone-nav{display:flex;gap:8px;margin-top:12px}
+@media (max-width:900px){.pv-flow .pv-flow-grid{grid-template-columns:1fr}.pv-flow .pv-phone-bezel{height:700px}}
+</style>{% endblock %}

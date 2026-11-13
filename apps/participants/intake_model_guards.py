@@ -36,7 +36,7 @@ def guard_version(instance):
         return
     if old and smart(old.snapshot) and old.status in {"published", "retired"}:
         fields = ("form_id", "version", "snapshot", "stable_id", "content_hash",
-                  "created_by_id", "published_at", "effective_at")
+                  "created_by_id", "published_at", "effective_at", "screens")
         if any(getattr(old, field) != getattr(instance, field) for field in fields):
             raise ValidationError("Published intake contracts are immutable; create a new draft version.")
     if not _contract_write.get():

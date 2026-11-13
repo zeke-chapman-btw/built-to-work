@@ -55,7 +55,7 @@ def directory(request):
     for person in page_people:
         person.roster_roles=(["Admin"] if person.user_id and person.user.is_superuser else [])+([labels[r] for r in sorted(roles_for(person.user)) if r in labels] if person.user_id else [])
         person.pay_revision=person.updated_at.isoformat()
-    return render(request,"staffing/directory.html",dict(page_title="Staff roster",people=page_people,q=q,selected_status=state,can_manage_staff=manager(request.user),back=request.get_full_path()))
+    return render(request,"staffing/directory.html",dict(page_title="Staff",people=page_people,q=q,selected_status=state,can_manage_staff=manager(request.user),back=request.get_full_path()))
 
 
 @staff_view
@@ -122,12 +122,20 @@ def profile_edit(request,profile_id=None):
         try:
             saved,form=services.save_profile(actor=request.user,data=request.POST,profile_id=profile_id)
             if saved:
-                messages.success(request,"Staff profile saved. Account links and login permissions were not changed.")
-                return redirect("staffing:profile",profile_id=saved.pk)
+                messages.success(request,"Saved.")
+                from apps.internal_ui.record_editors import editor_success
+                from django.urls import reverse as _r
+                return editor_success(request,_r("staffing:profile",args=[saved.pk]))
         except ValidationError as exc:
             form=ProfileForm(request.POST,instance=person); form.is_valid(); form.add_error(None,exc)
     from django.urls import reverse
-    return display_form(request,form,title="Edit staff" if profile_id else "Add staff",submit="Save staff profile",back=reverse("staffing:directory"))
+    if request.headers.get('X-BTW-Editor')=='1':
+        from apps.internal_ui.record_editors import editor_response
+        back=reverse("staffing:profile",args=[person.pk]) if profile_id else reverse("staffing:directory")
+        return editor_response(request,template='staffing/form.html',panel='internal/ui/record_form_panel.html',context=dict(
+            form=form,page_title="Edit staff details" if profile_id else "Add staff",editor_context=str(person) if profile_id else '',
+            back=back,save_label="Save changes",fields_template='customers/editor_fields.html',full_page_editor=False,editor_has_return_field=True))
+    return display_form(request,form,title="Edit staff" if profile_id else "Add staff",submit="Save changes",back=reverse("staffing:directory"))
 
 
 @staff_view

@@ -56,7 +56,8 @@ def start_session(*, assignment, browser_key, actor=None, event=None, preparatio
     if assignment.event_id and (not event or assignment.event_id != event.pk):
         raise ValidationError("The intake assignment belongs to another event.")
     if channel == "online" and event is not None:
-        raise ValidationError("Use an event-linked intake assignment.")
+        # An event with no form of its own uses the general online form, still linked to the event.
+        channel = "event"
     if channel == "event":
         if event is None:
             raise ValidationError("An event is required.")

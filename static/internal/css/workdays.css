@@ -77,3 +77,8 @@ body.internal-app #main-content .wd-search .visually-hidden{position:absolute;wi
 body.internal-app #main-content .workdays-page .wd-head h2{border:0 !important;padding:0 !important;margin:0 !important}
 body.internal-app #main-content .wd-row .wd-links a{color:var(--brand-red-dark,#a51d24);font-weight:500;font-size:13px}
 @media (max-width:640px){body.internal-app #main-content .wd-filters{grid-template-columns:repeat(2,minmax(0,1fr))}body.internal-app #main-content .wd-filter-actions{grid-column:1/-1}}
+
+/* Pay settings: quiet row links */
+.ux-financial-settings .pay-row-links{display:inline-flex;gap:14px;white-space:nowrap}
+.ux-financial-settings .pay-row-links a{color:#ac1929;text-decoration:none;font-size:13px;font-weight:500}
+.ux-financial-settings td{vertical-align:middle}

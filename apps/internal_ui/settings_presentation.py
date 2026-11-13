@@ -24,23 +24,23 @@ def _sections(user):
             advanced.append({'label': group['label'], 'links': remaining})
     sections = [{'key': 'account', 'label': 'Account', 'groups': []}]
     if staff:
-        sections.append({'key': 'staff', 'label': 'Staff roster', 'url': reverse('staffing:directory'), 'groups': []})
+        sections.append({'key': 'staff', 'label': 'Staff', 'url': reverse('staffing:directory'), 'groups': []})
     from apps.accounts.roles import manager
     from apps.sops.access import can_manage as can_manage_sops
     if can_manage_sops(user):
-        sections.append({'key': 'sops', 'label': 'SOP library', 'url': reverse('sops:manage'), 'groups': []})
-    for key, label in [('portal', 'Portal preview'), ('compensation', 'Compensation')]:
+        sections.append({'key': 'sops', 'label': 'SOPs', 'url': reverse('sops:manage'), 'groups': []})
+    for key, label in [('portal', 'Portals'), ('compensation', 'Pay')]:
         if key in direct:
             sections.append({'key': key, 'label': label, 'url': direct[key]['url'], 'groups': []})
     # Preserve the existing Administrator-only catalog visibility and guards.
     if user.is_superuser:
         sections.append({'key': 'recruiting', 'label': 'Recruiting', 'groups': [{
-            'label': 'Recruiting configuration', 'links': [
-                {'label': 'Employment & availability classifications',
-                 'description': 'Manage the existing stable classification catalog and retired values.',
+            'label': 'Recruiting', 'links': [
+                {'label': 'Work classifications',
+                 'description': 'Choices for employment type and availability.',
                  'url': reverse('recruiting:classifications') + '?from=settings'},
-                {'label': 'Recruiting stages',
-                 'description': 'Manage the existing shared recruiting lifecycle.',
+                {'label': 'Stages',
+                 'description': 'The steps a candidate moves through.',
                  'url': reverse('recruiting:stages') + '?from=settings'},
             ]}]})
     if advanced:

@@ -59,8 +59,8 @@ class PublicEventSettingsForm(forms.Form):
                 self.add_error("consent_document", "Select an approved consent document with reviewed text.")
             legacy_available = RegistrationFormVersion.objects.filter(
                 status=RegistrationFormVersion.Status.PUBLISHED, form__is_smart_intake=False).exists()
-            assigned_intake = IntakeFormAssignment.objects.filter(channel="event", event=self.event,
-                is_active=True, form__is_active=True, active_version__status="published").exists()
+            from apps.participants.intake_views import public_assignment
+            assigned_intake = public_assignment(self.event) is not None
             if not (legacy_available or assigned_intake):
                 self.add_error("status", "Publish the standard registration form before opening this link.")
         return cleaned
@@ -157,8 +157,8 @@ def public_event_registration(request, slug):
     if event.public_registration_status != "open" or not event.registration_is_open or event.end_at < timezone.now():
         reason = "Public registration is paused for this event." if event.public_registration_status == "paused" else "Public registration is closed for this event."
         return render(request, "participants/registration_unavailable.html", {"event": event, "reason": reason}, status=403)
-    assigned_intake = IntakeFormAssignment.objects.filter(channel="event", event=event,
-        is_active=True, form__is_active=True, active_version__status="published").exists()
+    from apps.participants.intake_views import public_assignment
+    assigned_intake = public_assignment(event) is not None
     if not assigned_intake and event.registration_capacity is not None and EventRegistration.objects.filter(event=event, status=EventRegistration.Status.ACTIVE).count() >= event.registration_capacity:
         return render(request, "participants/registration_unavailable.html", {"event": event, "reason": "This event is at capacity."}, status=403)
     if (not event.public_consent_document or not event.public_consent_document.is_approved

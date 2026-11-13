@@ -18,6 +18,7 @@ from django.views.decorators.http import require_http_methods
 from apps.events.models import Event, OfflineEventPreparation, ParticipantMatchReview
 from .models import IntakeFormAssignment, IntakeSession, Participant
 from .intake_submission import start_session, complete_session
+from .intake_screens import public_screens
 from .intake_wizard import (browser_key, session_for, session_revision, IntakeStepForm,
                             save_step, UI_STEP_NAMES, current_ui_step, contract_step_for,
                             save_personal_information)
@@ -40,6 +41,24 @@ def assigned(channel, *, event=None, trailer=None):
         channel=channel, event=event, trailer=trailer, is_active=True).first()
 
 
+def public_assignment(event=None):
+    """The form the public gets: the event's own form, else the general online form."""
+    usable = dict(is_active=True, form__is_active=True, active_version__status="published")
+    if event is not None:
+        own = IntakeFormAssignment.objects.filter(channel="event", event=event, **usable).first()
+        if own:
+            return own
+    return IntakeFormAssignment.objects.filter(channel="online", event=None, trailer=None, **usable).first()
+
+
+def public_start_url(event=None):
+    assignment = public_assignment(event)
+    if assignment is None:
+        return None
+    url = reverse("participants:intake-start", args=[assignment.pk])
+    return url + ("?event=" + str(event.pk) if event is not None and assignment.channel == "online" else "")
+
+
 @never_cache
 @require_http_methods(["GET", "POST"])
 def start(request, assignment_id):
@@ -51,17 +70,26 @@ def start(request, assignment_id):
     if assignment.channel in {"staff", "trailer"}:
         from .intake_submission import _staff_channel
         _staff_channel(request.user, assignment.channel)
+    event = assignment.event
+    if assignment.channel == "online":
+        raw_event = request.GET.get("event") or request.POST.get("event")
+        if raw_event:
+            try:
+                event = Event.objects.get(pk=raw_event)
+            except (Event.DoesNotExist, ValueError, ValidationError):
+                raise Http404
     error = ""
     if request.method == "POST":
         try:
             session = start_session(assignment=assignment, browser_key=browser_key(request),
-                                    actor=request.user, event=assignment.event, preparation=preparation)
+                                    actor=request.user, event=event, preparation=preparation)
         except ValidationError as exc:
             error = "; ".join(exc.messages)
         else:
             return redirect("participants:intake-session", session_id=session.pk)
     return render(request, "participants/intake_start.html", {
-        "assignment": assignment, "event": assignment.event, "error": error})
+        "assignment": assignment, "event": event, "error": error,
+        "screens": public_screens(assignment.active_version)})
 
 
 @never_cache
@@ -72,7 +100,7 @@ def wizard(request, session_id):
     except IntakeSession.DoesNotExist:
         raise Http404
     if session.state == "submitted":
-        result = {"event": session.event}
+        result = {"event": session.event, "screens": public_screens(session.form_version)}
         if request.user.is_authenticated and request.user.is_staff:
             source = session.submission
             review = ParticipantMatchReview.objects.filter(source_submission=source).first()

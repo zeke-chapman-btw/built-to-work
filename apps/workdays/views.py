@@ -1,4 +1,6 @@
 from datetime import date
+from django import forms
+from django.urls import reverse
 from zoneinfo import ZoneInfo
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
@@ -179,7 +181,7 @@ def settings(request):
     roles=list(StaffRole.objects.all())
     for role in roles:role.current_rate=svc.rate_for('role',today,role)
     rates=CompensationRate.objects.select_related('role','created_by')
-    return page(request,'settings',page_title='Compensation',roles=roles,rates=Paginator(rates,40).get_page(request.GET.get('page')),per_diem=svc.rate_for('per_diem',today),mileage=svc.rate_for('mileage',today),origin=ORIGIN)
+    return page(request,'settings',page_title='Pay',roles=roles,rates=Paginator(rates,40).get_page(request.GET.get('page')),per_diem=svc.rate_for('per_diem',today),mileage=svc.rate_for('mileage',today),origin=ORIGIN)
 
 @staff_view
 def role_edit(request,role_id=None):
@@ -189,9 +191,11 @@ def role_edit(request,role_id=None):
     if request.method=='POST':
         saved,form=svc.save_role(actor=request.user,data=request.POST,role_id=role_id)
         if saved:
-            messages.success(request,'Role saved. Prior workday role and compensation snapshots were retained.')
-            return redirect('workdays:settings')
-    return form_page(request,'Edit staff role' if obj else 'Add staff role',form,('workdays:settings',None))
+            messages.success(request,'Role saved. Days already worked keep their pay.')
+            from apps.internal_ui.record_editors import editor_success
+            return editor_success(request,reverse('workdays:settings'))
+    if request.headers.get('X-BTW-Editor')=='1':return pay_editor(request,'Edit role' if obj else 'Add role',form,obj.name if obj else '')
+    return form_page(request,'Edit role' if obj else 'Add role',form,('workdays:settings',None))
 
 @staff_view
 def rate_edit(request,kind):
@@ -205,11 +209,27 @@ def rate_edit(request,kind):
         data=request.POST.copy();data['kind']=kind;data['role']=str(role.pk) if role else ''
         saved,form=svc.save_rate(actor=request.user,data=data)
         if saved:
-            messages.success(request,'New rate version saved. Approved historical workdays and claims were not recalculated.')
-            return redirect('workdays:settings')
-    form.fields['kind'].disabled=True;form.fields['kind'].initial=kind
-    form.fields['role'].disabled=True;form.fields['role'].initial=role
-    return form_page(request,'New '+dict(CompensationRate.KINDS)[kind]+' rate version',form,('workdays:settings',None))
+            messages.success(request,'New rate saved. Days already approved keep their old rate.')
+            from apps.internal_ui.record_editors import editor_success
+            return editor_success(request,reverse('workdays:settings'))
+    # Kind and role are fixed by the link that opened the form, so they aren't shown as questions.
+    form.fields['kind'].disabled=True;form.fields['kind'].initial=kind;form.fields['kind'].widget=forms.HiddenInput()
+    form.fields['role'].disabled=True;form.fields['role'].initial=role;form.fields['role'].widget=forms.HiddenInput()
+    form.fields['amount'].label={'role':'Daily pay ($)','per_diem':'Per diem per day ($)','mileage':'Dollars per mile'}[kind]
+    current=svc.rate_for(kind,timezone.localdate(),role) if kind=='role' else svc.rate_for(kind,timezone.localdate())
+    if current:
+        shown_amount=str(current.amount.normalize()) if kind=='mileage' else f'{current.amount:,.2f}'
+        form.fields['amount'].help_text='Now: $'+shown_amount+(' per mile' if kind=='mileage' else ' a day')+' since '+current.effective_from.strftime('%b %-d, %Y')+'.'
+    title={'role':'Set daily pay','per_diem':'Set per diem','mileage':'Set mileage rate'}[kind]
+    if request.headers.get('X-BTW-Editor')=='1':return pay_editor(request,title,form,str(role) if role else '')
+    return form_page(request,title+(' · '+str(role) if role else ''),form,('workdays:settings',None))
+
+
+def pay_editor(request,title,form,context_line):
+    from apps.internal_ui.record_editors import editor_response
+    return editor_response(request,template='workdays/form.html',panel='internal/ui/record_form_panel.html',context={
+        'form':form,'page_title':title,'editor_context':context_line,'back':reverse('workdays:settings'),'save_label':'Save changes',
+        'fields_template':'internal/ui/section_fields.html','full_page_editor':False})
 
 @staff_view
 def report(request):

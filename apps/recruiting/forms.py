@@ -48,7 +48,8 @@ class ListForm(forms.ModelForm):
     class Meta:
         model = CandidateList
         fields = ['name', 'shared']
-        labels = {'shared': 'Share with authorized recruiting staff (editing remains with owner/Manager)'}
+        labels = {'name': 'List name', 'shared': 'Share with other recruiting staff'}
+        help_texts = {'shared': 'Only you and managers can change it.'}
 
 
 class ConsolidationForm(ReasonForm):
@@ -64,10 +65,14 @@ class ClassificationForm(OptionalReasonMixin, forms.ModelForm):
     class Meta:
         model = Classification
         fields = ['kind', 'key', 'label', 'position', 'is_active']
-        labels = {'kind': 'Profile category', 'key': 'Stable code', 'label': 'Display name',
-                  'position': 'Display order', 'is_active': 'Available for new selections'}
-        help_texts = {'key': 'Set once. Existing answers retain this code.',
-                      'position': 'Lower numbers appear first.'}
+        labels = {'kind': 'Category', 'key': 'Code', 'label': 'Name',
+                  'position': 'Order', 'is_active': 'Can be chosen'}
+        help_texts = {'key': "Short code that can't change later.",
+                      'position': 'Lower numbers show first.'}
+        widgets = {'kind': forms.RadioSelect(attrs={'class': 'btw-chip-choices'})}
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        self.fields['kind'].choices=[c for c in self.fields['kind'].choices if c[0]!='']
 
 
 class CampaignPolicyForm(ReasonForm):

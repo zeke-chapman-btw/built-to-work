@@ -1,12 +1,54 @@
-{% extends 'recruiting/base.html' %}{% load ui_patterns %}{% block recruiting_content %}<nav class="rc-links" aria-label="Candidate links"><a href="{% url 'recruiting:pipeline' %}">← Pipeline</a><a href="{% url 'participants:staff-profile' candidate.participant_id %}">Profile</a><a href="{% url 'recruiting:matching' candidate.opportunity_id %}">Position &amp; matching</a>{% if editable %}<a href="{% url 'recruiting:disclosure' candidate.pk %}">Share with employer</a>{% endif %}</nav>
-<div class="rc-cols"><div class="rc-col">
-<section class="card ops-list-card"><header class="ops-list-head"><h2>Stage</h2>{% if candidate.active %}{% ui_badge candidate.stage.label 'info' %}{% else %}{% ui_badge candidate.outcome|default:'Closed' %}{% endif %}</header><dl class="ops-facts-list"><div><dt>Assigned to</dt><dd>{{ candidate.assignee|default:'Nobody' }}</dd></div><div><dt>Position</dt><dd>{{ candidate.opportunity }}</dd></div>{% if candidate.selection_rationale %}<div><dt>Why selected</dt><dd>{{ candidate.selection_rationale }}</dd></div>{% endif %}</dl>{% for issue in policy_issues %}<p class="btw-inline-notice rc-pad">{{ issue }}</p>{% endfor %}
-{% if editable and candidate.active %}<form method="post" class="rc-form rc-stage-form">{% csrf_token %}<input type="hidden" name="operation" value="stage">{% for field in stage_form %}{% ui_field field %}{% endfor %}{% if stage_form.non_field_errors %}<p class="btw-field-error">{{ stage_form.non_field_errors|join:' ' }}</p>{% endif %}<button class="button button-primary" type="submit">Save stage</button></form>{% endif %}
-{% if editable %}<details class="ops-inline-add"{% if reassignment_form.errors %} open{% endif %}><summary>Change who's assigned</summary><form method="post" class="rc-form">{% csrf_token %}<input type="hidden" name="operation" value="reassign">{% for field in reassignment_form %}{% ui_field field %}{% endfor %}<button class="button secondary" type="submit">Save</button></form></details>{% endif %}</section>
-<section class="card ops-list-card"><header class="ops-list-head"><h2>Contact log</h2></header>{% if editable %}<details class="ops-inline-add"{% if outreach_form.errors %} open{% endif %}><summary>+ Log a contact</summary><p class="event-help">This only records a contact. It doesn't send anything.</p><form method="post" class="rc-form">{% csrf_token %}<input type="hidden" name="operation" value="outreach">{% for field in outreach_form %}{% ui_field field %}{% endfor %}<button class="button button-primary" type="submit">Save contact</button></form></details>{% endif %}{% for item in outreach %}<div class="ops-list-row"><span class="ops-list-main"><strong>{{ item.get_method_display }} · {{ item.outcome }}</strong><small>{{ item.contacted_at|date:'M j, Y · g:i A' }} · {{ item.actor }}</small>{% if item.response %}<small>{{ item.response }}</small>{% endif %}{% if item.notes %}<small>{{ item.notes|linebreaksbr }}</small>{% endif %}</span>{% if item.visible_task %}<span class="ops-list-links"><a href="{% url 'operations:task' item.visible_task.pk %}">Task</a></span>{% endif %}</div>{% empty %}<p class="ops-list-empty">No contacts logged yet.</p>{% endfor %}</section>
-<section class="card ops-list-card"><header class="ops-list-head"><h2>Employer responses</h2></header>{% for event in employer_feedback %}<div class="ops-list-row"><span class="ops-list-main"><strong>{{ event.get_kind_display }}</strong><small>{{ event.created_at|date:'M j, Y · g:i A' }}</small>{% if event.message %}<small>{{ event.message|linebreaksbr }}</small>{% endif %}</span></div>{% empty %}<p class="ops-list-empty">No employer responses yet.</p>{% endfor %}</section>
-</div><aside class="rc-col">
-<section class="card ops-list-card"><header class="ops-list-head"><h2>Interest</h2></header>{% for interest in origin_interests %}<div class="ops-list-row"><span class="ops-list-main"><strong><a href="{% url 'recruiting:interest-review' interest.pk %}">{{ interest.get_status_display }}</a></strong><small>{{ interest.created_at|date:'M j, Y' }}</small></span></div>{% if interest.status == 'withdrawn' %}<p class="btw-inline-notice rc-pad">They withdrew their interest. Nothing is shared with employers unless they show interest again.</p>{% endif %}{% empty %}<p class="ops-list-empty">Added by staff, not from the participant portal.</p>{% endfor %}</section>
-<section class="card ops-list-card"><header class="ops-list-head"><h2>Follow-up tasks</h2>{% if editable %}<a class="ops-quiet-link" href="{% url 'recruiting:followup' candidate.opportunity_id %}?candidate={{ candidate.pk }}">+ New task</a>{% endif %}</header>{% for link in task_links %}<div class="ops-list-row"><span class="ops-list-main"><strong><a href="{% url 'operations:task' link.task_id %}">{{ link.task.title }}</a></strong><small>{{ link.task.get_status_display }}</small></span></div>{% empty %}<p class="ops-list-empty">No follow-up tasks.</p>{% endfor %}</section>
-<details class="card ops-list-card rc-history"><summary>History</summary>{% for item in history %}<div class="ops-list-row"><span class="ops-list-main"><strong>{{ item.action|action_label }}</strong><small>{{ item.timestamp|date:'M j, Y · g:i A' }} · {{ item.actor }}</small>{% if item.reason and item.reason != "No reason given" %}<small>{{ item.reason }}</small>{% endif %}</span></div>{% empty %}<p class="ops-list-empty">No history yet.</p>{% endfor %}</details>
-</aside></div>{% endblock %}
+{% extends 'recruiting/base.html' %}{% load static ui_patterns %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/customers.css' %}?v=cx-layout-11">{% endblock %}
+{% block body_class %}{{ block.super }} customer-app has-customer-page{% endblock %}
+{% block recruiting_header %}{% endblock %}
+{% block recruiting_content %}{% with p=candidate.participant need=candidate.opportunity.need %}<div class="customer-page rc-candidate">
+<a class="customer-back" href="{% url 'recruiting:pipeline' %}">← Pipelines</a>
+<header class="cx-hero">
+<div class="cx-who"><span class="cx-avatar" aria-hidden="true">{{ p.first_name|slice:':1'|upper }}{{ p.last_name|slice:':1'|upper }}</span>
+<div><h1>{{ p }}</h1><p class="cx-meta">{{ need.title }} · {{ need.organization.name }}</p>
+<div class="cx-chips">{% if candidate.active %}{% ui_badge candidate.stage.label 'info' %}{% else %}{% ui_badge candidate.outcome|default:'Closed' %}{% endif %}</div></div></div>
+<div class="cx-actions">
+{% if editable and candidate.active %}<a class="button button-primary" data-record-editor href="?edit=stage">Change stage</a>{% endif %}
+{% if editable %}<a class="button secondary" data-record-editor href="?edit=outreach">Log contact</a>{% endif %}
+<details class="cx-more" data-ui-menu><summary>More</summary><div>
+<a href="{% url 'participants:staff-profile' candidate.participant_id %}">Participant profile</a>
+<a href="{% url 'recruiting:matching' candidate.opportunity_id %}">Position &amp; matching</a>
+{% if editable %}<a href="{% url 'recruiting:disclosure' candidate.pk %}">Share with employer</a>
+<a data-record-editor href="?edit=reassign">Change who's assigned</a>{% endif %}
+</div></details>
+</div>
+</header>
+{% for issue in policy_issues %}<p class="btw-inline-notice">{{ issue }}</p>{% endfor %}
+<div class="cx-tiles" role="group" aria-label="At a glance">
+<div class="cx-tile"><span>Stage</span><strong>{% if candidate.active %}{{ candidate.stage.label }}{% else %}{{ candidate.outcome|default:'Closed' }}{% endif %}</strong></div>
+<div class="cx-tile"><span>Assigned to</span><strong>{% if candidate.assignee %}{{ candidate.assignee }}{% else %}<span class="pv-unset" aria-label="Nobody">—</span>{% endif %}</strong></div>
+<div class="cx-tile"><span>Last contact</span>{% with last=outreach|first %}{% if last %}<strong>{{ last.get_method_display }} · {{ last.contacted_at|date:'M j' }}</strong><small>{{ last.outcome }}</small>{% else %}<strong><span class="pv-unset" aria-label="None yet">—</span></strong>{% endif %}{% endwith %}</div>
+<div class="cx-tile"><span>Employer responses</span><strong>{{ employer_feedback|length }}</strong></div>
+</div>
+<div class="cx-cols"><div class="cx-stack">
+<section class="customer-card cx-card" aria-labelledby="rc-log-title"><header class="cx-card-h"><h2 id="rc-log-title">Contact log</h2><span class="cx-links">{% if editable %}<a data-record-editor href="?edit=outreach">+ Log contact</a>{% endif %}</span></header>
+{% for item in outreach %}<div class="cx-person"><strong>{{ item.get_method_display }} · {{ item.outcome }}</strong><span>{{ item.contacted_at|date:'M j, Y · g:i A' }} · {{ item.actor }}{% if item.visible_task %} · <a href="{% url 'operations:task' item.visible_task.pk %}">Task</a>{% endif %}</span>{% if item.response %}<span>{{ item.response }}</span>{% endif %}{% if item.notes %}<span>{{ item.notes|linebreaksbr }}</span>{% endif %}</div>{% empty %}<p class="cx-empty">No contacts logged yet.</p>{% endfor %}
+</section>
+<section class="customer-card cx-card" aria-labelledby="rc-emp-title"><header class="cx-card-h"><h2 id="rc-emp-title">Employer responses</h2>{% if editable %}<span class="cx-links"><a href="{% url 'recruiting:disclosure' candidate.pk %}">Share with employer</a></span>{% endif %}</header>
+{% for event in employer_feedback %}<div class="cx-person"><strong>{{ event.get_kind_display }}</strong><span>{{ event.created_at|date:'M j, Y · g:i A' }}</span>{% if event.message %}<span>{{ event.message|linebreaksbr }}</span>{% endif %}</div>{% empty %}<p class="cx-empty">No employer responses yet.</p>{% endfor %}
+</section>
+<section class="customer-card cx-card" aria-labelledby="rc-hist-title"><header class="cx-card-h"><h2 id="rc-hist-title">History</h2></header>
+{% for item in history %}<div class="cx-person"><strong>{{ item.action|action_label }}</strong><span>{{ item.timestamp|date:'M j, Y · g:i A' }} · {{ item.actor }}</span>{% if item.reason and item.reason != "No reason given" %}<span>{{ item.reason }}</span>{% endif %}</div>{% empty %}<p class="cx-empty">No history yet.</p>{% endfor %}
+</section>
+</div><div class="cx-stack">
+<section class="customer-card cx-card" aria-labelledby="rc-details-title"><header class="cx-card-h"><h2 id="rc-details-title">Details</h2>{% if editable %}<span class="cx-links"><a data-record-editor href="?edit=reassign">Edit</a></span>{% endif %}</header>
+<dl class="cx-facts">
+<div><dt>Position</dt><dd><a href="{% url 'recruiting:matching' candidate.opportunity_id %}">{{ need.title }}</a></dd></div>
+<div><dt>Customer</dt><dd>{{ need.organization.name }}</dd></div>
+<div><dt>Assigned to</dt><dd>{% if candidate.assignee %}{{ candidate.assignee }}{% else %}<span class="pv-unset" aria-label="Nobody">—</span>{% endif %}</dd></div>
+<div><dt>Why selected</dt><dd>{% if candidate.selection_rationale %}{{ candidate.selection_rationale }}{% else %}<span class="pv-unset" aria-label="Not given">—</span>{% endif %}</dd></div>
+<div><dt>Came from</dt><dd>{% with interest=origin_interests|first %}{% if interest %}{% ui_badge 'Showed interest' 'success' %} <a href="{% url 'recruiting:interest-review' interest.pk %}">{{ interest.get_status_display }} · {{ interest.created_at|date:'M j' }}</a>{% else %}{% ui_badge 'Added by staff' 'neutral' %}{% endif %}{% endwith %}</dd></div>
+</dl>
+{% for interest in origin_interests %}{% if interest.status == 'withdrawn' %}<p class="btw-inline-notice rc-pad">They withdrew their interest. Nothing is shared with employers unless they show interest again.</p>{% endif %}{% endfor %}
+</section>
+<section class="customer-card cx-card" aria-labelledby="rc-tasks-title"><header class="cx-card-h"><h2 id="rc-tasks-title">Follow-up tasks</h2>{% if editable %}<span class="cx-links"><a href="{% url 'recruiting:followup' candidate.opportunity_id %}?candidate={{ candidate.pk }}">+ New task</a></span>{% endif %}</header>
+{% for link in task_links %}<div class="cx-person"><strong><a href="{% url 'operations:task' link.task_id %}">{{ link.task.title }}</a></strong><span>{{ link.task.get_status_display }}</span></div>{% empty %}<p class="cx-empty">No follow-up tasks.</p>{% endfor %}
+</section>
+</div></div>
+</div>{% endwith %}{% endblock %}

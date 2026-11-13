@@ -55,18 +55,22 @@ def eligible_accounts(actor):
 
 class StaffMemberForm(ProfileForm):
     existing_profile = forms.CharField(required=False, widget=forms.Select,
-        label='Existing staff profile', help_text='Choose an existing person to connect them. Saved personal details below are left unchanged for that profile.')
-    login_mode = forms.ChoiceField(choices=[('none', 'Profile only — no sign-in'), ('new', 'Create a sign-in account'), ('existing', 'Connect an existing staff account')], label='Sign-in access')
-    existing_account = forms.CharField(required=False, widget=forms.Select, label='Existing staff account',
-        help_text='Existing account identity, roles and financial designations are preserved.')
-    username = forms.CharField(max_length=150, required=False)
-    login_email = forms.EmailField(required=False, label='Sign-in and recovery email')
-    roles = forms.MultipleChoiceField(required=False, widget=forms.CheckboxSelectMultiple)
-    my_pay_access = forms.ChoiceField(choices=[('no', 'No'), ('yes', 'Yes')], initial='no', label='Allow access to My Pay',
-        help_text='Only this person’s own earnings statements. This grants no payroll or approval authority.')
-    send_invitation = forms.BooleanField(required=False, label='Send a secure sign-in invitation',
-        help_text='Optional for a new account. The person sets their own password.')
-    confirm_identity = forms.BooleanField(label='I checked the existing profiles and confirm this person and any account connection.')
+        label='Already on the staff list?', help_text='Pick them to give an existing person a sign-in. Their saved details stay as they are.')
+    login_mode = forms.ChoiceField(choices=[('none', 'No sign-in'), ('new', 'Create a sign-in'), ('existing', 'Use an existing sign-in')], initial='none', label='Sign-in',
+        widget=forms.RadioSelect(attrs={'class': 'btw-chip-choices'}))
+    existing_account = forms.CharField(required=False, widget=forms.Select(attrs={'data-show-when': 'login_mode=existing'}), label='Existing sign-in',
+        help_text='Their username, roles and pay settings stay the same.')
+    username = forms.CharField(max_length=150, required=False, widget=forms.TextInput(attrs={'data-show-when': 'login_mode=new'}))
+    login_email = forms.EmailField(required=False, label='Sign-in email', help_text='Used for password resets.',
+        widget=forms.EmailInput(attrs={'data-show-when': 'login_mode=new'}))
+    roles = forms.MultipleChoiceField(required=False, label='What can they do?',
+        widget=forms.CheckboxSelectMultiple(attrs={'data-show-when': 'login_mode=new'}))
+    my_pay_access = forms.ChoiceField(choices=[('no', 'No'), ('yes', 'Yes')], initial='no', label='Can see their own pay',
+        widget=forms.RadioSelect(attrs={'class': 'btw-chip-choices'}),
+        help_text='Only their own pay stubs and totals under My stuff.')
+    send_invitation = forms.BooleanField(required=False, label='Email them a link to set their password',
+        widget=forms.CheckboxInput(attrs={'data-show-when': 'login_mode=new'}))
+    confirm_identity = forms.BooleanField(label='I checked this person isn’t already on the staff list.')
 
     def __init__(self, *args, actor, **kwargs):
         super().__init__(*args, **kwargs)
@@ -76,7 +80,14 @@ class StaffMemberForm(ProfileForm):
             for p in StaffProfile.objects.filter(user__isnull=True).order_by('last_name', 'first_name')]
         self.fields['existing_account'].widget.choices = [('', 'Choose an account')] + [
             (displayed_token(actor, u, self.data.get('existing_account')), f'{u.get_full_name() or u.username} · {u.username}') for u in eligible_accounts(actor)]
-        self.fields['roles'].choices = ([('administrator', 'Administrator'), ('manager', 'Manager')] if actor.is_superuser else []) + [('recruiter', 'Recruiter'), ('event_staff', 'Event Staff')]
+        self.fields['roles'].choices = ([('administrator', 'Administrator'), ('manager', 'Manager')] if actor.is_superuser else []) + [('recruiter', 'Recruiter'), ('event_staff', 'Event staff')]
+        self.fields['existing_profile'].widget.choices[0] = ('', 'No — add a new person')
+        if len(self.fields['existing_profile'].widget.choices) == 1:
+            self.fields['existing_profile'].widget = forms.HiddenInput()
+        # Personal details only matter when adding a new person.
+        for name in ('first_name', 'last_name', 'email', 'phone', 'street_address', 'city', 'state', 'zip_code', 'shirt_size', 'is_active', 'internal_notes'):
+            if name in self.fields:
+                self.fields[name].widget.attrs['data-show-when'] = 'existing_profile='
         # Existing-profile selection is a connection, not an implicit profile edit.
         self.fields['first_name'].required = self.fields['last_name'].required = False
 
@@ -94,18 +105,20 @@ class StaffMemberForm(ProfileForm):
         elif mode == 'existing' and not data.get('existing_account'):
             self.add_error('existing_account', 'Choose the staff account to connect.')
         if data.get('send_invitation') and mode != 'new':
-            self.add_error('send_invitation', 'Use Roles & Access to invite an existing account.')
+            self.add_error('send_invitation', 'Send the invitation from their sign-in page instead.')
         return data
 
     @property
     def field_groups(self):
         groups = [
-            ('person', 'Staff member', ('existing_profile', 'first_name', 'last_name', 'email', 'phone', 'street_address', 'city', 'state', 'zip_code', 'shirt_size', 'is_active', 'internal_notes')),
-            ('access', 'Sign-in access', ('login_mode', 'existing_account', 'username', 'login_email', 'roles', 'send_invitation')),
-            ('pay', 'Own earnings', ('my_pay_access',)),
-            ('confirm', 'Confirm staff identity', ('confirm_identity',)),
+            ('person', 'Person', ('existing_profile', 'first_name', 'last_name', 'email', 'phone')),
+            ('address', 'Address', ('street_address', 'city', 'state', 'zip_code')),
+            ('other', 'Other details', ('shirt_size', 'is_active', 'internal_notes')),
+            ('access', 'Sign-in', ('login_mode', 'existing_account', 'username', 'login_email', 'roles', 'send_invitation')),
+            ('pay', 'Pay', ('my_pay_access',)),
+            ('confirm', 'Check', ('confirm_identity',)),
         ]
-        return [{'key': key, 'title': title, 'fields': [self[n] for n in names]} for key, title, names in groups]
+        return [{'key': key, 'title': title, 'fields': [self[n] for n in names if n in self.fields and not self[n].is_hidden]} for key, title, names in groups]
 
 
 @transaction.atomic

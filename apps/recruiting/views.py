@@ -59,7 +59,13 @@ def lists(request):
         except ValidationError as exc:
             form.add_error(None, exc)
         else:
-            return redirect('recruiting:list', list_id=item.pk)
+            from apps.internal_ui.record_editors import editor_success
+            return editor_success(request, reverse('recruiting:list', args=[item.pk]))
+    if request.GET.get('edit') == 'new' or request.method == 'POST':
+        from apps.internal_ui.record_editors import editor_response
+        return editor_response(request, template='recruiting/editor_page.html', panel='internal/ui/record_form_panel.html', context={
+            'form': form, 'page_title': 'New candidate list', 'back': reverse('recruiting:lists'), 'save_label': 'Create list',
+            'fields_template': 'internal/ui/section_fields.html', 'full_page_editor': request.headers.get('X-BTW-Editor') != '1'})
     return page(request, 'recruiting/lists.html', form=form,
         lists=service.visible_lists(request.user).filter(archived_at__isnull=True), page_title='Candidate lists')
 
@@ -202,13 +208,22 @@ def classifications(request, classification_id=None):
         except ValidationError as exc:form.add_error(None,exc)
         else:
             from .ui_context import catalog_url
-            return redirect(catalog_url(request, 'recruiting:classifications'))
+            from apps.internal_ui.record_editors import editor_success
+            return editor_success(request, catalog_url(request, 'recruiting:classifications'))
+    # Adding or editing a classification opens as a pop-up ("?edit=new" or the edit URL).
+    if item or request.GET.get('edit') == 'new' or request.method == 'POST':
+        from .ui_context import catalog_url
+        from apps.internal_ui.record_editors import editor_response
+        return editor_response(request, template='recruiting/editor_page.html', panel='internal/ui/record_form_panel.html', context={
+            'form': form, 'page_title': 'Edit classification' if item else 'New classification',
+            'back': catalog_url(request, 'recruiting:classifications'), 'save_label': 'Save changes',
+            'fields_template': 'internal/ui/section_fields.html', 'full_page_editor': request.headers.get('X-BTW-Editor') != '1'})
     from apps.core.models import AuditLog
     from django.contrib.contenttypes.models import ContentType
     history=AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(Classification),action='recruiting.classification.saved')
     if item:history=history.filter(object_id=str(item.pk))
     return page(request, 'recruiting/classifications.html', form=form, classifications=Classification.objects.all(),
-        page_title='Employment & availability classifications', active_workspace='administration',history=history.order_by('-timestamp')[:30])
+        page_title='Work classifications', active_workspace='administration',history=history.order_by('-timestamp')[:30])
 
 
 @staff

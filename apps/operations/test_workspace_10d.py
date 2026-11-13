@@ -86,7 +86,7 @@ class ManagementUI10DTests(TestCase):
         self.reader.user_permissions.add(Permission.objects.get(codename="view_syncoutboxitem"))
         self.client.force_login(self.reader,backend="django.contrib.auth.backends.ModelBackend")
         r=self.client.get(reverse("internal:workspace",args=["platform-tools"]))
-        self.assertContains(r,"Platform monitoring");self.assertNotContains(r,reverse("events:match-review-list"));self.assertNotContains(r,"/admin/events/backuprecord/")
+        self.assertContains(r,"System status");self.assertNotContains(r,reverse("events:match-review-list"));self.assertNotContains(r,"/admin/events/backuprecord/")
     def test_existing_event_get_never_backfills_checklist(self):
         self.assertFalse(EventExecution.objects.filter(event=self.event).exists())
         for name in ("execution","health","closeout"):

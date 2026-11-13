@@ -5,7 +5,8 @@
   "use strict";
 
   function wrapperOf(input) {
-    return input.closest(".ux-field, .btw-field, .field, [data-field]") || input.parentElement;
+    /* Hide the whole grid cell so a hidden question leaves no empty gap. */
+    return input.closest(".btw-editor-grid > div") || input.closest(".ux-field, .btw-field, .field, [data-field]") || input.parentElement;
   }
   function currentValue(form, name) {
     const checked = form.querySelector('input[name="' + name + '"]:checked');
@@ -55,6 +56,14 @@
     let index = 0;
     const firstError = steps.findIndex(function (s) { return s.hasAttribute("data-has-errors"); });
     if (firstError > -1) index = firstError;
+    else {
+      /* "?step=N" on the editor link (card Edit links) opens that section. */
+      let wanted = null;
+      try { wanted = new URL(form.getAttribute("action") || "", window.location.href).searchParams.get("step"); } catch (e) { wanted = null; }
+      if (!wanted) wanted = new URLSearchParams(window.location.search).get("step");
+      const n = parseInt(wanted, 10);
+      if (n > 0) index = Math.min(steps.length, n) - 1;
+    }
     function show(i, focus) {
       index = Math.max(0, Math.min(steps.length - 1, i));
       steps.forEach(function (s, n) { s.hidden = n !== index; });

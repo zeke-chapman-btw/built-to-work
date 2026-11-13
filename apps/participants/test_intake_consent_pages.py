@@ -134,7 +134,7 @@ class FivePageIntakeTests(TestCase):
     def test_form_builder_uses_five_participant_step_labels_without_changing_contract(self):
         self.client.force_login(self.admin, backend="django.contrib.auth.backends.ModelBackend")
         response = self.client.get(reverse("participants:intake-config-detail", args=[self.version.form_id]))
-        self.assertContains(response, "Preview five steps")
+        self.assertContains(response, "Preview what people see")
         from .intake_config_forms import QuestionConfigForm
         consent = QuestionConfigForm(contract=self.version.snapshot, key="consent")
         self.assertEqual(list(consent.fields["step"].choices), [(1, "Step 2 — Consent")])
