@@ -1,12 +1,12 @@
 {% extends 'recruiting/base.html' %}
 {% block recruiting_content %}
 <div class="ux-actions recruiting-need-actions"><a class="button" href="{% url 'recruiting:matching-directory' %}">All candidate matching</a>{% if can_manage_requests %}<a class="button" href="{% url 'recruiting:request-group' %}">Group positions into a Request</a>{% endif %}</div>
-<details class="btw-filter-panel" data-workforce-filters{% if filters.errors %} data-filter-errors{% endif %} open><summary>Filters{% if active_filters %} · {{ active_filters }} active{% endif %}</summary>
+<div class="btw-filter-panel card rc-need-filter-card" data-workforce-filters{% if filters.errors %} data-filter-errors{% endif %}>
 <form method="get" class="recruiting-need-filters" aria-label="Workforce Need filters">
 {% if filters.errors %}<div class="form-error-summary" role="alert">{{ filters.non_field_errors }}{% for field in filters %}{{ field.errors }}{% endfor %}</div>{% endif %}
 {% for field in filters %}<div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>{% endfor %}
 <div class="ux-actions"><button type="submit" class="button ux-primary">Apply</button><a class="button" href="{% url 'recruiting:workforce-needs' %}">Reset</a></div>
-</form></details>
+</form></div>
 <section class="ux-surface"><header class="ux-card-heading"><h2>Positions · {{ needs_page.paginator.count }}</h2></header>
 <div class="table-scroll" tabindex="0" role="region" aria-label="Workforce Needs"><table class="workspace-table">
 <thead><tr><th scope="col">Position</th><th scope="col">Customer</th><th scope="col">Workers requested</th><th scope="col">Location</th><th scope="col">Status</th><th scope="col">Next step</th></tr></thead><tbody>

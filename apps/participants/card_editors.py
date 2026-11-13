@@ -41,6 +41,8 @@ class ProfileCardForm(forms.Form):
                 'preferred_locations': 'Preferred work locations'}.get(name, field.label)
             if isinstance(field.widget, forms.Textarea):
                 field.widget.attrs['rows'] = 3
+            if getattr(field, 'choices', None) and not isinstance(field, forms.ModelChoiceField):
+                field.choices = [(v, 'Not set' if v == '' else l) for v, l in field.choices]
             self.fields[name] = field
             self.initial[name] = getattr(record, name, model._meta.get_field(name).get_default()) if record else model._meta.get_field(name).get_default()
         if card == 'identity':
@@ -65,7 +67,7 @@ class ProfileCardForm(forms.Form):
                 from apps.recruiting.forms import PreferencesForm
                 initial = initial_preferences(person)
                 preferences = PreferencesForm(initial=initial)
-                for key in ('current_employment_status', 'employment_classification', 'availability_classification', 'willing_to_relocate'):
+                for key in ('current_employment_status', 'availability_classification', 'willing_to_relocate'):
                     self.fields[key] = preferences.fields[key]
                     self.initial[key] = initial[key]
                     if hasattr(self.fields[key], 'choices'):

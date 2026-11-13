@@ -1,8 +1,8 @@
 {% extends 'shared/workspace_landing.html' %} {% load static customer_ui ui_patterns tz %}
 {% block workspace_body_class %}customer-app{% endblock %}
 {% block workspace_class %}customer-page{% endblock %}
-{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/customers.css' %}?v=cx-layout-7">{% include 'crm/assets.html' %}{% endblock %}
-{% block workspace_actions %}<a class="customer-button primary" href="{% url 'customers:new' %}">+ New customer</a>{% endblock %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/customers.css' %}?v=cx-layout-10">{% include 'crm/assets.html' %}{% include 'internal/ui/event_editor_assets.html' %}{% endblock %}
+{% block workspace_actions %}<a class="button button-primary" data-record-editor href="{% url 'customers:new' %}">+ New customer</a>{% endblock %}
 {% block workspace_filters %}{% include 'crm/directory_sections.html' %}{% if directory_listing == 'search' %}<form method="get" class="btw-compact-filter customer-filters btw-filter-panel btw-filter-fields" role="search"><div><label for="q">Search customers</label><input id="q" name="q" value="{{ q }}" placeholder="Name or industry"></div><div><label for="status">Status</label><select id="status" name="status"><option value="">All statuses</option>{% for key,label in statuses %}<option value="{{ key }}" {% if status == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div><div><label for="provisioned">Portal users</label><select id="provisioned" name="provisioned"><option value="">All customers</option><option value="yes" {% if provisioned == 'yes' %}selected{% endif %}>Set up</option><option value="no" {% if provisioned == 'no' %}selected{% endif %}>Not set up</option></select></div><button class="customer-button">Apply</button><a class="btw-filter-clear" href="{% url 'customers:directory' %}">Reset</a></form>{% endif %}{% endblock %}
 {% block workspace_content %}
 
@@ -11,7 +11,7 @@
 <header class="btw-result-heading"><h2 id="cx-list-title">{{ rows.paginator.count }} customer{{ rows.paginator.count|pluralize }}</h2></header>
 {% if rows %}<div class="cx-list-head" aria-hidden="true"><span>Customer</span><span>Status</span><span>Open positions</span><span>Active campaigns</span><span>Main contact</span>{% if show_last_contact %}<span>Last contact</span>{% endif %}</div>{% endif %}
 {% for org in rows %}<article class="cx-list-row" aria-label="{{ org.name }}">
-<div class="cx-list-name"><a href="{% url 'customers:workspace' org.pk 'overview' %}?return_to={{ directory_context|urlencode }}">{{ org.name }}</a>{% if org.industry %}<small>{{ org.industry }}</small>{% endif %}</div>
+<div class="cx-list-name pl-person"><span class="pl-avatar" aria-hidden="true">{{ org.name|customer_initials }}</span><span class="pl-person-text"><a href="{% url 'customers:workspace' org.pk 'overview' %}?return_to={{ directory_context|urlencode }}">{{ org.name }}</a>{% if org.industry %}<small>{{ org.industry }}</small>{% endif %}</span></div>
 <div class="cx-list-field"><span class="cx-list-label">Status</span>{% ui_badge org.get_status_display org.status|customer_status_tone %}</div>
 <div class="cx-list-field"><span class="cx-list-label">Open positions</span><span>{{ org.open_position_count }}</span></div>
 <div class="cx-list-field"><span class="cx-list-label">Active campaigns</span><span>{{ org.active_campaign_count }}</span></div>

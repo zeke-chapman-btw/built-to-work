@@ -123,3 +123,27 @@
 .customer-app .cx-muted { color:var(--muted,#56616d); }
 .customer-app .cx-chips { display:flex; gap:6px; flex-wrap:wrap; }
 .customer-app .cx-form-heading h2 { margin:0; font-size:1.125rem; }
+/* Customer record pages match the participant profile standard (spacing, type, tiles, cards). */
+body.internal-app.has-customer-page #main-content .customer-page{font-size:14px;line-height:21px}
+body.internal-app.has-customer-page #main-content .customer-back{display:inline-flex;align-items:center;min-height:32px;font-size:12px;line-height:20px}
+body.internal-app.has-customer-page #main-content .cx-avatar{width:56px;height:56px;border-radius:50%;background:#d02030;font-size:18px;line-height:20px}
+body.internal-app.has-customer-page #main-content .cx-hero h1{font-size:20px;line-height:28px;color:#252830}
+body.internal-app.has-customer-page #main-content .cx-actions .button{min-height:44px;height:44px;display:inline-flex;align-items:center}
+body.internal-app.has-customer-page #main-content .cx-actions .button.secondary{border-color:#7b8793;color:#24272c}
+body.internal-app.has-customer-page #main-content .cx-more>summary{min-height:44px;height:44px;padding:0 12px;border-radius:6px;background:transparent;border-color:#d1d5db;font-weight:400;color:#252830}
+body.internal-app.has-customer-page #main-content .cx-tiles{gap:12px}
+body.internal-app.has-customer-page #main-content .cx-tile{padding:12px 16px;border-color:#e4e4e7;font-size:14px;line-height:21px;display:flex;flex-direction:column;gap:2px}
+body.internal-app.has-customer-page #main-content .cx-tile span{font-weight:600;line-height:18px}
+body.internal-app.has-customer-page #main-content .cx-tile strong{font-size:17px;font-weight:700;line-height:23.8px;margin:0}
+body.internal-app.has-customer-page #main-content .cx-tile small{font-size:13px;line-height:19.5px;margin:0}
+body.internal-app.has-customer-page #main-content :is(.cx-card,.cx-panel){border-color:#e4e4e7;font-size:14px;line-height:21px}
+body.internal-app.has-customer-page #main-content .cx-card-h{padding:12px 16px;min-height:48px;box-sizing:border-box}
+body.internal-app.has-customer-page #main-content .cx-card-h h2{color:#52525b}
+body.internal-app.has-customer-page #main-content .cx-card-h a{font-size:12px;font-weight:500;line-height:18px}
+body.internal-app.has-customer-page #main-content .cx-facts{display:grid;grid-template-columns:130px minmax(0,1fr);gap:6px 12px;padding:12px 16px 16px;font-size:14px}
+body.internal-app.has-customer-page #main-content .cx-facts>div{display:contents}
+body.internal-app.has-customer-page #main-content .cx-facts dt{font-size:13px;line-height:19.5px}
+body.internal-app.has-customer-page #main-content .cx-facts dd{line-height:21px}
+body.internal-app.has-customer-page #main-content .cx-tile{color:#18181b}
+body.internal-app.has-customer-page #main-content .cx-more>summary{font-size:13px;line-height:20px}
+body.internal-app.has-customer-page #main-content .cx-who{gap:16px}

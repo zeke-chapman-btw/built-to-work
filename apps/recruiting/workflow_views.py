@@ -221,7 +221,16 @@ def stages(request,key=None):
         except ValidationError as exc:form.add_error(None,exc)
         else:
             from .ui_context import catalog_url
+            if request.headers.get('X-BTW-Editor')=='1':
+                from apps.internal_ui.record_editors import editor_success
+                return editor_success(request, catalog_url(request, 'recruiting:stages'))
             return redirect(catalog_url(request, 'recruiting:stages'))
+    if request.headers.get('X-BTW-Editor')=='1':
+        from apps.internal_ui.record_editors import editor_response
+        from .ui_context import catalog_url
+        return editor_response(request, template='recruiting/stages.html', panel='internal/ui/record_form_panel.html', context={
+            'form':form,'page_title':'Edit stage' if row else 'New stage','back':catalog_url(request,'recruiting:stages'),'save_label':'Save',
+            'fields_template':'internal/ui/section_fields.html','editor_return_label':'stages','full_page_editor':False})
     return page(request,'recruiting/stages.html',page_title='Recruiting Stages',stages=RecruitingStage.objects.all(),form=form)
 
 

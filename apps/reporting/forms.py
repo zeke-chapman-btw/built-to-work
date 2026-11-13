@@ -13,8 +13,8 @@ from apps.workdays.models import Workday
 class ReportFilter(forms.Form):
     start = forms.DateField(required=False, label="From", widget=forms.DateInput(attrs={"type":"date"}))
     end = forms.DateField(required=False, label="Through", widget=forms.DateInput(attrs={"type":"date"}))
-    event = forms.ModelChoiceField(queryset=Event.objects.none(), required=False)
-    customer = forms.ModelChoiceField(queryset=CustomerOrganization.objects.none(), required=False)
+    event = forms.ModelChoiceField(queryset=Event.objects.none(), required=False, empty_label="Any event")
+    customer = forms.ModelChoiceField(queryset=CustomerOrganization.objects.none(), required=False, empty_label="Any customer")
     region = forms.CharField(required=False, max_length=100, label="State / region")
     identifier = forms.ChoiceField(required=False, choices=[("", "Any participant identifier"), ("student","Student"), ("employee","Employee"), ("teacher_instructor","Teacher / Instructor"), ("job_seeker","Job Seeker"), ("other","Other"), ("unclassified","Unclassified")])
     segments = forms.CharField(required=False,max_length=4000,widget=forms.HiddenInput)
@@ -22,8 +22,8 @@ class ReportFilter(forms.Form):
     assessment = forms.ChoiceField(required=False,choices=[("","Any"),("quiz","Quiz"),("simulator","Simulator"),("game","Game")],widget=forms.HiddenInput)
     score_min = forms.DecimalField(required=False,widget=forms.HiddenInput)
     score_max = forms.DecimalField(required=False,widget=forms.HiddenInput)
-    campaign = forms.ModelChoiceField(queryset=Campaign.objects.none(),required=False)
-    opportunity = forms.ModelChoiceField(queryset=RecruitingOpportunity.objects.none(),required=False)
+    campaign = forms.ModelChoiceField(queryset=Campaign.objects.none(),required=False,empty_label="Any campaign")
+    opportunity = forms.ModelChoiceField(queryset=RecruitingOpportunity.objects.none(),required=False,empty_label="Any position")
     def __init__(self, *args, actor, tab="highlights", **kwargs):
         super().__init__(*args, **kwargs)
         from .access import allowed_tabs

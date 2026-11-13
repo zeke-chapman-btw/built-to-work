@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  document.querySelectorAll('[data-workforce-filters]').forEach(panel => {
+  document.querySelectorAll('details[data-workforce-filters]').forEach(panel => {
     const wide = window.matchMedia('(min-width: 768px)');
     function adapt() { panel.open = wide.matches || panel.hasAttribute('data-filter-errors'); }
     adapt();

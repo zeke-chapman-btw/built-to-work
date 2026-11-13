@@ -79,7 +79,7 @@ class ParticipantReset9GTests(TestCase):
         client = Client(enforce_csrf_checks=True)
         response = client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, '<label for="id_email">Account email:</label>', html=True)
+        self.assertContains(response, '<label for="id_email">Account email</label>', html=True)
         self.assertContains(response, 'type="email"')
         self.assertContains(response, 'name="csrfmiddlewaretoken"')
         self.assertContains(response, 'Send recovery instructions')
