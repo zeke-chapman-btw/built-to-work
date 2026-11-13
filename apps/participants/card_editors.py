@@ -67,9 +67,12 @@ class ProfileCardForm(forms.Form):
                 from apps.recruiting.forms import PreferencesForm
                 initial = initial_preferences(person)
                 preferences = PreferencesForm(initial=initial)
-                for key in ('current_employment_status', 'availability_classification', 'willing_to_relocate'):
+                for key in ('current_employment_status', 'employment_classification', 'availability_classification', 'willing_to_relocate'):
                     self.fields[key] = preferences.fields[key]
                     self.initial[key] = initial[key]
+                    if key == 'employment_classification':
+                        self.fields[key].label = 'Employment type'
+                        self.fields[key].help_text = ''
                     if hasattr(self.fields[key], 'choices'):
                         self.fields[key].choices = [(v, 'Not set' if str(l).lower() in ('unknown', 'not recorded', '---------') else l) for v, l in self.fields[key].choices]
                 self.fields['recruiting_revision'] = forms.IntegerField(widget=forms.HiddenInput)
