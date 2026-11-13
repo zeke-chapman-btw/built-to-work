@@ -43,6 +43,7 @@ class PortalModelForm(ScopedForm, forms.ModelForm):
 
 class NeedForm(PortalModelForm):
     action_policy = 'needs'
+    stepper = True
     working_id = forms.UUIDField(required=False, widget=forms.HiddenInput)
     sections = HIRING_SECTIONS
 

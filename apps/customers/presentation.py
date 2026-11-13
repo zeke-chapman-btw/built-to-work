@@ -34,6 +34,8 @@ def label_hiring_fields(fields):
     for name, field in fields.items():
         if name in HIRING_LABELS:
             field.label = HIRING_LABELS[name]
+    if 'pay_response' in fields:
+        chip_hiring_fields(fields)
 
 def membership_rows(org):
     rows = []
@@ -61,3 +63,56 @@ def membership_rows(org):
                      'can_invite': not member.accepted_at and member.state == 'enabled' and org.status == 'active' and org.provisioned,
                      'can_revoke': bool(token and not token.revoked_at and not token.consumed_at and not member.accepted_at)})
     return rows
+
+
+# Plain chip answers for the position form, and which questions appear only after a matching answer.
+CHIP_LABELS = {
+    'pay_response': {'provided': 'Pay rate or range', 'not_applicable': 'Not applicable'},
+    'hours_mode': {'specified': 'Set hours per week', 'variable': 'Hours vary'},
+    'start_mode': {'date': 'Specific date', 'timeframe': 'Timeframe'},
+    'duration_response': {'provided': 'Set length', 'ongoing': 'Ongoing', 'not_applicable': "Doesn't apply"},
+    'location_mode': {'location': 'One of our locations', 'custom': 'Another worksite', 'remote': 'Remote'},
+}
+ANSWER_LABELS = {'provided': 'Yes', 'none': 'No', 'not_applicable': "Doesn't apply", 'yes': 'Yes', 'no': 'No'}
+CHIP_FIELDS = ('employment_type', 'location_mode', 'pay_response', 'pay_basis', 'overtime_response', 'benefits_response',
+               'per_diem_response', 'shift', 'hours_mode', 'start_mode', 'duration_response', 'required_skills_response',
+               'preferred_skills_response', 'required_experience_response', 'preferred_experience_response',
+               'required_credentials_response', 'preferred_credentials_response', 'travel_response', 'overnight_response',
+               'conditions_response', 'equipment_response', 'screening_response', 'other_response')
+SHOW_WHEN = {
+    'location': 'location_mode=location',
+    **{name: 'location_mode=custom' for name in ('location_name', 'address_line1', 'address_line2', 'city', 'location_state', 'postal_code', 'country')},
+    **{name: 'pay_response=provided' for name in ('pay_minimum', 'pay_maximum', 'pay_currency', 'pay_basis')},
+    'pay_details': 'pay_response=provided,not_applicable',
+    'per_diem_amount': 'per_diem_response=provided',
+    'hours_per_week': 'hours_mode=specified',
+    'start_date': 'start_mode=date', 'start_timeframe': 'start_mode=timeframe',
+    'duration_details': 'duration_response=provided,not_applicable', 'end_date': 'duration_response=provided',
+    'required_experience_years': 'required_experience_response=provided',
+    'preferred_experience_years': 'preferred_experience_response=provided',
+}
+for _name in ('overtime', 'travel', 'overnight'):
+    SHOW_WHEN[_name + '_details'] = _name + '_response=yes'
+for _name in ('benefits', 'per_diem', 'required_skills', 'preferred_skills', 'required_experience', 'preferred_experience',
+              'required_credentials', 'preferred_credentials', 'conditions', 'equipment', 'screening', 'other'):
+    SHOW_WHEN[_name + '_details'] = _name + '_response=provided,not_applicable'
+
+
+def chip_hiring_fields(fields):
+    """Turn short answer lists into tap-to-pick chips and mark follow-up questions."""
+    from django import forms
+    for name in CHIP_FIELDS:
+        field = fields.get(name)
+        if not field or not hasattr(field, 'choices'):
+            continue
+        names = CHIP_LABELS.get(name, {})
+        choices = [(value, names.get(value) or (ANSWER_LABELS.get(value, label) if name.endswith('_response') else label))
+                   for value, label in field.choices if value != '']
+        field.choices = choices
+        field.widget = forms.RadioSelect(attrs={'class': 'btw-chip-choices'}, choices=choices)
+    for field in fields.values():
+        if isinstance(field.widget, forms.Textarea):
+            field.widget.attrs['rows'] = 3
+    for name, rule in SHOW_WHEN.items():
+        if name in fields:
+            fields[name].widget.attrs['data-show-when'] = rule

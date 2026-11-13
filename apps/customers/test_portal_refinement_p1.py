@@ -33,7 +33,7 @@ class PortalRefinementTests(PortalFixtures, TestCase):
         response=self.client.post(reverse('customer_portal:need-create'),{'org_revision':org.revision,'title':'Keep my typed role','worker_quantity':'invalid'})
         self.assertEqual(response.status_code,200)
         self.assertContains(response,'Keep my typed role')
-        self.assertContains(response,'Go to section')
+        self.assertContains(response,'data-step-dot')
         self.assertContains(response,'data-has-errors')
         self.assertContains(response,'data-error-summary')
         self.assertEqual(len(response.context['form'].groups),7)

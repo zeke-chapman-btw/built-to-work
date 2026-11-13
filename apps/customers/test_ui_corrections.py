@@ -80,7 +80,7 @@ class CustomerUICorrectionsTests(PortalFixtures, TestCase):
         self.assertContains(response,'SYNTHETIC retained input')
         self.assertTrue(response.context['form'].groups[0]['errors'])
         self.assertTrue(response.context['form'].groups[2]['errors'])
-        self.assertContains(response,'id="hiring-group-3" open')
+        self.assertContains(response,'id="hiring-group-3"');self.assertContains(response,'data-has-errors')
         self.assertEqual(WorkforceNeed.objects.filter(organization=org).count(),0)
 
     def test_incomplete_draft_save_stays_distinct_from_submission(self):

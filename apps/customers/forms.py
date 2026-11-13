@@ -201,18 +201,19 @@ class CampaignForm(CustomerModelForm):
 
 
 HIRING_SECTIONS = (
-    ("Role and staffing", ("title", "trade", "description", "worker_quantity", "employment_type", "employment_details")),
-    ("Work location", ("location_mode", "location", "location_name", "address_line1", "address_line2", "city", "location_state", "postal_code", "country", "location_details")),
-    ("Pay, overtime and benefits", ("pay_response", "pay_minimum", "pay_maximum", "pay_currency", "pay_basis", "pay_details", "overtime_response", "overtime_details", "benefits_response", "benefits_details", "per_diem_response", "per_diem_details", "per_diem_amount")),
-    ("Schedule and timing", ("shift", "schedule_details", "hours_mode", "hours_per_week", "start_mode", "start_date", "start_timeframe", "duration_response", "duration_details", "end_date")),
-    ("Skills, experience and credentials", ("required_skills_response", "required_skills_details", "preferred_skills_response", "preferred_skills_details", "required_experience_response", "required_experience_details", "required_experience_years", "preferred_experience_response", "preferred_experience_details", "preferred_experience_years", "required_credentials_response", "required_credentials_details", "preferred_credentials_response", "preferred_credentials_details")),
-    ("Travel and working environment", ("travel_response", "travel_details", "overnight_response", "overnight_details", "conditions_response", "conditions_details", "equipment_response", "equipment_details")),
-    ("Contact, screening and hiring timeline", ("primary_contact", "screening_response", "screening_details", "other_response", "other_details", "hiring_timeline", "hiring_deadline")),
+    ("The role", ("title", "trade", "description", "worker_quantity", "employment_type", "employment_details")),
+    ("Where the work is", ("location_mode", "location", "location_name", "address_line1", "address_line2", "city", "location_state", "postal_code", "country", "location_details")),
+    ("Pay & benefits", ("pay_response", "pay_minimum", "pay_maximum", "pay_currency", "pay_basis", "pay_details", "overtime_response", "overtime_details", "benefits_response", "benefits_details", "per_diem_response", "per_diem_details", "per_diem_amount")),
+    ("Schedule", ("shift", "schedule_details", "hours_mode", "hours_per_week", "start_mode", "start_date", "start_timeframe", "duration_response", "duration_details", "end_date")),
+    ("Skills & experience", ("required_skills_response", "required_skills_details", "preferred_skills_response", "preferred_skills_details", "required_experience_response", "required_experience_details", "required_experience_years", "preferred_experience_response", "preferred_experience_details", "preferred_experience_years", "required_credentials_response", "required_credentials_details", "preferred_credentials_response", "preferred_credentials_details")),
+    ("Travel & work conditions", ("travel_response", "travel_details", "overnight_response", "overnight_details", "conditions_response", "conditions_details", "equipment_response", "equipment_details")),
+    ("Contact & hiring", ("primary_contact", "screening_response", "screening_details", "other_response", "other_details", "hiring_timeline", "hiring_deadline")),
 )
 
 
 class HiringForm(CustomerModelForm):
     grouped_disclosures = True
+    stepper = True
     working_id = forms.UUIDField(required=False, widget=forms.HiddenInput)
     sections = HIRING_SECTIONS
 
@@ -228,8 +229,8 @@ class HiringForm(CustomerModelForm):
         for name in self.fields:
             if name.endswith("_response"):
                 self.fields[name].label = self.fields[name].label.replace(" response", "")
-        self.fields["location"].help_text = "Location addresses come from Company Profile. Update an incomplete address there, or choose Other work location."
-        self.fields["pay_currency"].help_text = "Three-letter currency code. No currency or pay amount is assumed."
+        self.fields["location"].help_text = "Addresses come from your company profile. If it isn't listed, choose Another worksite."
+        self.fields["pay_currency"].help_text = "Three letters, for example USD."
         label_hiring_fields(self.fields)
         self.fields["working_id"].initial = self.instance.pk if not self.instance._state.adding else None
 
