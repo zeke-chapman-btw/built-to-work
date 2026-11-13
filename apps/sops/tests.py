@@ -101,8 +101,8 @@ class MyStuffAndStaffViewTests(TestCase):
         self.client.force_login(self.worker, backend="django.contrib.auth.backends.ModelBackend")
         response = self.client.get(reverse("my:schedule"))
         self.assertContains(response, "SYNTHETIC Staffed fair")
-        # Event-staff accounts don't see housing or contacts (existing privacy rule).
-        self.assertNotContains(response, "SYNTHETIC Inn")
+        self.assertContains(response, "SYNTHETIC Inn")
+        self.assertContains(response, "Conf. C-1")
         self.assertNotContains(response, ">My pay<")
         self.profile.my_pay_enabled = True
         self.profile.save()
@@ -114,7 +114,7 @@ class MyStuffAndStaffViewTests(TestCase):
         response = self.client.get(reverse("my:schedule"))
         self.assertContains(response, "Viewing as Wanda Worker")
         self.assertContains(response, "SYNTHETIC Staffed fair")
-        self.assertNotContains(response, "SYNTHETIC Inn")
+        self.assertContains(response, "SYNTHETIC Inn")
         # Saving anything is blocked and the admin is told why.
         before = self.profile.updated_at
         response = self.client.post(reverse("internal:settings"), {"first_name": "Changed"}, HTTP_REFERER="/internal/settings/")
@@ -166,3 +166,20 @@ class EventHousingTests(TestCase):
         self.assertContains(bad, "Check-out can", status_code=400)
         self.client.post(edit, {"remove": "1"})
         self.assertFalse(self.event.lodgings.exists())
+
+
+class EventRegistrationsForStaffTests(MyStuffAndStaffViewTests):
+    def test_assigned_staff_can_look_people_up_unassigned_cannot(self):
+        from apps.events.models import EventRegistration
+        from apps.participants.models import Participant
+        person = Participant.objects.create(first_name="SYNTHETIC", last_name="Lookup", contact_email="hidden@example.test")
+        EventRegistration.objects.create(event=self.event, participant=person)
+        url = reverse("staffing:event-participants", args=[self.event.pk])
+        self.client.force_login(self.worker, backend="django.contrib.auth.backends.ModelBackend")
+        response = self.client.get(url, {"q": "Lookup"})
+        self.assertContains(response, "SYNTHETIC Lookup")
+        self.assertNotContains(response, "hidden@example.test")
+        other = staff_user("not-assigned", "event_staff")
+        StaffProfile.objects.create(first_name="N", last_name="A", email="na@example.test", user=other, is_active=True)
+        self.client.force_login(other, backend="django.contrib.auth.backends.ModelBackend")
+        self.assertEqual(self.client.get(url).status_code, 403)

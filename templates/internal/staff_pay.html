@@ -1,7 +1,7 @@
 {% extends 'shared/workspace_landing.html' %}
 {% block workspace_class %}ux-settings-page{% endblock %}
 {% block workspace_content %}<div class="sop-page">
-<p class="ls-intro">When My pay is on, that person sees their own pay stubs and year-to-date totals under My stuff. They never see anyone else's.</p>
+<p class="ls-intro">When My pay is on, that person sees their own pay stubs and year-to-date totals under My stuff. They never see anyone else's. To see everyone's pay, use <a href="{% url 'internal:reports' %}?tab=payroll">Reports &amp; Analytics → Payroll</a>.</p>
 <form method="get" class="card rc-filters sop-search"><div class="field"><label for="pay-q">Search staff</label><input id="pay-q" name="q" value="{{ q }}" placeholder="Name or email"></div><div class="rc-filter-actions"><button class="button secondary" type="submit">Search</button>{% if q %}<a href="?">Clear</a>{% endif %}</div></form>
 <section class="card ops-list-card"><header class="ops-list-head"><h2>Staff</h2><span class="hv2-muted">My pay on for {{ on_count }} of {{ people|length }}</span></header>
 {% for row in people %}<div class="ops-list-row"><a class="ops-list-main" href="{% url 'staffing:profile' row.profile.pk %}"><strong>{{ row.profile }}</strong><small>{% if row.roles %}{{ row.roles|join:', ' }}{% else %}No login role{% endif %}{% if row.profile.email %} · {{ row.profile.email }}{% endif %}</small></a>

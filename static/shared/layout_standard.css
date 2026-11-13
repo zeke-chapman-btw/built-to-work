@@ -112,3 +112,6 @@ body.internal-app #main-content .hv2-linkbtn { background:none; border:0; paddin
 body.internal-app #main-content .hv2-linkbtn:hover { text-decoration:underline; }
 body.internal-app #main-content :is(.my-page,.sop-page), body.internal-app #main-content .btw-standard-workspace:has(> .my-page,> .sop-page) { max-width:none; }
 body.internal-app #main-content .ls-links { display:flex; gap:14px; flex-wrap:wrap; font-size:13px; margin:12px 0 0; }
+body.internal-app #main-content .reg-sub { display:block; color:var(--muted,#6b7280); font-size:12px; }
+body.internal-app #main-content .reg-ticket { font-family:ui-monospace,Menlo,monospace; font-weight:600; }
+body.internal-app #main-content .reg-table td { vertical-align:top; }

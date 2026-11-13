@@ -44,8 +44,6 @@ def schedule(request):
     if not active_staff(request.user):
         raise PermissionDenied
     profile = StaffProfile.objects.filter(user=request.user, is_active=True).first()
-    from apps.accounts.operational_access import safe_event_worker
-    general_only = safe_event_worker(request.user)  # same policy as the general event page
     now = timezone.now()
     upcoming, past, requests, open_events = [], [], [], []
     if profile:
@@ -58,10 +56,8 @@ def schedule(request):
             item = dict(_event(event), role=row.role or row.get_coverage_role_display(),
                         days=[d.date for d in row.days.all()],
                         checkin_url=reverse("workdays:checkin", args=[event.pk]) if has_role(request.user, "event_staff") else "",
-                        housing=[] if general_only else _stay(event), travel="" if general_only else event.logistics_instructions,
-                        contact={} if general_only else dict(name=event.contact_name, phone=event.contact_phone, email=event.contact_email))
-            if general_only:
-                item.update(address="", setup_date=None, arrival=None, return_date=None)
+                        housing=_stay(event), travel=event.logistics_instructions,
+                        contact=dict(name=event.contact_name, phone=event.contact_phone, email=event.contact_email))
             (upcoming if event.end_at >= now else past).append(item)
         past = list(reversed(past))[:10]
         for req in profile.availability_requests.select_related("event").order_by("-created_at")[:20]:

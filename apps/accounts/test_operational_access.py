@@ -64,10 +64,14 @@ class OperationalRoleTests(TestCase):
         self.event.status='completed';self.event.staff_published_at=None;self.event.save()
         self.assertEqual(self.client.get(reverse('staffing:general-event',args=[self.event.pk])).status_code,404)
     def test_general_projection_omits_private_event_fields_even_when_assigned(self):
-        self.assignment();self.login_as(self.worker)
+        # Owner decision (Nov 12): assigned event staff see contact, housing and travel/setup notes.
+        self.login_as(self.worker)
+        r=self.client.get(reverse('staffing:general-event',args=[self.event.pk]))
+        for marker in ('PRIVATE_CONTACT_MARKER','PRIVATE_HOUSING_MARKER','PRIVATE_OPERATIONS_MARKER'):self.assertNotContains(r,marker)
+        self.assignment()
         r=self.client.get(reverse('staffing:general-event',args=[self.event.pk]))
         self.assertEqual(r.status_code,200)
-        for marker in ('PRIVATE_CONTACT_MARKER','PRIVATE_HOUSING_MARKER','PRIVATE_OPERATIONS_MARKER'):self.assertNotContains(r,marker)
+        for marker in ('PRIVATE_CONTACT_MARKER','PRIVATE_HOUSING_MARKER','PRIVATE_OPERATIONS_MARKER'):self.assertContains(r,marker)
         self.assertNotIn('event',r.context)
         self.assertEqual(self.client.get(reverse('staffing:staff-event',args=[self.event.pk])).status_code,302)
     def test_event_staff_cannot_read_or_edit_event_workspace(self):

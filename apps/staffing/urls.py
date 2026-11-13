@@ -4,6 +4,7 @@ app_name="staffing"
 urlpatterns=[
     path('published/',general_views.schedule,name='general-schedule'),
     path('published/<uuid:event_id>/',general_views.detail,name='general-event'),
+    path('published/<uuid:event_id>/participants/',general_views.participants,name='event-participants'),
     path("",views.schedule,name="schedule"),
     path("directory/",views.directory,name="directory"),
     path("directory/add/",views.profile_edit,name="profile-add"),
