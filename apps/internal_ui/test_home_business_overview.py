@@ -163,11 +163,11 @@ class HomeBusinessOverviewTests(TestCase):
             end_at=datetime(2026,10,28,1,30,tzinfo=UTC), timezone_name='America/New_York')
         with patch('django.utils.timezone.now', return_value=fixed):
             response = self.page()
+            detail = self.client.get(reverse('events:event_detail', args=[event.pk]))
         # The date block and times use the event's own time zone (Oct 27, 8:30 PM Eastern), not UTC (Oct 28).
         self.assertContains(response, '<span>OCT</span><strong>27</strong>', html=False)
         self.assertContains(response, '8:30 PM')
         self.assertNotContains(response, '12:30 AM')
-        detail = self.client.get(reverse('events:event_detail', args=[event.pk]))
         self.assertContains(detail, '8:30 PM')
         self.assertContains(detail, '9:30 PM')
         self.assertNotContains(response, 'Oct 28, 2026')

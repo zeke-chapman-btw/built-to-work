@@ -13,6 +13,8 @@ from .collaboration_forms import TaskLinksForm, TaskCommentForm
 
 def record(actor, task, action, before, after):
     audit_action(actor=actor, action="operations.task."+action, instance=task, old_data=before, new_data=after)
+    from .reminder_planning import reconcile_after_commit
+    reconcile_after_commit(task.pk)
 
 
 @transaction.atomic

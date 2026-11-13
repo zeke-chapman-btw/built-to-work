@@ -1,0 +1,2 @@
+{% if notice.scope_label %}<p class="notification-kind">{{ notice.scope_label }}</p>{% endif %}
+{% for section in notice.summary_sections %}<div class="reminder-summary-section"><h4>{{ section.title }}</h4><ul>{% for item in section.rows %}<li><a href="{{ item.destination }}">{{ item.title }}</a><span class="notification-kind">{{ item.label }}</span></li>{% endfor %}</ul></div>{% endfor %}

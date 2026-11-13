@@ -6,6 +6,14 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "")
 DEBUG = False
+
+# Build 18A is activated only on the existing, approved Preview service.
+# Tests/local review opt in explicitly through their isolated settings.
+BTW_TASK_REMINDERS_ENABLED = (
+    os.environ.get('RENDER_SERVICE_ID') == 'srv-db8n044s728c73aaet00'
+    and os.environ.get('BTW_PREVIEW_GATE_ENABLED', '').lower() == 'true'
+    and os.environ.get('EMAIL_BACKEND') == 'django.core.mail.backends.locmem.EmailBackend'
+)
 ALLOWED_HOSTS = [
     host.strip() for host in os.environ.get("ALLOWED_HOSTS", "").split(",") if host.strip()
 ]

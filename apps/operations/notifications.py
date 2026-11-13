@@ -11,6 +11,10 @@ from .task_access import tasks_for, staff_user
 
 
 def visible_notifications(user):
+    from .reminder_preferences import enabled
+    if enabled():
+        from .reminder_rendering import visible_queryset
+        return visible_queryset(user)
     return TaskNotification.objects.filter(recipient=user, task__in=tasks_for(user)).select_related('task').order_by('-created_at','-pk')
 
 
@@ -39,10 +43,17 @@ def notify_from_audit(entry, task):
     kind,message,include_creator=event
     recipients={task.assigned_staff.user_id}
     if include_creator:recipients.add(task.created_by_id)
-    recipients.discard(None);recipients.discard(entry.actor_id)
+    from .reminder_preferences import enabled, activity_allowed
+    from .reminder_calendar import primary_event
+    recipients.discard(None)
+    if not (enabled() and kind in ('assigned','reassigned') and task.assigned_staff.user_id == entry.actor_id):
+        recipients.discard(entry.actor_id)
     for user in get_user_model().objects.filter(pk__in=recipients,is_active=True,is_staff=True):
         # Role membership is current; explicit administrators aren't broadcast recipients.
         if tasks_for(user).filter(pk=task.pk).exists():
+            required = kind in ('assigned','reassigned') and task.assigned_staff.user_id == user.pk
+            if enabled() and not required and not activity_allowed(user, event=primary_event(task), completed=task.status=='completed'):
+                continue
             TaskNotification.objects.get_or_create(source_event=entry,recipient=user,defaults={'task':task,'kind':kind,'message':message})
 
 
@@ -71,5 +82,8 @@ def shell_context(user):
     from .due_dates import due_attention
     visible=visible_notifications(user)
     due=due_attention(user)
-    return {'task_updates':{'unread':visible.filter(read_at__isnull=True).count(),'recent':list(visible[:5]),
+    from .reminder_rendering import decorate
+    recent = decorate(user, visible[:5])
+    from .reminder_preferences import enabled
+    return {'task_updates':{'unread':visible.filter(read_at__isnull=True).count(),'recent':recent,'reminders_enabled':enabled(),
                            'due_count':due['overdue_count']+due['soon_count']}}

@@ -1,0 +1,1 @@
+{% if task_updates.reminders_enabled %}<form method="post" action="{% url 'operations:reminder-snooze' notice.pk %}" class="reminder-actions">{% csrf_token %}<button class="button secondary" name="choice" value="hour">Snooze one hour</button><button class="button secondary" name="choice" value="morning">Next morning</button></form>{% endif %}

@@ -1,7 +1,14 @@
 from django.urls import path
-from . import views, task_workspace_views, notification_views, template_views, execution_views, equipment_views, screen_library
+from . import views, task_workspace_views, notification_views, template_views, execution_views, equipment_views, screen_library, reminder_views
 app_name="operations"
 urlpatterns=[
+ path('tasks/reminders/status/', reminder_views.status, name='reminder-status'),
+ path('tasks/reminders/preferences/', reminder_views.personal, name='reminder-preferences'),
+ path('tasks/reminders/company/', reminder_views.policy, name='reminder-company'),
+ path('tasks/reminders/events/<uuid:event_id>/', reminder_views.policy, name='reminder-event'),
+ path('tasks/updates/<uuid:notification_id>/snooze/', reminder_views.snooze, name='reminder-snooze'),
+ path('tasks/<uuid:task_id>/reminders/', reminder_views.task_controls, name='task-reminders'),
+ path('tasks/<uuid:task_id>/reminders/snooze/', reminder_views.snooze, name='task-reminder-snooze'),
  path("trailers/",equipment_views.trailer_list,name="trailers"),
  path("screens/",screen_library.index,name="screens"),
  path("screens/<slug:key>/",screen_library.preview,name="screen-preview"),
