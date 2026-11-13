@@ -84,8 +84,8 @@ def create(request, participant_id=None, organization_id=None):
                 return editor_success(request, back)
     return interaction_editor(request, {"form": form, "page_title": "Log a touchpoint",
         "subject": participant or organization, "editor_context": str(participant or organization), "back": back,
-        "guidance": "Record a touchpoint that already happened. Only authorized BTW staff can see this history.",
-        "submit_label": "Save interaction"})
+        "guidance": "",
+        "submit_label": "Save touchpoint"})
 
 
 class StartForm(django_forms.Form):

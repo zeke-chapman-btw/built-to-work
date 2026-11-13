@@ -37,9 +37,37 @@ class ActivityForm(OptionalReasonMixin, forms.Form):
     reason = forms.CharField(label="Reason for correction", max_length=500, required=False,
         widget=forms.Textarea(attrs={"rows": 2}))
 
+    # The handful of types staff actually pick; older types still show when editing an entry that used one.
+    QUICK_TYPES = ("call", "voicemail", "sms", "email", "meeting", "video", "event", "other")
+
     def __init__(self, *args, actor=None, organization=None, row=None, employer=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.initial.setdefault("occurred_at", timezone.now().replace(second=0, microsecond=0))
+        short = {"call": "Call", "voicemail": "Voicemail", "sms": "Text", "email": "Email", "meeting": "In person",
+                 "video": "Video call", "event": "At an event", "other": "Other"}
+        self.fields["activity_type"].label = "Type"
+        if not employer:
+            # Staff see the short list as chips; every existing type is still accepted (older entries, other screens).
+            keep = set(self.QUICK_TYPES) | ({row.activity_type} if row else set())
+            shown = [(value, short.get(value, label)) for value, label in ActivityType.choices if value in keep]
+            self.fields["activity_type"].initial = "call"
+            self.fields["activity_type"].widget = forms.RadioSelect(attrs={"class": "btw-chip-choices"}, choices=shown)
+        self.fields["summary"].label = "What happened"
+        self.fields["summary"].widget.attrs["placeholder"] = "Talked about the welding opening, sending resume Friday"
+        self.fields["notes"].label = "More details"
+        self.fields["notes"].widget.attrs["rows"] = 2
+        self.fields["outcome"].label = "Result"
+        self.fields["outcome"].widget.attrs["placeholder"] = "Interested, not now, left message..."
+        direction = [("outbound", "We reached out"), ("inbound", "They reached out")]
+        self.fields["direction"].label = "Who reached out"
+        self.fields["direction"].choices = [("", "Not set")] + direction
+        self.fields["direction"].widget = forms.RadioSelect(attrs={"class": "btw-chip-choices"}, choices=direction)
+        self.fields["next_step"].label = "Next step"
+        self.fields["follow_up_on"].label = "Follow up on"
+        self.fields["responsible_staff"].label = "Who follows up"
+        for key, label in (("engagement", "Job opening"), ("contact", "Customer contact"), ("campaign", "Campaign"), ("workforce_request", "Request")):
+            if key in self.fields:
+                self.fields[key].label = label
         if row:
             for key in ("activity_type", "occurred_at", "summary", "outcome", "direction", "notes", "next_step", "follow_up_on", "responsible_staff"):
                 self.initial[key] = getattr(row, key)
@@ -95,7 +123,15 @@ class ActivityForm(OptionalReasonMixin, forms.Form):
 
     @property
     def core_fields(self):
-        return [self[key] for key in ("activity_type", "occurred_at", "summary", "outcome", "reason") if key in self.fields]
+        return [self[key] for key in ("activity_type", "summary", "occurred_at", "direction", "reason") if key in self.fields]
+
+    @property
+    def detail_fields(self):
+        return [self[key] for key in ("outcome", "notes") if key in self.fields]
+
+    @property
+    def link_fields(self):
+        return [self[key] for key in ("contact", "engagement", "campaign", "workforce_request") if key in self.fields]
 
     @property
     def optional_fields(self):

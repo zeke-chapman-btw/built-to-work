@@ -71,3 +71,7 @@ body.internal-app.has-crm-ux-profile .crm-unified-history .crm-panel-heading { p
  body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-has-type :is(.ex-directory-record,.ex-result-head) { grid-template-columns:minmax(160px,1.6fr) minmax(48px,.4fr) minmax(120px,1.1fr) minmax(150px,1fr) minmax(70px,.6fr) minmax(100px,.9fr); }
 }
 body.internal-app.btw-platform.has-participants-explorer #main-content .people-explorer .ex-results .btw-result-heading h2 { font-size:15px; }
+/* Touchpoint pop-up: fields sit closer together inside the editor grid. */
+.btw-editor-body .btw-editor-grid .crm-field { margin-block:0; }
+.btw-editor-body .crm-touch-core { margin-bottom:6px; }
+.btw-editor-body .btw-disclosure > .btw-editor-grid { margin-top:10px; }

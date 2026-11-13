@@ -109,7 +109,7 @@ class RelationshipUxTests(EmployerFixtures, TestCase):
         self.assertEqual(list(form.fields['activity_type'].choices),list(ActivityType.choices))
         self.assertEqual(len(ActivityType.choices),16)
         self.assertEqual(form.fields['workforce_request'].label_from_instance(request),request.name)
-        self.assertEqual([f.name for f in form.core_fields],['activity_type','occurred_at','summary','outcome'])
+        self.assertEqual([f.name for f in form.core_fields],['activity_type','summary','occurred_at','direction'])
         self.assertEqual(form.fields['summary'].max_length,240)
         self.assertEqual(form.fields['notes'].max_length,6000)
         self.assertTrue(form.fields['operation_id'].widget.is_hidden)
