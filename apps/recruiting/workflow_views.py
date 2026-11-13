@@ -100,12 +100,16 @@ def pipeline(request):
 def candidate_detail(request,candidate_id):
     row=workflow.candidate_for(request.user,candidate_id)
     editable=can_manage(request.user,row.opportunity)
-    operation=request.POST.get('operation')
+    edit=request.GET.get('edit','')
+    operation=request.POST.get('operation') or (edit if request.method=='POST' else None)
     initial={'expected_revision':row.revision}
     stage=StageChangeForm(request.POST if operation=='stage' else None,initial={**initial,'stage':row.stage_id})
     reassignment=ReassignmentForm(request.POST if operation=='reassign' else None,initial={**initial,'user':row.assignee_id})
-    outreach=OutreachForm(request.POST if operation=='outreach' else None,actor=request.recruiting_actor,initial=initial)
+    from django.utils import timezone as dj_tz
+    outreach=OutreachForm(request.POST if operation=='outreach' else None,actor=request.recruiting_actor,
+        initial={**initial,'contacted_at':dj_tz.localtime().replace(second=0,microsecond=0,tzinfo=None)})
     forms_by_action={'stage':stage,'reassign':reassignment,'outreach':outreach}
+    detail_url=reverse('recruiting:candidate-detail',args=[row.pk])
     if request.method=='POST':
         if not editable:raise PermissionDenied
         form=forms_by_action.get(operation)
@@ -117,7 +121,19 @@ def candidate_detail(request,candidate_id):
                 elif operation=='reassign':workflow.reassign(actor=request.user,candidate_id=row.pk,user_id=d['user'],expected_revision=d['expected_revision'],why=d['reason'])
                 else:workflow.record_outreach(actor=request.user,candidate_id=row.pk,expected_revision=d['expected_revision'],operation_id=d['operation_id'],data={**d,'task':d['task'].pk if d['task'] else None})
             except ValidationError as exc:form.add_error(None,exc)
-            else:messages.success(request,'Recruiting activity saved.');return redirect('recruiting:candidate-detail',candidate_id=row.pk)
+            else:
+                messages.success(request,'Saved.')
+                from apps.internal_ui.record_editors import editor_success
+                return editor_success(request,detail_url)
+    # Stage, assignment and contact log open as pop-up editors ("?edit=stage|reassign|outreach").
+    if edit in forms_by_action and (request.method=='GET' or operation==edit):
+        if not editable:raise PermissionDenied
+        from apps.internal_ui.record_editors import editor_response
+        titles={'stage':'Change stage','reassign':"Change who's assigned",'outreach':'Log a contact'}
+        return editor_response(request,template='recruiting/editor_page.html',panel='internal/ui/record_form_panel.html',context={
+            'form':forms_by_action[edit],'page_title':titles[edit],'editor_context':f'{row.participant} · {row.opportunity.need.title}',
+            'back':detail_url,'save_label':'Save changes','fields_template':'internal/ui/section_fields.html',
+            'full_page_editor':request.headers.get('X-BTW-Editor')!='1'})
     permitted_tasks=tasks_for(request.recruiting_actor)
     outreach_rows=list(row.outreach.select_related('actor','task').order_by('-contacted_at','-pk')[:30])
     task_ids=set(permitted_tasks.values_list('pk',flat=True))
@@ -235,9 +251,9 @@ def stages(request,key=None):
 
 
 class RequestForm(forms.Form):
-    organization=forms.ModelChoiceField(queryset=None)
-    name=forms.CharField(max_length=160)
-    positions=forms.ModelMultipleChoiceField(queryset=None)
+    organization=forms.ModelChoiceField(queryset=None,label='Customer')
+    name=forms.CharField(max_length=160,label='Group name')
+    positions=forms.ModelMultipleChoiceField(queryset=None,widget=forms.CheckboxSelectMultiple,help_text='Pick positions from the same customer.')
     def __init__(self,*args,**kwargs):
         from apps.customers.models import CustomerOrganization,WorkforceNeed
         super().__init__(*args,**kwargs)
@@ -254,8 +270,13 @@ def request_group(request):
         d=form.cleaned_data
         try:group_positions(actor=request.user,organization_id=d['organization'].pk,name=d['name'],need_ids=[p.pk for p in d['positions']])
         except ValidationError as exc:form.add_error(None,exc)
-        else:return redirect('recruiting:campaigns')
-    return page(request,'recruiting/form.html',page_title='Group positions into a Workforce Request',form=form,button='Group positions')
+        else:
+            from apps.internal_ui.record_editors import editor_success
+            return editor_success(request,reverse('recruiting:campaigns'))
+    from apps.internal_ui.record_editors import editor_response
+    return editor_response(request,template='recruiting/editor_page.html',panel='internal/ui/record_form_panel.html',context={
+        'form':form,'page_title':'Group positions','back':reverse('recruiting:campaigns'),'save_label':'Group positions',
+        'fields_template':'internal/ui/section_fields.html','full_page_editor':request.headers.get('X-BTW-Editor')!='1'})
 
 
 @staff
@@ -268,5 +289,5 @@ def identity_history(request):
         except ValidationError as exc:messages.error(request,'; '.join(exc.messages))
         else:messages.info(request,'Reversal requires attributed review of subsequent activity; no records were discarded.' if row.reversal_review_required else 'The safe reviewed identity link was reversed. Original records remain intact.')
         return redirect('recruiting:identity-history')
-    return page(request,'recruiting/identity_history.html',page_title='Established Identity Review History',
+    return page(request,'recruiting/identity_history.html',page_title='Merged records',
         rows=IdentityConsolidation.objects.select_related('source','target','actor').order_by('-created_at')[:50])

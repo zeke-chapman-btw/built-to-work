@@ -37,7 +37,7 @@ class FoundationTests(TestCase):
         event=AuditLog.objects.filter(action='recruiting.classification.saved',object_id=str(row.pk)).latest('timestamp')
         self.assertEqual(event.old_data['label'],'SYNTHETIC original label');self.assertEqual(event.new_data['label'],'SYNTHETIC clarified label')
         payload['label']='SYNTHETIC stale overwritten label'
-        response=self.client.post(url,payload);self.assertEqual(response.status_code,200);self.assertContains(response,'classification changed')
+        response=self.client.post(url,payload);self.assertContains(response,'classification changed',status_code=400)
         row.refresh_from_db();self.assertEqual(row.label,'SYNTHETIC clarified label')
 
     def test_staff_creation_uses_existing_person_duplicate_guard_and_lead_metadata(self):

@@ -85,15 +85,15 @@ class EmployerTests(EmployerFixtures,TestCase):
         self.assertNotContains(private,task.title)
 
     def test_independent_staff_forms_have_unique_label_targets(self):
-        import re
+        # Stage, assignment and contact log are separate pop-up editors; none asks for a reason.
         self.client.force_login(self.admin,backend='django.contrib.auth.backends.ModelBackend')
-        response=self.client.get(reverse('recruiting:candidate-detail',args=[self.candidate.pk]))
-        html=response.content.decode()
-        ids=re.findall(r'\bid="(recruiting_[^"]+)"',html)
-        self.assertEqual(len(ids),len(set(ids)))
-        for prefix in ['stage_form','reassignment_form','outreach_form']:
-            self.assertIn('id="recruiting_'+prefix+'_reason"',html)
-            self.assertNotIn('for="recruiting_'+prefix+'_reason"',html)
+        url=reverse('recruiting:candidate-detail',args=[self.candidate.pk])
+        page=self.client.get(url).content.decode()
+        for edit in ['stage','reassign','outreach']:
+            self.assertIn('href="?edit='+edit+'"',page)
+            html=self.client.get(url+'?edit='+edit,HTTP_X_BTW_EDITOR='1').content.decode()
+            self.assertIn('data-editor-form',html)
+            self.assertNotIn('Reason',html)
 
     def test_only_explicit_btw_release_exposes_allowlisted_information(self):
         self.assertEqual(employer.list_candidates(self.customer,self.organization.pk),[])

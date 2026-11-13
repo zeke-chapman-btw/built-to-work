@@ -55,3 +55,10 @@ body.internal-app #main-content .recruiting-workspace .workspace-table th{font-s
 .rc-new-campaign-menu p { margin:6px 10px; font-size:12px; color:var(--muted,#6b7280); }
 .rc-new-campaign-menu a { display:block; padding:9px 10px; border-radius:6px; text-decoration:none; color:var(--ink,#252830); }
 .rc-new-campaign-menu a:hover { background:#f4f5f6; }
+/* Overview: header links in brand red like other cards; tools as a quiet link row */
+.rc-page .qb-head > a { color:#ac1929; font-size:13px; font-weight:500; text-decoration:none; }
+.rc-page .rc-tool-links { display:flex; flex-wrap:wrap; gap:8px 20px; padding:14px 16px; font-size:14px; }
+.rc-page .rc-tool-links a { color:#ac1929; text-decoration:none; }
+.rc-page .qb-q-actions .button { min-height:36px; }
+/* Candidate page uses the customer/participant profile layout at full width */
+body.internal-app #main-content .recruiting-workspace .customer-page.rc-candidate { max-width:none; margin:0; }

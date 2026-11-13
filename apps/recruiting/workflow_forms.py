@@ -25,19 +25,21 @@ class VersionReasonForm(OptionalReasonMixin, forms.Form):
 
 
 class StageChangeForm(VersionReasonForm):
-    stage=forms.ModelChoiceField(queryset=RecruitingStage.objects.filter(is_active=True))
-    confirm_hired=forms.BooleanField(required=False,label='They were actually hired (tick this when moving to Hired)')
+    stage=forms.ModelChoiceField(queryset=RecruitingStage.objects.filter(is_active=True),empty_label=None,widget=forms.RadioSelect(attrs={'class':'btw-chip-choices'}))
+    confirm_hired=forms.BooleanField(required=False,label='They were actually hired',widget=forms.CheckboxInput(attrs={'data-show-when':'stage=hired'}))
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs);self.fields['stage'].label_from_instance=lambda obj:obj.label
 
 
 class ReassignmentForm(VersionReasonForm):
-    user=forms.ChoiceField(label='Responsible staff member')
+    user=forms.ChoiceField(label='Assigned to')
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs);self.fields['user'].choices=staff_choices()
 
 
 class CollaborationForm(ReassignmentForm):
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs);self.fields['user'].label='Staff member'
     mode=forms.ChoiceField(choices=[('owner','Responsible owner'),('view','View-only collaborator'),('manage','Managing collaborator'),('revoke','Revoke collaboration')])
 
 
@@ -65,12 +67,12 @@ class PublicationForm(VersionReasonForm):
 
 class OutreachForm(VersionReasonForm):
     operation_id=forms.UUIDField(widget=forms.HiddenInput,initial=uuid.uuid4)
-    method=forms.ChoiceField(choices=CandidateOutreach._meta.get_field('method').choices)
-    contacted_at=forms.DateTimeField(widget=forms.DateTimeInput(attrs={'type':'datetime-local'}))
-    outcome=forms.CharField(max_length=160)
+    method=forms.ChoiceField(label='How',help_text="This only records a contact. Nothing is sent.",choices=CandidateOutreach._meta.get_field('method').choices,widget=forms.RadioSelect(attrs={'class':'btw-chip-choices'}))
+    contacted_at=forms.DateTimeField(label='When',widget=forms.DateTimeInput(attrs={'type':'datetime-local'}))
+    outcome=forms.CharField(max_length=160,label='What happened')
     response=forms.CharField(max_length=500,required=False,widget=forms.Textarea(attrs={'rows':2}))
     notes=forms.CharField(max_length=3000,required=False,widget=forms.Textarea(attrs={'rows':3}))
-    task=forms.ModelChoiceField(queryset=None,required=False,label='Existing follow-up Task (optional)')
+    task=forms.ModelChoiceField(queryset=None,required=False,label='Link a follow-up task (optional)')
     def __init__(self,*args,actor,**kwargs):
         super().__init__(*args,**kwargs);self.fields['reason'].required=False;self.fields['task'].queryset=tasks_for(actor).filter(archived_at__isnull=True)
 
