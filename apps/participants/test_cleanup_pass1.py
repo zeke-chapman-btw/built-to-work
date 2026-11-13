@@ -40,7 +40,7 @@ class ParticipantCleanupTests(EmployerFixtures, TestCase):
         career, _ = ParticipantCareerProfile.objects.get_or_create(participant=self.person)
         career.skills_interests = 'SYNTHETIC preserved skills'; career.education_training = 'SYNTHETIC preserved education'
         career.save()
-        for card, field, value in [('identity','city','Augusta'), ('skills','skills_interests','SYNTHETIC revised skills'), ('education','education_training','SYNTHETIC revised training'), ('preferences','preferred_locations','SYNTHETIC Southeast')]:
+        for card, field, value in [('identity','city','Augusta'), ('skills','skills_interests','SYNTHETIC revised skills'), ('education','education_training','SYNTHETIC revised training'), ('preferences','career_interests','SYNTHETIC Welding')]:
             with self.subTest(card=card):
                 before = ParticipantCareerProfile.objects.get(participant=self.person)
                 payload = self.card_data(card); payload[field] = value
@@ -69,13 +69,18 @@ class ParticipantCleanupTests(EmployerFixtures, TestCase):
 
     def test_type_editor_in_profile_card_uses_ownership_revision_and_protection(self):
         from .identifier_definitions import PrimaryIdentifier
-        data=self.card_data('identity');data['primary_identifier']=PrimaryIdentifier.values[0]
-        self.assertEqual(self.client.post(self.card_url('identity'),data,HTTP_X_BTW_EDITOR='1').status_code,200)
+        # Participant type is edited from the Details card now (with how they found us).
+        url=reverse('participants:acquisition-edit',args=[self.person.pk])
+        form=self.client.get(url,HTTP_X_BTW_EDITOR='1').context['form']
+        data={'participant_type':PrimaryIdentifier.values[0],'type_revision':form.initial['type_revision'],'channel':'unknown','revision':form.initial['revision']}
+        self.assertEqual(self.client.post(url,data,HTTP_X_BTW_EDITOR='1').status_code,200)
         state=IntakeFieldState.objects.get(participant=self.person,destination='primary_identifier')
         self.assertTrue(state.is_protected)
         self.assertEqual(state.provenance['origin'],'staff')
-        stale=self.card_data('identity');state.save();stale['city']='SYNTHETIC conflict'
-        self.assertEqual(self.client.post(self.card_url('identity'),stale,HTTP_X_BTW_EDITOR='1').status_code,409)
+        # A second save from the same (now stale) Details form is refused instead of overwriting.
+        state.save();data['participant_type']=PrimaryIdentifier.values[1]
+        self.assertIn(self.client.post(url,data,HTTP_X_BTW_EDITOR='1').status_code,(400,409))
+        self.person.refresh_from_db();self.assertEqual(self.person.primary_identifier,PrimaryIdentifier.values[0])
 
     def test_typed_maybe_unknown_and_unrelated_preferences_are_preserved(self):
         for value in ('yes','maybe','no',''):
@@ -88,7 +93,7 @@ class ParticipantCleanupTests(EmployerFixtures, TestCase):
             f, qs, criteria=discover(self.admin,{'q':'#'+str(self.person.pk),'travel':value or 'unknown'})
             self.assertTrue(f.is_valid(),f.errors)
             self.assertEqual(list(qs.values_list('pk',flat=True)),[self.person.pk])
-        data=self.card_data('preferences');data['preferred_locations']='SYNTHETIC changed location'
+        data=self.card_data('preferences');data['career_interests']='SYNTHETIC changed trades'
         self.client.post(self.card_url('preferences'),data,HTTP_X_BTW_EDITOR='1')
         self.assertIsNone(ParticipantCareerProfile.objects.get(participant=self.person).willing_to_travel)
 

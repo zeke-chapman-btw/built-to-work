@@ -114,13 +114,15 @@ class Post16A2Tests(EmployerFixtures, TestCase):
         self.client.force_login(self.admin, backend='django.contrib.auth.backends.ModelBackend')
         response = self.client.get(reverse('participants:staff-profile', args=[self.person.pk]))
         self.assertContains(response, self.employment.label)
-        self.assertContains(response, 'Weekends')
+        self.assertNotContains(response, '<dt>Availability</dt>')  # availability no longer shown on the staff profile
 
     def test_legacy_editors_preserve_evidence_and_unrelated_role_cannot_write(self):
-        for cls in [PortalCareerForm, CareerProfileForm]:
-            form = cls(instance=self.career)
-            self.assertTrue(form.fields['employment_status'].disabled)
-            self.assertTrue(form.fields['work_availability'].disabled)
+        form = PortalCareerForm(instance=self.career)
+        self.assertTrue(form.fields['employment_status'].disabled)
+        self.assertTrue(form.fields['work_availability'].disabled)
+        # The staff editor no longer includes these older fields at all, so saving cannot change them.
+        self.assertNotIn('employment_status', CareerProfileForm(instance=self.career).fields)
+        self.assertNotIn('work_availability', CareerProfileForm(instance=self.career).fields)
         with self.assertRaises(PermissionDenied):
             self.save(actor=self.customer)
         with self.assertRaises(PermissionDenied):

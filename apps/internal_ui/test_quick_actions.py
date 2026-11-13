@@ -22,7 +22,7 @@ class QuickActionsTests(TestCase):
     def test_catalog_defaults_are_existing_routes_and_no_placeholders(self):
         defaults = [a['id'] for a in QUICK_ACTIONS if a['default']]
         self.assertEqual(self.ids(), defaults)
-        self.assertEqual(len(defaults), 9)
+        self.assertEqual(len(defaults), 8)
         self.assertEqual(len({a['id'] for a in QUICK_ACTIONS}), len(QUICK_ACTIONS))
         for action in available_quick_actions(self.user):
             self.assertEqual(self.client.get(action['url']).status_code, 200, action['id'])

@@ -269,7 +269,7 @@ class HomeBusinessOverviewTests(TestCase):
         self.grant(self.staff,'participants.view_participant')
         action=quick_actions_for(self.staff)[0]
         self.assertEqual(action['url'],reverse('participants:staff-add'))
-        self.assertEqual(action['label'],'+ New participant')
+        self.assertEqual(action['label'],'+ Participant')
         self.assertEqual([a['id'] for a in quick_actions_for(self.staff)],['add-participant','settings'])
         self.assertEqual(next(a for a in available_quick_actions(self.admin) if a['id']=='add-participant')['url'],reverse('participants:staff-add'))
         self.grant(self.other,'participants.view_participant')

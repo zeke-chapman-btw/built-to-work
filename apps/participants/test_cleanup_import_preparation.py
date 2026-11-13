@@ -49,7 +49,9 @@ class ImportPreparationTests(TestCase):
     def test_downloadable_sample_uses_existing_parser_and_historical_import(self):
         payload = Path(finders.find('participants/import-participants-sample.csv')).read_bytes()
         batch = create_batch(uploaded_file=SimpleUploadedFile('sample.csv', payload, content_type='text/csv'), actor=self.admin)
-        rows = list(preview_batch(batch, {field: field for field in IMPORT_FIELDS}, actor=self.admin))
+        from apps.participants.historical import guess_mapping
+        headers = payload.decode('utf-8-sig').splitlines()[0].split(',')
+        rows = list(preview_batch(batch, guess_mapping(headers), actor=self.admin))
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0].status, HistoricalImportRow.Status.READY)
         self.assertEqual(import_ready(batch, actor=self.admin), 1)

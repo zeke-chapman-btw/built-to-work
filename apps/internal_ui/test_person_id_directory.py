@@ -111,7 +111,7 @@ class PersonIdDirectoryTests(TestCase):
         self.assertNotContains(response,'>Edit type</a>')
         self.assertContains(response,reverse('participants:profile-card-edit',args=[self.person.pk,'identity']))
         self.assertContains(response,f'>ID {self.person.pk}</span>')
-        self.assertContains(response,'<dt>Type</dt><dd><span class="pv-unset"')
+        self.assertContains(response,'<dt>Participant type</dt><dd><span class="pv-unset"')
         form_response=self.client.get(edit)
         self.assertEqual(form_response.context['form'].fields['identifier'].label,'Type')
         revision=form_response.context['form'].initial['revision']
@@ -121,7 +121,7 @@ class PersonIdDirectoryTests(TestCase):
         self.assertEqual((self.person.pk,self.person.identity_uuid),(old_pk,old_uuid))
         self.assertEqual(self.person.primary_identifier,'student')
         updated_profile=self.client.get(profile)
-        self.assertContains(updated_profile,'<dt>Type</dt>')
+        self.assertContains(updated_profile,'<dt>Participant type</dt>')
         self.assertContains(updated_profile,self.person.get_primary_identifier_display())
         self.assertContains(updated_profile,f'>ID {old_pk}</span>')
         self.assertTrue(IntakeFieldState.objects.get(participant=self.person,destination='primary_identifier').is_protected)

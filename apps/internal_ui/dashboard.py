@@ -19,7 +19,7 @@ QUICK_ACTIONS = (
     {"id": "stations", "label": "Stations", "route": "stations:list", "permissions": ("stations.view_station",), "default": False},
     {"id": "offline-preparation", "label": "Offline event preparation", "route": "events:offline-preparations", "permissions": ("events.view_offlineeventpreparation",), "default": False},
 )
-MAX_QUICK_ACTIONS = 12
+MAX_QUICK_ACTIONS = 9
 
 def _allowed(user, check):
     from django.core.exceptions import PermissionDenied

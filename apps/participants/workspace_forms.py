@@ -29,15 +29,13 @@ class StaffProfileForm(forms.ModelForm):
 class CareerProfileForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for name in ['employment_status', 'work_availability']:
-            self.fields[name].disabled = True
-            self.fields[name].label = 'Previously recorded ' + name.replace('_', ' ')
-            self.fields[name].help_text = 'Retained evidence. Edit current classifications in Recruiting preferences.'
 
     class Meta:
         model = ParticipantCareerProfile
-        fields = ("employment_status", "employment_interest", "career_interests", "skills_interests",
-                  "years_of_experience", "education_training", "work_availability", "willing_to_travel",
+        # Older "employment status" / "availability" text and preferred locations are kept on the record but no
+        # longer edited here; leaving them out of the form means saving never blanks them.
+        fields = ("employment_interest", "career_interests", "skills_interests",
+                  "years_of_experience", "education_training", "willing_to_travel",
                   "preferred_work_type")
         labels = {"years_of_experience": "Years of work experience (total)", "career_interests": "Trades they want to work in",
                   "skills_interests": "Skills they have", "education_training": "School and training",
