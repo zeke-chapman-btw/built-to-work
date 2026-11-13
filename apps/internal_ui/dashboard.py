@@ -25,17 +25,14 @@ QUICK_ACTIONS = (
 MAX_QUICK_ACTIONS = 9
 
 def _allowed(user, check):
-    from django.core.exceptions import PermissionDenied
-    try:
-        if check == "manager":
-            from apps.customers.access import require_manager
-            require_manager(user)
-            return True
-        if check in ("touchpoint", "note"):
-            from apps.crm.views import _start_scopes
-            return bool(_start_scopes(user, check))
-    except PermissionDenied:
-        return False
+    """Cheap display check using the signed-in user's cached permissions; each pop-up re-checks fully on open."""
+    from apps.accounts.roles import manager
+    from apps.participants.workspace_access import can_notes
+    if check == "manager":
+        return bool(manager(user) and (user.is_superuser or user.has_perm("customers.manage_customers")))
+    if check in ("touchpoint", "note"):
+        notes = can_notes(user) and user.has_perm("participants.add_participantnote")
+        return bool(notes or (check == "touchpoint" and _allowed(user, "manager")))
     return False
 
 
@@ -43,11 +40,15 @@ def available_quick_actions(user):
     if not user.is_authenticated or not user.is_active or not user.is_staff:
         return []
     actions = []
+    checked = {}
     for entry in QUICK_ACTIONS:
         if entry["permissions"] and not any(user.has_perm(p) for p in entry["permissions"]):
             continue
-        if entry.get("check") and not _allowed(user, entry["check"]):
-            continue
+        if entry.get("check"):
+            if entry["check"] not in checked:
+                checked[entry["check"]] = _allowed(user, entry["check"])
+            if not checked[entry["check"]]:
+                continue
         action = dict(entry)
         if action["id"] == "add-participant":
             if user.has_perm("participants.view_participant"):

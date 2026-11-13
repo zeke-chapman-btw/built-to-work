@@ -64,7 +64,7 @@ class InternalShellTests(TestCase):
                 response = self.client.get(reverse("internal:workspace", kwargs={"workspace_id": workspace_id}))
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, 'class="sidebar-brand"', count=1)
-                self.assertContains(response, 'class="utility-label"', count=1)
+                self.assertNotContains(response, 'class="utility-label"')  # staff pages no longer show the top label row
                 self.assertContains(response, "internal-sidebar")
                 if workspace_id == "operations":
                     self.assertContains(response, "operations-home")
@@ -152,13 +152,13 @@ class PortalFoundationTests(TestCase):
         self.client.force_login(self.staff_user("dashboard-branding-staff"))
         response = self.client.get(reverse("internal:home"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'class="utility-label"', count=1)
+        self.assertNotContains(response, 'class="utility-label"')
         self.assertContains(response, 'internal/images/built-to-work-linear.svg', count=1)
         html = response.content.decode()
         sidebar = html.split('<aside class="sidebar"', 1)[1].split('</aside>', 1)[0]
         topbar = html.split('<header class="topbar">', 1)[1].split('</header>', 1)[0]
         self.assertIn('built-to-work-linear.svg', sidebar)
-        self.assertIn('Built to Work', topbar)
+        self.assertNotIn('Built to Work', topbar)
         self.assertNotIn('brand-logo', topbar)
         self.assertNotIn('type="search"', topbar)
         self.assertNotContains(response, "Staff workspace")
