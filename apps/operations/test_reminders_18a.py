@@ -1,7 +1,7 @@
 """Isolated clock, permission, delivery and recovery regressions for Build 18A."""
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone as utc
-from threading import Barrier
+from threading import Barrier, Event as ThreadEvent
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
@@ -478,4 +478,29 @@ class ReminderPostgresConcurrency18ATests(Fixtures, TransactionTestCase):
             outcomes=list(pool.map(worker,range(2)))
         self.assertEqual(outcomes.count('delivered'),1)
         self.assertEqual(TaskReminderItem.objects.filter(task=task,job__recipient=self.staff,kind='advance').count(),1)
+        self.assertEqual(TaskNotification.objects.filter(reminder_job__recipient=self.staff).count(),1)
+
+    def test_staff_account_edit_gets_priority_and_worker_recovers_without_a_duplicate(self):
+        from django.db import transaction
+        task=self.task();sync_task(task.pk,now=clock())
+        TaskReminderJob.objects.exclude(recipient=self.staff,kind='advance').update(state='superseded')
+        locked,released=ThreadEvent(),ThreadEvent()
+        def account_edit():
+            close_old_connections()
+            try:
+                with transaction.atomic():
+                    get_user_model().objects.select_for_update().get(pk=self.staff.pk)
+                    locked.set()
+                    if not released.wait(timeout=10):raise AssertionError('Worker blocked the staff-account edit.')
+                    StaffProfile.objects.select_for_update().get(pk=self.profiles[self.staff.pk].pk)
+            finally:close_old_connections()
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            edit=pool.submit(account_edit)
+            self.assertTrue(locked.wait(timeout=10))
+            try:outcome=run_tick(now=clock())
+            finally:released.set()
+            edit.result(timeout=10)
+        self.assertEqual(outcome['outcomes'].get('failed'),1)
+        self.assertFalse(TaskNotification.objects.filter(reminder_job__isnull=False).exists())
+        run_tick(now=clock()+timedelta(minutes=1))
         self.assertEqual(TaskNotification.objects.filter(reminder_job__recipient=self.staff).count(),1)

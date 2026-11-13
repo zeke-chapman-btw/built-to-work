@@ -153,11 +153,14 @@ def deliver_job(claimed, *, now=None, worker_id='manual'):
     locked = list(Task.objects.select_for_update(of=('self',)).filter(pk__in=ids)
                   .select_related('event', 'assigned_staff').order_by('pk'))
     from apps.staffing.models import StaffProfile
-    list(StaffProfile.objects.select_for_update().filter(
+    nowait = connection.features.has_select_for_update_nowait
+    list(StaffProfile.objects.select_for_update(nowait=nowait).filter(
         pk__in={task.assigned_staff_id for task in locked}).order_by('pk'))
     if any(primary_event(task) and primary_event(task).pk not in event_ids for task in locked):
         raise RuntimeError('Task event links changed during delivery; retry required.')
-    user = get_user_model().objects.select_for_update().filter(pk=claimed.recipient_id).first()
+    # Staff-account edits already lock users before profiles. Retry instead of
+    # waiting here while holding a profile that such an edit may need.
+    user = get_user_model().objects.select_for_update(nowait=nowait).filter(pk=claimed.recipient_id).first()
     job = TaskReminderJob.objects.select_for_update().get(pk=claimed.pk)
     if job.state != 'claimed' or job.claim_token != claimed.claim_token:
         return 'lost_claim'

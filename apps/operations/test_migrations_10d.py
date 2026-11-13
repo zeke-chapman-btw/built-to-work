@@ -26,7 +26,10 @@ class ExecutionMigration10DTests(TransactionTestCase):
             executor=MigrationExecutor(connection);executor.migrate(latest)
             new=executor.loader.project_state(latest).apps
             for key,pk in identities.items():
-                self.assertEqual(new.get_model(*key).objects.values().get(pk=pk),before[key])
+                after=new.get_model(*key).objects.values().get(pk=pk)
+                if key==("operations","Task"):
+                    self.assertIsNone(after.pop("weekend_work_date"))
+                self.assertEqual(after,before[key])
             self.assertFalse(new.get_model("operations","EventExecution").objects.filter(event_id=event.pk).exists())
             self.assertEqual(new.get_model("operations","MasterChecklistItem").objects.count(),8)
             self.assertFalse(new.get_model("operations","MasterChecklistItem").objects.filter(is_required=True).exists())

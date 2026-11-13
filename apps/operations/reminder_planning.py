@@ -6,7 +6,7 @@ from datetime import timedelta
 from zoneinfo import ZoneInfo
 
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import Q
 from django.utils import timezone
 
@@ -101,13 +101,14 @@ def sync_task(task_id, *, now=None):
     list(Event.objects.select_for_update().filter(pk__in=event_ids).order_by('pk'))
     task = Task.objects.select_for_update(of=('self',)).select_related('event', 'assigned_staff').get(pk=task_id)
     from apps.staffing.models import StaffProfile
-    StaffProfile.objects.select_for_update().get(pk=task.assigned_staff_id)
+    nowait = connection.features.has_select_for_update_nowait
+    StaffProfile.objects.select_for_update(nowait=nowait).get(pk=task.assigned_staff_id)
     current_event = primary_event(task)
     if current_event and current_event.pk not in event_ids:
         # A simultaneous link change will be picked up on the next scan.
         return []
     ids = {recipient_id(task), task.created_by_id} - {None}
-    users = {u.pk: u for u in get_user_model().objects.select_for_update()
+    users = {u.pk: u for u in get_user_model().objects.select_for_update(nowait=nowait)
              .filter(pk__in=ids).order_by('pk')}
     current_recipient = recipient_id(task)
     current = fingerprint(task)
