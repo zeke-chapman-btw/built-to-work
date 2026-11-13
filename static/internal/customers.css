@@ -147,3 +147,18 @@ body.internal-app.has-customer-page #main-content .cx-facts dd{line-height:21px}
 body.internal-app.has-customer-page #main-content .cx-tile{color:#18181b}
 body.internal-app.has-customer-page #main-content .cx-more>summary{font-size:13px;line-height:20px}
 body.internal-app.has-customer-page #main-content .cx-who{gap:16px}
+/* Position page: tiles and grouped cards, same 3-column grid as profiles */
+body.internal-app.has-customer-page #main-content .pos-tiles { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); margin:0 0 16px; }
+body.internal-app.has-customer-page #main-content .pos-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; align-items:start; margin:0 0 16px; }
+body.internal-app.has-customer-page #main-content .pos-card { margin:0; padding:0; overflow:hidden; }
+body.internal-app.has-customer-page #main-content .pos-card .btw-panel-heading { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; min-height:48px; box-sizing:border-box; border-bottom:1px solid #eef0f2; margin:0; }
+body.internal-app.has-customer-page #main-content .pos-card .btw-panel-heading h2 { margin:0; font-size:15px; color:#252830; border:0; padding:0; }
+body.internal-app.has-customer-page #main-content .pos-card .pv-facts { display:grid; grid-template-columns:120px minmax(0,1fr); gap:8px 12px; margin:0; padding:12px 16px 16px; font-size:14px; }
+body.internal-app.has-customer-page #main-content .pos-card .pv-facts dt { color:#6b7280; font-size:13px; }
+body.internal-app.has-customer-page #main-content .pos-card .pv-facts dd { margin:0; min-width:0; overflow-wrap:anywhere; }
+body.internal-app.has-customer-page #main-content .pos-card .pv-facts dd .badge { margin:0 6px 0 0; }
+body.internal-app.has-customer-page #main-content .pos-card .ls-card-body { padding:12px 16px; }
+body.internal-app.has-customer-page #main-content .cx-chip-link { font-size:12px; margin-left:6px; }
+body.internal-app.has-customer-page #main-content .cx-actions-menu > summary { min-height:44px; height:44px; padding:0 12px; display:inline-flex; align-items:center; }
+@media (max-width:1100px) { body.internal-app.has-customer-page #main-content .pos-grid { grid-template-columns:1fr 1fr; } body.internal-app.has-customer-page #main-content .pos-tiles { grid-template-columns:1fr 1fr; } }
+@media (max-width:700px) { body.internal-app.has-customer-page #main-content .pos-grid, body.internal-app.has-customer-page #main-content .pos-tiles { grid-template-columns:1fr; } }

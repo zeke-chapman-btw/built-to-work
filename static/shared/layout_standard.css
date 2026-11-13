@@ -239,3 +239,22 @@ label:has(> input.btw-chip-choices) > input.btw-chip-choices { position:absolute
 label:has(> input.btw-chip-choices:checked) { background:#fde2e4; border-color:#d91f2a; color:#b3141f; }
 label:has(> input.btw-chip-choices:focus-visible) { outline:2px solid #d91f2a; outline-offset:2px; }
 label:has(> input.btw-chip-choices[value=""]) { color:#6b7280; }
+
+/* Positions list rows (same look as Participants and Customers lists) */
+body.internal-app #main-content .pos-list-head, body.internal-app #main-content .pos-list-row { display:grid; grid-template-columns:minmax(240px,2.2fr) minmax(120px,1fr) 80px minmax(110px,1fr) minmax(120px,1.1fr) minmax(170px,1.3fr); gap:12px; align-items:center; padding:12px 16px; }
+body.internal-app #main-content .pos-list-head { background:#fafafa; font-size:12px; color:#666; padding-top:10px; padding-bottom:10px; }
+body.internal-app #main-content .pos-list-row { border-top:1px solid #f0f1f3; font-size:14px; }
+body.internal-app #main-content .pos-list-row .pl-person-text small { color:#6b7280; font-size:12px; }
+body.internal-app #main-content .pos-list-row .pos-sub-link { color:inherit; font-weight:400; text-decoration:underline; }
+body.internal-app #main-content .pos-cell-label { display:none; }
+body.internal-app #main-content .pos-links { display:flex; flex-wrap:wrap; gap:4px 12px; }
+body.internal-app #main-content .pos-links a { color:#d91f2a; text-decoration:none; font-weight:500; }
+body.internal-app #main-content .pos-links a:hover { text-decoration:underline; }
+body.internal-app #main-content .pos-empty { padding:16px; margin:0; }
+body.internal-app #main-content .pos-list .recruiting-pagination { padding:12px 16px; border-top:1px solid #f0f1f3; }
+@media (max-width:900px) {
+  body.internal-app #main-content .pos-list-head { display:none; }
+  body.internal-app #main-content .pos-list-row { grid-template-columns:1fr 1fr; }
+  body.internal-app #main-content .pos-list-row > .pl-person { grid-column:1/-1; }
+  body.internal-app #main-content .pos-cell-label { display:block; font-size:12px; color:#6b7280; }
+}

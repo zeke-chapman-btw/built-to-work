@@ -327,7 +327,8 @@ def need_detail(request, org_id, record_id):
     actions += {"active": [("hold", "Put on hold"), ("close", "Close position")], "hold": [("resume", "Reopen"), ("close", "Close position")]}.get(obj.status, [])
     if obj.status not in {"closed", "cancelled"}:
         actions.append(("cancel", "Cancel position"))
-    return render(request, "customers/need.html", context(request, org, "needs", need=obj, effective_sections=revision_sections(obj.effective_revision), working_sections=revision_sections(working), actions=actions, editable=obj.status not in {"closed", "cancelled"} and (not working or working.state == "draft"), revisions=[{"revision": rev, "sections": revision_sections(rev)} for rev in obj.revisions.all()], recent=activity(org, need=obj)[:30]))
+    from .position_view import position_view
+    return render(request, "customers/need.html", context(request, org, "needs", need=obj, position=position_view(obj.effective_revision or working), effective_sections=revision_sections(obj.effective_revision), working_sections=revision_sections(working), actions=actions, editable=obj.status not in {"closed", "cancelled"} and (not working or working.state == "draft"), revisions=[{"revision": rev, "sections": revision_sections(rev)} for rev in obj.revisions.all()], recent=activity(org, need=obj)[:30]))
 
 
 @staff_view

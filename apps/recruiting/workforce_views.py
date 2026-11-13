@@ -29,9 +29,9 @@ class NamedRecordChoice(forms.ModelChoiceField):
 
 class WorkforceFilters(forms.Form):
     q = forms.CharField(required=False, max_length=200, label='Position or customer')
-    status = forms.ChoiceField(required=False, choices=[('open', 'Open needs'), ('all', 'All statuses')] + list(WorkforceNeed.Status.choices))
-    customer = NamedRecordChoice(required=False, queryset=CustomerOrganization.objects.none())
-    request = NamedRecordChoice(required=False, queryset=WorkforceRequest.objects.none(), label='Workforce Request')
+    status = forms.ChoiceField(required=False, choices=[('open', 'Open positions'), ('all', 'All statuses')] + list(WorkforceNeed.Status.choices))
+    customer = NamedRecordChoice(required=False, queryset=CustomerOrganization.objects.none(), empty_label='Any customer')
+    request = NamedRecordChoice(required=False, queryset=WorkforceRequest.objects.none(), label='Position group', empty_label='Any group')
 
     def __init__(self, *args, needs, can_manage_requests, **kwargs):
         super().__init__(*args, **kwargs)
@@ -77,6 +77,7 @@ def directory(request):
     needs = needs.annotate(has_recruiting_setup=Exists(RecruitingOpportunity.objects.filter(need_id=OuterRef('pk'))))
     records = Paginator(needs.order_by('-updated_at', 'pk'), 20).get_page(request.GET.get('page'))
     opportunities = {item.need_id: item for item in opportunities_for(actor).filter(need_id__in=[n.pk for n in records], archived_at__isnull=True)}
+    from apps.customers.position_view import pay_text
     rows = []
     for need in records:
         approved = bool(need.effective_revision and need.effective_revision.state == 'approved')
@@ -91,6 +92,7 @@ def directory(request):
             'location': location or (site.name if site else ''),
             'trade': terms.trade if terms else '', 'description': terms.description if terms else '',
             'employment': terms.get_employment_type_display() if terms else '',
+            'pay': pay_text(terms) if terms else '',
             'campaign': need.campaign.name if need.campaign else '',
             'campaign_url': reverse('recruiting:campaign-detail', args=[need.campaign_id]) if need.campaign_id else '',
             'need_url': reverse('customers:need', args=[need.organization_id, need.pk]) if can_customers else '',
