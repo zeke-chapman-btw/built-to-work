@@ -215,3 +215,11 @@ def people_split(value):
     """Split a stored list ("Welding, Electrical") into separate items."""
     import re
     return [part.strip() for part in re.split(r"[,;\n]+", str(value or "")) if part.strip()]
+
+
+@register.filter
+def people_short_work(value):
+    """Short chip text so two answers fit on one line: Full time → FT, Part time → PT."""
+    text = str(value or "")
+    return {"full time": "FT", "full-time": "FT", "part time": "PT", "part-time": "PT", "any arrangement": "Any",
+            "self employed": "Self-employed", "self-employed": "Self-employed"}.get(text.strip().casefold(), text)

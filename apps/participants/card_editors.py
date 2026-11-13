@@ -35,7 +35,7 @@ class ProfileCardForm(forms.Form):
         record = person if model is Participant else getattr(person, 'career_profile', None)
         for name in fields:
             field = model._meta.get_field(name).formfield()
-            field.label = {'career_interests': 'Trades they want to work in', 'skills_interests': 'Skills they have',
+            field.label = {'career_interests': 'Trades desired', 'skills_interests': 'Skills they have',
                 'years_of_experience': 'Years of work experience (total)', 'education_training': 'School and training',
                 'employment_interest': 'Seeking work', 'preferred_work_type': 'Work type',
                 'preferred_locations': 'Preferred work locations'}.get(name, field.label)
@@ -62,7 +62,7 @@ class ProfileCardForm(forms.Form):
                 from apps.recruiting.forms import PreferencesForm
                 initial = initial_preferences(person)
                 preferences = PreferencesForm(initial=initial)
-                for key in ('current_employment_status', 'employment_classification', 'willing_to_relocate'):
+                for key in ('current_employment_status', 'employment_classification'):
                     self.fields[key] = preferences.fields[key]
                     self.initial[key] = initial[key]
                     if key == 'employment_classification':
@@ -79,7 +79,7 @@ class ProfileCardForm(forms.Form):
             # Standard answers as tap-to-pick chips.
             labels = {'employment_interest': 'Looking for work', 'travel': 'Willing to travel', 'willing_to_relocate': 'Willing to relocate',
                       'current_employment_status': 'Currently working', 'preferred_work_type': 'Work desired',
-                      'career_interests': 'Trades they want to work in', 'employment_classification': 'Employment type'}
+                      'career_interests': 'Trades desired', 'employment_classification': 'Employment type'}
             for key, label in labels.items():
                 if key in self.fields:
                     self.fields[key].label = label
@@ -99,7 +99,7 @@ class ProfileCardForm(forms.Form):
                 for alias in [label, key, *label.split('/')]:
                     known.setdefault(alias.strip().casefold(), label)
             del self.fields['career_interests']
-            self.fields['trades'] = forms.MultipleChoiceField(label='Trades they want to work in', required=False,
+            self.fields['trades'] = forms.MultipleChoiceField(label='Trades desired', required=False,
                 choices=[(label, label) for label in options], widget=forms.CheckboxSelectMultiple(attrs={'class': 'btw-chip-choices'}))
             self.fields['trades_other'] = forms.CharField(label='Other trades', required=False, max_length=500,
                 widget=forms.TextInput(attrs={'placeholder': 'Anything not in the list, separated by commas'}))
@@ -107,7 +107,7 @@ class ProfileCardForm(forms.Form):
             self.initial['trades_other'] = ', '.join(item for item in current if item.casefold() not in known)
             self.trade_options_url = reverse('recruiting:classifications') + '?from=settings&kind=trade'
         if card == 'preferences':
-            self.order_fields(['employment_interest','preferred_work_type','current_employment_status','employment_classification','travel','willing_to_relocate','trades','trades_other'])
+            self.order_fields(['employment_interest','travel','current_employment_status','preferred_work_type','employment_classification','trades','trades_other'])
         self.initial['revision'] = profile_revision(person)
         if card == 'preferences':
             primary=['employment_interest','travel','willing_to_relocate','current_employment_status']

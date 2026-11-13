@@ -48,11 +48,10 @@
   <header class="btw-panel-heading"><h2 id="profile-work-preferences-title">Work preferences</h2>{% if can_edit_profile and not participant.archived_at %}<a data-profile-manager data-record-editor href="{% url 'participants:profile-card-edit' participant.pk 'preferences' %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit work preferences">Edit</a>{% endif %}</header>
   <dl class="pv-pref-grid">
     <div><dt>Looking for work</dt><dd>{% if prefs and prefs.interest != 'Not recorded' %}{% ui_badge prefs.interest prefs.interest|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
-    <div><dt>Work desired</dt><dd>{% if career.preferred_work_type %}{% ui_badge career.get_preferred_work_type_display 'neutral' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
-    <div><dt>Currently working</dt><dd>{% if prefs and prefs.employment.value != 'Not recorded' %}{% ui_badge prefs.employment.value 'neutral' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
     <div><dt>Willing to travel</dt><dd>{% if prefs and prefs.travel != 'Not recorded' %}{% ui_badge prefs.travel prefs.travel|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
-    <div><dt>Willing to relocate</dt><dd>{% if prefs and prefs.relocation != 'Not recorded' %}{% ui_badge prefs.relocation prefs.relocation|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
-    <div class="pv-pref-wide"><dt>Trades wanted</dt><dd>{% if current_interests %}<span class="pv-chip-list">{% for trade in current_interests|people_split %}{% ui_badge trade 'info' %}{% endfor %}</span>{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
+    <div><dt>Currently working</dt><dd>{% if prefs and prefs.employment.value != 'Not recorded' %}{% ui_badge prefs.employment.value|people_short_work 'neutral' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
+    <div><dt>Work desired</dt><dd>{% if career.preferred_work_type %}{% ui_badge career.get_preferred_work_type_display|people_short_work 'neutral' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
+    <div class="pv-pref-wide"><dt>Trades desired</dt><dd>{% if current_interests %}<span class="pv-chip-list">{% for trade in current_interests|people_split %}{% ui_badge trade 'info' %}{% endfor %}</span>{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
   </dl>
 </section>{% endwith %}
 </div>

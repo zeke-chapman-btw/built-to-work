@@ -265,11 +265,25 @@ body.internal-app.has-participant-workspace.has-participants-pass3.has-participa
 .has-crm-ux-profile .pv-ref-note { margin:0; background:#fffbeb; border-radius:6px; padding:8px 12px; font-size:13px; color:#92400e; }
 .has-crm-ux-profile .pv-ref-foot { display:flex; justify-content:space-between; gap:8px; font-size:13px; color:var(--muted); }
 .has-crm-ux-profile .pv-ref-foot a { font-weight:600; }
-/* Work preferences: two answers per row, label over chip; trades take the full width last. */
-.has-crm-ux-profile .pv-pref-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px 14px; margin:0; }
-.has-crm-ux-profile .pv-pref-grid > div { min-width:0; }
-.has-crm-ux-profile .pv-pref-grid dt { font-size:12px; color:var(--muted); margin:0 0 4px; }
+/* Work preferences: two answers per row, each chip on the same line as its question; trades take the full width last. */
+.has-crm-ux-profile .pv-pref-grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px 16px; margin:0; font-size:14px; }
+.has-crm-ux-profile .pv-pref-grid > div { display:flex; align-items:center; flex-wrap:wrap; gap:4px 8px; min-width:0; }
+.has-crm-ux-profile .pv-pref-grid dt { font-size:13px; color:var(--muted); margin:0; }
+.has-crm-ux-profile .pv-pref-grid dt::after { content:":"; }
 .has-crm-ux-profile .pv-pref-grid dd { margin:0; }
-.has-crm-ux-profile .pv-pref-grid .pv-pref-wide { grid-column:1/-1; }
+.has-crm-ux-profile .pv-pref-grid .pv-pref-wide { grid-column:1/-1; align-items:flex-start; }
+.has-crm-ux-profile .pv-pref-grid .pv-pref-wide dt { padding-top:2px; }
 .has-crm-ux-profile .pv-chip-list { display:flex; flex-wrap:wrap; gap:6px; }
 .has-crm-ux-profile .pv-pref-grid .badge { margin:0; }
+/* Contact and Details: a little more air between rows. */
+.has-crm-ux-profile .pv-facts { row-gap:10px; align-items:baseline; }
+/* Fit two answers per row on laptop screens: labels stay on one line next to their chip. */
+.has-crm-ux-profile .pv-pref-grid { grid-template-columns:minmax(0, 1.15fr) minmax(0, 1fr); column-gap:12px; }
+.has-crm-ux-profile .pv-pref-grid > div:not(.pv-pref-wide) { flex-wrap:nowrap; gap:6px; }
+.has-crm-ux-profile .pv-pref-grid dt { white-space:nowrap; font-size:12.5px; }
+/* Contact / Details: label column only as wide as its longest label, so values (like emails) get the room. */
+.has-crm-ux-profile #profile-identity .pv-facts,
+.has-crm-ux-profile #profile-details .pv-facts { grid-template-columns:max-content minmax(0, 1fr); column-gap:18px; }
+.has-crm-ux-profile .pv-facts dd a[href^="mailto:"] { overflow-wrap:anywhere; }
+.has-crm-ux-profile .pv-pref-grid .btw-badge,
+.has-crm-ux-profile .pv-ref-head .btw-badge { flex:none; white-space:nowrap; overflow-wrap:normal; max-width:none; }
