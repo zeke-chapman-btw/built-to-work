@@ -49,3 +49,14 @@
  .task-page .notification-card { padding:18px; }
  .notification-card-heading time { margin-left:0; flex-basis:100%; }
 }
+.task-page section.card.reminder-settings { width: 100%; max-width: 44rem; }
+.reminder-settings form { display: grid; gap: var(--space-4, 1rem); }
+.reminder-actions { display: flex; flex-wrap: wrap; gap: var(--space-2, .5rem); margin-top: var(--space-3, .75rem); }
+.reminder-summary-section h4 { margin: var(--space-3, .75rem) 0 var(--space-2, .5rem); }
+.reminder-summary-section ul, .reminder-event-list { list-style: none; padding: 0; }
+.reminder-summary-section li { display: grid; gap: .2rem; margin: .5rem 0; overflow-wrap: anywhere; }
+.notification-card { scroll-margin-top: 5rem; }
+@media (max-width: 640px) {
+  .reminder-settings { max-width: 100%; min-width: 0; }
+  .reminder-settings input, .reminder-settings select { max-width: 100%; min-width: 0; }
+}

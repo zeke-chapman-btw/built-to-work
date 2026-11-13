@@ -66,7 +66,7 @@ class FinalRefinementTests(TestCase):
         response = self.client.get(reverse('operations:updates'))
         self.assertEqual(reverse('operations:updates'), '/operations/tasks/updates/')
         self.assertContains(response, '<h1 class="page-title">Notifications</h1>', html=True)
-        self.assertContains(response, 'Live task attention')
+        self.assertContains(response, 'Upcoming and overdue')
         self.assertContains(response, '1 overdue')
         self.assertEqual(TaskNotification.objects.count(), 0)
 

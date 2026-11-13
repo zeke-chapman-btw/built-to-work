@@ -304,6 +304,10 @@ from django.test import TransactionTestCase
 @skipUnless(connection.vendor == 'postgresql', 'Row-lock race requires PostgreSQL')
 class CardConcurrencyTests(EmployerFixtures, TransactionTestCase):
     def setUp(self):
+        # TransactionTestCase flush removes data-migration catalog rows.
+        from apps.recruiting.models import RecruitingStage
+        RecruitingStage.objects.get_or_create(key='identified', defaults={
+            'label':'SYNTHETIC Initial', 'position':0, 'is_active':True})
         self.employer_setup()
 
     def test_one_stale_writer_is_rejected_without_lost_updates(self):

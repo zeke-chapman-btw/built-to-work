@@ -13,11 +13,18 @@ function panel(open, errors = false) {
 }
 const filters = [panel(false), panel(false, true)];
 const disclosures = [panel(false), panel(true)];
+const documentListeners = {};
 let printCalls = 0, prevented = false;
 const document = {
-  addEventListener(name, handler) { events['document:' + name] = handler; },
+  addEventListener(name, handler) {
+    (documentListeners[name] ||= []).push(handler);
+    events['document:' + name] = event => documentListeners[name].forEach(listener => listener(event));
+  },
   querySelectorAll(selector) {
-    return selector === '[data-report-filters]' ? filters : disclosures;
+    if (selector === '[data-report-filters]') return filters;
+    if (selector === '[data-report-disclosure]' || selector === '[data-report-print-expand]') return disclosures;
+    if (selector === '[data-report-export]') return [];
+    throw new Error('Unhandled fixture selector: ' + selector);
   }
 };
 const window = {
@@ -49,7 +56,7 @@ disclosures[1].handlers.keydown({ key: 'Escape', preventDefault() {}, stopPropag
 assert.equal(disclosures[1].open, false);
 assert(disclosures[1].focused && stopped);
 cases.push('Escape closes the disclosure and restores summary focus');
-events['document:click']({ target: { closest() { return {}; } }, preventDefault() { prevented = true; } });
+events['document:click']({ target: { closest() { return { closest() { return null; } }; } }, preventDefault() { prevented = true; } });
 assert.equal(printCalls, 1);
 assert(prevented);
 assert.deepEqual(disclosures.map(value => value.open), [false, false]);

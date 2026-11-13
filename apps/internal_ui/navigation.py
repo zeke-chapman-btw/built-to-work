@@ -274,7 +274,7 @@ def staff_destinations(user, current_path=""):
         active = "settings"
     if current_path.startswith(("/internal/reports/", "/reports/", "/workdays/reports/")):
         active = "events" if current_path.startswith("/reports/events/") else "settings" if current_path.startswith("/reports/categories/") else "reports"
-    if current_path.startswith(("/internal/settings/", "/workdays/mine/", "/internal/quick-actions/", "/accounts/staff/", "/workdays/compensation/")):
+    if current_path.startswith(("/internal/settings/", "/operations/tasks/reminders/", "/workdays/mine/", "/internal/quick-actions/", "/accounts/staff/", "/workdays/compensation/")):
         active = "settings"
     if current_path.startswith(("/internal/reports/my-pay/", "/my/", "/workdays/mine/")):active="my-stuff"
     if current_path.startswith("/sops/") and not current_path.startswith("/sops/library/"):active="sops"

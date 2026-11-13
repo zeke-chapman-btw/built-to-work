@@ -1,0 +1,11 @@
+{% extends 'operations/task_base.html' %}
+{% block task_content %}
+<p><a href="{{ back }}">← {% if personal_settings %}Settings{% else %}Reminders{% endif %}</a></p>
+<section class="card reminder-settings">
+{% if reminder_event %}<h2>{{ reminder_event.name }}</h2>{% endif %}
+<form method="post">{% csrf_token %}{% include 'internal/ui/event_form_fields.html' with form=form %}
+<div class="reminder-actions"><button class="button button-primary" type="submit">Save</button></div></form>
+</section>
+{% if personal_settings and company_settings %}<section class="card reminder-settings"><a href="{% url 'operations:reminder-company' %}">Company reminders →</a></section>{% endif %}
+{% if reminder_events %}<section class="card reminder-settings"><h2>Event reminders</h2><ul class="reminder-event-list">{% for item in reminder_events %}<li><a href="{% url 'operations:reminder-event' item.pk %}">{{ item.name }}</a></li>{% endfor %}</ul></section>{% endif %}
+{% endblock %}

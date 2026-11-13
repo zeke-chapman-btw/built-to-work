@@ -1,0 +1,11 @@
+{% extends 'operations/task_base.html' %}
+{% block task_content %}
+<p><a href="{{ back }}">← {{ task.title }}</a></p>
+<section class="card reminder-settings"><h2>Snooze reminders</h2>
+<form method="post" action="{% url 'operations:task-reminder-snooze' task.pk %}">{% csrf_token %}
+<div class="reminder-actions"><button class="button secondary" name="choice" value="hour">One hour</button><button class="button secondary" name="choice" value="morning">Next morning</button></div></form>
+</section>
+{% if can_schedule %}<section class="card reminder-settings"><h2>Weekend work</h2><form method="post">{% csrf_token %}
+{% include 'internal/ui/event_form_fields.html' with form=form %}<div class="reminder-actions"><button class="button button-primary">Save</button></div></form></section>{% endif %}
+<p><a href="{% url 'operations:reminder-preferences' %}">Reminder preferences →</a></p>
+{% endblock %}

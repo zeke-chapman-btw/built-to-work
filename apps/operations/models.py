@@ -16,6 +16,7 @@ class Task(UUIDModel, TimestampedModel):
     assigned_staff=models.ForeignKey("staffing.StaffProfile",on_delete=models.PROTECT,related_name="tasks")
     event=models.ForeignKey("events.Event",null=True,blank=True,on_delete=models.PROTECT,related_name="operational_tasks")
     due_date=models.DateField(null=True,blank=True)
+    weekend_work_date=models.DateField(null=True,blank=True)
     priority=models.CharField(max_length=10,choices=Priority.choices,default=Priority.NORMAL)
     status=models.CharField(max_length=16,choices=Status.choices,default=Status.TODO)
     created_by=models.ForeignKey(settings.AUTH_USER_MODEL,null=True,blank=True,on_delete=models.SET_NULL,related_name="operational_tasks_created")
@@ -63,9 +64,14 @@ class TaskNotification(UUIDModel):
         CHANGED='changed','Due date / priority'
         ARCHIVED='archived','Archived'
         RESTORED='restored','Restored'
+        ADVANCE='advance','Coming up'
+        DUE='due','Due'
+        SUMMARY='summary','Morning summary'
     recipient=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='task_notifications')
-    task=models.ForeignKey(Task,on_delete=models.CASCADE,related_name='notifications')
-    source_event=models.ForeignKey('core.AuditLog',on_delete=models.CASCADE,related_name='task_notifications')
+    task=models.ForeignKey(Task,on_delete=models.CASCADE,related_name='notifications',null=True,blank=True)
+    source_event=models.ForeignKey('core.AuditLog',on_delete=models.CASCADE,related_name='task_notifications',null=True,blank=True)
+    reminder_job=models.OneToOneField('operations.TaskReminderJob',on_delete=models.PROTECT,null=True,blank=True,related_name='notification')
+    snoozed_until=models.DateTimeField(null=True,blank=True)
     kind=models.CharField(max_length=16,choices=Kind.choices)
     message=models.CharField(max_length=240)
     created_at=models.DateTimeField(auto_now_add=True)
@@ -108,3 +114,6 @@ class EventDocument(UUIDModel, TimestampedModel):
 from .template_models import OperationsTemplate, OperationsTemplateRevision, OperationsTemplateResource, EventOperationsApplication
 
 from .execution_models import (ChecklistMaster,MasterChecklistCategory,MasterChecklistItem,EventExecution,EventChecklistCategory,EventChecklistItem)
+
+from .reminder_models import (TaskReminderPolicy, TaskReminderPreference, TaskReminderJob,
+                              TaskReminderItem, TaskReminderSchedulerState)

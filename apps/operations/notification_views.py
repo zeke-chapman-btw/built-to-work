@@ -11,6 +11,8 @@ from . import notifications,due_dates
 def updates(request):
     if request.method!='GET':return HttpResponseNotAllowed(['GET'])
     page=Paginator(notifications.visible_notifications(request.user),20).get_page(request.GET.get('page'))
+    from .reminder_rendering import decorate
+    page.object_list = decorate(request.user, page.object_list)
     return render(request,'operations/updates.html',{'page_title':'Notifications','notification_page':page,'due_attention':due_dates.due_attention(request.user)})
 
 def destination(request):

@@ -45,6 +45,9 @@ def snap(obj):
     return data
 def audit(user,action,obj,before=None,reason=""):
     audit_action(actor=user,action="operations."+action,instance=obj,old_data=before,new_data=snap(obj),reason=reason)
+    if isinstance(obj, Task):
+        from .reminder_planning import reconcile_after_commit
+        reconcile_after_commit(obj.pk)
 
 @transaction.atomic
 def save_task(*, actor, data, task_id=None, event_id=None, creation_id=None):
