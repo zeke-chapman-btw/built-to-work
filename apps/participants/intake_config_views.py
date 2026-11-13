@@ -10,6 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.cache import never_cache
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.views.decorators.http import require_http_methods
 from .models import RegistrationForm, RegistrationFormVersion
 from .intake_lifecycle import (require_admin, create_form, duplicate_form, save_draft, publish,
@@ -70,7 +71,31 @@ def index(request):
     staged = CentralEventDownload.objects.exclude(config={}).order_by("-updated_at")[:50]
     return render(request, "participants/intake_config_index.html", context(request,
         page_title="Forms", forms=RegistrationForm.objects.filter(is_smart_intake=True).prefetch_related(
-            "versions").order_by("name"), staged_downloads=staged, error=error))
+            "versions").order_by("name"), staged_downloads=staged, error=error, **_signup_places()))
+
+
+def _signup_places():
+    """Where each form is used, for the Forms page."""
+    from apps.events.models import TrailerInstance
+    from .models import IntakeFormAssignment
+    from . import signup_links as links
+    live = list(IntakeFormAssignment.objects.filter(is_active=True).select_related("form", "active_version", "event", "trailer"))
+    for a in live:
+        a.label = f"{a.form.name} · version {a.active_version.version}"
+    general = next((a for a in live if a.channel == "online"), None)
+    own = {a.event_id: a for a in live if a.channel == "event"}
+    from .intake_submission import _public_event
+
+    def is_open(event):
+        try:
+            _public_event(event)
+        except ValidationError:
+            return False
+        return True
+    events = [{"event": e, "own": own.get(e.pk), "open": is_open(e)} for e in links.public_events()]
+    trailers = [{"trailer": t, "event": links.trailer_event(t)} for t in TrailerInstance.objects.filter(is_active=True).order_by("display_name")]
+    staffed = [a for a in live if a.channel in {"staff", "trailer"}]
+    return {"general_assignment": general, "event_places": events, "trailer_places": trailers, "staff_places": staffed}
 
 
 @admin_page
@@ -202,29 +227,18 @@ def reorder(request, form_id, key):
     return redirect("participants:intake-config-detail", form_id=model.pk)
 
 
-@admin_page
-@never_cache
-@require_http_methods(["GET", "POST"])
-def preview(request, version_id):
-    version = get_object_or_404(RegistrationFormVersion.objects.select_related("form"),
-                               pk=version_id, form__is_smart_intake=True)
-    try:
-        step = int(request.GET.get("step", 1))
-    except ValueError:
-        step = 1
-    if step not in UI_STEP_NAMES:
-        step = 1
-    persona = request.GET.get("persona", "alex")
-    examples = {
-        "alex": {"first_name": "SYNTHETIC Alex", "age": 17, "current_situation": "high_school",
-                 "hands_on": "yes", "school_name": "SYNTHETIC CTE", "industry_interests": ["welding"]},
-        "jordan": {"first_name": "SYNTHETIC Jordan", "age": 22, "current_situation": "employed_other",
-                   "current_industry": "retail", "hands_on": "no", "industry_interests": ["electrical"]},
-        "chris": {"first_name": "SYNTHETIC Chris", "age": 43, "current_situation": "employed_trade",
-                  "current_industry": "construction", "hands_on": "yes", "industry_interests": ["welding"]}}
-    if persona not in examples:
-        persona = "alex"
-    answers = dict(examples[persona])
+PERSONAS = {
+    "alex": ("Alex · 17 · High school / CTE", {"first_name": "SYNTHETIC Alex", "age": 17, "current_situation": "high_school",
+             "hands_on": "yes", "school_name": "SYNTHETIC CTE", "industry_interests": ["welding"]}),
+    "jordan": ("Jordan · 22 · Retail, interested in electrical", {"first_name": "SYNTHETIC Jordan", "age": 22, "current_situation": "employed_other",
+               "current_industry": "retail", "hands_on": "no", "industry_interests": ["electrical"]}),
+    "chris": ("Chris · 43 · Welding supervisor", {"first_name": "SYNTHETIC Chris", "age": 43, "current_situation": "employed_trade",
+              "current_industry": "construction", "hands_on": "yes", "industry_interests": ["welding"]}),
+}
+
+
+def _example_answers(persona):
+    answers = dict(PERSONAS[persona][1])
     age = answers.pop("age")
     answers.update(last_name="Example", dob=date(timezone.localdate().year-age, 1, 1).isoformat(),
         email=persona+"@example.test", phone="55501000"+str(age), city="Example City", state="GA", postal_code="00000",
@@ -236,12 +250,113 @@ def preview(request, version_id):
             "paid": "unpaid" if persona == "alex" else "paid",
             "duration": "6_12_months" if persona == "alex" else "over_10_years",
             "skills": ["mig"], "proficiency": "beginner" if persona == "alex" else "advanced"}]
-    form = IntakeStepForm(request.POST if request.method == "POST" else None,
-                          contract=version.snapshot, step=contract_step_for(step), answers=answers,
-                          consent_only=(step == 2) if step <= 2 else None)
-    # Preview has no canonical or session writes. Conditions are handled by the same browser module.
+    return answers
+
+
+SCREENS = [("welcome", "Welcome")] + [(str(n), f"{n}. {name}") for n, name in UI_STEP_NAMES.items()] + [("finish", "Finish")]
+
+
+@admin_page
+@never_cache
+def preview(request, version_id):
+    """Phone-sized preview of the whole sign-up: welcome, every step and the finish screen."""
+    version = get_object_or_404(RegistrationFormVersion.objects.select_related("form"),
+                               pk=version_id, form__is_smart_intake=True)
+    screen = request.GET.get("screen") or request.GET.get("step") or "welcome"
+    if screen not in dict(SCREENS):
+        screen = "welcome"
+    persona = request.GET.get("persona", "alex")
+    if persona not in PERSONAS:
+        persona = "alex"
+    others = version.form.versions.exclude(pk=version.pk).filter(status__in=["draft", "published"]).order_by("-version")
     return render(request, "participants/intake_config_preview.html", context(request,
-        page_title="Draft preview — " + version.form.name, version=version, form=form,
-        questions=form.display_questions(), experience_rows=form.display_rows(),
-        experience_question=form.experience_question, contract=version.snapshot,
-        step=step, step_name=UI_STEP_NAMES[step], prior_answers=answers, persona=persona))
+        page_title="Preview — " + version.form.name, version=version, screen=screen, screens=SCREENS,
+        persona=persona, personas=[(k, v[0]) for k, v in PERSONAS.items()], other_versions=others,
+        can_edit_wording=version.form.is_active, latest=_latest(version.form)))
+
+
+@xframe_options_sameorigin
+@admin_page
+@never_cache
+def preview_screen(request, version_id):
+    """One participant screen exactly as the public sees it, filled with a made-up person. Nothing is saved."""
+    from types import SimpleNamespace
+    from .intake_screens import public_screens
+    from .models import ConsentDocumentVersion
+    version = get_object_or_404(RegistrationFormVersion.objects.select_related("form"),
+                               pk=version_id, form__is_smart_intake=True)
+    screen = request.GET.get("screen", "welcome")
+    persona = request.GET.get("persona", "alex") if request.GET.get("persona") in PERSONAS else "alex"
+    screens = public_screens(version)
+    from django.urls import reverse
+    base = {"preview": True, "screens": screens, "event": None,
+            "preview_base": reverse("participants:intake-config-preview", args=[version.pk])}
+    if screen == "welcome":
+        return render(request, "participants/intake_start.html", {**base, "assignment": None})
+    if screen == "finish":
+        return render(request, "participants/intake_complete.html", base)
+    try:
+        step = int(request.GET.get("step") or screen)
+    except ValueError:
+        step = 1
+    if step not in UI_STEP_NAMES:
+        step = 1
+    answers = _example_answers(persona)
+    consent = ConsentDocumentVersion.objects.filter(key="btw-intake", is_approved=True).order_by("-effective_at", "-version").first()
+    form = IntakeStepForm(None, contract=version.snapshot, step=contract_step_for(step), answers=answers,
+                          consent_only=(step == 2) if step <= 2 else None)
+    fake_session = SimpleNamespace(consent_document=consent or SimpleNamespace(
+        title="Consent", body="The approved consent text appears here. Add one under Operations → Consents."))
+    return render(request, "participants/intake_step.html", {**base,
+        "session": fake_session, "form": form, "step": step, "step_name": UI_STEP_NAMES[step],
+        "progress": step * 20, "questions": form.display_questions(), "experience_rows": form.display_rows(),
+        "experience_question": form.experience_question, "event_fields": [], "contract": version.snapshot,
+        "prior_answers": answers, "revision": "", "previous_step": step - 1})
+
+
+class ScreensForm(forms.Form):
+    revision = forms.CharField(widget=forms.HiddenInput)
+
+    def __init__(self, *args, current=None, **kwargs):
+        from .intake_screens import DEFAULTS, LABELS, LIMITS
+        super().__init__(*args, **kwargs)
+        for key, default in DEFAULTS.items():
+            long = key.endswith("message")
+            self.fields[key] = forms.CharField(label=LABELS[key], required=False, max_length=LIMITS[key],
+                initial=(current or {})[key] if key in (current or {}) else default,
+                widget=forms.Textarea(attrs={"rows": 3}) if long else forms.TextInput())
+        self.fields["welcome_challenge"].help_text = "Leave blank to hide this line."
+        self.fields["finish_message"].help_text = "Shown when there is no event ticket. With a ticket, people see their ticket instead."
+
+    @property
+    def field_groups(self):
+        welcome = [self[k] for k in self.fields if k.startswith("welcome")]
+        finish = [self[k] for k in self.fields if k.startswith("finish")]
+        return [{"title": "Welcome screen", "fields": welcome}, {"title": "Finish screen", "fields": finish}]
+
+
+@admin_page
+@never_cache
+@require_http_methods(["GET", "POST"])
+def screens_edit(request, form_id):
+    """Edit welcome and finish wording. Saved into the draft; the public sees it after publishing."""
+    from django.urls import reverse
+    from apps.internal_ui.record_editors import editor_response, editor_success
+    from .intake_lifecycle import save_screens
+    model = _form(form_id)
+    latest = _latest(model)
+    form = ScreensForm(request.POST or None, current=latest.screens, initial={"revision": revision(latest)})
+    if request.method == "POST" and form.is_valid():
+        values = dict(form.cleaned_data)
+        try:
+            draft = save_screens(actor=request.user, form_id=model.pk, screens=values,
+                                 expected_revision=request.POST.get("revision"))
+        except ValidationError as exc:
+            form.add_error(None, exc)
+        else:
+            messages.success(request, "Saved to the draft. Publish the draft when it looks right.")
+            return editor_success(request, reverse("participants:intake-config-preview", args=[draft.pk]))
+    return editor_response(request, template="participants/signup_where_page.html", panel="internal/ui/record_form_panel.html", context={
+        "form": form, "page_title": "Welcome and finish wording", "editor_context": model.name,
+        "back": reverse("participants:intake-config-preview", args=[latest.pk]), "save_label": "Save to draft",
+        "fields_template": "customers/editor_fields.html", "full_page_editor": request.headers.get("X-BTW-Editor") != "1"})

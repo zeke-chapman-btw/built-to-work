@@ -164,6 +164,8 @@ class RegistrationFormVersion(TimestampedModel):
     snapshot = models.JSONField(default=dict)
     stable_id = models.UUIDField(null=True, blank=True, unique=True, editable=False)
     content_hash = models.CharField(max_length=64, blank=True, editable=False)
+    # Welcome and finish screen wording; edited on drafts, frozen once published.
+    screens = models.JSONField(default=dict, blank=True)
     def save(self, *args, **kwargs):
         from .intake_model_guards import guard_version
         guard_version(self)

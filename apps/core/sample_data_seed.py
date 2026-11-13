@@ -241,6 +241,8 @@ def people(admin, event):
     draft = create_form(actor=admin, name="SAMPLE Review intake")
     version = publish(actor=admin, version_id=draft.pk, expected_revision=revision(draft))
     assignment = assign(actor=admin, version_id=version.pk, channel="staff", event=event)
+    # The public sign-up link uses this form too, so the preview shows the form builder flow.
+    assign(actor=admin, version_id=version.pk, channel="online")
     result = []
     for i, name in enumerate(SAMPLE_NAMES):
         first, last = name.split(" ", 1)

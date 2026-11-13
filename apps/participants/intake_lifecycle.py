@@ -101,9 +101,31 @@ def save_draft(*, actor, form_id, contract, expected_revision):
         else:
             current = RegistrationFormVersion.objects.create(
                 form=form, version=current.version + 1, status="draft", snapshot=contract,
-                stable_id=uuid.uuid4(), created_by=actor)
+                screens=deepcopy(current.screens or {}), stable_id=uuid.uuid4(), created_by=actor)
         _sync_questions(form, contract)
     _audit(actor, "draft.saved", current, version=current.version, digest=contract_hash(contract))
+    return current
+
+
+@transaction.atomic
+def save_screens(*, actor, form_id, screens, expected_revision):
+    """Welcome and finish wording. Published versions stay as they are; edits go into a draft."""
+    require_admin(actor)
+    from .intake_screens import clean_screens
+    screens = clean_screens(screens)
+    form = RegistrationForm.objects.select_for_update(of=("self",)).get(pk=form_id, is_smart_intake=True)
+    current = form.versions.order_by("-version").first()
+    if not current or revision(current) != expected_revision:
+        raise ValidationError("This form changed while you were editing. Reload before saving.")
+    with contract_write():
+        if current.status == "draft":
+            current.screens = screens
+            current.save(update_fields=["screens", "updated_at"])
+        else:
+            current = RegistrationFormVersion.objects.create(
+                form=form, version=current.version + 1, status="draft", snapshot=deepcopy(current.snapshot),
+                screens=screens, stable_id=uuid.uuid4(), created_by=actor)
+    _audit(actor, "screens.saved", current, version=current.version)
     return current
 
 
@@ -187,6 +209,19 @@ def assign(*, actor, version_id, channel, event=None, trailer=None):
            channel=channel, event=str(event.pk) if event else None,
            trailer=str(trailer.pk) if trailer else None)
     return assignment
+
+
+@transaction.atomic
+def unassign(*, actor, channel, event=None, trailer=None):
+    """Stop using a form for one place. For an event this falls back to the general online form."""
+    require_admin(actor)
+    rows = IntakeFormAssignment.objects.select_for_update(of=("self",)).filter(
+        channel=channel, event=event, trailer=trailer, is_active=True)
+    for row in rows:
+        row.is_active, row.updated_by = False, actor
+        row.save(update_fields=["is_active", "updated_by", "updated_at"])
+        _audit(actor, "form.unassigned", row, channel=channel, event=str(event.pk) if event else None)
+    return rows
 
 
 def export_version(*, actor, version_id):

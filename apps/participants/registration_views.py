@@ -64,10 +64,17 @@ def registration_start(request, event_id=None):
     if event_id:
         from apps.events.models import Event
         event = get_object_or_404(Event, pk=event_id)
-    from .intake_views import assigned
-    smart = assigned("event" if event else "online", event=event)
+    from .intake_views import public_start_url
+    smart = public_start_url(event)
     if smart:
-        return redirect("participants:intake-start", assignment_id=smart.pk)
+        if event is not None:
+            from .intake_submission import _public_event
+            try:
+                _public_event(event)
+            except ValidationError:
+                return render(request, "participants/registration_unavailable.html", {"event": event,
+                    "reason": "Sign-up for this event isn't open right now."}, status=403)
+        return redirect(smart)
     if request.method == "POST":
         return redirect(reverse("participants:registration-form") + (("?event=" + str(event.pk)) if event else ""))
     return render(request, "participants/registration_start.html", {"event": event})
@@ -93,9 +100,10 @@ def registration_form(request, *, fixed_event=None, public=False):
     if smart_event is None and raw_event:
         from apps.events.models import Event
         smart_event = get_object_or_404(Event, pk=raw_event)
-    smart = assigned("event" if smart_event else "online", event=smart_event)
+    from .intake_views import public_start_url
+    smart = public_start_url(smart_event)
     if smart:
-        return redirect("participants:intake-start", assignment_id=smart.pk)
+        return redirect(smart)
     # The rendered form carries a request key; resubmitting that form is idempotent.
     # Legacy/API POSTs without a key remain independent submissions.
     submitted_key = request.POST.get("registration_request_key", "") if request.method == "POST" else ""

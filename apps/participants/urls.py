@@ -1,7 +1,7 @@
 from . import verification_views, staff_directory_views, participant_review_views, workspace_views
 from django.urls import path
 from . import views, testing_views, registration_views, historical_views, qualification_views, document_views
-from . import intake_views, intake_config_views, intake_trailer_views, consent_views
+from . import intake_views, intake_config_views, intake_trailer_views, consent_views, signup_views
 from . import portal_views, portal_auth
 from . import portal_profile_views
 app_name = "participants"
@@ -48,6 +48,8 @@ urlpatterns = [
     path("staff/intake-forms/<int:form_id>/skills/", intake_config_views.edit, {"mode": "skills"}, name="intake-config-skills"),
     path("staff/intake-forms/<int:form_id>/mappings/", intake_config_views.edit, {"mode": "mappings"}, name="intake-config-mappings"),
     path("staff/intake-forms/versions/<int:version_id>/preview/", intake_config_views.preview, name="intake-config-preview"),
+    path("staff/intake-forms/versions/<int:version_id>/preview/screen/", intake_config_views.preview_screen, name="intake-config-preview-screen"),
+    path("staff/intake-forms/<int:form_id>/wording/", intake_config_views.screens_edit, name="intake-config-wording"),
     path("staff/intelligence/", workspace_views.analytics, name="intelligence"),
     path("staff/saved-views/", workspace_views.saved_views, name="saved-views"),
     path("staff/saved-views/<int:view_id>/archive/", workspace_views.saved_view_archive, name="saved-view-archive"),
@@ -68,6 +70,13 @@ urlpatterns = [
     path("staff/directory/<str:participant_id>/", staff_directory_views.staff_profile, name="staff-profile"),
     path("register/", registration_views.registration_start, name="registration-start"),
     path("register/event/<uuid:event_id>/", registration_views.registration_start, name="registration-event-start"),
+    path("register/trailer/<uuid:trailer_id>/", signup_views.trailer_start, name="registration-trailer-start"),
+    path("staff/sign-up/qr/<str:kind>/", signup_views.qr_image, name="signup-qr-image"),
+    path("staff/sign-up/qr/<str:kind>/<uuid:obj_id>/", signup_views.qr_image, name="signup-qr-image"),
+    path("staff/sign-up/print/<str:kind>/", signup_views.qr_sheet, name="signup-qr-sheet"),
+    path("staff/sign-up/print/<str:kind>/<uuid:obj_id>/", signup_views.qr_sheet, name="signup-qr-sheet"),
+    path("staff/sign-up/where/<str:kind>/", signup_views.where_edit, name="signup-where"),
+    path("staff/sign-up/where/<str:kind>/<uuid:obj_id>/", signup_views.where_edit, name="signup-where"),
     path("register/form/", registration_views.registration_form, name="registration-form"),
     path("staff/registration-forms/", registration_views.form_builder, name="registration-forms"),
     path("staff/registration-forms/questions/add/", registration_views.form_question_add, name="registration-question-add"),
