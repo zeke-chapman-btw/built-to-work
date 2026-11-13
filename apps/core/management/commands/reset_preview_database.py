@@ -37,7 +37,11 @@ class Command(BaseCommand):
         self.stdout.write("Rebuilding tables...")
         call_command("migrate", interactive=False, verbosity=0)
         self.stdout.write(self.style.SUCCESS("Preview database is empty and ready."))
+        # Put kept logins back first, so a problem while loading samples never leaves the site without them.
+        for snap in kept:
+            self._restore(snap)
         if options["load_samples"]:
+            self.stdout.write("Loading sample data (this can take a minute)...")
             result, credentials = load_samples(allow_preview=True)
             self.stdout.write(result)
             for username, password in credentials:
@@ -45,7 +49,8 @@ class Command(BaseCommand):
             if credentials:
                 self.stdout.write("Passwords are shown once. Save them somewhere private.")
         for snap in kept:
-            self._restore(snap)
+            self._regroup(snap)
+        self.stdout.write(self.style.SUCCESS("Done."))
 
     def _snapshot(self, name):
         from django.contrib.auth import get_user_model
@@ -69,3 +74,11 @@ class Command(BaseCommand):
                                    for p in Permission.objects.filter(content_type__app_label=app, codename=code)])
         note = f" (roles not found: {', '.join(missing)})" if missing else ""
         self.stdout.write(self.style.SUCCESS(f"Kept login: {user.username} with the same password{note}."))
+
+    def _regroup(self, snap):
+        """Sample data may create role groups; attach any the kept login had."""
+        from django.contrib.auth import get_user_model
+        from django.contrib.auth.models import Group
+        user = get_user_model().objects.filter(username=snap["fields"]["username"]).first()
+        if user:
+            user.groups.add(*Group.objects.filter(name__in=snap["groups"]))
