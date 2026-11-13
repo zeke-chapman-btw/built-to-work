@@ -126,7 +126,7 @@ class FinalRefinementTests(TestCase):
         for user in users:
             self.assertEqual(global_task_create_url(self.context(user, task_creation_enabled=True)), '')
         self.client.logout()
-        self.assertNotContains(self.client.get(reverse('admin:login')), 'data-global-task-create')
+        self.assertNotContains(self.client.get(reverse('accounts:login')), 'data-global-task-create')
 
     def test_page_flag_suppresses_action_and_bottom_clearance_class(self):
         html = Template('{% extends "internal/base.html" %}').render(Context(self.context(task_creation_enabled=False)))

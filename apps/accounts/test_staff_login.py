@@ -65,8 +65,10 @@ class StaffLoginTests(TestCase):
         for i in range(11):self.client.post(reverse('accounts:login'),{'username':self.worker.username,'password':'WRONG-SYNTHETIC'})
         self.client.post(reverse('accounts:logout'))
         r=self.login();self.assertEqual(r.status_code,200);self.assertNotIn('_auth_user_id',self.client.session)
-    def test_native_admin_login_is_preserved(self):
-        self.assertEqual(self.client.get('/admin/login/').status_code,200)
+    def test_admin_login_forwards_to_shared_sign_in(self):
+        r=self.client.get('/admin/login/?next=/internal/');self.assertEqual(r.status_code,302);self.assertEqual(r.url,reverse('accounts:login')+'?next=%2Finternal%2F')
+        self.assertEqual(self.client.get('/admin/login/?next=/admin/').url,reverse('accounts:login'))
+        self.assertEqual(self.client.get('/').url,reverse('accounts:login'))
     def test_invalid_activation_is_branded(self):
         r=self.client.get(reverse('accounts:activate',args=['invalid']));self.assertContains(r,'built-to-work-linear.svg');self.assertContains(r,'invalid, expired or already used')
 

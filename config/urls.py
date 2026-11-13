@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import include, path
-from apps.core.views import health, home
+from apps.core.views import admin_login, health, home
 from apps.events import public_views
 
 admin.site.site_header = "Built to Work admin"
@@ -18,6 +18,7 @@ urlpatterns = [
     path("reports/", include("apps.event_reports.urls")),
     path("internal/reports/", include("apps.reporting.urls")),
     path("internal/", include("apps.internal_ui.urls")),
+    path("admin/login/", admin_login, name="admin-login-redirect"),
     path("admin/", admin.site.urls),
     path("participants/", include("apps.participants.urls")),
     path("stations/", include("apps.stations.urls")),
