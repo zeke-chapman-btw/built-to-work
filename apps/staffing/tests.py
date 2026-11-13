@@ -95,7 +95,7 @@ class Staffing9CTests(TestCase):
         self.other_person.is_active=False; self.other_person.save()
         r=self.client.get('/staff/directory/',{'q':'Other','status':'inactive'}); self.assertContains(r,'SYNTHETIC Other'); self.assertNotContains(r,'SYNTHETIC Employee')
         directory = self.client.get('/staff/directory/')
-        self.assertContains(directory, 'Add profile')
+        self.assertContains(directory, '+ Add staff')
         self.assertContains(directory, reverse('staffing:profile-add'))
         self.assertNotContains(directory, reverse('accounts:staff-create'))
         self.assertNotContains(directory, 'Roles &amp; Access')

@@ -8,6 +8,7 @@ from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 from apps.internal_ui.record_editors import event_return, editor_response, editor_success, revision_conflict, record_unavailable
 from apps.events.models import Event
@@ -48,8 +49,13 @@ def directory(request):
     if state not in ("active","inactive","all"): state="active"
     if state!="all": people=people.filter(is_active=state=="active")
     if q: people=people.filter(Q(first_name__icontains=q)|Q(last_name__icontains=q)|Q(email__icontains=q))
-    from apps.accounts.roles import manager
-    return render(request,"staffing/directory.html",dict(page_title="Staff directory",people=Paginator(people,20).get_page(request.GET.get("page")),q=q,selected_status=state,can_manage_staff=manager(request.user)))
+    from apps.accounts.roles import manager, roles_for
+    page_people=Paginator(people.select_related("user").order_by("last_name","first_name"),25).get_page(request.GET.get("page"))
+    labels={"manager":"Manager","recruiter":"Recruiter","event_staff":"Event staff"}
+    for person in page_people:
+        person.roster_roles=(["Admin"] if person.user_id and person.user.is_superuser else [])+([labels[r] for r in sorted(roles_for(person.user)) if r in labels] if person.user_id else [])
+        person.pay_revision=person.updated_at.isoformat()
+    return render(request,"staffing/directory.html",dict(page_title="Staff roster",people=page_people,q=q,selected_status=state,can_manage_staff=manager(request.user),back=request.get_full_path()))
 
 
 @staff_view
@@ -67,7 +73,40 @@ def profile(request,profile_id):
         can_manage = True
     except PermissionDenied:
         pass
-    return render(request,"staffing/profile.html",dict(page_title=str(person),person=person,can_manage_staff=can_manage,history=Paginator(history,20).get_page(request.GET.get("page")),availability=person.availability_requests.select_related("event","decided_by")[:50]))
+    from . import roster
+    from apps.accounts.roles import roles_for
+    labels={"manager":"Manager","recruiter":"Recruiter","event_staff":"Event staff"}
+    roles=([ "Admin"] if person.user_id and person.user.is_superuser else [])+([labels[r] for r in sorted(roles_for(person.user)) if r in labels] if person.user_id else [])
+    pay=roster.pay_summary(person) if roster.can_see_pay(request.user) else None
+    upcoming=[a for a in history.exclude(event__status__in=("draft","cancelled","archived")).filter(status="confirmed",event__end_at__gte=timezone.now()).order_by("event__start_at")]
+    return render(request,"staffing/profile.html",dict(page_title=str(person),person=person,can_manage_staff=can_manage,roles=roles,pay=pay,upcoming=upcoming,
+        can_delete=can_manage and roster.can_delete(person),pay_revision=person.updated_at.isoformat(),
+        history=Paginator(history,20).get_page(request.GET.get("page")),availability=person.availability_requests.select_related("event","decided_by")[:50]))
+
+
+@staff_view
+def roster_action(request,profile_id,action):
+    """Archive, restore, delete, or switch My pay from the staff roster."""
+    from . import roster
+    if request.method!="POST":raise PermissionDenied
+    back=request.POST.get("back") or ""
+    if not back.startswith("/staff/directory/"):back=reverse("staffing:profile",args=[profile_id])
+    try:
+        if action in ("archive","restore"):
+            roster.set_archived(actor=request.user,profile_id=profile_id,archived=action=="archive")
+            messages.success(request,"Archived. Their history is kept." if action=="archive" else "Restored.")
+        elif action=="delete":
+            roster.delete_profile(actor=request.user,profile_id=profile_id)
+            messages.success(request,"Deleted.")
+            return redirect("staffing:directory")
+        elif action=="my-pay":
+            from apps.accounts.staff_onboarding import set_own_pay_access
+            set_own_pay_access(actor=request.user,profile_id=profile_id,enabled=request.POST.get("enabled")=="1",expected_revision=request.POST.get("revision",""))
+            messages.success(request,"My pay updated.")
+        else:raise PermissionDenied
+    except ValidationError as exc:
+        messages.error(request," ".join(exc.messages))
+    return redirect(back)
 
 
 @staff_view

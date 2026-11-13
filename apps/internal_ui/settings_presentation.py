@@ -24,11 +24,9 @@ def _sections(user):
             advanced.append({'label': group['label'], 'links': remaining})
     sections = [{'key': 'account', 'label': 'Account', 'groups': []}]
     if staff:
-        sections.append({'key': 'staff', 'label': 'Staff', 'url': reverse('staffing:directory'), 'groups': []})
+        sections.append({'key': 'staff', 'label': 'Staff roster', 'url': reverse('staffing:directory'), 'groups': []})
     from apps.accounts.roles import manager
     from apps.sops.access import can_manage as can_manage_sops
-    if manager(user):
-        sections.append({'key': 'staff-pay', 'label': 'Staff pay', 'url': reverse('internal:staff-pay'), 'groups': []})
     if can_manage_sops(user):
         sections.append({'key': 'sops', 'label': 'SOP library', 'url': reverse('sops:manage'), 'groups': []})
     for key, label in [('portal', 'Portal preview'), ('compensation', 'Compensation')]:
@@ -62,7 +60,7 @@ def settings_context(request):
     elif path.startswith(reverse('internal:portal-preview')):
         selected = 'portal'
     elif path.startswith(reverse('internal:staff-pay')):
-        selected = 'staff-pay'
+        selected = 'staff'
     elif path.startswith(reverse('sops:manage')):
         selected = 'sops'
     elif path.startswith(('/accounts/staff/', reverse('staffing:directory'))):

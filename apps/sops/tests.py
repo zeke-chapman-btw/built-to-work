@@ -123,10 +123,10 @@ class MyStuffAndStaffViewTests(TestCase):
         self.profile.refresh_from_db()
         self.assertEqual(self.profile.updated_at, before)
         # Admin-only pages stay closed while viewing as staff.
-        self.assertNotEqual(self.client.get(reverse("internal:staff-pay")).status_code, 200)
+        self.assertNotEqual(self.client.get(reverse("staffing:directory")).status_code, 200)
         self.client.post(reverse("internal:staff-preview-exit"))
         self.assertNotIn(SESSION_KEY, self.client.session)
-        self.assertEqual(self.client.get(reverse("internal:staff-pay")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("staffing:directory")).status_code, 200)
 
     def test_staff_cannot_start_a_staff_view(self):
         self.client.force_login(self.worker, backend="django.contrib.auth.backends.ModelBackend")
@@ -134,11 +134,31 @@ class MyStuffAndStaffViewTests(TestCase):
 
     def test_staff_pay_switch(self):
         self.client.force_login(self.admin, backend="django.contrib.auth.backends.ModelBackend")
-        response = self.client.get(reverse("internal:staff-pay"))
+        self.assertRedirects(self.client.get(reverse("internal:staff-pay")), reverse("staffing:directory"), fetch_redirect_response=False)
+        response = self.client.get(reverse("staffing:directory"))
         self.assertContains(response, "Wanda Worker")
-        self.client.post(reverse("internal:staff-pay"), {"profile": str(self.profile.pk), "enabled": "1", "revision": self.profile.updated_at.isoformat()})
+        self.client.post(reverse("staffing:roster-action", args=[self.profile.pk, "my-pay"]), {"enabled": "1", "revision": self.profile.updated_at.isoformat()})
         self.profile.refresh_from_db()
         self.assertTrue(self.profile.my_pay_enabled)
+        profile_page = self.client.get(reverse("staffing:profile", args=[self.profile.pk]))
+        self.assertContains(profile_page, "All-time earnings")
+        self.assertContains(profile_page, "Pay stubs")
+
+    def test_archive_restore_and_delete_rules(self):
+        self.client.force_login(self.admin, backend="django.contrib.auth.backends.ModelBackend")
+        self.client.post(reverse("staffing:roster-action", args=[self.profile.pk, "archive"]))
+        self.profile.refresh_from_db(); self.worker.refresh_from_db()
+        self.assertFalse(self.profile.is_active)
+        self.assertFalse(self.worker.is_active)
+        self.client.post(reverse("staffing:roster-action", args=[self.profile.pk, "restore"]))
+        self.profile.refresh_from_db(); self.worker.refresh_from_db()
+        self.assertTrue(self.profile.is_active and self.worker.is_active)
+        # Has a login and an assignment: can't be deleted.
+        self.client.post(reverse("staffing:roster-action", args=[self.profile.pk, "delete"]))
+        self.assertTrue(StaffProfile.objects.filter(pk=self.profile.pk).exists())
+        blank = StaffProfile.objects.create(first_name="SYNTHETIC", last_name="Blank", is_active=True)
+        self.client.post(reverse("staffing:roster-action", args=[blank.pk, "delete"]))
+        self.assertFalse(StaffProfile.objects.filter(pk=blank.pk).exists())
 
 
 class EventHousingTests(TestCase):

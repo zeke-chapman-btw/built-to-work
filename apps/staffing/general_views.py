@@ -89,15 +89,13 @@ def detail(request,event_id):
 def participants(request,event_id):
     """Assigned staff can look people up at their event to help with tickets and stations.
 
-    Owner decision (Nov 12). Shows name, city, ticket number, sign-up time and station
-    progress; no contact details, birth dates or notes. Each view is audited.
+    Owner decisions (Nov 12). Shows name, city, phone, ticket number, sign-up time and
+    station progress; no email, birth dates or notes. Staff can show or reissue a ticket.
+    Each view is audited.
     """
     from apps.core.audit import record_audit
     from apps.events.models import EventRegistration
-    event=get_object_or_404(Event,pk=event_id)
-    profile=services.own_profile(request.user)
-    assigned=bool(profile and event.staff_assignments.filter(staff=profile,status='confirmed').exists())
-    if not (assigned or manager(request.user)) or event.status in ('draft','archived'):raise PermissionDenied
+    event=_event_for_helper(request,event_id)
     q=request.GET.get('q','').strip()[:80]
     rows=(EventRegistration.objects.filter(event=event,status='active').select_related('participant')
           .prefetch_related('tickets','experience_session__activities').order_by('participant__last_name','participant__first_name'))
@@ -110,8 +108,36 @@ def participants(request,event_id):
         ticket=next((t for t in reg.tickets.all() if t.is_current),None)
         session=getattr(reg,'experience_session',None)
         done={a.activity:a.status for a in session.activities.all()} if session else {}
-        people.append(dict(name=f"{person.preferred_name or person.first_name} {person.last_name}".strip(),city=", ".join(v for v in (person.city,person.state) if v),
-            ticket=ticket.ticket_number if ticket else '',ticket_ok=bool(ticket and not ticket.revoked_at),registered=reg.registered_at,source=reg.get_source_display(),
+        people.append(dict(id=reg.pk,name=f"{person.preferred_name or person.first_name} {person.last_name}".strip(),city=", ".join(v for v in (person.city,person.state) if v),phone=person.contact_phone,
+            ticket=ticket.ticket_number if ticket else '',ticket_id=ticket.pk if ticket else '',ticket_ok=bool(ticket and not ticket.revoked_at),registered=reg.registered_at,source=reg.get_source_display(),
             steps=[(label,done.get(key,'')) for key,label in (('kiosk','Quiz'),('game','Game'),('simulator','Simulator')) if key in done]))
     record_audit(actor=request.user,action='event.participants.viewed',instance=event,source='staff_event_participants',new_data={'search':bool(q),'page':page_rows.number})
     return page(request,'staffing/event_participants.html',page_title=event.name,general_event=event_projection(event),people=people,page=page_rows,q=q,total=rows.count())
+
+
+def _event_for_helper(request,event_id):
+    event=get_object_or_404(Event,pk=event_id)
+    profile=services.own_profile(request.user)
+    assigned=bool(profile and event.staff_assignments.filter(staff=profile,status='confirmed').exists())
+    if not (assigned or manager(request.user)) or event.status in ('draft','archived'):raise PermissionDenied
+    return event
+
+
+@staff_view
+@require_http_methods(['GET','POST'])
+def participant_ticket(request,event_id,registration_id):
+    """Show a person's current ticket (GET) or give them a new one (POST) at the event."""
+    from apps.core.audit import record_audit
+    from apps.events.models import EventRegistration,QrTicket
+    from apps.events.services import reissue_ticket
+    event=_event_for_helper(request,event_id)
+    registration=get_object_or_404(EventRegistration,pk=registration_id,event=event,status='active')
+    if request.method=='POST':
+        ticket,changed=reissue_ticket(registration=registration,actor=request.user,reason='Reissued by event staff at the event',
+                                      expected_ticket_id=request.POST.get('expected_ticket_id') or None)
+        if changed:messages.success(request,f'New ticket {ticket.ticket_number} issued. The old one no longer works.')
+        return redirect(reverse('staffing:event-participants',args=[event.pk])+'?q='+(ticket.ticket_number or ''))
+    ticket=QrTicket.objects.filter(registration=registration,is_current=True).first()
+    if not ticket:raise PermissionDenied
+    record_audit(actor=request.user,action='event.ticket.shown_by_staff',instance=ticket,source='staff_event_participants')
+    return redirect('events:ticket_present',token=ticket.token)

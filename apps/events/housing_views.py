@@ -19,7 +19,7 @@ class LodgingForm(forms.ModelForm):
         fields = FIELDS
         widgets = {"check_in": forms.DateInput(attrs={"type": "date"}),
                    "check_out": forms.DateInput(attrs={"type": "date"}),
-                   "notes": forms.Textarea(attrs={"rows": 3}),
+                   "notes": forms.Textarea(attrs={"rows": 3, "placeholder": "Wi-Fi name and password, door or lockbox codes, check-out time, parking..."}),
                    "phone": forms.TextInput(attrs={"type": "tel"})}
 
 
