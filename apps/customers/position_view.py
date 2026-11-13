@@ -3,6 +3,8 @@ from decimal import Decimal
 
 NO_ANSWER = {"none", "not_applicable", ""}
 BASIS = {"hour": "hr", "day": "day", "week": "week", "month": "month", "year": "year", "project": "project"}
+PAY_TYPE = {"hour": "Hourly", "day": "Daily", "week": "Weekly", "month": "Monthly", "year": "Salary", "project": "Per project", "other": "Other"}
+PAY_TONE = {"hour": "info", "year": "success", "project": "warning"}
 YES_NO_TONE = {"yes": "success", "no": "neutral", "not_applicable": "neutral"}
 
 
@@ -40,13 +42,25 @@ def _yes_no(rev, label, name):
     return _row(label, details, chip=chip, tone=YES_NO_TONE.get(response, "neutral"))
 
 
-def pay_text(rev):
+def pay_range(rev):
     low, high = _money(rev.pay_minimum), _money(rev.pay_maximum)
-    if rev.pay_response != "provided" or not (low or high):
-        return rev.pay_details or ""
+    if not (low or high):
+        return ""
     amount = f"{low}–{high}" if low and high and low != high else (low or high)
     basis = BASIS.get(rev.pay_basis)
     return f"{amount} / {basis}" if basis else amount
+
+
+def pay_frequency_text(rev):
+    return _display(rev, "pay_frequency") if getattr(rev, "pay_frequency", "") else ""
+
+
+def pay_text(rev):
+    """Short pay summary, e.g. "$22–$28 / hr" or "Salary · $60,000 / year"."""
+    amount = pay_range(rev)
+    if not amount:
+        return rev.pay_details or ""
+    return f"Salary · {amount}" if rev.pay_basis == "year" else amount
 
 
 def hours_text(rev):
@@ -75,7 +89,8 @@ def position_view(rev):
         {"label": "Start", "value": start_text(rev)},
     ]
     address = ", ".join(v for v in (rev.address_line1, rev.address_line2, rev.city,
-                                     " ".join(v for v in (rev.location_state, rev.postal_code) if v)) if v)
+                                     " ".join(v for v in (rev.location_state, rev.postal_code) if v),
+                                     rev.country if rev.country and rev.country.upper() not in {"US", "USA", "UNITED STATES"} else "") if v)
     location_name = rev.location_name or (str(rev.location) if getattr(rev, "location_id", None) else "")
     duration = (_row("Length", "", chip="Ongoing", tone="info") if rev.duration_response == "ongoing"
                 else _row("Length", rev.duration_details or (rev.end_date.strftime("Until %b %-d, %Y") if rev.end_date else "")))
@@ -89,25 +104,27 @@ def position_view(rev):
     if rev.per_diem_response == "provided" and rev.per_diem_amount:
         per_diem["value"] = _money(rev.per_diem_amount) + (f" · {rev.per_diem_details}" if rev.per_diem_details else "")
     cards = [
-        {"key": "role", "title": "Role", "rows": [
+        {"key": "role", "title": "The role", "rows": [
             _row("Trade", rev.trade),
             _row("Type", "", chip=_display(rev, "employment_type") if rev.employment_type else "", tone="info"),
             _row("Workers", str(rev.worker_quantity) if rev.worker_quantity else ""),
             _row("Description", rev.description),
             _row("Notes", rev.employment_details),
         ]},
-        {"key": "location", "title": "Location", "rows": [
+        {"key": "location", "title": "Where the work is", "rows": [
             _row("Setting", "", chip=_display(rev, "location_mode") if rev.location_mode else "", tone="neutral"),
             _row("Place", location_name),
             _row("Address", address),
             _row("Notes", rev.location_details),
         ]},
         {"key": "pay", "title": "Pay & benefits", "rows": [
-            _row("Pay", pay_text(rev)),
+            _row("Pay type", "", chip=PAY_TYPE.get(rev.pay_basis, ""), tone=PAY_TONE.get(rev.pay_basis, "neutral")),
+            _row("Pay range", pay_range(rev)),
+            _row("Paid", "", chip=pay_frequency_text(rev), tone="neutral"),
+            _row("Pay notes", rev.pay_details),
             _yes_no(rev, "Overtime", "overtime"),
             _answer(rev, "Benefits", "benefits"),
             per_diem,
-            _row("Notes", rev.pay_details if rev.pay_response == "provided" else ""),
         ]},
         {"key": "schedule", "title": "Schedule", "rows": [
             _row("Shift", "", chip=shift, tone="neutral"),
@@ -116,7 +133,7 @@ def position_view(rev):
             _row("Start", start_text(rev)),
             duration,
         ]},
-        {"key": "requirements", "title": "Requirements", "rows": [
+        {"key": "requirements", "title": "Skills & experience", "rows": [
             _answer(rev, "Skills needed", "required_skills"),
             _answer(rev, "Skills preferred", "preferred_skills"),
             exp("required_experience", "Experience needed"),
@@ -124,7 +141,7 @@ def position_view(rev):
             _answer(rev, "Licenses needed", "required_credentials"),
             _answer(rev, "Licenses preferred", "preferred_credentials"),
         ]},
-        {"key": "environment", "title": "Work environment", "rows": [
+        {"key": "environment", "title": "Travel & work conditions", "rows": [
             _yes_no(rev, "Travel", "travel"),
             _yes_no(rev, "Overnights", "overnight"),
             _answer(rev, "Conditions", "conditions"),
@@ -140,7 +157,7 @@ def position_view(rev):
             _answer(rev, "Other", "other"),
         ]},
     ]
-    optional = {"Notes", "Other", "Decide by"}
+    optional = {"Notes", "Pay notes", "Paid", "Other", "Decide by"}
     for card in cards:
         card["rows"] = [r for r in card["rows"] if r["value"] or r["chip"] or r["label"] not in optional]
     return {"tiles": tiles, "cards": cards}

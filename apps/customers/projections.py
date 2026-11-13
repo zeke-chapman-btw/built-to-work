@@ -80,7 +80,8 @@ def terms(rev):
             values[:0] = [{'label': 'Hiring contact', 'value': rev.contact_name}, {'label': 'Contact email', 'value': rev.contact_email}, {'label': 'Contact phone', 'value': rev.contact_phone}]
         if values:
             groups.append({'title': title, 'values': values})
-    return {'number': rev.number, 'state': rev.get_state_display(), 'sections': groups}
+    from .position_view import position_view
+    return {'number': rev.number, 'state': rev.get_state_display(), 'sections': groups, 'position': position_view(rev)}
 
 
 def need_row(obj):

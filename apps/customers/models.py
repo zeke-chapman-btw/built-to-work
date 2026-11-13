@@ -265,6 +265,7 @@ class HiringTerms(models.Model):
     pay_maximum = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(Decimal("0"))])
     pay_currency = models.CharField(max_length=3, blank=True)
     pay_basis = models.CharField(max_length=12, blank=True, choices=[("hour", "Hourly"), ("day", "Daily"), ("week", "Weekly"), ("month", "Monthly"), ("year", "Annual"), ("project", "Per project"), ("other", "Other")])
+    pay_frequency = models.CharField(max_length=12, blank=True, choices=[("weekly", "Weekly"), ("biweekly", "Every two weeks"), ("semimonthly", "Twice a month"), ("monthly", "Monthly")])
     pay_details = models.TextField(blank=True)
     overtime_response = models.CharField(max_length=16, blank=True, choices=YES_NO)
     overtime_details = models.TextField(blank=True)

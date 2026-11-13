@@ -16,7 +16,7 @@ def submission_errors(revision):
             errors[field] = message
 
     for field in ("title", "trade", "description", "worker_quantity", "employment_type",
-                  "location_mode", "pay_response", "shift", "schedule_details", "hours_mode",
+                  "location_mode", "pay_response", "pay_basis", "shift", "schedule_details", "hours_mode",
                   "start_mode", "duration_response", "primary_contact", "hiring_timeline"):
         require(field)
     if r.employment_type == "other":
@@ -33,12 +33,15 @@ def submission_errors(revision):
     elif r.location_mode == "remote":
         require("location_details", "Describe the remote work arrangement and geographic requirements.")
     if r.pay_response == "provided":
-        for field in ("pay_minimum", "pay_currency", "pay_basis"):
-            require(field, "Provide the rate, currency and pay basis.")
+        require("pay_basis", "Choose how the job is paid.")
+        require("pay_minimum", "Enter the lowest pay.")
+        require("pay_currency", "Enter the lowest pay.")
+        if r.pay_basis in {"hour", "year"}:
+            require("pay_frequency", "Choose how often workers are paid.")
         if r.pay_basis == "other":
-            require("pay_details", "Explain the pay basis.")
+            require("pay_details", "Describe how the job is paid.")
     elif r.pay_response == "not_applicable":
-        require("pay_details", "Explain why compensation is not applicable.")
+        require("pay_details", "Describe how the job is paid, or when pay will be decided.")
         if r.pay_minimum is not None or r.pay_maximum is not None:
             errors["pay_minimum"] = "Remove amounts when compensation is not applicable."
     for topic in ANSWER_TOPICS:

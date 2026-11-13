@@ -339,7 +339,7 @@ def customers(admin, persons):
             data={"title": "SAMPLE " + ("Welding apprentice" if i == 0 else "Equipment operator"), "trade": "SAMPLE Skilled trades",
                 "description": WHY, "worker_quantity": 3, "employment_type": "full_time", "location_mode": "custom",
                 "location_name": "SAMPLE Augusta shop", "address_line1": "100 SAMPLE Way", "city": "Augusta", "location_state": "GA", "country": "US",
-                "pay_response": "provided", "pay_minimum": Decimal("20"), "pay_maximum": Decimal("26"), "pay_currency": "USD", "pay_basis": "hour",
+                "pay_response": "provided", "pay_minimum": Decimal("20"), "pay_maximum": Decimal("26"), "pay_currency": "USD", "pay_basis": "hour", "pay_frequency": "weekly",
                 "overtime_response": "no", "benefits_response": "none", "per_diem_response": "none", "shift": "day", "schedule_details": "SAMPLE Monday to Friday, 8 AM to 5 PM",
                 "hours_mode": "specified", "hours_per_week": Decimal("40"), "start_mode": "timeframe", "start_timeframe": "SAMPLE Within one month",
                 "duration_response": "ongoing", "required_skills_response": "none", "preferred_skills_response": "none",

@@ -22,12 +22,22 @@
       input.disabled = !show;
     });
   }
+  function applyLabels(form) {
+    form.querySelectorAll("[data-labels]").forEach(function (input) {
+      let map; try { map = JSON.parse(input.getAttribute("data-labels")); } catch (e) { return; }
+      const label = input.id ? form.querySelector('label[for="' + input.id + '"]') : null;
+      if (!label) return;
+      if (!label.dataset.original) label.dataset.original = label.textContent;
+      const text = map[currentValue(form, map.field)];
+      label.textContent = text || label.dataset.original;
+    });
+  }
   function initRules(form) {
     if (form.dataset.positionRules) return;
     if (!form.querySelector("[data-show-when]")) return;
     form.dataset.positionRules = "1";
-    form.addEventListener("change", function () { applyRules(form); });
-    applyRules(form);
+    form.addEventListener("change", function () { applyRules(form); applyLabels(form); });
+    applyRules(form); applyLabels(form);
   }
 
   function initStepper(form) {

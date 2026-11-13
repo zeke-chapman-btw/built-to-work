@@ -7,8 +7,9 @@ HIRING_LABELS = {
     'location_mode': 'Where will the work take place?', 'location': 'Customer location / branch',
     'location_name': 'Worksite name', 'address_line1': 'Street address', 'address_line2': 'Address line 2',
     'location_state': 'State / region', 'location_details': 'Additional location details',
-    'pay_response': 'How will pay be specified?', 'pay_minimum': 'Minimum pay', 'pay_maximum': 'Maximum pay',
-    'pay_currency': 'Currency code', 'pay_basis': 'Pay period / basis', 'pay_details': 'Pay details or explanation',
+    'pay_response': 'How will pay be specified?', 'pay_minimum': 'Lowest pay', 'pay_maximum': 'Highest pay',
+    'pay_currency': 'Currency code', 'pay_basis': 'How is this job paid?', 'pay_details': 'Pay notes',
+    'pay_frequency': 'How often are workers paid?',
     'overtime_response': 'Is overtime available?', 'overtime_details': 'Overtime details',
     'benefits_response': 'Are benefits offered?', 'benefits_details': 'Benefits details',
     'per_diem_response': 'Is per diem provided?', 'per_diem_details': 'Per diem details', 'per_diem_amount': 'Per diem amount',
@@ -67,14 +68,15 @@ def membership_rows(org):
 
 # Plain chip answers for the position form, and which questions appear only after a matching answer.
 CHIP_LABELS = {
-    'pay_response': {'provided': 'Pay rate or range', 'not_applicable': 'Not applicable'},
+    'pay_basis': {'hour': 'Hourly', 'year': 'Salary', 'project': 'Per project', 'other': 'Other / not set yet',
+                  'day': 'Daily', 'week': 'Weekly', 'month': 'Monthly'},
     'hours_mode': {'specified': 'Set hours per week', 'variable': 'Hours vary'},
     'start_mode': {'date': 'Specific date', 'timeframe': 'Timeframe'},
     'duration_response': {'provided': 'Set length', 'ongoing': 'Ongoing', 'not_applicable': "Doesn't apply"},
     'location_mode': {'location': 'One of our locations', 'custom': 'Another worksite', 'remote': 'Remote'},
 }
 ANSWER_LABELS = {'provided': 'Yes', 'none': 'No', 'not_applicable': "Doesn't apply", 'yes': 'Yes', 'no': 'No'}
-CHIP_FIELDS = ('employment_type', 'location_mode', 'pay_response', 'pay_basis', 'overtime_response', 'benefits_response',
+CHIP_FIELDS = ('employment_type', 'location_mode', 'pay_basis', 'pay_frequency', 'overtime_response', 'benefits_response',
                'per_diem_response', 'shift', 'hours_mode', 'start_mode', 'duration_response', 'required_skills_response',
                'preferred_skills_response', 'required_experience_response', 'preferred_experience_response',
                'required_credentials_response', 'preferred_credentials_response', 'travel_response', 'overnight_response',
@@ -82,8 +84,7 @@ CHIP_FIELDS = ('employment_type', 'location_mode', 'pay_response', 'pay_basis', 
 SHOW_WHEN = {
     'location': 'location_mode=location',
     **{name: 'location_mode=custom' for name in ('location_name', 'address_line1', 'address_line2', 'city', 'location_state', 'postal_code', 'country')},
-    **{name: 'pay_response=provided' for name in ('pay_minimum', 'pay_maximum', 'pay_currency', 'pay_basis')},
-    'pay_details': 'pay_response=provided,not_applicable',
+    **{name: 'pay_basis=hour,day,week,month,year,project,other' for name in ('pay_minimum', 'pay_maximum', 'pay_frequency', 'pay_details')},
     'per_diem_amount': 'per_diem_response=provided',
     'hours_per_week': 'hours_mode=specified',
     'start_date': 'start_mode=date', 'start_timeframe': 'start_mode=timeframe',
@@ -110,9 +111,49 @@ def chip_hiring_fields(fields):
                    for value, label in field.choices if value != '']
         field.choices = choices
         field.widget = forms.RadioSelect(attrs={'class': 'btw-chip-choices'}, choices=choices)
+    # Pay: ask how the job is paid; the stored pay answer and currency are filled in automatically.
+    for name in ('pay_response', 'pay_currency'):
+        if name in fields:
+            fields[name].widget = forms.HiddenInput()
+    if 'pay_basis' in fields:
+        offered = [(v, l) for v, l in fields['pay_basis'].choices if v in ('hour', 'year', 'project', 'other')]
+        fields['pay_basis'].widget = forms.RadioSelect(attrs={'class': 'btw-chip-choices'}, choices=offered)
+    for name, labels in (('pay_minimum', {'hour': 'Lowest hourly rate', 'year': 'Lowest yearly salary', 'project': 'Lowest project amount', 'other': 'Lowest amount (if known)'}),
+                         ('pay_maximum', {'hour': 'Highest hourly rate', 'year': 'Highest yearly salary', 'project': 'Highest project amount', 'other': 'Highest amount (if known)'})):
+        if name in fields:
+            import json
+            fields[name].widget.attrs['data-labels'] = json.dumps({'field': 'pay_basis', **labels})
+            fields[name].widget.attrs['inputmode'] = 'decimal'
+            fields[name].widget.attrs['placeholder'] = '$'
     for field in fields.values():
         if isinstance(field.widget, forms.Textarea):
             field.widget.attrs['rows'] = 3
     for name, rule in SHOW_WHEN.items():
         if name in fields:
             fields[name].widget.attrs['data-show-when'] = rule
+
+
+PAID_BASES = ('hour', 'day', 'week', 'month', 'year', 'project')
+
+
+def derive_pay(data):
+    """The form only asks how the job is paid; fill in the stored pay answer and currency from that."""
+    basis = data.get('pay_basis') or ''
+    has_amount = data.get('pay_minimum') is not None or data.get('pay_maximum') is not None
+    if basis in PAID_BASES or (basis == 'other' and has_amount):
+        data['pay_response'] = 'provided'
+    elif basis == 'other':
+        data['pay_response'] = 'not_applicable'
+    else:
+        data['pay_response'] = ''
+    if data['pay_response'] != 'provided':
+        data['pay_minimum'] = data['pay_maximum'] = None
+        data['pay_frequency'] = '' if basis != 'other' else data.get('pay_frequency', '')
+    if has_amount and not data.get('pay_currency'):
+        data['pay_currency'] = 'USD'
+    return data
+
+
+class PayFieldsMixin:
+    def clean(self):
+        return derive_pay(super().clean())

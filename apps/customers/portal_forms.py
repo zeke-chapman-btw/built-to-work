@@ -3,7 +3,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from .models import WorkforceNeedRevision, Campaign, CustomerContact, CustomerLocation, EDITABLE_TERM_FIELDS
 from .forms import HIRING_SECTIONS
-from .presentation import label_hiring_fields
+from .presentation import label_hiring_fields, PayFieldsMixin
 from .services import CAMPAIGN_FIELDS
 from .portal_policy import require_membership
 
@@ -41,7 +41,7 @@ class PortalModelForm(ScopedForm, forms.ModelForm):
         return [{'title': title, 'fields': [self[k] for k in keys if k in self.fields], 'errors': any(self[k].errors for k in keys if k in self.fields)} for title, keys in self.sections]
 
 
-class NeedForm(PortalModelForm):
+class NeedForm(PayFieldsMixin, PortalModelForm):
     action_policy = 'needs'
     stepper = True
     working_id = forms.UUIDField(required=False, widget=forms.HiddenInput)

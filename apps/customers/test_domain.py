@@ -82,7 +82,7 @@ class CustomerFixtures:
         contact = self.child(org, "contact", {"first_name": "SYNTHETIC", "last_name": "Hiring contact", "email": "contact@example.test"})
         data = {"title": "SYNTHETIC Welder", "trade": "Welding", "description": "Fabrication and repair of steel assemblies.",
                 "worker_quantity": 2, "employment_type": "full_time", "location_mode": "location", "location": location,
-                "pay_response": "provided", "pay_minimum": Decimal("20"), "pay_maximum": Decimal("30"), "pay_currency": "USD", "pay_basis": "hour",
+                "pay_response": "provided", "pay_minimum": Decimal("20"), "pay_maximum": Decimal("30"), "pay_currency": "USD", "pay_basis": "hour", "pay_frequency": "weekly",
                 "overtime_response": "no", "shift": "day", "schedule_details": "Monday to Friday, 8 AM to 4 PM", "hours_mode": "specified", "hours_per_week": Decimal("40"),
                 "start_mode": "timeframe", "start_timeframe": "Within 30 days", "duration_response": "ongoing", "travel_response": "no", "overnight_response": "no",
                 "primary_contact": contact, "hiring_timeline": "Interview within two weeks"}
