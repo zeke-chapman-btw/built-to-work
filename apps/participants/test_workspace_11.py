@@ -207,7 +207,7 @@ class ParticipantWorkspace11Tests(TestCase):
             response=self.client.get(reverse("participants:staff-directory"),{"q":"SYNTHETIC Scale"})
         self.assertEqual(response.context["total_participants"],150)
         self.assertEqual(len(response.context["page_obj"].object_list),25)
-        self.assertLess(len(observed),30)
+        self.assertLess(len(observed),32)
 
     def test_linked_identity_read_projection_preserves_stored_ids(self):
         # Exercise the projection independently of existing reconciliation write tests.

@@ -56,7 +56,7 @@ class HeaderDirectoryFollowupTests(ReportingFixtures):
             self.assertContains(response,'Saved searches')
             fields = [n for n in doc.nodes if form in n['parents'] and n['tag']=='input' and n['attrs'].get('type')!='hidden']
             self.assertTrue(any(n['attrs'].get('name')=='location' for n in fields))
-            self.assertFalse(any(n['attrs'].get('name') in ['trade_interest','city','state'] for n in fields))
+            self.assertFalse(any(n['attrs'].get('name') in ['city','state'] for n in fields))
         ids = [n['attrs']['id'] for n in doc.nodes if n['attrs'].get('id')]
         self.assertEqual(len(ids), len(set(ids)))
 

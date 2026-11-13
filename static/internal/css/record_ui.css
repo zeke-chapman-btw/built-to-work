@@ -194,3 +194,6 @@
 [data-editor-manager-back][hidden] { display:none !important; }
 .participant-manager pre { white-space:pre-wrap; overflow-wrap:anywhere; }
 
+
+.btw-editor-grid.pp-address-row { grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr); margin-top:12px; }
+@media (max-width:560px){ .btw-editor-grid, .btw-editor-grid.pp-address-row { grid-template-columns:1fr; } }

@@ -152,7 +152,7 @@ body.internal-app.has-participant-workspace.has-participants-pass3.has-participa
 .has-crm-ux-profile .crm-audience-nav a[aria-current="page"]::before { content: none; }
 
 /* Profile v2: one-page participant profile (header chips, summary strip, two columns). */
-.has-crm-ux-profile .pv-id-badge { display:inline-flex; align-items:center; gap:2px; margin:6px 0 2px; padding:1px 2px 1px 10px; border:1px solid var(--ink); border-radius:6px; font:700 14px/1.6 var(--font); color:var(--ink); }
+.has-crm-ux-profile .pv-id-badge { display:inline-flex; align-items:center; margin:4px 0 2px; padding:0 8px; border:1px solid #d5d9de; border-radius:999px; background:#f6f7f8; font:500 12px/1.7 var(--font); color:#555; }
 .has-crm-ux-profile .pv-id-copy { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border:0; background:none; color:var(--muted); cursor:pointer; border-radius:4px; }
 .has-crm-ux-profile .pv-id-copy:hover { color:var(--ink); background:#f1f3f5; }
 .has-crm-ux-profile .pv-id-copy:focus-visible { outline:2px solid var(--btw-focus-color); outline-offset:1px; }
@@ -238,3 +238,8 @@ body.internal-app.has-participant-workspace.has-participants-pass3.has-participa
   body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-profile-tools { position: static; }
   body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .crm-profile-tools[open] > div { left: 0; right: 0; width: auto; max-width: none; }
 }
+
+.has-crm-ux-profile .pv-unset { color:#b7bcc2; }
+.has-crm-ux-profile .pv-found { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px; }
+.has-crm-ux-profile .pv-inline-edit { margin-left:auto; font-size:13px; }
+.has-crm-ux-profile #profile-work-preferences .pv-facts dd .badge { margin:0; }

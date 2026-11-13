@@ -1,13 +1,13 @@
 {% extends people_base|default:'participants/workspace_base.html' %}{% load static verification_status participant_workspace people_ui crm_ui ui_patterns %}
 {% block body_class %}{{ block.super }} has-participant-profile has-crm-ux-profile{% endblock %}
-{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<link rel="stylesheet" href="{% static 'crm/profile.css' %}?v=profile-v2-5"><script defer src="{% static 'crm/profile_copy.js' %}?v=profile-v2-1"></script><link rel="stylesheet" href="{% static 'participants/identifier.css' %}?v=identifier-1">{% endblock %}
+{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<link rel="stylesheet" href="{% static 'crm/profile.css' %}?v=profile-v2-6"><script defer src="{% static 'crm/profile_copy.js' %}?v=profile-v2-1"></script><link rel="stylesheet" href="{% static 'participants/identifier.css' %}?v=identifier-1">{% endblock %}
 {% block page_heading %}
 <section class="people-profile-hero p3-profile-hero">
   {% if section and section != 'overview' %}<a class="event-back" href="{% people_section_url 'overview' %}">← {{ participant }}</a>{% else %}<a class="event-back" href="{{ directory_origin }}">← {{ directory_origin_label }}</a>{% endif %}
   <div class="people-profile-heading">
     <span class="people-avatar" aria-hidden="true">{{ participant|people_initials }}</span>
     <div class="people-profile-title"><h1 class="people-profile-name"><a class="p3-profile-home" href="{% people_section_url 'overview' %}" aria-label="{{ participant }} — profile overview">{{ participant }}</a>{% if participant.primary_identifier %}<span class="badge participant-identifier-badge">{{ participant.get_primary_identifier_display }}</span>{% endif %}</h1>
-      <span class="pv-id-badge">ID {{ participant.pk|stringformat:"d" }}<button type="button" class="pv-id-copy" data-copy-text="{{ participant.pk|stringformat:'d' }}" aria-label="Copy participant ID {{ participant.pk|stringformat:'d' }}" title="Copy ID">{% ui_icon 'documents' %}</button></span>
+      <span class="pv-id-badge" title="Participant ID">ID {{ participant.pk|stringformat:"d" }}</span>
       <p>{% if current_interests %}<span class="p3-identity-interest">{{ current_interests|truncatechars:80 }}</span> · {% endif %}{{ participant.city|default:'Location not provided' }}{% if participant.state %}, {{ participant.state }}{% endif %}</p>
       {% if current_profile_preferences %}<div id="profile-preferences" tabindex="-1" class="pv-header-chips" role="group" aria-label="Work preferences">
         {% with prefs=current_profile_preferences %}
@@ -20,7 +20,7 @@
     </div>
     <div class="p3-profile-actions">
       {% if crm_can_add %}<a class="button button-primary" data-record-editor href="{{ crm_new_url }}">+ Log touchpoint</a>{% endif %}
-      {% if can_edit_profile and not participant.archived_at %}<a class="button secondary" href="{% url 'participants:staff-edit' participant.pk %}?return_to={{ request.get_full_path|urlencode }}">Edit profile</a>{% endif %}
+      {% if can_edit_profile and not participant.archived_at %}<a class="button secondary" data-record-editor href="{% url 'participants:profile-card-edit' participant.pk 'identity' %}?return_to={{ request.get_full_path|urlencode }}">Edit profile</a>{% endif %}
       {% profile_tools %}
     </div>
   </div>

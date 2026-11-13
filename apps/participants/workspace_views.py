@@ -403,11 +403,10 @@ def acquisition_edit(request, participant_id):
         except ValidationError as exc:
             form.add_error(None, exc)
         else:
-            messages.success(request, "Original source updated.")
-            return people_saved(request,reverse("participants:staff-profile", args=[person.pk]) + "?section=acquisition")
+            messages.success(request, "Saved.")
+            return people_saved(request, "participants:staff-profile", participant_id=person.pk)
     return render(request, "participants/workspace_form.html", context(request, participant=person, form=form,
-        page_title="Correct original acquisition", form_description="Correct the original source only when supported by evidence. Later activity remains separate.",
-        submit_label="Save attributable correction", return_url=reverse("participants:staff-profile", args=[person.pk]) + "?section=acquisition"),
+        page_title="How they found us", submit_label="Save", return_url=reverse("participants:staff-profile", args=[person.pk])),
         status=400 if form.is_bound and form.errors else 200)
 
 
@@ -606,8 +605,8 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
         chips.append(dict(label=dimension.replace("_", " ").title(), value=display, url=target(values)))
     groups = []
     for key, title in [("employment","Interested in work"), ("travel","Willing to travel"),
-                       ("channel","Original source"), ("assessment","Assessment source"),
-                       ("archived","Participant records")]:
+                       ("channel","Found us"), ("assessment","Assessment"),
+                       ("archived","Show")]:
         if key not in form.fields:
             continue
         options = []
@@ -615,15 +614,15 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
             selected = str(criteria.get(key, "")) == str(value)
             display_label = {"employment":{"":"Any", "seeking":"Yes", "open":"Maybe", "not_seeking":"No", "unknown":"Unknown"},
                              "travel":{"":"Any", "yes":"Yes", "maybe":"Maybe", "no":"No", "unknown":"Unknown"},
-                             "channel":{"":"All", "online":"Online", "event":"Event", "unknown":"Unknown"},
+                             "channel":{"":"Any", "online":"Online", "event":"At an event", "unknown":"Not known"},
                              "assessment":{"":"Any", "quiz":"Quiz", "simulator":"Simulator", "game":"Game"},
-                             "archived":{"":"Active", "active":"Active", "all":"All", "archived":"Archived"}}.get(key, {}).get(str(value), label)
+                             "archived":{"":"Active participants", "active":"Active participants", "all":"Active and archived", "only":"Archived only"}}.get(key, {}).get(str(value), label)
             options.append(dict(value=str(value), label=display_label, selected=selected, url=change(key, None if selected else value)))
         groups.append(dict(key=key, title=title, options=options, errors=form[key].errors))
-    definitions = [("Skills & qualifications", ["skill","qualification","qualification_kind","qualification_status","document_status"]),
-                   ("Experience & work preferences", ["experience_min","experience_data","availability","preferred_location","work_type","relocation","employment_classification","availability_classification"]),
-                   ("Assessment limits", ["assessment_category","score_min","score_max"]),
-                   ("Events & source dates", ["event","participation","acquired_from","acquired_to","completeness"])]
+    definitions = [("Work preferences", ["trade_interest","work_type","relocation","employment_classification","availability_classification","preferred_location","availability"]),
+                   ("Experience & qualifications", ["experience_min","experience_data","skill","qualification","qualification_kind","qualification_status","document_status"]),
+                   ("Events & dates", ["event","participation","acquired_from","acquired_to","completeness"]),
+                   ("Assessment scores", ["assessment_category","score_min","score_max"])]
     panels, common_panels = {}, {}
     for device in ("unified",):
         def presentation_field(key):
@@ -632,7 +631,7 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
             attrs = {"id":identifier}
             if bound.errors:
                 attrs.update({"aria-invalid":"true", "aria-describedby":identifier + "-errors"})
-            return dict(label={"trade_interest":"Trade / work interest"}.get(key, bound.label),
+            return dict(label={"trade_interest":"Trade interest"}.get(key, bound.label),
                         identifier=identifier, widget=bound.as_widget(attrs=attrs), errors=bound.errors)
         common_panels[device] = [presentation_field(key) for key in ("location",) if key in form.fields]
         type_fields = [presentation_field(key) for key in ("identifier",) if key in form.fields]
@@ -648,7 +647,7 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
         panels[device] = advanced
     hidden = [(key, value) for key, value in criteria.items() if key not in {"q","sort","segments"}]
     filter_hidden = [(key, criteria.get(key, "")) for key in
-                     ("trade_interest","city","state")
+                     ("city","state")
                      if key in form.fields]
     colors = ["#d02030", "#0ea5e9", "#f59e0b", "#10b981", "#8b5cf6", "#a1a1aa"]
     total = page.paginator.count
@@ -668,7 +667,9 @@ def _explorer_presentation(request, form, population, criteria, data, page, *, i
     origin_values.pop("assessment_source", None)
     origin_query = urlencode(origin_values)
     directory_origin = request.path + ("?" + origin_query if origin_query else "")
-    return dict(explorer_reset=route, explorer_chips=chips, explorer_groups=groups, explorer_panels=panels, explorer_common=common_panels, explorer_type_fields=type_fields,
+    more_keys = {k for _, names in definitions for k in names} | {g["key"] for g in groups if g["key"] not in ("employment", "travel")} | {"identifier", "trade_interest"}
+    more_active = sum(1 for k in more_keys if criteria.get(k) not in (None, "", [])) + (1 if criteria.get("page_size") not in (None, "", "25", 25) else 0)
+    return dict(explorer_more_active=more_active, explorer_reset=route, explorer_chips=chips, explorer_groups=groups, explorer_panels=panels, explorer_common=common_panels, explorer_type_fields=type_fields,
                 explorer_hidden=hidden, explorer_filter_hidden=filter_hidden, explorer_charts=charts,
                 explorer_origin=directory_origin, explorer_clear=route,
                 explorer_unified=True, explorer_include_analysis=include_analysis,

@@ -73,20 +73,51 @@ class WorkExperienceForm(OptionalReasonMixin, forms.ModelForm):
 
 
 class AcquisitionForm(forms.ModelForm):
+    """How we first met this person: at an event, online, or not known."""
     revision = forms.CharField(widget=forms.HiddenInput)
-    audit_reason = forms.CharField(max_length=1000, required=False, widget=forms.HiddenInput, label="Evidence and reason for this correction")
+    audit_reason = forms.CharField(max_length=1000, required=False, widget=forms.HiddenInput)
+    found_on = forms.DateField(required=False, label="Date", widget=forms.DateInput(attrs={"type": "date"}))
     class Meta:
         model = ParticipantAcquisition
-        fields = ("channel", "acquired_at", "event", "online_source", "source_submission", "provenance")
-        labels = {"acquired_at": "Original acquisition time (UTC)", "source_submission": "Supporting intake submission"}
-        widgets = {"acquired_at": forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M")}
+        fields = ("channel", "event", "online_source")
+        labels = {"channel": "How they found us", "event": "Event", "online_source": "Where online"}
     def __init__(self, *args, participant, user, **kwargs):
         super().__init__(*args, **kwargs)
         self.instance.participant = participant
-        self.fields["source_submission"].queryset = RegistrationSubmission.objects.filter(participant=participant).order_by("-submitted_at")
+        self.fields["channel"].choices = [("event", "At an event"), ("online", "Online"), ("unknown", "Not known")]
         self.fields["event"].queryset = Event.objects.order_by("-start_at") if user.has_perm("events.view_event") else Event.objects.none()
-        self.fields["event"].help_text = "Event references require event-view permission. Unknown historical origins should stay unknown."
-        self.fields["acquired_at"].input_formats = ["%Y-%m-%dT%H:%M", "%Y-%m-%dT%H:%M:%S"]
+        self.fields["event"].empty_label = "Choose an event"
+        self.fields["online_source"].widget.attrs["placeholder"] = "Website, Facebook, Indeed, a friend..."
+        self.order_fields(["channel", "found_on", "event", "online_source"])
+        if self.instance.pk and self.instance.acquired_at:
+            from zoneinfo import ZoneInfo
+            from django.utils import timezone
+            self.initial.setdefault("found_on", timezone.localtime(self.instance.acquired_at, ZoneInfo("America/New_York")).date())
+    def clean(self):
+        data = super().clean()
+        channel = data.get("channel")
+        if channel != "event":
+            data["event"] = None
+        elif not data.get("event"):
+            self.add_error("event", "Choose the event.")
+        if channel != "online":
+            data["online_source"] = ""
+        found = data.get("found_on")
+        if channel == "unknown" or not found:
+            data["acquired_at"] = None
+        else:
+            from datetime import datetime, time
+            from zoneinfo import ZoneInfo
+            from django.utils import timezone
+            when = datetime.combine(found, time(12), ZoneInfo("America/New_York"))
+            if when > timezone.now():
+                self.add_error("found_on", "The date can't be in the future.")
+            data["acquired_at"] = when
+        data["source_submission"] = self.instance.source_submission if self.instance.pk else None
+        data["provenance"] = self.instance.provenance if self.instance.pk else ""
+        return data
+    def _post_clean(self):
+        pass
 
 
 class NoteForm(forms.ModelForm):
@@ -124,47 +155,51 @@ class ParticipantEventForm(forms.Form):
 class DiscoveryForm(forms.Form):
     from .identifier_definitions import PrimaryIdentifier
     identifier = forms.ChoiceField(required=False, label="Type", choices=[("", "Any type"), *PrimaryIdentifier.choices, ("unclassified", "Unclassified")])
-    relocation = forms.ChoiceField(required=False, choices=[("", "Any relocation preference"), ("yes", "Willing to relocate"), ("maybe", "May relocate"), ("no", "Not willing to relocate"), ("unknown", "Relocation preference unknown")])
-    employment_classification = forms.CharField(required=False, max_length=80, label="Employment classification key")
-    availability_classification = forms.CharField(required=False, max_length=80, label="Availability classification key")
+    relocation = forms.ChoiceField(required=False, label="Will relocate", choices=[("", "Any"), ("yes", "Yes"), ("maybe", "Maybe"), ("no", "No"), ("unknown", "Not recorded")])
+    employment_classification = forms.ChoiceField(required=False, label="Employment")
+    availability_classification = forms.ChoiceField(required=False, label="Availability")
     segments = forms.CharField(required=False, max_length=12000, widget=forms.HiddenInput)
     facet = forms.ChoiceField(required=False, choices=[("", "No chart segment")] + [(x, x.replace("_", " ").title()) for x in ("channel", "state", "employment", "experience", "interest", "qualification", "document", "verification", "participation", "assessment", "completeness", "acquisition_month")], widget=forms.HiddenInput)
     bucket = forms.CharField(required=False, max_length=240, widget=forms.HiddenInput)
     q = forms.CharField(required=False, max_length=150, label="Name, ID, email, or phone", widget=forms.TextInput(attrs={"aria-describedby": "participant-search-help"}))
     trade_interest = forms.CharField(required=False, max_length=120, label="Trade / career interest")
-    skill = forms.CharField(required=False, max_length=120, label="Recorded skill / qualification text")
+    skill = forms.CharField(required=False, max_length=120, label="Skill or qualification")
     page_size = forms.ChoiceField(required=False, choices=[("25", "25"), ("10", "10"), ("50", "50"), ("100", "100")], initial="25", label="Per page")
     location = forms.CharField(required=False, max_length=200, label="Location", widget=forms.TextInput(attrs={"placeholder": "City, state, or both"}))
     city = forms.CharField(required=False, max_length=100)
     state = forms.CharField(required=False, max_length=100)
     employment = forms.ChoiceField(required=False, choices=[("", "Any"), ("seeking", "Yes"), ("open", "Maybe"), ("not_seeking", "No"), ("unknown", "Unknown")])
-    experience_min = forms.DecimalField(required=False, min_value=0, max_value=80, decimal_places=1, label="Minimum reported experience (years)")
-    experience_data = forms.ChoiceField(required=False, choices=[("", "Any experience data"), ("known", "Reported overall experience"), ("unknown", "Overall experience unknown")])
-    availability = forms.CharField(required=False, max_length=120, label="Availability text")
-    preferred_location = forms.CharField(required=False, max_length=120, label="Preferred work geography")
-    work_type = forms.ChoiceField(required=False, choices=[("", "Any work arrangement")] + list(ParticipantCareerProfile._meta.get_field("preferred_work_type").choices[1:]))
+    experience_min = forms.DecimalField(required=False, min_value=0, max_value=80, decimal_places=1, label="Years of experience (at least)")
+    experience_data = forms.ChoiceField(required=False, label="Experience recorded", choices=[("", "Any"), ("known", "Yes"), ("unknown", "No")])
+    availability = forms.CharField(required=False, max_length=120, label="Availability notes")
+    preferred_location = forms.CharField(required=False, max_length=120, label="Preferred work area")
+    work_type = forms.ChoiceField(required=False, label="Work type", choices=[("", "Any")] + list(ParticipantCareerProfile._meta.get_field("preferred_work_type").choices[1:]))
     travel = forms.ChoiceField(required=False, choices=[("", "Any"), ("yes", "Yes"), ("maybe", "Maybe"), ("no", "No"), ("unknown", "Unknown")])
-    channel = forms.ChoiceField(required=False, choices=[("", "Any original acquisition")] + list(ParticipantAcquisition.Channel.choices))
-    acquired_from = forms.DateField(required=False, widget=DATE, label="Acquired from")
-    acquired_to = forms.DateField(required=False, widget=DATE, label="Acquired through")
-    event = forms.ModelChoiceField(required=False, queryset=Event.objects.none(), label="Registered event")
-    participation = forms.ChoiceField(required=False, choices=[("", "Any registration history"), ("registered", "Has active event registration"), ("none", "No active registration recorded")])
-    qualification = forms.ModelChoiceField(required=False, queryset=QualificationCatalogEntry.objects.none())
-    qualification_kind = forms.ChoiceField(required=False, choices=[("", "Any qualification kind")] + list(QualificationCatalogEntry.Kind.choices))
-    qualification_status = forms.ChoiceField(required=False, choices=[("", "Any credential review"), ("verified", "Has currently verified qualification"), ("pending", "Has pending qualification"), ("unverified", "Has unverified qualification"), ("expired", "Has expired qualification"), ("rejected", "Has rejected qualification"), ("none", "No active qualifications recorded")])
-    document_status = forms.ChoiceField(required=False, choices=[("", "Any document status"), ("present", "Has active documents"), ("none", "No active documents recorded"), ("verified", "Has verified document"), ("pending", "Has pending document"), ("expired", "Has expired document"), ("rejected", "Has rejected document")])
+    channel = forms.ChoiceField(required=False, label="Found us", choices=[("", "Any"), ("event", "At an event"), ("online", "Online"), ("unknown", "Not known")])
+    acquired_from = forms.DateField(required=False, widget=DATE, label="Found us from")
+    acquired_to = forms.DateField(required=False, widget=DATE, label="Found us through")
+    event = forms.ModelChoiceField(required=False, queryset=Event.objects.none(), label="Signed up for event", empty_label="Any event")
+    participation = forms.ChoiceField(required=False, label="Event sign-ups", choices=[("", "Any"), ("registered", "Signed up for an event"), ("none", "No sign-ups")])
+    qualification = forms.ModelChoiceField(required=False, queryset=QualificationCatalogEntry.objects.none(), empty_label="Any", label="Qualification")
+    qualification_kind = forms.ChoiceField(required=False, label="Qualification kind", choices=[("", "Any")] + list(QualificationCatalogEntry.Kind.choices))
+    qualification_status = forms.ChoiceField(required=False, label="Qualification status", choices=[("", "Any"), ("verified", "Has currently verified qualification"), ("pending", "Has pending qualification"), ("unverified", "Has unverified qualification"), ("expired", "Has expired qualification"), ("rejected", "Has rejected qualification"), ("none", "No active qualifications recorded")])
+    document_status = forms.ChoiceField(required=False, label="Documents", choices=[("", "Any"), ("present", "Has active documents"), ("none", "No active documents recorded"), ("verified", "Has verified document"), ("pending", "Has pending document"), ("expired", "Has expired document"), ("rejected", "Has rejected document")])
     assessment = forms.ChoiceField(required=False, choices=[("", "Any assessment history"), ("quiz", "Accepted completed quiz"), ("simulator", "Accepted simulator result"), ("game", "Completed official game")])
-    assessment_category = forms.ModelChoiceField(required=False, queryset=AssessmentCategory.objects.none(), label="Quiz category")
-    score_min = forms.DecimalField(required=False, min_value=0, max_value=1000000, decimal_places=6, label="Minimum stored score")
-    score_max = forms.DecimalField(required=False, min_value=0, max_value=1000000, decimal_places=6, label="Maximum stored score")
-    completeness = forms.ChoiceField(required=False, choices=[("", "Any profile coverage"), ("complete", "All six profile groups recorded"), ("partial", "Some profile groups unknown")])
-    archived = forms.ChoiceField(required=False, choices=[("", "Active participants"), ("all", "Active and archived"), ("only", "Archived participants")])
+    assessment_category = forms.ModelChoiceField(required=False, queryset=AssessmentCategory.objects.none(), label="Quiz category", empty_label="Any")
+    score_min = forms.DecimalField(required=False, min_value=0, max_value=1000000, decimal_places=6, label="Score at least")
+    score_max = forms.DecimalField(required=False, min_value=0, max_value=1000000, decimal_places=6, label="Score at most")
+    completeness = forms.ChoiceField(required=False, label="Profile", choices=[("", "Any"), ("complete", "Complete"), ("partial", "Missing details")])
+    archived = forms.ChoiceField(required=False, label="Show", choices=[("", "Active participants"), ("all", "Active and archived"), ("only", "Archived only")])
     sort = forms.ChoiceField(required=False, choices=[("", "Name A–Z"), ("name_desc", "Name Z–A"), ("newest", "Newest records"), ("oldest", "Oldest records"), ("acquired", "Most recent known acquisition"), ("experience", "Reported experience (highest first)")])
 
     def __init__(self, *args, user, **kwargs):
         super().__init__(*args, **kwargs)
         if user.has_perm("events.view_eventregistration"):
             self.fields["event"].queryset = Event.objects.order_by("-start_at")
+        from apps.recruiting.models import Classification
+        for name, kind in (("employment_classification", "employment"), ("availability_classification", "availability")):
+            if name in self.fields:
+                self.fields[name].choices = [("", "Any")] + [(c.key, c.label) for c in Classification.objects.filter(kind=kind)]
         if user.has_perm("participants.view_participantqualification"):
             self.fields["qualification"].queryset = QualificationCatalogEntry.objects.order_by("name")
         if user.has_perm("assessments.view_quizattempt"):

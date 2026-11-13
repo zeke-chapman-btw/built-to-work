@@ -154,7 +154,7 @@ class CrmUxProfileTests(TestCase):
             response = self.client.get(self.url)
             header = response.content.decode().split('<section id="profile-identity"', 1)[1].split('</header>', 1)[0]
             self.assertNotIn('Jump to section', header)
-            self.assertEqual('aria-label="Manage profile details"' in header, can_edit)
+            self.assertEqual('aria-label="Edit contact details"' in header, can_edit)
             if can_edit:
                 self.assertIn(reverse('participants:profile-card-edit', args=[self.person.pk, 'identity']), header)
                 self.assertIn('return_to=', header)

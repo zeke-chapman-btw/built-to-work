@@ -1,7 +1,7 @@
 {% load tz %}
 <section id="{{ directory_panel.anchor }}" class="card crm-directory-panel" aria-labelledby="directory-relationships-heading" tabindex="-1">
-  <header class="crm-directory-heading"><h2 id="directory-relationships-heading">{% if directory_panel.view == 'activity' %}Recent Activity{% else %}Follow-ups{% endif %}</h2></header>
-  {% if directory_panel.audiences %}<nav class="crm-directory-audience" aria-label="Activity audience">{% for audience in directory_panel.audiences %}<a href="{{ audience.url }}"{% if audience.selected %} aria-current="page"{% endif %}>{{ audience.label }}</a>{% endfor %}</nav>{% else %}<p class="crm-directory-help">Open Tasks you can access · due soon means the next three calendar days.</p>{% endif %}
+  <h2 id="directory-relationships-heading" class="visually-hidden">{% if directory_panel.view == 'activity' %}Recent activity{% else %}Follow-ups{% endif %}</h2>
+  {% if directory_panel.audiences %}<nav class="crm-directory-audience" aria-label="Activity audience">{% for audience in directory_panel.audiences %}<a href="{{ audience.url }}"{% if audience.selected %} aria-current="page"{% endif %}>{{ audience.label }}</a>{% endfor %}</nav>{% else %}<p class="crm-directory-help">Open tasks, soonest first. “Due soon” means the next three days.</p>{% endif %}
   {% if directory_panel.refreshed %}<p class="crm-directory-help" role="status">This page link expired or was invalid. Showing the latest entries.</p>{% endif %}
   <div class="crm-directory-body">
   {% if directory_panel.view == 'activity' %}

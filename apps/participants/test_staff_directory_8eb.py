@@ -92,7 +92,7 @@ class StaffParticipantDirectoryTests(TestCase):
 
     def test_edit_profile_button_follows_change_permission(self):
         url = reverse("participants:staff-profile", args=[self.person.pk])
-        edit_url = reverse("participants:staff-edit", args=[self.person.pk])
+        edit_url = reverse("participants:profile-card-edit", args=[self.person.pk, "identity"])
         self.assertTrue(self.client.login(username="directory-staff", password="test-password"))
         self.assertNotContains(self.client.get(url), edit_url)
         self.staff.user_permissions.add(Permission.objects.get(codename="change_participant", content_type__app_label="participants", content_type__model="participant"))

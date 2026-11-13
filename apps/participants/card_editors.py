@@ -19,10 +19,10 @@ from .identifier_services import revision as type_revision, save_identifier
 from .intake_discovery import effective_travel
 
 CARDS = {
-    'identity': ('Profile', Participant, ('first_name', 'last_name', 'preferred_name', 'contact_email', 'contact_phone', 'city', 'state', 'postal_code')),
+    'identity': ('Contact', Participant, ('first_name', 'last_name', 'preferred_name', 'contact_email', 'contact_phone', 'city', 'state', 'postal_code')),
     'skills': ('Skills & Trades', ParticipantCareerProfile, ('career_interests', 'skills_interests', 'years_of_experience')),
     'education': ('Education & Training', ParticipantCareerProfile, ('education_training',)),
-    'preferences': ('Employment & preferences', ParticipantCareerProfile, ('employment_interest', 'preferred_work_type', 'preferred_locations')),
+    'preferences': ('Work preferences', ParticipantCareerProfile, ('employment_interest', 'preferred_work_type', 'preferred_locations', 'career_interests')),
 }
 
 
@@ -37,7 +37,7 @@ class ProfileCardForm(forms.Form):
             field = model._meta.get_field(name).formfield()
             field.label = {'career_interests': 'Trade and career interests', 'skills_interests': 'Reported skills and interests',
                 'years_of_experience': 'Reported overall experience (years)', 'education_training': 'Education & training',
-                'employment_interest': 'Interested in work', 'preferred_work_type': 'Work arrangement',
+                'employment_interest': 'Seeking work', 'preferred_work_type': 'Work type',
                 'preferred_locations': 'Preferred work locations'}.get(name, field.label)
             if isinstance(field.widget, forms.Textarea):
                 field.widget.attrs['rows'] = 3
@@ -45,12 +45,12 @@ class ProfileCardForm(forms.Form):
             self.initial[name] = getattr(record, name, model._meta.get_field(name).get_default()) if record else model._meta.get_field(name).get_default()
         if card == 'identity':
             self.fields['primary_identifier'] = Participant._meta.get_field('primary_identifier').formfield(label='Type')
-            self.fields['primary_identifier'].choices = [('', 'Unclassified')] + [(value, label) for value, label in self.fields['primary_identifier'].choices if value]
+            self.fields['primary_identifier'].choices = [('', 'Not set')] + [(value, label) for value, label in self.fields['primary_identifier'].choices if value]
             self.fields['type_revision'] = forms.CharField(widget=forms.HiddenInput)
             self.initial.update(primary_identifier=person.primary_identifier, type_revision=type_revision(person))
         if card == 'preferences':
-            self.fields['employment_interest'].choices = [('', 'Unknown'),('seeking','Yes'),('open','Maybe'),('not_seeking','No')]
-            self.fields['travel'] = forms.ChoiceField(required=False, label='Willing to travel', choices=[('', 'Unknown'), ('yes', 'Yes'), ('maybe', 'Maybe'), ('no', 'No')])
+            self.fields['employment_interest'].choices = [('', 'Not set'),('seeking','Yes'),('open','Maybe'),('not_seeking','No')]
+            self.fields['travel'] = forms.ChoiceField(required=False, label='Willing to travel', choices=[('', 'Not set'), ('yes', 'Yes'), ('maybe', 'Maybe'), ('no', 'No')])
             state = IntakeFieldState.objects.filter(participant=person, destination='travel_willingness').first()
             self.initial['travel'] = effective_travel(record, state) or ''
             self.fields['travel_revision'] = forms.CharField(widget=forms.HiddenInput)
@@ -68,10 +68,12 @@ class ProfileCardForm(forms.Form):
                 for key in ('current_employment_status', 'employment_classification', 'availability_classification', 'willing_to_relocate'):
                     self.fields[key] = preferences.fields[key]
                     self.initial[key] = initial[key]
+                    if hasattr(self.fields[key], 'choices'):
+                        self.fields[key].choices = [(v, 'Not set' if str(l).lower() in ('unknown', 'not recorded', '---------') else l) for v, l in self.fields[key].choices]
                 self.fields['recruiting_revision'] = forms.IntegerField(widget=forms.HiddenInput)
                 self.initial['recruiting_revision'] = initial['revision']
         if card == 'preferences':
-            self.order_fields(['employment_interest','travel','willing_to_relocate','current_employment_status','preferred_work_type','preferred_locations','employment_classification','availability_classification'])
+            self.order_fields(['employment_interest','travel','willing_to_relocate','current_employment_status','preferred_work_type','availability_classification','employment_classification','career_interests','preferred_locations'])
         self.initial['revision'] = profile_revision(person)
         if card == 'preferences':
             primary=['employment_interest','travel','willing_to_relocate','current_employment_status']
@@ -191,5 +193,5 @@ def edit(request, participant_id, card):
                 return people_saved(request, 'participants:staff-profile', participant_id=person.pk)
     return editor_response(request, template='participants/compact_form.html', panel='internal/ui/record_form_panel.html',
         context=context(request, participant=person, form=form, page_title='Edit ' + CARDS[card][0],
-            back=people_return(request, person, reverse('participants:staff-profile', args=[person.pk])), save_label='Save changes', fields_template='participants/preference_card_fields.html' if card == 'preferences' else 'internal/ui/section_fields.html',
+            back=people_return(request, person, reverse('participants:staff-profile', args=[person.pk])), save_label='Save changes', fields_template={'preferences': 'participants/preference_card_fields.html', 'identity': 'participants/identity_card_fields.html'}.get(card, 'internal/ui/section_fields.html'),
             cautious_save=True, editor_return_label='profile', save_conflict=conflict, full_page_editor=request.headers.get('X-BTW-Editor') != '1'))

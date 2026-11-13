@@ -1,5 +1,5 @@
 {% extends 'internal/base.html' %}{% load static crm_ui %}
-{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=uxcd-1">{% endblock %}
+{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=rui-1112">{% endblock %}
 {% block page_heading %}{% endblock %}
 {% block content %}<div class="crm-workspace"><a href="{{ back }}">← {{ back|crm_back_label }}</a><header class="crm-heading"><h1>{{ record.get_audience_display }}</h1><p><a href="{{ item.subject_url }}">{{ item.subject_label }}</a></p></header>
 <section class="card crm-card"><h2>{{ item.summary }}</h2><p>{{ item.type }} · {{ item.occurred_at|date:'M j, Y g:i A T' }} · {{ item.author }}</p><p>{{ item.source }} · Recorded {{ item.created_at|date:'M j, Y g:i A T' }}</p>{% if item.organization %}<p>{{ item.organization }}{% if item.contact %} · {{ item.contact }}{% endif %}{% if item.engagement %} · {{ item.engagement }}{% endif %}</p>{% endif %}{% if item.outcome %}<p>Outcome: {{ item.outcome }}</p>{% endif %}{{ item.notes|linebreaksbr }}{% if item.next_step %}<p>Next step: {{ item.next_step }}</p>{% endif %}{% if item.follow_up_on %}<p>Follow-up date: {{ item.follow_up_on|date:'M j, Y' }}</p>{% endif %}

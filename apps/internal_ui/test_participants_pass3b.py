@@ -172,7 +172,7 @@ class ParticipantExplorerTests(TestCase):
 
     def test_discrete_type_changes_clear_only_incompatible_score_fields(self):
         response=self.response(assessment='quiz',score_min='0',city='Example')
-        group=next(g for g in response.context['explorer_groups'] if g['title']=='Assessment source')
+        group=next(g for g in response.context['explorer_groups'] if g['title']=='Assessment')
         target=next(o['url'] for o in group['options'] if parse_qs(urlsplit(o['url']).query).get('assessment')==['simulator'])
         query=parse_qs(urlsplit(target).query)
         self.assertEqual(query['city'],['Example'])

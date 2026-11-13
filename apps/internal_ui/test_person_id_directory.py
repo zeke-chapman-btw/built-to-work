@@ -57,7 +57,7 @@ class PersonIdDirectoryTests(TestCase):
         names=[n['attrs']['name'] for n in inputs]
         self.assertEqual(len(names),len(set(names)))
         self.assertTrue({'q','sort','employment','travel','identifier','location','segments','assessment'}<=set(names))
-        self.assertEqual(len([n for n in doc.nodes if n['tag']=='button' and form in n['parents']]),1)
+        self.assertEqual(len([n for n in doc.nodes if n['tag']=='button' and form in n['parents'] and n['attrs'].get('type')!='button']),1)
         self.assertContains(response,'>Apply</button>',count=1)
         self.assertContains(response,'>Reset</a>',count=1)
         self.assertNotContains(response,'>Search</button>')
@@ -110,8 +110,7 @@ class PersonIdDirectoryTests(TestCase):
         response=self.client.get(profile)
         self.assertNotContains(response,'>Edit type</a>')
         self.assertContains(response,reverse('participants:profile-card-edit',args=[self.person.pk,'identity']))
-        self.assertContains(response,f'aria-label="Copy participant ID {self.person.pk}"')
-        self.assertContains(response,f'data-copy-text="{self.person.pk}"')
+        self.assertContains(response,f'>ID {self.person.pk}</span>')
         self.assertNotContains(response,'<dt>Type</dt>')
         form_response=self.client.get(edit)
         self.assertEqual(form_response.context['form'].fields['identifier'].label,'Type')
@@ -124,7 +123,7 @@ class PersonIdDirectoryTests(TestCase):
         updated_profile=self.client.get(profile)
         self.assertContains(updated_profile,'<dt>Type</dt>')
         self.assertContains(updated_profile,self.person.get_primary_identifier_display())
-        self.assertContains(updated_profile,f'data-copy-text="{old_pk}"')
+        self.assertContains(updated_profile,f'>ID {old_pk}</span>')
         self.assertTrue(IntakeFieldState.objects.get(participant=self.person,destination='primary_identifier').is_protected)
         from apps.core.models import AuditLog
         self.assertTrue(AuditLog.objects.filter(action='participants.identifier.changed').exists())

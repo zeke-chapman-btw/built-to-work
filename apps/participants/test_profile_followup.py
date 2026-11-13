@@ -69,7 +69,7 @@ class ProfileFollowupTests(EmployerFixtures, TestCase):
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.headers.get('X-BTW-Editor'),'1')
         self.assertContains(response,'data-editor-panel')
-        self.assertContains(response,'Supporting intake submission')
+        self.assertContains(response,'How they found us')
         self.assertNotContains(response,'<html')
         self.assertContains(self.client.get(url),'<html')
         reader=get_user_model().objects.create_user(username='SYNTHETIC-source-reader',is_staff=True)
@@ -84,7 +84,7 @@ class ProfileFollowupTests(EmployerFixtures, TestCase):
         names=list(form.fields)
         visible=[key for key in names if not form.fields[key].widget.is_hidden]
         self.assertEqual(visible[:4],['employment_interest','travel','willing_to_relocate','current_employment_status'])
-        self.assertEqual(dict(form.fields['employment_interest'].choices),{'':'Unknown','seeking':'Yes','open':'Maybe','not_seeking':'No'})
+        self.assertEqual(dict(form.fields['employment_interest'].choices),{'':'Not set','seeking':'Yes','open':'Maybe','not_seeking':'No'})
         self.assertEqual([label for key,label in form.fields['current_employment_status'].choices if key and key!='__retained__'],['Full time','Part time','Self employed','Contract','Unemployed'])
         career=ParticipantCareerProfile.objects.get(participant=self.person)
         career.preferred_work_type='part_time';career.employment_status='Legacy nonstandard retained';career.save()
