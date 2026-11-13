@@ -142,3 +142,65 @@ def default_contract():
         "welding": ["mig", "tig", "stick", "blueprints", "fabrication", "inspection", "tools"],
         "supervision": ["crew", "safety", "quality", "scheduling", "blueprints", "leadership"]},
         "qualification_mappings": []}
+
+
+# Questions dropped from the recommended set: they repeated another question or were rarely useful.
+RETIRED_FROM_RECOMMENDED = ("street_address", "school_activities", "training", "job_responsibilities",
+                            "prior_employment", "certifications")
+
+
+def recommended_contract():
+    """The slimmer Nov 2026 sign-up: same saved answers, fewer overlapping questions, plainer wording."""
+    contract = default_contract()
+    by_key = {q["key"]: q for q in contract["questions"]}
+    def relabel(key, label, **extra):
+        by_key[key]["label"] = label
+        by_key[key].update(extra)
+    relabel("preferred_name", "Preferred name (if different)")
+    relabel("current_situation", "What best describes you right now?")
+    relabel("education_level", "Highest education so far")
+    relabel("school_name", "School name")
+    relabel("graduation", "When do you finish? (month/year)")
+    # Only people working outside the trades need to name their industry.
+    relabel("current_industry", "What industry do you work in?", rule={"field": "current_situation", "op": "in", "value": ["employed_other"]},
+            options=[o for o in by_key["current_industry"]["options"] if o["value"] != "construction"])
+    relabel("industry_other", "Which industry?")
+    relabel("job_title", "Current job title")
+    relabel("employment_duration", "How long have you worked there?")
+    relabel("industry_interests", "Which trades interest you? Pick up to 3")
+    relabel("interest_other", "Other trade")
+    relabel("hands_on", "Have you done any hands-on trade work?")
+    group = by_key["experiences"]
+    group["label"] = "Tell us about it"
+    group["children"] = [c for c in group["children"] if c["key"] not in ("paid", "description")]
+    child_labels = {"area": "Trade", "source": "Where did you learn it?", "duration": "For how long?",
+                    "skills": "Skills you used", "proficiency": "How comfortable are you with it?"}
+    for c in group["children"]:
+        c["label"] = child_labels.get(c["key"], c["label"])
+    relabel("license_status", "Driver's license")
+    relabel("license_class", "License type")
+    # One list with "None yet" replaces the yes/no question plus a second list.
+    cert = by_key["certification_choices"]
+    cert.pop("rule", None)
+    relabel("certification_choices", "Any certifications? Pick all that apply", required=False,
+            options=cert["options"] + [{"value": "none", "label": "None yet"}], exclusive=["none"])
+    relabel("career_timeline", "When could you start?")
+    relabel("opportunity_types", "What are you looking for? Pick all that apply")
+    relabel("opportunity_other", "Something else")
+    relabel("career_priorities", "What matters most to you in a job? Pick up to 3",
+            help_text="This helps us match you with jobs you'll actually want.",
+            options=[{"value": v, "label": l} for v, l in (
+                ("pay", "Good pay"), ("benefits", "Benefits"), ("advancement", "Room to grow"),
+                ("learning", "Learning new skills"), ("security", "Steady, reliable work"),
+                ("balance", "A schedule that fits my life"), ("close_to_home", "Close to home"),
+                ("enjoyment", "Work I enjoy"), ("difference", "Making a difference"))])
+    relabel("desired_pay", "What hourly pay are you hoping for?")
+    relabel("travel_willingness", "Would you travel for work or training?")
+    relabel("travel_range", "How far?")
+    relabel("referral_source", "How did you hear about us?")
+    relabel("updates_preference", "Want updates about jobs, training and events?")
+    step4 = ["career_timeline", "opportunity_types", "opportunity_other", "career_priorities", "desired_pay",
+             "travel_willingness", "travel_range", "referral_source", "updates_preference"]
+    kept = [q for q in contract["questions"] if q["key"] not in RETIRED_FROM_RECOMMENDED and q["step"] != 4]
+    contract["questions"] = kept + [by_key[key] for key in step4]
+    return contract

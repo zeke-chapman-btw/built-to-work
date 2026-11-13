@@ -78,7 +78,8 @@ def workspace_intake_context(user, person, members, career):
                  career.career_interests or data.get("_industry_search", "")) if career else "")
     if "manual_typed_value" in interest_marker:
         interest = _label(defaults["industry_interests"], data.get("industry_interests"))
-    result = {"current_interests": interest,
+    priorities = next((row["value"] for row in rows if row["destination"] == "career_priorities" and row["value"] != "Not answered"), "")
+    result = {"current_interests": interest, "current_priorities": priorities,
               "current_travel": {"yes": "Yes", "no": "No", "maybe": "Maybe"}.get(travel, "Unknown"),
               "intake_profile_rows": rows, "hands_on_entries": entries,
               "intake_history": RegistrationSubmission.objects.filter(participant_id__in=members,

@@ -73,7 +73,7 @@ class SignupLinkTests(TestCase):
         page = self.client.get(reverse("participants:intake-config-index"))
         self.assertContains(page, "Where people sign up")
         self.assertContains(page, "SYNTHETIC Open Event")
-        self.assertContains(page, "Sign-up open")
+        self.assertContains(page, ">Open<")
 
     def test_qr_codes_are_staff_only(self):
         response = self.client.get(reverse("participants:signup-qr-image", args=["general"]))

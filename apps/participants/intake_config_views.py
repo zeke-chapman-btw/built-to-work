@@ -29,6 +29,27 @@ def participant_step(question):
     return 2 if question.get('type') == 'consent' else 1 if source_step == 1 else source_step + 1 if isinstance(source_step, int) else 0
 
 
+def _rule_text(rule, by_key):
+    """'Only if' wording for a conditional question."""
+    if not rule:
+        return ""
+    if rule.get("op") == "adult_non_student":
+        return "Only if: an adult who isn't a student"
+    parent = by_key.get(rule.get("field"))
+    if not parent:
+        return "Only sometimes"
+    options = {o["value"]: o["label"] for o in parent.get("options", [])}
+    values = rule.get("value") if isinstance(rule.get("value"), list) else [rule.get("value")]
+    if parent["key"] == "current_situation":
+        known = {frozenset(["high_school", "college", "trade_school"]): "a student",
+                 frozenset(["employed_trade", "employed_other"]): "working",
+                 frozenset(["employed_other"]): "working outside the trades"}
+        if frozenset(values) in known:
+            return "Only if: " + known[frozenset(values)]
+    shown = " or ".join(f"“{options.get(v, str(v))}”" for v in values)
+    return f"Only if {shown} is picked above"
+
+
 def admin_page(view):
     @login_required(login_url="admin:login")
     @wraps(view)
@@ -62,16 +83,87 @@ def index(request):
     error = ""
     if request.method == "POST":
         try:
-            version = create_form(actor=request.user, name=request.POST.get("name"))
+            from .intake_defaults import recommended_contract
+            version = create_form(actor=request.user, name=request.POST.get("name"), snapshot=recommended_contract())
         except ValidationError as exc:
             error = _message(exc)
         else:
             return redirect("participants:intake-config-detail", form_id=version.form_id)
     from apps.events.models import CentralEventDownload
     staged = CentralEventDownload.objects.exclude(config={}).order_by("-updated_at")[:50]
+    places = _signup_places()
     return render(request, "participants/intake_config_index.html", context(request,
-        page_title="Forms", forms=RegistrationForm.objects.filter(is_smart_intake=True).prefetch_related(
-            "versions").order_by("name"), staged_downloads=staged, error=error, **_signup_places()))
+        page_title="Forms", form_rows=_form_rows(), staged_downloads=staged, error=error,
+        place_rows=_place_rows(places), **places))
+
+
+def _form_rows():
+    """One line per form: status, size and where it's used."""
+    from .models import IntakeFormAssignment
+    rows = []
+    live = list(IntakeFormAssignment.objects.filter(is_active=True).values_list("form_id", "channel"))
+    for form in RegistrationForm.objects.filter(is_smart_intake=True).prefetch_related("versions").order_by("-is_active", "name"):
+        versions = sorted(form.versions.all(), key=lambda v: v.version)
+        latest = versions[-1] if versions else None
+        published = [v for v in versions if v.status == "published"]
+        questions = (latest.snapshot or {}).get("questions", []) if latest else []
+        steps = len({participant_step(q) for q in questions})
+        channels = [channel for form_id, channel in live if form_id == form.pk]
+        used = []
+        if "online" in channels:
+            used.append("General online")
+        events = channels.count("event")
+        if events:
+            used.append(f"{events} event{'s' if events != 1 else ''}")
+        tablets = sum(1 for c in channels if c in ("staff", "trailer"))
+        if tablets:
+            used.append(f"{tablets} tablet{'s' if tablets != 1 else ''}")
+        if not form.is_active:
+            status, tone = "Retired", "neutral"
+        elif published and latest.status == "draft":
+            status, tone = "Live · draft open", "warning"
+        elif published:
+            status, tone = "Live", "success"
+        else:
+            status, tone = "Draft", "warning"
+        rows.append({"form": form, "latest": latest, "status": status, "tone": tone,
+                     "summary": f"{len(questions)} questions · {steps} steps · v{latest.version if latest else 0}",
+                     "used": " · ".join(used)})
+    return rows
+
+
+def _place_rows(places):
+    """Every sign-up place as one row for the filterable table."""
+    from django.urls import reverse
+    from apps.events.templatetags.ticket_ui import event_dates, event_place
+    rows = []
+    general = places["general_assignment"]
+    rows.append({"kind": "online", "kind_label": "Online", "name": "General sign-up link", "sub": "Website, social posts, anyone not at an event",
+                 "form": general.form.name if general else "", "status": "open" if general else "none",
+                 "links": [("QR", reverse("participants:signup-qr-sheet", args=["general"]), True)]
+                          + ([("Preview", reverse("participants:intake-config-preview", args=[general.active_version_id]), False)] if general else [])
+                          + [("Change", reverse("participants:signup-where", args=["general"]), "editor")]})
+    for place in places["event_places"]:
+        event = place["event"]
+        where = event_place(event)
+        links = [] if place["open"] else [("Open it", reverse("events:event_detail", args=[event.pk]), False)]
+        links += [("QR", reverse("participants:signup-qr-sheet", args=["event", event.pk]), True)]
+        if place["own"]:
+            links.append(("Preview", reverse("participants:intake-config-preview", args=[place["own"].active_version_id]), False))
+        links.append(("Change", reverse("participants:signup-where", args=["event", event.pk]), "editor"))
+        rows.append({"kind": "event", "kind_label": "Event", "name": event.name, "sub": event_dates(event) + (" · " + where if where else ""),
+                     "form": place["own"].form.name if place["own"] else ("Same as online" if general else ""),
+                     "status": "open" if place["open"] else "closed", "links": links})
+    for place in places["trailer_places"]:
+        rows.append({"kind": "trailer", "kind_label": "Trailer sign", "name": str(place["trailer"]),
+                     "sub": ("Today: " + place["event"].name) if place["event"] else "Between events",
+                     "form": "Follows the event", "status": "open",
+                     "links": [("QR", reverse("participants:signup-qr-sheet", args=["trailer", place["trailer"].pk]), True)]})
+    for a in places["staff_places"]:
+        rows.append({"kind": "tablet", "kind_label": "Tablet", "name": (a.event.name if a.event else "All events") + (f" · {a.trailer}" if a.trailer else ""),
+                     "sub": a.get_channel_display(), "form": a.form.name, "status": "open",
+                     "links": [("Open form", reverse("participants:intake-config-detail", args=[a.form_id]), False)]})
+    return rows
 
 
 def _signup_places():
@@ -118,6 +210,19 @@ def detail(request, form_id):
                 draft = prepare_identifier_draft(actor=request.user, form_id=model.pk, expected_revision=request.POST.get("revision"))
                 messages.success(request, "Compatible identifier draft prepared. Nothing was published or reassigned.")
                 return redirect("participants:intake-config-detail", form_id=draft.form_id)
+            if action == "use_recommended":
+                from .intake_defaults import recommended_contract
+                from .intake_contracts import IDENTIFIER_SCHEMA
+                contract = recommended_contract()
+                if latest.snapshot.get("schema") == IDENTIFIER_SCHEMA:
+                    from .identifier_contracts import identifier_contract
+                    contract = identifier_contract(contract)
+                # Keep this form's own skill lists and qualification mappings.
+                contract["area_skills"] = deepcopy(latest.snapshot.get("area_skills", contract["area_skills"]))
+                contract["qualification_mappings"] = deepcopy(latest.snapshot.get("qualification_mappings", []))
+                save_draft(actor=request.user, form_id=model.pk, contract=contract, expected_revision=request.POST.get("revision"))
+                messages.success(request, "Draft made with the recommended questions. Preview it, then publish when you're happy. The live form hasn't changed.")
+                return redirect("participants:intake-config-detail", form_id=model.pk)
             if action == "publish":
                 _confirmed(request)
                 publish(actor=request.user, version_id=latest.pk, expected_revision=request.POST.get("revision"))
@@ -146,15 +251,22 @@ def detail(request, form_id):
     grouped = {number: [] for number in labels}
     kind_labels = {'short_text': 'Short answer', 'long_text': 'Long answer', 'single_choice': 'Choose one',
                    'multiple_choice': 'Choose several', 'consent': 'Consent', 'repeat_group': 'Repeating list'}
+    by_key = {q['key']: q for q in latest.snapshot['questions']}
     for question in latest.snapshot['questions']:
         number = participant_step(question)
+        question = {**question, 'rule_text': _rule_text(question.get('rule'), by_key)}
         # Display-only copy: the stored snapshot is never changed.
         grouped.setdefault(number, []).append({**question, 'destination_text': destination_text(question.get('destination')), 'kind_label': kind_labels.get(question.get('type'), str(question.get('type', '')).replace('_', ' ').capitalize())})
     question_groups = [{'number': number, 'title': labels.get(number, 'Other retained questions'),
-                        'questions': grouped[number]} for number in sorted(grouped) if grouped[number]]
+                        'anchor': f'step-{number}', 'questions': grouped[number]} for number in sorted(grouped) if grouped[number]]
+    from .intake_defaults import RETIRED_FROM_RECOMMENDED
+    keys = set(by_key)
+    can_use_recommended = model.is_active and bool(keys & set(RETIRED_FROM_RECOMMENDED))
     return render(request, "participants/intake_config_detail.html", context(request,
         page_title=model.name, intake_form=model, version=latest, revision=revision(latest),
-        questions=latest.snapshot["questions"], question_groups=question_groups, versions=model.versions.order_by("-version"),
+        questions=latest.snapshot["questions"], question_groups=question_groups, can_use_recommended=can_use_recommended,
+        version_label=("Draft · v" if latest.status == "draft" else "Live · v") + str(latest.version),
+        question_total=len(latest.snapshot["questions"]), versions=model.versions.order_by("-version"),
         published=model.versions.filter(status="published"), assignments=model.intake_assignments.select_related(
             "event", "trailer", "active_version"), assignment_form=assignment_form, error=error))
 

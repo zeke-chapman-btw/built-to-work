@@ -51,6 +51,7 @@
     <div><dt>Willing to travel</dt><dd>{% if prefs and prefs.travel != 'Not recorded' %}{% ui_badge prefs.travel prefs.travel|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
     <div><dt>Currently working</dt><dd>{% if prefs and prefs.employment.value != 'Not recorded' %}{% ui_badge prefs.employment.value|people_short_work 'neutral' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
     <div><dt>Work desired</dt><dd>{% if career.preferred_work_type %}{% ui_badge career.get_preferred_work_type_display|people_short_work 'neutral' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
+    {% if current_priorities %}<div class="pv-pref-wide"><dt>What matters most</dt><dd><span class="pv-chip-list">{% for item in current_priorities|people_split %}{% ui_badge item 'neutral' %}{% endfor %}</span></dd></div>{% endif %}
     <div class="pv-pref-wide"><dt>Trades desired</dt><dd>{% if current_interests %}<span class="pv-chip-list">{% for trade in current_interests|people_split %}{% ui_badge trade 'info' %}{% endfor %}</span>{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd></div>
   </dl>
 </section>{% endwith %}

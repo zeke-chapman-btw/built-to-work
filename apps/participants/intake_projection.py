@@ -147,7 +147,7 @@ def project_intake(*, submission, target=None, is_new=False, actor=None):
         ParticipantHandsOnExperience.objects.get_or_create(
             source_submission=submission, entry_id=entry["entry_id"],
             defaults={"participant": source_person, "area": entry["area"],
-                      "experience_source": entry["source"], "paid": entry["paid"],
+                      "experience_source": entry["source"], "paid": entry.get("paid") or ("paid" if entry["source"] == "employment" else "unpaid"),
                       "duration": entry["duration"], "practiced_skills": entry.get("skills") or [],
                       "proficiency": entry.get("proficiency") or "", "description": entry.get("description") or "",
                       "definition_snapshot": definition})

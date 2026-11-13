@@ -66,6 +66,7 @@ PROTECTED = {
 }
 EXPERIENCE_CHILDREN = {"area", "source", "paid", "duration", "skills", "proficiency", "description"}
 REQUIRED_CHILDREN = {"area", "source", "paid", "duration"}
+OPTIONAL_CHILDREN = {"paid", "description"}
 
 
 def canonical_json(value):
@@ -219,8 +220,9 @@ def _question(question, prior, destinations, *, child=False):
         if child or key != "experiences" or destination != "experiences":
             _fail("Only the supported common experience repeat group is available.")
         children = question.get("children")
-        if (not isinstance(children, list) or any(not isinstance(q, dict) for q in children)
-                or {q.get("key") for q in children} != EXPERIENCE_CHILDREN):
+        keys = {q.get("key") for q in children} if isinstance(children, list) and all(isinstance(q, dict) for q in children) else None
+        # "Paid or unpaid" and "Description" may be left out (paid is then worked out from where they learned it).
+        if keys is None or not (EXPERIENCE_CHILDREN - OPTIONAL_CHILDREN) <= keys <= EXPERIENCE_CHILDREN:
             _fail("The experience group must retain its complete approved structure.")
         child_prior, child_destinations = {}, set()
         for q in children:
@@ -230,7 +232,7 @@ def _question(question, prior, destinations, *, child=False):
             if q["required"] != (q["key"] in REQUIRED_CHILDREN):
                 _fail("The required common experience fields cannot be weakened.")
             child_prior[q["key"]] = q
-        if set(_options(child_prior["paid"])) != {"paid", "unpaid"}:
+        if "paid" in child_prior and set(_options(child_prior["paid"])) != {"paid", "unpaid"}:
             _fail("Paid classification has exactly Paid and Unpaid choices.")
     elif "children" in question:
         _fail("Only experience groups may contain children.")
@@ -279,9 +281,13 @@ def validate_contract(contract):
         "license_class": {"field": "license_status", "op": "equals", "value": "valid"},
         "certification_choices": {"field": "certifications", "op": "equals", "value": "yes"},
     }
+    # Approved alternatives: industry asked only of people working outside the trades, and one
+    # certification list with an exclusive "None yet" instead of a yes/no gate.
+    alternatives = {"current_industry": [{"field": "current_situation", "op": "in", "value": ["employed_other"]}],
+                    "certification_choices": [None] if "none" in prior.get("certification_choices", {}).get("exclusive", []) else []}
     for key, rule in essential_rules.items():
         q = prior.get(key, {})
-        if q.get("rule") != rule:
+        if q.get("rule") != rule and q.get("rule") not in alternatives.get(key, []):
             _fail("Protected conditional behavior changed: " + key)
         if key in {"current_industry", "experiences", "travel_range"} and not q.get("required"):
             _fail("The applicable question must be required: " + key)
