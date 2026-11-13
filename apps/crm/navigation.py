@@ -36,6 +36,8 @@ def safe_return(request, value, fallback="", depth=0):
             organization = CustomerOrganization.objects.get(pk=match.kwargs["org_id"])
             access.internal_context(request.user, organization=organization)
             keys = QUERY_KEYS; anchors = {"btw-interactions", "employer-interactions", "relationship-followups", "relationship-contacts"}
+        elif name == "internal:home":
+            keys = set()
         elif name == "crm:recent":
             keys = RECENT_KEYS; anchors = {"btw-recent", "employer-recent"}
         elif name == "crm:detail":

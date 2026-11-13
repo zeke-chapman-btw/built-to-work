@@ -194,7 +194,7 @@
           dirty = true; return;
         }
         if (!response.ok || !(response.headers.get('Content-Type') || '').includes('application/json')) throw new Error('Save unavailable');
-        const result = await response.json(); if(typeof result.url!=='string' || !sameOrigin(result.url)) throw new Error('Invalid destination'); const target=managerOrigin || sameOrigin(result.url);
+        const result = await response.json(); if(typeof result.next==='string'){const next=sameOrigin(result.next);if(!next)throw new Error('Invalid destination');const step=await request(next.href,{credentials:'same-origin',headers:{'X-BTW-Editor':'1'}});if(!step.ok||step.headers.get('X-BTW-Editor')!=='1')throw new Error('Unavailable');setBusy(false);render(await step.text());return;} if(typeof result.url!=='string' || !sameOrigin(result.url)) throw new Error('Invalid destination'); const target=managerOrigin || sameOrigin(result.url);
         rememberReturnFocus(target);
         ownHistory = false; dirty = false; history.scrollRestoration=originalRestoration; feedback('Saved. Returning to your list…');
         if (target.pathname === location.pathname && target.search === location.search) {

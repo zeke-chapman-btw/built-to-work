@@ -2,6 +2,7 @@
 from functools import wraps
 import uuid
 
+from django import forms as django_forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied, ValidationError
@@ -81,10 +82,106 @@ def create(request, participant_id=None, organization_id=None):
             else:
                 messages.success(request, "Interaction recorded. No message was sent.")
                 return editor_success(request, back)
-    return interaction_editor(request, {"form": form, "page_title": "Log interaction",
-        "subject": participant or organization, "back": back,
+    return interaction_editor(request, {"form": form, "page_title": "Log a touchpoint",
+        "subject": participant or organization, "editor_context": str(participant or organization), "back": back,
         "guidance": "Record a touchpoint that already happened. Only authorized BTW staff can see this history.",
         "submit_label": "Save interaction"})
+
+
+class StartForm(django_forms.Form):
+    """Generic “+ Touchpoint”: pick who it's about, then the usual touchpoint form opens."""
+    about = django_forms.ChoiceField(label="About", choices=(("participant", "Participant"), ("customer", "Customer")),
+        initial="participant", widget=django_forms.RadioSelect(attrs={"class": "btw-chip-choices"}))
+    find = django_forms.CharField(label="Name", required=False, max_length=120,
+        widget=django_forms.TextInput(attrs={"placeholder": "Start typing a name, email or phone", "autocomplete": "off"}))
+    pick = django_forms.ChoiceField(label="Which one?", required=False, choices=(), widget=django_forms.RadioSelect(attrs={"class": "btw-chip-choices"}))
+
+    def __init__(self, *args, choices_for=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        allowed = [(key, label) for key, label in self.fields["about"].choices if key in choices_for]
+        self.fields["about"].choices = allowed
+        if len(allowed) == 1:
+            self.fields["about"].initial = allowed[0][0]
+
+
+def _start_scopes(user):
+    allowed = {}
+    try:
+        access.internal_context(user, participant=Participant(kind=Participant.Kind.PERSON), write=True)
+        allowed["participant"] = True
+    except PermissionDenied:
+        pass
+    try:
+        require_manager(user)
+        allowed["customer"] = True
+    except PermissionDenied:
+        pass
+    return allowed
+
+
+def _start_matches(about, text):
+    from django.db.models import Q
+    text = text.strip()
+    if not text:
+        return []
+    if about == "customer":
+        rows = CustomerOrganization.objects.exclude(status="archived").filter(Q(name__icontains=text) | Q(legal_name__icontains=text)).order_by("name")[:15]
+        return [(str(row.pk), row.name) for row in rows]
+    query = Q(contact_email__icontains=text) | Q(contact_phone__icontains=text) | Q(preferred_name__icontains=text)
+    parts = text.split()
+    name = Q()
+    for part in parts:
+        name &= Q(first_name__icontains=part) | Q(last_name__icontains=part)
+    rows = Participant.objects.filter(kind=Participant.Kind.PERSON, archived_at__isnull=True).filter(query | name).order_by("last_name", "first_name")[:15]
+    return [(str(row.pk), f"{row} · {row.contact_email or row.city or 'no email'}") for row in rows]
+
+
+def _open_editor(request, url):
+    """Open the next pop-up step in the same window (or go there on a full page)."""
+    if request.headers.get("X-BTW-Editor") != "1":
+        return redirect(url)
+    from django.http import JsonResponse
+    response = JsonResponse({"next": url})
+    response["X-BTW-Editor"] = "1"
+    return response
+
+
+@staff_view
+@require_http_methods(["GET", "POST"])
+def start(request):
+    scopes = _start_scopes(request.user)
+    if not scopes:
+        raise PermissionDenied("Your role does not allow logging touchpoints.")
+    home = reverse("internal:home")
+    data = request.POST if request.method == "POST" else None
+    form = StartForm(data, choices_for=scopes, initial={"about": request.GET.get("about", "participant") if request.GET.get("about") in scopes else next(iter(scopes))})
+    if data is not None and form.is_valid():
+        about, picked = form.cleaned_data["about"], form.cleaned_data.get("pick") or data.get("pick", "")
+        matches = _start_matches(about, form.cleaned_data["find"])
+        if not picked and len(matches) == 1:
+            picked = matches[0][0]
+        valid_ids = {key for key, _ in matches}
+        if picked and (picked in valid_ids or not form.cleaned_data["find"]):
+            try:
+                target = reverse("crm:participant-new", args=[int(picked)]) if about == "participant" else reverse("crm:customer-new", args=[uuid.UUID(picked)])
+            except (ValueError, TypeError):
+                target = ""
+            if target:
+                return _open_editor(request, with_context(target, home))
+        if matches:
+            form.fields["pick"].choices = matches
+            if picked:
+                form.add_error("pick", "Pick who this touchpoint is about.")
+        else:
+            form.add_error("find", "No matches. Try part of the name, an email or a phone number.")
+    context = {"form": form, "page_title": "Log a touchpoint", "back": home, "save_label": "Next",
+               "editor_context": "Who was it with?", "fields_template": "internal/ui/section_fields.html",
+               "full_page_editor": request.headers.get("X-BTW-Editor") != "1"}
+    if form.fields["pick"].choices:
+        form.fields["find"].widget = django_forms.HiddenInput()
+    else:
+        form.fields["pick"].widget = django_forms.HiddenInput()
+    return editor_response(request, template="crm/form.html", panel="internal/ui/record_form_panel.html", context=context)
 
 
 @staff_view

@@ -20,9 +20,9 @@ from .intake_discovery import effective_travel
 
 CARDS = {
     'identity': ('Contact', Participant, ('first_name', 'last_name', 'preferred_name', 'contact_email', 'contact_phone', 'city', 'state', 'postal_code')),
-    'skills': ('Skills & Trades', ParticipantCareerProfile, ('career_interests', 'skills_interests', 'years_of_experience')),
+    'skills': ('Skills', ParticipantCareerProfile, ('skills_interests', 'years_of_experience')),
     'education': ('Education & Training', ParticipantCareerProfile, ('education_training',)),
-    'preferences': ('Work preferences', ParticipantCareerProfile, ('employment_interest', 'preferred_work_type', 'preferred_locations', 'career_interests')),
+    'preferences': ('Work preferences', ParticipantCareerProfile, ('employment_interest', 'preferred_work_type', 'career_interests')),
 }
 
 
@@ -35,8 +35,8 @@ class ProfileCardForm(forms.Form):
         record = person if model is Participant else getattr(person, 'career_profile', None)
         for name in fields:
             field = model._meta.get_field(name).formfield()
-            field.label = {'career_interests': 'Trade and career interests', 'skills_interests': 'Reported skills and interests',
-                'years_of_experience': 'Reported overall experience (years)', 'education_training': 'Education & training',
+            field.label = {'career_interests': 'Trades they want to work in', 'skills_interests': 'Skills they have',
+                'years_of_experience': 'Years of work experience (total)', 'education_training': 'School and training',
                 'employment_interest': 'Seeking work', 'preferred_work_type': 'Work type',
                 'preferred_locations': 'Preferred work locations'}.get(name, field.label)
             if isinstance(field.widget, forms.Textarea):
@@ -45,12 +45,6 @@ class ProfileCardForm(forms.Form):
                 field.choices = [(v, 'Not set' if v == '' else l) for v, l in field.choices]
             self.fields[name] = field
             self.initial[name] = getattr(record, name, model._meta.get_field(name).get_default()) if record else model._meta.get_field(name).get_default()
-        if card == 'identity':
-            self.fields['primary_identifier'] = Participant._meta.get_field('primary_identifier').formfield(label='Type')
-            self.fields['primary_identifier'].choices = [('', 'Not set')] + [(value, label) for value, label in self.fields['primary_identifier'].choices if value]
-            self.fields['primary_identifier'].widget = forms.RadioSelect(attrs={'class': 'btw-chip-choices'}, choices=self.fields['primary_identifier'].choices)
-            self.fields['type_revision'] = forms.CharField(widget=forms.HiddenInput)
-            self.initial.update(primary_identifier=person.primary_identifier, type_revision=type_revision(person))
         if card == 'preferences':
             self.fields['employment_interest'].choices = [('', 'Not set'),('seeking','Yes'),('open','Maybe'),('not_seeking','No')]
             self.fields['travel'] = forms.ChoiceField(required=False, label='Willing to travel', choices=[('', 'Not set'), ('yes', 'Yes'), ('maybe', 'Maybe'), ('no', 'No')])
@@ -68,7 +62,7 @@ class ProfileCardForm(forms.Form):
                 from apps.recruiting.forms import PreferencesForm
                 initial = initial_preferences(person)
                 preferences = PreferencesForm(initial=initial)
-                for key in ('current_employment_status', 'employment_classification', 'availability_classification', 'willing_to_relocate'):
+                for key in ('current_employment_status', 'employment_classification', 'willing_to_relocate'):
                     self.fields[key] = preferences.fields[key]
                     self.initial[key] = initial[key]
                     if key == 'employment_classification':
@@ -79,13 +73,13 @@ class ProfileCardForm(forms.Form):
                 self.fields['recruiting_revision'] = forms.IntegerField(widget=forms.HiddenInput)
                 self.initial['recruiting_revision'] = initial['revision']
                 # Catalog classifications repeat the questions above; only show them when the catalog has options or a value is set.
-                for key in ('employment_classification', 'availability_classification'):
+                for key in ('employment_classification',):
                     if len(list(self.fields[key].choices)) <= 1 and not self.initial.get(key):
                         del self.fields[key]
             # Standard answers as tap-to-pick chips.
-            labels = {'employment_interest': 'Seeking work', 'travel': 'Will travel', 'willing_to_relocate': 'Will relocate',
-                      'current_employment_status': 'Working now', 'preferred_work_type': 'Work type wanted',
-                      'availability_classification': 'Availability', 'employment_classification': 'Employment type'}
+            labels = {'employment_interest': 'Looking for work', 'travel': 'Willing to travel', 'willing_to_relocate': 'Willing to relocate',
+                      'current_employment_status': 'Currently working', 'preferred_work_type': 'Work desired',
+                      'career_interests': 'Trades they want to work in', 'employment_classification': 'Employment type'}
             for key, label in labels.items():
                 if key in self.fields:
                     self.fields[key].label = label
@@ -93,7 +87,7 @@ class ProfileCardForm(forms.Form):
                 if key in self.fields:
                     self.fields[key].widget = forms.RadioSelect(attrs={'class': 'btw-chip-choices'}, choices=self.fields[key].choices)
         if card == 'preferences':
-            self.order_fields(['employment_interest','travel','willing_to_relocate','current_employment_status','preferred_work_type','availability_classification','employment_classification','career_interests','preferred_locations'])
+            self.order_fields(['employment_interest','preferred_work_type','career_interests','current_employment_status','employment_classification','travel','willing_to_relocate'])
         self.initial['revision'] = profile_revision(person)
         if card == 'preferences':
             primary=['employment_interest','travel','willing_to_relocate','current_employment_status']
@@ -154,9 +148,9 @@ def save_card(*, actor, participant_id, card, data):
             save_preferences(actor=actor, participant_id=person.pk, data={key: data[key] for key in class_fields},
                 expected_revision=data['recruiting_revision'], why='Staff updated Employment & preferences')
     changed = {key: data[key] for key in fields if not record or data[key] != getattr(record, key)}
-    type_changed = card == 'identity' and data['primary_identifier'] != person.primary_identifier
+    type_changed = 'primary_identifier' in data and data['primary_identifier'] != person.primary_identifier
     # Type has its own intake-ownership revision, checked before any write.
-    if card == 'identity' and data['type_revision'] != type_revision(person):
+    if 'type_revision' in data and data['type_revision'] != type_revision(person):
         raise ValidationError('This type changed while you were editing. Reload before saving.')
     if type_changed:
         person = save_identifier(actor=actor, participant_id=person.pk,

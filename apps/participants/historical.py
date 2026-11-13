@@ -22,9 +22,105 @@ MAX_FILE_BYTES = 5 * 1024 * 1024
 MAX_XLSX_EXPANDED = 30 * 1024 * 1024
 MAX_ROWS = 10000
 MAX_COLUMNS = 100
+PROFILE_IMPORT_FIELDS = ("participant_type", "found_us", "looking_for_work", "work_desired", "trades_wanted",
+                         "willing_to_travel", "skills", "years_experience", "education", "staff_note")
 IMPORT_FIELDS = ("identity_uuid", "first_name", "last_name", "preferred_name", "email", "phone",
-                 "date_of_birth", "city", "state", "postal_code", "event_uuid", "event_name",
+                 "date_of_birth", "city", "state", "postal_code", *PROFILE_IMPORT_FIELDS, "event_uuid", "event_name",
                  "event_date", "group_name", "simulator_score", "score_method", "score_source", "scored_at")
+# Plain names, grouped the way the participant profile shows them.
+IMPORT_GROUPS = (
+    ("Contact", (("first_name", "First name"), ("last_name", "Last name"), ("preferred_name", "Preferred name"),
+                 ("email", "Email"), ("phone", "Phone"), ("city", "City"), ("state", "State"), ("postal_code", "ZIP code"),
+                 ("date_of_birth", "Date of birth"))),
+    ("Details", (("participant_type", "Participant type"), ("found_us", "How they found us"))),
+    ("Work preferences", (("looking_for_work", "Looking for work"), ("work_desired", "Work desired"),
+                          ("trades_wanted", "Trades they want to work in"), ("willing_to_travel", "Willing to travel"))),
+    ("Qualifications", (("skills", "Skills they have"), ("years_experience", "Years of work experience"),
+                        ("education", "School and training"))),
+    ("Staff notes", (("staff_note", "Staff note"),)),
+    ("Past event (optional)", (("event_name", "Event name"), ("event_date", "Event date"), ("group_name", "Group"),
+                               ("event_uuid", "BTW event ID"))),
+    ("Past Simulator score (optional)", (("simulator_score", "Simulator score"), ("score_method", "How it was scored"),
+                                         ("score_source", "Where the score came from"), ("scored_at", "Scored on"))),
+    ("BTW records", (("identity_uuid", "BTW participant ID"),)),
+)
+IMPORT_LABELS = {key: label for _, fields in IMPORT_GROUPS for key, label in fields}
+# Extra column names people commonly use, matched without case, spaces or punctuation.
+_ALIASES = {"first_name": ("first", "firstname", "givenname", "fname"), "last_name": ("last", "lastname", "surname", "familyname", "lname"),
+            "preferred_name": ("nickname", "goesby"), "email": ("emailaddress", "contactemail", "e-mail"),
+            "phone": ("phonenumber", "mobile", "cell", "cellphone", "contactphone"), "postal_code": ("zip", "zipcode", "postcode", "postalcode"),
+            "date_of_birth": ("dob", "birthdate", "birthday"), "participant_type": ("type", "participanttype", "persontype", "role"),
+            "found_us": ("source", "leadsource", "howtheyfoundus", "howdidyouhearaboutus", "referral", "foundus"),
+            "looking_for_work": ("seekingwork", "lookingforwork", "jobseeking", "employmentinterest"),
+            "work_desired": ("worktype", "workdesired", "employmenttype", "fullorparttime"),
+            "trades_wanted": ("trade", "trades", "tradeinterest", "tradeinterests", "careerinterests", "interests"),
+            "willing_to_travel": ("travel", "willtravel", "willingtotravel"), "skills": ("skills", "skillsinterests"),
+            "years_experience": ("experience", "yearsofexperience", "yearsexperience"), "education": ("education", "training", "schooling"),
+            "staff_note": ("note", "notes", "comments", "staffnote"), "simulator_score": ("score", "simscore")}
+
+
+def _key(text):
+    return "".join(ch for ch in str(text).casefold() if ch.isalnum())
+
+
+def guess_mapping(headers):
+    """Suggest a column for each field from the spreadsheet's own header names."""
+    by_key = {}
+    for header in headers:
+        by_key.setdefault(_key(header), header)
+    result = {}
+    for field in IMPORT_FIELDS:
+        for candidate in (field, IMPORT_LABELS.get(field, ""), *_ALIASES.get(field, ())):
+            header = by_key.get(_key(candidate))
+            if header and header not in result.values():
+                result[field] = header
+                break
+    return result
+
+
+_YES = {"yes", "y", "true", "1", "seeking", "seekingwork"}
+_NO = {"no", "n", "false", "0", "notseeking", "notseekingwork"}
+_MAYBE = {"maybe", "open", "unsure", "possibly", "opentoopportunities"}
+
+
+def _choice(value, choices, label):
+    wanted = _key(value)
+    for stored, shown in choices:
+        if stored and wanted in (_key(stored), _key(shown)):
+            return stored
+    raise ValidationError(f"{label} \"{value}\" is not one of the choices.")
+
+
+def _profile_values(data):
+    from .identifier_definitions import PrimaryIdentifier
+    from .models import ParticipantCareerProfile
+    if data.get("participant_type"):
+        aliases = {"jobseeker": "job_seeker", "teacher": "teacher_instructor", "instructor": "teacher_instructor"}
+        data["participant_type"] = aliases.get(_key(data["participant_type"])) or _choice(data["participant_type"], PrimaryIdentifier.choices, "Participant type")
+    if data.get("looking_for_work"):
+        word = _key(data["looking_for_work"])
+        data["looking_for_work"] = "seeking" if word in _YES else "not_seeking" if word in _NO else "open" if word in _MAYBE else _choice(
+            data["looking_for_work"], ParticipantCareerProfile._meta.get_field("employment_interest").choices, "Looking for work")
+    if data.get("work_desired"):
+        aliases = {"fulltime": "full_time", "ft": "full_time", "parttime": "part_time", "pt": "part_time", "either": "any", "anything": "any"}
+        data["work_desired"] = aliases.get(_key(data["work_desired"])) or _choice(
+            data["work_desired"], ParticipantCareerProfile._meta.get_field("preferred_work_type").choices, "Work desired")
+    if data.get("willing_to_travel"):
+        word = _key(data["willing_to_travel"])
+        if word not in _YES | _NO:
+            raise ValidationError("Willing to travel must be Yes or No.")
+        data["willing_to_travel"] = "yes" if word in _YES else "no"
+    if data.get("years_experience"):
+        try:
+            years = Decimal(data["years_experience"])
+            if not years.is_finite() or years < 0 or years > 80:
+                raise InvalidOperation
+            data["years_experience"] = str(years.quantize(Decimal("0.1")))
+        except InvalidOperation as exc:
+            raise ValidationError("Years of work experience must be a number from 0 to 80.") from exc
+    for field, limit in (("found_us", 240), ("trades_wanted", 4000), ("skills", 4000), ("education", 4000), ("staff_note", 4000)):
+        if len(data.get(field, "")) > limit:
+            raise ValidationError(f"{IMPORT_LABELS[field]} is too long.")
 EXPORT_FIELDS = ("identity_uuid", "first_name", "last_name", "preferred_name", "email", "phone",
                  "date_of_birth", "city", "state", "postal_code", "event_name", "event_date",
                  "group_name", "registration_source", "simulator_score", "score_method", "score_source")
@@ -151,6 +247,7 @@ def _normalize(raw, mapping):
             raise ValidationError("Simulator score requires its original method and source.")
     if data.get("scored_at"):
         data["scored_at"] = _score_timestamp(data["scored_at"]).isoformat()
+    _profile_values(data)
     return data
 
 
@@ -219,7 +316,10 @@ def _import_row(row, *, actor, participant=None):
             fields["date_of_birth"] = _date(data["date_of_birth"], "date_of_birth")
         if data.get("identity_uuid"):
             fields["identity_uuid"] = uuid.UUID(data["identity_uuid"])
+        if data.get("participant_type"):
+            fields["primary_identifier"] = data["participant_type"]
         participant = Participant.objects.create(**fields)
+    _import_profile(participant, data, actor=actor, row=row)
     event_record = None
     if any(data.get(field) for field in ("event_name", "event_date", "event_uuid", "group_name")):
         event = Event.objects.filter(pk=data["event_uuid"]).first() if data.get("event_uuid") else None
@@ -238,6 +338,35 @@ def _import_row(row, *, actor, participant=None):
     audit_action(actor=actor, action="historical.import.row", instance=row,
                  new_data={"participant_uuid": str(participant.identity_uuid), "row": row.row_number})
     return participant
+
+
+def _import_profile(participant, data, *, actor, row):
+    """Fill profile answers from the sheet. Existing answers on a matched person are never overwritten."""
+    from .models import ParticipantCareerProfile, ParticipantNote
+    from .workspace_models import ParticipantAcquisition
+    career_values = {"employment_interest": data.get("looking_for_work", ""), "preferred_work_type": data.get("work_desired", ""),
+                     "career_interests": data.get("trades_wanted", ""), "skills_interests": data.get("skills", ""),
+                     "education_training": data.get("education", "")}
+    career_values = {key: value for key, value in career_values.items() if value}
+    if data.get("years_experience"):
+        career_values["years_of_experience"] = Decimal(data["years_experience"])
+    if data.get("willing_to_travel"):
+        career_values["willing_to_travel"] = data["willing_to_travel"] == "yes"
+    if career_values:
+        career, _ = ParticipantCareerProfile.objects.get_or_create(participant=participant)
+        blank = {key: value for key, value in career_values.items() if getattr(career, key) in ("", None)}
+        if blank:
+            for key, value in blank.items():
+                setattr(career, key, value)
+            career.save()
+    if data.get("participant_type") and not participant.primary_identifier:
+        Participant.objects.filter(pk=participant.pk, primary_identifier="").update(primary_identifier=data["participant_type"])
+    if data.get("found_us") and not ParticipantAcquisition.objects.filter(participant=participant).exists():
+        ParticipantAcquisition.objects.create(participant=participant, channel="online", online_source=data["found_us"],
+            recorded_by=actor, provenance=f"Spreadsheet import: {row.batch.original_filename} row {row.row_number}"[:240],
+            correction_reason="Imported from spreadsheet")
+    if data.get("staff_note"):
+        ParticipantNote.objects.create(participant=participant, content=data["staff_note"], author=actor)
 
 
 def import_ready(batch, *, actor):

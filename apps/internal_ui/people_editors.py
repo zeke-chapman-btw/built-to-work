@@ -80,7 +80,7 @@ def people_conflict(form):
     text=' '.join(str(error) for error in form.non_field_errors()).lower()
     return has_edit_conflict(form) or 'reload' in text
 
-TITLES={'historical_index':'Historical records','historical_map':'Map import columns','historical_batch':'Review import preview','historical_review':'Review historical identity','historical_export':'Export participants','staff_requests':'Account requests','staff_request_resolve':'Review account request','intake_review_queue':'Participant Review Queue','intake_review_detail':'Review intake identity'}
+TITLES={'historical_index':'Import participants','historical_map':'Match your columns','historical_batch':'Review import preview','historical_review':'Review historical identity','historical_export':'Export participants','staff_requests':'Account requests','staff_request_resolve':'Review account request','intake_review_queue':'Participant Review Queue','intake_review_detail':'Review intake identity'}
 COMPACT={'NoteForm','RecordActionForm','ParticipantEventForm','WorkExperienceForm','AcquisitionForm'}
 
 def form_groups(form,career_form=None):
@@ -95,7 +95,7 @@ def form_groups(form,career_form=None):
         used.add('confirm_distinct')
         if career_form:
             add('Interests and experience',['career_interests','skills_interests','years_of_experience','education_training'],True,career_form)
-            add('Work preferences',['employment_status','employment_interest','preferred_work_type','preferred_locations','work_availability','willing_to_travel'],True,career_form)
+            add('Work preferences',['employment_interest','preferred_work_type','willing_to_travel'],True,career_form)
         used.add('audit_reason')
     else:
         add('',[f.name for f in form.visible_fields()])

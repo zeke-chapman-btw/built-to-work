@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from apps.internal_ui.people_editors import people_render as render, people_saved
 from django.views.decorators.http import require_http_methods, require_POST
-from .historical import (EXPORT_FIELDS, IMPORT_FIELDS, MAX_FILE_BYTES, MAX_ROWS, MAX_COLUMNS, _read_rows, create_batch, export_participants,
+from .historical import (EXPORT_FIELDS, IMPORT_FIELDS, IMPORT_GROUPS, guess_mapping, MAX_FILE_BYTES, MAX_ROWS, MAX_COLUMNS, _read_rows, create_batch, export_participants,
                          import_ready, preview_batch, resolve_review)
 from .models import (HistoricalImportBatch, HistoricalImportRow, HistoricalMappingTemplate, Participant)
 
@@ -30,7 +30,7 @@ def historical_index(request):
         except ValidationError as exc:
             error = "; ".join(exc.messages)
     batches = HistoricalImportBatch.objects.order_by("-created_at")[:50]
-    return render(request, "participants/historical_index.html", {"batches": batches, "error": error, "import_fields": IMPORT_FIELDS,
+    return render(request, "participants/historical_index.html", {"batches": batches, "error": error, "import_fields": IMPORT_FIELDS, "import_groups": IMPORT_GROUPS,
         "import_max_mb": MAX_FILE_BYTES // (1024 * 1024), "import_max_rows": MAX_ROWS, "import_max_columns": MAX_COLUMNS})
 
 
@@ -41,14 +41,14 @@ def historical_map(request, batch_id):
     batch = get_object_or_404(HistoricalImportBatch, pk=batch_id)
     error = ""
     try:
-        headers, _ = _read_rows(batch)
+        headers, rows = _read_rows(batch)
     except ValidationError as exc:
-        headers = []
+        headers, rows = [], []
         error = "; ".join(exc.messages)
     templates = HistoricalMappingTemplate.objects.filter(kind="import", created_by=request.user)
     selected = request.GET.get("template")
     template = templates.filter(pk=selected).first() if selected and selected.isdigit() else None
-    mapping = template.mapping if template else batch.mapping
+    mapping = template.mapping if template else (batch.mapping or guess_mapping(headers))
     if request.method == "POST" and headers:
         mapping = {field: request.POST.get("map_" + field, "") for field in IMPORT_FIELDS}
         mapping = {field: column for field, column in mapping.items() if column}
@@ -61,9 +61,14 @@ def historical_map(request, batch_id):
             return people_saved(request,"participants:historical-batch", batch_id=batch.pk)
         except ValidationError as exc:
             error = "; ".join(exc.messages)
-    mapped = [(field, mapping.get(field, "")) for field in IMPORT_FIELDS]
-    return render(request, "participants/historical_map.html", {"batch": batch, "headers": headers,
-        "mapped": mapped, "templates": templates, "error": error})
+    first = rows[0][1] if rows else {}
+    examples = [{"header": header, "example": (first.get(header) or "")[:40]} for header in headers]
+    groups = [{"title": title, "fields": [{"name": name, "label": label, "chosen": mapping.get(name, "")} for name, label in fields]}
+              for title, fields in IMPORT_GROUPS]
+    used = set(mapping.values())
+    return render(request, "participants/historical_map.html", {"batch": batch, "headers": headers, "examples": examples,
+        "groups": groups, "row_count": len(rows), "unused": [h for h in headers if h not in used],
+        "templates": templates, "error": error, "page_title": "Match your columns"})
 
 
 @login_required

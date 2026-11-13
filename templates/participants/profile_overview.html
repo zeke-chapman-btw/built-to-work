@@ -35,10 +35,10 @@
 </section>
 
 <section id="profile-details" tabindex="-1" class="card p3-reading-section" aria-labelledby="profile-details-title">
-  <header class="btw-panel-heading"><h2 id="profile-details-title">Details</h2>{% if can_manage_acquisition and not participant.archived_at %}<a data-record-editor href="{% url 'participants:acquisition-edit' participant.pk %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit how they found us">Edit</a>{% endif %}</header>
+  <header class="btw-panel-heading"><h2 id="profile-details-title">Details</h2>{% if can_manage_acquisition and not participant.archived_at %}<a data-record-editor href="{% url 'participants:acquisition-edit' participant.pk %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit details">Edit</a>{% endif %}</header>
   <dl class="pv-facts">
-    <dt>Type</dt><dd>{% if participant.primary_identifier %}{% ui_badge participant.get_primary_identifier_display 'info' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Found us</dt><dd class="pv-found">{% if acquisition_record and acquisition_record.channel != 'unknown' %}{% if acquisition_record.channel == 'event' %}{% ui_badge 'Event' 'success' %}{% if acquisition_record.event_id %}{% if can_view_events %}<a href="{% url 'events:event_detail' acquisition_record.event_id %}">{{ acquisition_record.event.name }}</a>{% else %}<span>{{ acquisition_record.event.name }}</span>{% endif %}{% endif %}{% else %}{% ui_badge 'Online' 'info' %}{% if acquisition_record.online_source %}<span>{{ acquisition_record.online_source }}</span>{% endif %}{% endif %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Participant type</dt><dd>{% if participant.primary_identifier %}{% ui_badge participant.get_primary_identifier_display 'info' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>How they found us</dt><dd class="pv-found">{% if acquisition_record and acquisition_record.channel != 'unknown' %}{% if acquisition_record.channel == 'event' %}{% ui_badge 'Event' 'success' %}{% if acquisition_record.event_id %}{% if can_view_events %}<a href="{% url 'events:event_detail' acquisition_record.event_id %}">{{ acquisition_record.event.name }}</a>{% else %}<span>{{ acquisition_record.event.name }}</span>{% endif %}{% endif %}{% else %}{% ui_badge 'Online' 'info' %}{% if acquisition_record.online_source %}<span>{{ acquisition_record.online_source }}</span>{% endif %}{% endif %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
     <dt>Date joined</dt><dd>{{ participant.created_at|date:'M j, Y' }}</dd>
   </dl>
 </section>
@@ -46,14 +46,12 @@
 {% with prefs=current_profile_preferences %}<section id="profile-preferences" tabindex="-1" class="card p3-reading-section" aria-labelledby="profile-work-preferences-title">
   <header class="btw-panel-heading"><h2 id="profile-work-preferences-title">Work preferences</h2>{% if can_edit_profile and not participant.archived_at %}<a data-profile-manager data-record-editor href="{% url 'participants:profile-card-edit' participant.pk 'preferences' %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit work preferences">Edit</a>{% endif %}</header>
   <dl class="pv-facts">
-    <dt>Seeking work</dt><dd>{% if prefs and prefs.interest != 'Not recorded' %}{% ui_badge prefs.interest prefs.interest|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Will travel</dt><dd>{% if prefs and prefs.travel != 'Not recorded' %}{% ui_badge prefs.travel prefs.travel|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Will relocate</dt><dd>{% if prefs and prefs.relocation != 'Not recorded' %}{% ui_badge prefs.relocation prefs.relocation|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Work type</dt><dd>{% if career.preferred_work_type %}{% ui_badge career.get_preferred_work_type_display 'neutral' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Working now</dt><dd>{% if prefs and prefs.employment.value != 'Not recorded' %}{% ui_badge prefs.employment.value 'neutral' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Availability</dt><dd>{% if prefs and prefs.availability.value != 'Not recorded' %}{{ prefs.availability.value }}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Trade interest</dt><dd>{% if current_interests %}{{ current_interests|truncatechars:80 }}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Locations</dt><dd>{% if career.preferred_locations %}{{ career.preferred_locations|truncatechars:80 }}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Looking for work</dt><dd>{% if prefs and prefs.interest != 'Not recorded' %}{% ui_badge prefs.interest prefs.interest|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Work desired</dt><dd>{% if career.preferred_work_type %}{% ui_badge career.get_preferred_work_type_display 'neutral' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Trades wanted</dt><dd>{% if current_interests %}{{ current_interests|truncatechars:80 }}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Currently working</dt><dd>{% if prefs and prefs.employment.value != 'Not recorded' %}{% ui_badge prefs.employment.value 'neutral' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Willing to travel</dt><dd>{% if prefs and prefs.travel != 'Not recorded' %}{% ui_badge prefs.travel prefs.travel|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Willing to relocate</dt><dd>{% if prefs and prefs.relocation != 'Not recorded' %}{% ui_badge prefs.relocation prefs.relocation|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
   </dl>
 </section>{% endwith %}
 </div>
@@ -102,45 +100,45 @@
 
   {% if can_view_qualifications %}
   <section id="profile-credentials" tabindex="-1" class="pv-subsection" aria-labelledby="profile-credentials-title">
-    <h3 id="profile-credentials-title">Licenses &amp; certifications</h3>
+    <h3 id="profile-credentials-title">Licenses &amp; certifications{% if can_add_qualification and not participant.archived_at %} <a class="pv-subsection-action" data-profile-manager data-record-editor href="{% url 'participants:staff-participant-qualifications' participant.pk %}?add=1&amp;return_to={{ request.get_full_path|urlencode }}" aria-label="Add a license or certification">+ Add</a>{% endif %}</h3>
     {% for group in profile_qualification_groups %}{% if group.key == 'credentials' %}{% for item in group.items %}{% with record=item.record %}{% with badge=record|people_verification %}
-    <div class="pv-qual-row"><span>{{ record }}{% if record.expiration_date %}<small>Expires {{ record.expiration_date|date:'M j, Y' }}</small>{% endif %}</span>{% ui_badge badge.label badge.tone %}</div>
+    <div class="pv-qual-row"><span>{{ record }}{% if record.expiration_date %}<small>Expires {{ record.expiration_date|date:'M j, Y' }}</small>{% endif %}</span><span class="pv-row-actions">{% ui_badge badge.label badge.tone %}{% include 'participants/qual_edit_link.html' %}</span></div>
     {% endwith %}{% endwith %}{% empty %}<p class="p3-empty">No licenses or certifications yet.</p>{% endfor %}{% if group.total > group.items|length %}<a class="pv-more" data-profile-manager data-record-editor href="{% people_section_url 'qualifications' %}">All {{ group.total }}</a>{% endif %}{% endif %}{% endfor %}
   </section>
   {% endif %}
 
   <section id="profile-skills" tabindex="-1" class="pv-subsection" aria-labelledby="profile-skills-title">
-    <h3 id="profile-skills-title">Skills &amp; trades{% if can_edit_profile and not participant.archived_at %} <a class="pv-subsection-action" data-profile-manager data-record-editor href="{% people_section_url 'career' %}&amp;card=skills" aria-label="Manage skills and trades">Edit</a>{% endif %}</h3>
+    <h3 id="profile-skills-title">Skills &amp; trades{% if can_edit_profile and not participant.archived_at %} <a class="pv-subsection-action" data-profile-manager data-record-editor href="{% url 'participants:profile-card-edit' participant.pk 'skills' %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit skills">Edit</a>{% endif %}</h3>
     {% if career.skills_interests %}<div class="pv-reported"><p>{{ career.skills_interests|linebreaksbr }}</p><span class="pv-meta">Reported skills · Self-reported</span></div>{% endif %}
     {% if hands_on_entries %}<div class="pv-chips">{% for entry in hands_on_entries|slice:':8' %}<span class="pv-chip" title="{{ entry.skills }}{% if entry.duration %} · {{ entry.duration }}{% endif %}">{{ entry.area }}</span>{% endfor %}</div>{% endif %}
     {% if can_view_qualifications %}{% for group in profile_qualification_groups %}{% if group.key == 'skills' %}{% for item in group.items %}{% with record=item.record %}{% with badge=record|people_verification %}
-    <div class="pv-qual-row pv-qual-skill"><span>{{ record }}{% if record.years_of_experience != None %}<small>{{ record.years_of_experience }} years</small>{% endif %}</span>{% ui_badge badge.label badge.tone %}</div>
+    <div class="pv-qual-row pv-qual-skill"><span>{{ record }}{% if record.years_of_experience != None %}<small>{{ record.years_of_experience }} years</small>{% endif %}</span><span class="pv-row-actions">{% ui_badge badge.label badge.tone %}{% include 'participants/qual_edit_link.html' %}</span></div>
     {% if record.experience_details %}<details class="profile-evidence pv-evidence"><summary>Details &amp; evidence</summary><p>{{ record.experience_details|truncatewords:45 }}</p><a data-profile-manager data-record-editor href="{% people_section_url 'qualifications' %}">Full qualification &amp; evidence</a></details>{% endif %}
     {% endwith %}{% endwith %}{% endfor %}{% if group.total > group.items|length %}<a class="pv-more" data-profile-manager data-record-editor href="{% people_section_url 'qualifications' %}">All {{ group.total }} skills</a>{% endif %}{% endif %}{% endfor %}{% endif %}
     {% if not career.skills_interests and not hands_on_entries and not profile_skill_total %}<p class="p3-empty">No skills yet.</p>{% endif %}
   </section>
 
   <section id="profile-work" tabindex="-1" class="pv-subsection" aria-labelledby="profile-work-title">
-    <h3 id="profile-work-title">Experience{% if career and career.years_of_experience != None %} <span class="pv-meta">· {{ career.years_of_experience }} years reported</span>{% endif %}{% if can_edit_profile and not participant.archived_at %} <a class="pv-subsection-action" data-profile-manager data-record-editor href="{% people_section_url 'career' %}&amp;card=work" aria-label="Manage work history">Edit</a>{% endif %}</h3>
-    {% for work in profile_work_history %}<div class="pv-work"><p>{{ work.role|default:'Role not provided' }}{% if work.employer %}, {{ work.employer }}{% endif %}</p><p class="pv-meta">{% if work.started_on %}{{ work.started_on|date:'Y' }}{% endif %}{% if work.started_on or work.is_current or work.ended_on %} – {% endif %}{% if work.is_current or work.source == 'intake' %}now{% elif work.ended_on %}{{ work.ended_on|date:'Y' }}{% endif %}{% if work.location %}{% if work.started_on or work.is_current or work.ended_on %} · {% endif %}{{ work.location }}{% endif %}</p></div>
+    <h3 id="profile-work-title">Experience{% if career and career.years_of_experience != None %} <span class="pv-meta">· {{ career.years_of_experience }} years reported</span>{% endif %}{% if can_edit_profile and not participant.archived_at %} <a class="pv-subsection-action" data-profile-manager data-record-editor href="{% url 'participants:work-add' participant.pk %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Add a job">+ Add job</a>{% endif %}</h3>
+    {% for work in profile_work_history %}<div class="pv-work"><p>{{ work.role|default:'Role not provided' }}{% if work.employer %}, {{ work.employer }}{% endif %}{% if can_edit_profile and not participant.archived_at %}{% if work.participant_id == participant.pk %} <a class="pv-row-edit" data-profile-manager data-record-editor href="{% url 'participants:work-edit' participant.pk work.pk %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit this job">Edit</a>{% endif %}{% endif %}</p><p class="pv-meta">{% if work.started_on %}{{ work.started_on|date:'Y' }}{% endif %}{% if work.started_on or work.is_current or work.ended_on %} – {% endif %}{% if work.is_current or work.source == 'intake' %}now{% elif work.ended_on %}{{ work.ended_on|date:'Y' }}{% endif %}{% if work.location %}{% if work.started_on or work.is_current or work.ended_on %} · {% endif %}{{ work.location }}{% endif %}</p></div>
     {% empty %}<p class="p3-empty">No work history yet.</p>{% endfor %}
     {% if profile_work_total > profile_work_history|length %}<a class="pv-more" data-profile-manager data-record-editor href="{% people_section_url 'career' %}&amp;card=work">All {{ profile_work_total }} jobs</a>{% endif %}
   </section>
 
   <section id="profile-education" tabindex="-1" class="pv-subsection" aria-labelledby="profile-education-title">
-    <h3 id="profile-education-title">Education{% if can_edit_profile and not participant.archived_at %} <a class="pv-subsection-action" data-profile-manager data-record-editor href="{% people_section_url 'career' %}&amp;card=education" aria-label="Manage education and training">Edit</a>{% endif %}</h3>
+    <h3 id="profile-education-title">Education{% if can_edit_profile and not participant.archived_at %} <a class="pv-subsection-action" data-profile-manager data-record-editor href="{% url 'participants:profile-card-edit' participant.pk 'education' %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit education">Edit</a>{% endif %}</h3>
     {% if career.education_training %}<p>{{ career.education_training|linebreaksbr }}</p>{% endif %}
     {% if profile_intake_who %}<dl class="pv-facts">{% for fact in profile_intake_who %}<dt>{{ fact.label }}</dt><dd>{{ fact.value }}</dd>{% endfor %}</dl>{% endif %}
     {% if can_view_qualifications %}{% for group in profile_qualification_groups %}{% if group.key == 'education' %}{% for item in group.items %}{% with record=item.record %}{% with badge=record|people_verification %}
-    <div class="pv-qual-row"><span>{{ record }}{% if record.reported_provider %}<small>{{ record.reported_provider }}</small>{% endif %}</span>{% ui_badge badge.label badge.tone %}</div>
+    <div class="pv-qual-row"><span>{{ record }}{% if record.reported_provider %}<small>{{ record.reported_provider }}</small>{% endif %}</span><span class="pv-row-actions">{% ui_badge badge.label badge.tone %}{% include 'participants/qual_edit_link.html' %}</span></div>
     {% endwith %}{% endwith %}{% endfor %}{% endif %}{% endfor %}{% endif %}
     {% if not career.education_training and not profile_intake_who and not profile_education_total %}<p class="p3-empty">No education yet.</p>{% endif %}
   </section>
 
   {% for group in profile_qualification_groups %}{% if group.key == 'other' and group.total %}
   <section id="profile-other" tabindex="-1" class="pv-subsection" aria-labelledby="profile-other-title">
-    <h3 id="profile-other-title">Other</h3>
-    {% for item in group.items %}{% with record=item.record %}{% with badge=record|people_verification %}<div class="pv-qual-row"><span>{{ record }}</span>{% ui_badge badge.label badge.tone %}</div>{% endwith %}{% endwith %}{% endfor %}
+    <h3 id="profile-other-title">Other qualifications</h3>
+    {% for item in group.items %}{% with record=item.record %}{% with badge=record|people_verification %}<div class="pv-qual-row"><span>{{ record }}</span><span class="pv-row-actions">{% ui_badge badge.label badge.tone %}{% include 'participants/qual_edit_link.html' %}</span></div>{% endwith %}{% endwith %}{% endfor %}
   </section>
   {% endif %}{% endfor %}
 </section>

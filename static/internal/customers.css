@@ -162,3 +162,15 @@ body.internal-app.has-customer-page #main-content .cx-chip-link { font-size:12px
 body.internal-app.has-customer-page #main-content .cx-actions-menu > summary { min-height:44px; height:44px; padding:0 12px; display:inline-flex; align-items:center; }
 @media (max-width:1100px) { body.internal-app.has-customer-page #main-content .pos-grid { grid-template-columns:1fr 1fr; } body.internal-app.has-customer-page #main-content .pos-tiles { grid-template-columns:1fr 1fr; } }
 @media (max-width:700px) { body.internal-app.has-customer-page #main-content .pos-grid, body.internal-app.has-customer-page #main-content .pos-tiles { grid-template-columns:1fr; } }
+.cx-card .pv-touchpoint{display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #eceef1;font-size:14px}
+.cx-card .pv-touchpoint p{margin:0}
+.cx-card .pv-touchpoint-icon{flex:none;display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#f1f3f5;color:#3f4650}
+.cx-card .pv-touchpoint-icon .btw-icon{width:15px;height:15px}
+.cx-card .pv-touchpoint-title{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;font-weight:600}
+.cx-card .pv-touchpoint-title a{color:#ac1929;text-decoration:none}
+.cx-card .pv-meta{font-size:13px;font-weight:400;color:var(--muted,#56616d)}
+.cx-card .pv-count{font-weight:500;color:var(--muted,#56616d);letter-spacing:0}
+.cx-next{margin:0;padding:10px 16px;font-size:13px;color:var(--muted,#56616d)}
+.cx-next a{color:#ac1929;text-decoration:none}
+.cx-person strong{display:flex;align-items:center;gap:8px}
+.cx-row-edit{margin-left:auto;font-size:13px;font-weight:600}

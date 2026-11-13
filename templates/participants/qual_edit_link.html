@@ -1,0 +1,1 @@
+{% if can_change_qualification and not participant.archived_at %}<a class="pv-row-edit" data-profile-manager data-record-editor href="{% url 'participants:staff-participant-qualification-edit' participant.pk record.pk %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit {{ record }}">Edit</a>{% endif %}

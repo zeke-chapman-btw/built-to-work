@@ -39,6 +39,8 @@ def _staff_workspace_context(request, *, title, description):
         "can_view_registrations": _can(request.user, "events.view_eventregistration"),
         "can_view_tickets": _can(request.user, "events.view_qrticket"),
         "can_view_qualifications": _can(request.user, "participants.view_participantqualification"),
+        "can_add_qualification": _can(request.user, "participants.add_participantqualification"),
+        "can_change_qualification": _can(request.user, "participants.change_participantqualification"),
         "can_view_documents": _can(request.user, "participants.view_participantdocument"),
         "can_manage_documents": _can(request.user, "participants.manage_participant_documents"),
         "can_view_quiz_results": _can(request.user, "assessments.view_quizattempt"),

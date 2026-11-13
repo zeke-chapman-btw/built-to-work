@@ -19,6 +19,9 @@ def manager_response(request, template, context, **kwargs):
     ctx.setdefault('page_title', 'Participant information')
     focused_form = template in {'participants/staff_document_edit.html','participants/staff_document_replace.html'} or (template=='participants/staff_qualifications.html' and (ctx.get('is_edit') or (ctx.get('can_add') and (request.GET.get('add') or request.method=='POST'))))
     if focused_form:
+        if template=='participants/staff_qualifications.html':
+            ctx['page_title']='Edit qualification' if ctx.get('is_edit') else 'Add qualification'
+            ctx['editor_context']=str(ctx['participant'])
         ctx.update(back=ctx['people_return_url'],save_label='Save changes',fields_template='internal/ui/section_fields.html',cautious_save=True,editor_return_label='profile',full_page_editor=False)
         return editor_response(request,template=template,context=ctx,panel='internal/ui/record_form_panel.html')
     if template == 'participants/staff_profile.html':

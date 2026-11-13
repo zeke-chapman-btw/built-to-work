@@ -384,10 +384,10 @@ def work_edit(request, participant_id, object_id=None):
         except ValidationError as exc:
             form.add_error(None, exc)
         else:
-            messages.success(request, "Work history saved.")
+            messages.success(request, "Job saved.")
             return people_saved(request,reverse("participants:staff-profile", args=[person.pk]) + "?section=career")
     return render(request, "participants/workspace_form.html", context(request, participant=person, form=form,
-        page_title="Edit work history" if row else "Add work history", submit_label="Save work history",
+        page_title="Edit job" if row else "Add a job", submit_label="Save job",
         return_url=reverse("participants:staff-profile", args=[person.pk]) + "?section=career"),
         status=400 if form.is_bound and form.errors else 200)
 
@@ -402,14 +402,22 @@ def acquisition_edit(request, participant_id):
                            initial={"revision": row.updated_at.isoformat() if row else "none"})
     if request.method == "POST" and form.is_valid():
         try:
-            correct_acquisition(actor=request.user, participant_id=person.pk, data=form.cleaned_data)
+            with transaction.atomic():
+                if "participant_type" in form.cleaned_data:
+                    from .identifier_services import revision as type_revision, save_identifier
+                    if form.cleaned_data["type_revision"] != type_revision(person):
+                        raise ValidationError("Participant type changed while you were editing. Reload before saving.")
+                    if form.cleaned_data["participant_type"] != person.primary_identifier:
+                        save_identifier(actor=request.user, participant_id=person.pk, value=form.cleaned_data["participant_type"],
+                                        expected_revision=form.cleaned_data["type_revision"], reason="Details card: participant type updated by staff")
+                correct_acquisition(actor=request.user, participant_id=person.pk, data=form.cleaned_data)
         except ValidationError as exc:
             form.add_error(None, exc)
         else:
             messages.success(request, "Saved.")
             return people_saved(request, "participants:staff-profile", participant_id=person.pk)
     return render(request, "participants/workspace_form.html", context(request, participant=person, form=form,
-        page_title="Edit how they found us", submit_label="Save changes", return_url=reverse("participants:staff-profile", args=[person.pk])),
+        page_title="Edit details", submit_label="Save changes", return_url=reverse("participants:staff-profile", args=[person.pk])),
         status=400 if form.is_bound and form.errors else 200)
 
 

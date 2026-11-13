@@ -1,5 +1,5 @@
 {% extends 'internal/base.html' %}{% load static event_ui tz %}
-{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/dashboard.css' %}?v=home-v2-1"><link rel="stylesheet" href="{% static 'internal/css/workspace_ui.css' %}?v=pass-b-business-2"><link rel="stylesheet" href="{% static 'internal/css/corrective_p2.css' %}">{% endblock %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/dashboard.css' %}?v=home-v2-2"><link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=rui-1112">{% include 'crm/assets.html' %}{% include 'internal/ui/event_editor_assets.html' %}<link rel="stylesheet" href="{% static 'internal/css/workspace_ui.css' %}?v=pass-b-business-2"><link rel="stylesheet" href="{% static 'internal/css/corrective_p2.css' %}">{% endblock %}
 {% block body_class %}{{ block.super }} home-dashboard-page has-corrective-p2 has-shared-workspace{% endblock %}
 {% block page_heading %}<header class="page-header home-greeting"><h1>{{ home_greeting }}</h1><span class="home-date">{{ home_today|date:'l, F j, Y' }}</span></header>{% endblock %}
 {% block content %}
@@ -15,7 +15,7 @@
     </section>
     <aside class="card hv2-actions" aria-labelledby="hv2-actions-title">
       <header class="hv2-head"><h2 id="hv2-actions-title">Quick actions</h2><a class="hv2-link" href="{{ quick_actions_edit_url }}">Customize</a></header>
-      <div class="hv2-action-list">{% for action in quick_actions %}<a class="hv2-action"{% if action.id == 'create-task' %} data-task-create{% endif %} href="{{ action.url }}">{{ action.label }}</a>{% empty %}<p class="hv2-empty">No quick actions yet</p>{% endfor %}</div>
+      {% if quick_actions %}<div class="hv2-create-grid">{% for action in quick_actions %}{% if action.create %}<a class="hv2-action hv2-create"{% if action.id == 'create-task' %} data-task-create{% endif %}{% if action.editor %} data-record-editor{% endif %} href="{{ action.url }}">{{ action.label }}</a>{% endif %}{% endfor %}</div><div class="hv2-action-list">{% for action in quick_actions %}{% if not action.create %}<a class="hv2-action" href="{{ action.url }}">{{ action.label }}</a>{% endif %}{% endfor %}</div>{% else %}<p class="hv2-empty">No quick actions yet</p>{% endif %}
     </aside>
   </div>
 

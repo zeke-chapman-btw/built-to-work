@@ -120,6 +120,15 @@ def workspace(request, org_id, tab="overview"):
         from apps.crm.presentation import history_context
         relationship = history_context(request, organization=org)
         data.update({key: relationship[key] for key in ("crm_summary", "crm_subject_is_company", "crm_previous_url", "crm_can_add", "crm_new_url", "crm_btw_allowed") if key in relationship})
+        # Same recent-touchpoint list the participant profile shows: what was actually done, newest first.
+        touchpoints, touchpoint_total = [], 0
+        for audience in ("btw", "employer"):
+            if relationship.get("crm_" + audience + "_allowed"):
+                touchpoints.extend(relationship.get("crm_" + audience + "_rows") or [])
+                found = relationship.get("crm_" + audience + "_page")
+                touchpoint_total += found.paginator.count if found is not None else 0
+        touchpoints.sort(key=lambda item: item["occurred_at"], reverse=True)
+        data.update(overview_touchpoints=touchpoints[:4], overview_touchpoint_total=touchpoint_total)
         data.update(
             overview_contacts=org.contacts.filter(is_active=True).order_by("last_name", "first_name", "pk")[:4],
             overview_contact_total=org.contacts.filter(is_active=True).count(),

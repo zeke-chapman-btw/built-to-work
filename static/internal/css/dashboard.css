@@ -204,3 +204,7 @@ a.hv2-stat:hover{border-color:#bbb}
 .hv2 .hv2-stat{padding:16px 18px}
 .hv2-action{padding:8px 12px}
 .hv2-activity-list li{position:relative}.hv2-read{position:absolute;right:14px;top:12px;margin:0}
+.hv2-create-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:14px 16px 0}
+.hv2-create-grid .hv2-action.hv2-create{text-align:center;font-weight:600;padding:9px 8px;color:#ac1929;border-color:#efc9cd;background:#fff}
+.hv2-create-grid .hv2-action.hv2-create:hover{background:#fdf3f4;border-color:#ac1929}
+.hv2-create-grid+.hv2-action-list{padding-top:10px}

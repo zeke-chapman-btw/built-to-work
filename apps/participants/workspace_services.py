@@ -56,7 +56,7 @@ def save_profile(*, actor, participant_id, person_data, career_data, revision, r
         raise ValidationError("This profile changed while you were editing. Reload before saving.")
     before = {"person": snapshot(person, PERSON_FIELDS), "career": snapshot(career, CAREER_FIELDS) if career else {}}
     updates = {key: person_data[key] for key in PERSON_FIELDS}
-    updates.update({key: career_data[key] for key in CAREER_FIELDS})
+    updates.update({key: career_data[key] for key in CAREER_FIELDS if key in career_data})
     person = update_participant_profile(participant=person, updates=updates)
     career = ParticipantCareerProfile.objects.get(participant=person)
     audit(actor, "profile.updated", person, before=before,

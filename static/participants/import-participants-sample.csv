@@ -1,2 +1,2 @@
-identity_uuid,first_name,last_name,preferred_name,email,phone,date_of_birth,city,state,postal_code,event_uuid,event_name,event_date,group_name,simulator_score,score_method,score_source,scored_at
-,SYNTHETIC,Example,,sample-participant@example.test,,,Example City,GA,,,SYNTHETIC past event,2026-10-01,SYNTHETIC example group,,,,
+First name,Last name,Preferred name,Email,Phone,City,State,ZIP,Participant type,How they found us,Looking for work,Work desired,Trades wanted,Willing to travel,Skills,Years of experience,Education,Staff note,Event name,Event date
+SYNTHETIC,Example,,sample-participant@example.test,,Example City,GA,,Job seeker,Facebook,Yes,Full time,Welding; Electrical,Yes,Forklift,2,High school diploma,Met at career fair,SYNTHETIC past event,2026-10-01

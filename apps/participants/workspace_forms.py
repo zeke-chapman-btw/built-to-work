@@ -38,9 +38,10 @@ class CareerProfileForm(forms.ModelForm):
         model = ParticipantCareerProfile
         fields = ("employment_status", "employment_interest", "career_interests", "skills_interests",
                   "years_of_experience", "education_training", "work_availability", "willing_to_travel",
-                  "preferred_locations", "preferred_work_type")
-        labels = {"years_of_experience": "Reported overall experience (years)", "career_interests": "Trade and career interests",
-                  "skills_interests": "Reported skills and interests"}
+                  "preferred_work_type")
+        labels = {"years_of_experience": "Years of work experience (total)", "career_interests": "Trades they want to work in",
+                  "skills_interests": "Skills they have", "education_training": "School and training",
+                  "employment_interest": "Looking for work", "preferred_work_type": "Work desired", "willing_to_travel": "Willing to travel"}
         widgets = {key: forms.Textarea(attrs={"rows": 3}) for key in ("career_interests", "skills_interests", "education_training")}
 
 
@@ -65,11 +66,14 @@ class WorkExperienceForm(OptionalReasonMixin, forms.ModelForm):
             self.fields["employer"].required = True
             self.fields["role"].required = True
     revision = forms.CharField(required=False, widget=forms.HiddenInput)
-    audit_reason = forms.CharField(required=False, max_length=500, label="Source / note (optional)")
+    audit_reason = forms.CharField(required=False, max_length=500, widget=forms.HiddenInput)
     class Meta:
         model = ParticipantWorkExperience
         fields = ("employer", "role", "location", "started_on", "ended_on", "is_current", "description", "source_reference")
-        widgets = {"started_on": DATE, "ended_on": DATE, "description": forms.Textarea(attrs={"rows": 4})}
+        widgets = {"started_on": DATE, "ended_on": DATE, "description": forms.Textarea(attrs={"rows": 3})}
+        labels = {"employer": "Employer", "role": "Job title", "location": "Where", "started_on": "Started",
+                  "ended_on": "Ended", "is_current": "They still work here", "description": "What they did",
+                  "source_reference": "Where this info came from"}
 
 
 class AcquisitionForm(forms.ModelForm):
@@ -83,12 +87,24 @@ class AcquisitionForm(forms.ModelForm):
     def __init__(self, *args, participant, user, **kwargs):
         super().__init__(*args, **kwargs)
         self.instance.participant = participant
+        # Participant type sits on the Details card, so it is edited here too (when allowed).
+        if user.has_perm("participants.change_participant"):
+            from .identifier_services import revision as type_revision
+            type_choices = [("", "Not set")] + [(v, l) for v, l in Participant._meta.get_field("primary_identifier").choices if v]
+            self.fields["participant_type"] = forms.ChoiceField(label="Participant type", required=False, choices=type_choices,
+                widget=forms.RadioSelect(attrs={"class": "btw-chip-choices"}))
+            self.fields["type_revision"] = forms.CharField(widget=forms.HiddenInput)
+            self.initial.setdefault("participant_type", participant.primary_identifier)
+            self.initial.setdefault("type_revision", type_revision(participant))
+            self.order_fields(["participant_type", "channel", "event", "online_source"])
         choices = [("event", "Event"), ("online", "Online"), ("unknown", "Not known")]
         self.fields["channel"].choices = choices
         self.fields["channel"].widget = forms.RadioSelect(attrs={"class": "btw-chip-choices"}, choices=choices)
         self.fields["event"].queryset = Event.objects.order_by("-start_at") if user.has_perm("events.view_event") else Event.objects.none()
         self.fields["event"].empty_label = "Choose an event"
         self.fields["online_source"].widget.attrs["placeholder"] = "Website, Facebook, Indeed, a friend..."
+        self.fields["event"].widget.attrs["data-show-when"] = "channel=event"
+        self.fields["online_source"].widget.attrs["data-show-when"] = "channel=online"
     def clean(self):
         data = super().clean()
         channel = data.get("channel")

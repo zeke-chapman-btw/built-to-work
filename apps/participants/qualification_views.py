@@ -32,10 +32,16 @@ class ParticipantQualificationForm(forms.ModelForm):
         self.fields["catalog_entry"].queryset = choices.order_by("name")
         self.fields["catalog_entry"].required = False
         self.fields["custom_name"].required = False
-        self.fields["custom_name"].label = "Custom qualification"
-        self.fields["catalog_entry"].label = "Catalog qualification"
-        self.fields["custom_name"].help_text = "Use a custom qualification when it is not in the catalog."
-        self.fields["experience_details"].label = "Experience and credential details"
+        self.fields["custom_name"].label = "Not in the list? Type it"
+        self.fields["catalog_entry"].label = "Qualification"
+        self.fields["catalog_entry"].empty_label = "Pick from the list"
+        self.fields["custom_name"].help_text = ""
+        self.fields["experience_details"].label = "Details"
+        self.fields["years_of_experience"].label = "Years of experience"
+        self.fields["issue_date"].label = "Issued"
+        self.fields["expiration_date"].label = "Expires"
+        self.fields["notes"].label = "Staff notes"
+        self.fields["is_self_reported"].label = "They told us (not yet checked)"
     def clean(self):
         data=super().clean()
         if self.instance.pk and data.get('expected_revision') and data['expected_revision'] != self.instance.updated_at.isoformat():
