@@ -230,7 +230,7 @@ def stages(request,key=None):
     row=get_object_or_404(RecruitingStage,pk=key) if key else None
     form=StageConfigurationForm(request.POST or None,initial={'expected_revision':row.revision if row else None,
         'key':row.pk if row else '', 'label':row.label if row else '', 'position':row.position if row else 0,'is_active':row.is_active if row else True})
-    if row:form.fields['key'].disabled=True
+    if row:form.fields['key'].disabled=True;form.fields['key'].widget=forms.HiddenInput()
     if request.method=='POST' and form.is_valid():
         d=form.cleaned_data
         try:workflow.configure_stage(actor=request.user,key=d['key'],label=d['label'],position=d['position'],is_active=d['is_active'],expected_revision=d['expected_revision'],why=d['reason'])
@@ -245,9 +245,9 @@ def stages(request,key=None):
         from apps.internal_ui.record_editors import editor_response
         from .ui_context import catalog_url
         return editor_response(request, template='recruiting/stages.html', panel='internal/ui/record_form_panel.html', context={
-            'form':form,'page_title':'Edit stage' if row else 'New stage','back':catalog_url(request,'recruiting:stages'),'save_label':'Save',
+            'form':form,'page_title':'Edit stage' if row else 'New stage','editor_context':row.label if row else '','back':catalog_url(request,'recruiting:stages'),'save_label':'Save changes',
             'fields_template':'internal/ui/section_fields.html','editor_return_label':'stages','full_page_editor':False})
-    return page(request,'recruiting/stages.html',page_title='Recruiting Stages',stages=RecruitingStage.objects.all(),form=form)
+    return page(request,'recruiting/stages.html',page_title='Stages',stages=RecruitingStage.objects.all(),form=form)
 
 
 class RequestForm(forms.Form):

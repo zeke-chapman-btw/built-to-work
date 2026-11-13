@@ -62,3 +62,5 @@ body.internal-app #main-content .recruiting-workspace .workspace-table th{font-s
 .rc-page .qb-q-actions .button { min-height:36px; }
 /* Candidate page uses the customer/participant profile layout at full width */
 body.internal-app #main-content .recruiting-workspace .customer-page.rc-candidate { max-width:none; margin:0; }
+/* Settings catalog pages (stages, classifications) line up with the settings title */
+body.internal-app #main-content .recruiting-workspace.is-settings-catalog { margin:0 24px; width:auto; }
