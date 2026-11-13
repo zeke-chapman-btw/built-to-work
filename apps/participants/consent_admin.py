@@ -17,7 +17,7 @@ from .models import ConsentDocumentVersion
 
 
 class ConsentUploadForm(forms.Form):
-    key = forms.SlugField(initial='btw-intake', max_length=80)
+    key = forms.SlugField(initial='btw-intake', max_length=80, label='Consent ID', help_text='Use the same ID for every version of the same consent.')
     version = forms.CharField(max_length=40)
     title = forms.CharField(max_length=200)
     original_pdf = forms.FileField(label='Original PDF')
@@ -68,7 +68,7 @@ class ConsentAdminWorkflowMixin:
         from .workspace_views import context
         name = template.rsplit("/", 1)[-1]
         return render(request, "participants/consents/" + name,
-                      context(request, page_title="Consents",
+                      context(request, page_title=values.get("title") or "Consents",
                               page_description="Manage consent documents, publication and recorded acceptances.", **values))
 
     def get_model_perms(self, request):
@@ -108,7 +108,7 @@ class ConsentAdminWorkflowMixin:
             messages.success(request, 'PDF stored as a draft. Review its text before publishing.')
             return redirect(self._url('review', document))
         return self._render(request, 'admin/participants/consentdocumentversion/upload.html',
-                      {'form': form, 'title': 'Upload consent PDF', 'opts': self.model._meta})
+                      {'form': form, 'title': 'Upload consent', 'opts': self.model._meta})
 
     def review_view(self, request, document_id):
         self._require_admin(request)

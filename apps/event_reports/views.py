@@ -60,7 +60,7 @@ def index(request):
     summary=reporting.aggregate(reports)
     if request.GET.get('export')=='csv' and valid:return performance_csv(request,reports,'cross-event-summary.csv')
     rows=Paginator(reports,20).get_page(request.GET.get('page'))
-    return page(request,'index',page_title='Event Reports & Analytics',form=form,rows=rows,summary=summary,status=200 if valid else 400)
+    return page(request,'index',page_title='Compare events',form=form,rows=rows,summary=summary,status=200 if valid else 400)
 
 @portal
 def detail(request,event_id):
@@ -190,7 +190,7 @@ def review(request,event_id):
     else:
         obj=CostReview.objects.filter(event=event).first()
         form=ReviewForm(initial={'revision':svc.review_token(event,obj),**{k:getattr(obj,k) if obj else False for k in ['manual_reviewed','incentives_reviewed','staff_reviewed']}})
-    return page(request,'form',page_title='Reconcile event costs',form=form,event=event,summary='Confirm recorded sources, including intentional zero components. Source changes invalidate this review. Pending workdays/trips and missing assignment-day workdays remain incomplete.',back=reverse('event_reports:detail',args=[event.pk]),status=400 if form.is_bound else 200)
+    return page(request,'form',page_title='Reconcile event costs',form=form,event=event,summary='Check each item once it is complete. If there were none, it still counts as checked. Any later change reopens this review.',back=reverse('event_reports:detail',args=[event.pk]),status=400 if form.is_bound else 200)
 
 @portal
 def categories(request):

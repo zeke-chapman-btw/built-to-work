@@ -19,6 +19,10 @@ class CoreConfig(AppConfig):
                 elif kwargs.get("label_suffix") is None:
                     kwargs["label_suffix"] = ""
                 base_init(self, *args, **kwargs)
+                for field in self.fields.values():
+                    label = str(field.label or "")
+                    if label.startswith("Is ") and len(label) > 3:
+                        field.label = label[3:4].upper() + label[4:]
             form_init._btw_plain = True
             forms.BaseForm.__init__ = form_init
         original = forms.ModelChoiceField.__init__

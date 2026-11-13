@@ -1,1 +1,1 @@
-{% extends 'operations/task_base.html' %}{% block task_content %}<p><a href="{{ back }}">← Back</a></p><section class="card task-create-page">{% include 'operations/quick_form.html' %}</section>{% endblock %}
+{% extends 'operations/task_base.html' %}{% block page_heading %}<a class="event-back ls-back" href="{{ back }}">← Back</a>{{ block.super }}{% endblock %}{% block task_content %}<section class="card task-create-page">{% include 'operations/quick_form.html' %}</section>{% endblock %}

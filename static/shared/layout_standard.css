@@ -202,3 +202,31 @@ body.internal-app #main-content .cx-list-row .cx-list-name.pl-person { display:f
 body.internal-app #main-content .cx-list-row .cx-list-name .pl-person-text small { color:var(--muted,#6b7280); font-size:12px; }
 body.internal-app #main-content .cx-list-head { background:#fafafa; font-size:12px !important; color:#666 !important; text-transform:none !important; letter-spacing:0 !important; font-weight:400 !important; }
 body.internal-app #main-content .cx-list-head > span { font-size:12px !important; text-transform:none !important; letter-spacing:0 !important; font-weight:400 !important; }
+
+/* Shared filter card, stat tiles and tables (match the event Report tab) */
+body.internal-app #main-content .ls-filter-card { padding:16px; margin:0 0 16px; }
+body.internal-app #main-content .ls-filter-row { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; }
+body.internal-app #main-content .ls-filter-field { flex:1 1 170px; min-width:0; display:flex; flex-direction:column; gap:6px; }
+body.internal-app #main-content .ls-filter-field label { font-size:13px; font-weight:500; margin:0; }
+body.internal-app #main-content .ls-filter-field :is(input,select) { width:100%; min-height:40px; box-sizing:border-box; }
+body.internal-app #main-content .ls-filter-actions { display:flex; gap:8px; }
+body.internal-app #main-content .ls-filter-actions .button { min-height:40px; display:inline-flex; align-items:center; }
+body.internal-app #main-content .ls-section { padding:0; margin:0 0 16px; overflow:hidden; }
+body.internal-app #main-content .ls-section-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; border-bottom:1px solid #eef0f2; }
+body.internal-app #main-content .ls-section-head h2 { margin:0; font-size:15px; }
+body.internal-app #main-content .ls-tiles { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; padding:16px; }
+body.internal-app #main-content .ls-tile { border:1px solid #e4e4e7; border-radius:8px; padding:12px 16px; display:flex; flex-direction:column; gap:4px; }
+body.internal-app #main-content .ls-tile span { font-size:12px; color:#555; }
+body.internal-app #main-content .ls-tile strong { font-size:20px; line-height:28px; font-weight:700; }
+body.internal-app #main-content .ls-note { margin:0; padding:0 16px 16px; font-size:13px; }
+body.internal-app #main-content .ls-table { width:100%; border-collapse:collapse; font-size:14px; }
+body.internal-app #main-content .ls-table th { text-align:left; font-size:12px; font-weight:500; color:#666; background:#fafafa; padding:10px 16px; white-space:nowrap; }
+body.internal-app #main-content .ls-table td { padding:12px 16px; border-top:1px solid #f0f1f3; vertical-align:top; }
+body.internal-app #main-content .ls-table td small { display:block; color:#6b7280; font-size:12px; margin-top:2px; }
+body.internal-app #main-content .ls-table td a { font-weight:600; color:#111; text-decoration:none; }
+body.internal-app #main-content .ls-table td a:hover { text-decoration:underline; }
+body.internal-app #main-content .pv-unset { color:#b7bcc2; }
+body.internal-app #main-content .people-workspace .people-form.card, body.internal-app.has-participant-workspace #main-content .people-form.card { max-width:none !important; margin-inline:0 !important; }
+body.internal-app #main-content .ls-section-head h2 { border:0 !important; padding:0 !important; }
+body.internal-app.has-tasks-refinement #main-content .ls-back { margin:16px 0 0 24px; }
+body.internal-app.has-settings-workspace #main-content > :is(.event-back,.btw-focused-editor,.cleanup-sections,.settings-navigation-frame) { margin-left:24px !important; margin-right:24px !important; }

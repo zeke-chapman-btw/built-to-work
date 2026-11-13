@@ -81,14 +81,14 @@ class CategoryForm(forms.ModelForm):
         return (self.cleaned_data.get('reason') or '').strip() or ('Created.' if self.instance._state.adding else 'Updated.')
 
 class ReviewForm(RevisionForm):
-    manual_reviewed=forms.BooleanField(required=False,label='Manual expenses are reconciled, including an intentional zero if no expenses exist')
-    incentives_reviewed=forms.BooleanField(required=False,label='Actual distributed incentives are reconciled, including an intentional zero')
-    staff_reviewed=forms.BooleanField(required=False,label='Staff workdays and trip declarations have been reviewed, including an intentional zero')
+    manual_reviewed=forms.BooleanField(required=False,label='All expenses are entered')
+    incentives_reviewed=forms.BooleanField(required=False,label='All gift cards and incentives given out are entered')
+    staff_reviewed=forms.BooleanField(required=False,label='Staff days worked and mileage are reviewed')
 
 class EventFilter(forms.Form):
     q=forms.CharField(required=False,max_length=200,label='Event name')
-    start=forms.DateField(required=False,widget=forms.DateInput(attrs={'type':'date'}),label='Event start date from')
-    end=forms.DateField(required=False,widget=forms.DateInput(attrs={'type':'date'}),label='Event start date through')
+    start=forms.DateField(required=False,widget=forms.DateInput(attrs={'type':'date'}),label='From')
+    end=forms.DateField(required=False,widget=forms.DateInput(attrs={'type':'date'}),label='To')
     status=forms.ChoiceField(required=False,choices=[('','All statuses')]+list(Event.Status.choices))
     event_type=forms.ChoiceField(required=False,choices=[('','All event types')]+list(Event.EventType.choices))
     def clean(self):
