@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.http import HttpResponseNotAllowed
+from django.http import HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -20,6 +20,19 @@ def available():
 
 def revision(obj):
     return obj.updated_at.isoformat() if obj else 'new'
+
+
+@staff_view
+def status(request):
+    actor = prefs.current_user(request.user)
+    if not actor.is_superuser:
+        raise PermissionDenied
+    if request.method != 'GET':
+        return HttpResponseNotAllowed(['GET'])
+    from .reminder_health import inspect_scheduler
+    response = JsonResponse(inspect_scheduler())
+    response['Cache-Control'] = 'no-store, private'
+    return response
 
 
 @staff_view

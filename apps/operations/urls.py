@@ -2,6 +2,7 @@ from django.urls import path
 from . import views, task_workspace_views, notification_views, template_views, execution_views, equipment_views, screen_library, reminder_views
 app_name="operations"
 urlpatterns=[
+ path('tasks/reminders/status/', reminder_views.status, name='reminder-status'),
  path('tasks/reminders/preferences/', reminder_views.personal, name='reminder-preferences'),
  path('tasks/reminders/company/', reminder_views.policy, name='reminder-company'),
  path('tasks/reminders/events/<uuid:event_id>/', reminder_views.policy, name='reminder-event'),

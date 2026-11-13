@@ -43,6 +43,8 @@ Inspect successful automatic operation without delivering a manual tick:
 python manage.py run_task_reminders --status
 ```
 
+Administrators can also read `/operations/tasks/reminders/status/`. This GET-only, uncached endpoint reports the actual Render commit and safe scheduler health metadata, without task/user details or execution error text. It also works when reminders are disabled, for activation diagnosis. It never schedules or delivers work.
+
 `last_automatic_at` advances only after a successful automatic tick. Manual runs cannot update it. `automatic_healthy` requires a recent successful automatic run and no outstanding reported error. Startup logs include `TASK_REMINDER_WORKER_STARTED`.
 
 For bounded recovery only:
