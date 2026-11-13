@@ -14,11 +14,21 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = StaffProfile
         fields = ("first_name", "last_name", "email", "phone", "street_address", "city", "state", "zip_code", "shirt_size", "is_active", "internal_notes")
-        widgets = {"internal_notes": forms.Textarea(attrs={"rows": 3})}
+        widgets = {"internal_notes": forms.Textarea(attrs={"rows": 3}),
+                   "shirt_size": forms.RadioSelect(attrs={"class": "btw-chip-choices"})}
+        labels = {"zip_code": "ZIP code", "is_active": "Active", "internal_notes": "Admin notes"}
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["shirt_size"].choices = [c for c in self.fields["shirt_size"].choices if c[0]]
         if not self.instance._state.adding:
             self.initial["revision"] = self.instance.updated_at.isoformat()
+
+    @property
+    def field_groups(self):
+        groups = (("Contact", ("first_name", "last_name", "email", "phone")),
+                  ("Address", ("street_address", "city", "state", "zip_code")),
+                  ("Other", ("shirt_size", "is_active", "internal_notes")))
+        return [{"title": t, "fields": [self[n] for n in names if n in self.fields]} for t, names in groups]
 
 
 class AccountLinkForm(forms.Form):

@@ -5,7 +5,8 @@
   "use strict";
 
   function wrapperOf(input) {
-    return input.closest(".ux-field, .btw-field, .field, [data-field]") || input.parentElement;
+    /* Hide the whole grid cell so a hidden question leaves no empty gap. */
+    return input.closest(".btw-editor-grid > div") || input.closest(".ux-field, .btw-field, .field, [data-field]") || input.parentElement;
   }
   function currentValue(form, name) {
     const checked = form.querySelector('input[name="' + name + '"]:checked');

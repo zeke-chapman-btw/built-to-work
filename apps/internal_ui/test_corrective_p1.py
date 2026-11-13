@@ -51,8 +51,8 @@ class CorrectivePassOneTests(TestCase):
         self.client.force_login(self.viewer, backend='django.contrib.auth.backends.ModelBackend')
         self.assertEqual(self.client.get(reverse('internal:workspace', kwargs={'workspace_id':'administration'})).status_code,403)
         response=self.client.get(reverse('internal:settings'))
-        self.assertNotContains(response, 'Expense Categories')
-        self.assertNotContains(response, 'Django administration')
+        self.assertNotContains(response, 'Expense categories')
+        self.assertNotContains(response, 'Database admin')
 
     def test_one_active_destination_and_event_expense_context(self):
         for path, expected in [('/events/', 'events'), ('/internal/reports/','reports'), ('/reports/categories/','settings'), ('/reports/events/123/','events'), ('/internal/settings/','settings'), ('/events/operations/','settings'), ('/operations/tasks/','tasks')]:

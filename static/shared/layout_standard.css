@@ -281,3 +281,9 @@ body.internal-app #main-content .pos-list .recruiting-pagination { padding:12px 
 @media (max-width:640px) { .pf-step fieldset { grid-template-columns:1fr; } .pf-dots { display:none; } }
 .pf-stepper .pf-step-title { font-size:22px !important; line-height:30px !important; font-weight:600 !important; margin:0 !important; }
 .pf-actions [hidden], .pf-step[hidden] { display:none !important; }
+/* Tighter space between a page title and its tabs */
+body.internal-app.btw-platform.has-workspace-landing #main-content .btw-landing-header { min-height:0; margin-bottom:8px; }
+body.internal-app #main-content .recruiting-tabs { margin:12px 0 16px !important; }
+body.internal-app #main-content .btw-landing-selection .recruiting-tabs { margin-top:0 !important; }
+/* Settings tabs line up with the page title on every settings page */
+body.internal-app #main-content > .settings-navigation-frame { padding-left:0 !important; padding-right:0 !important; margin-left:24px !important; margin-right:24px !important; }

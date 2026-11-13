@@ -250,7 +250,7 @@ class Reporting9FTests(TestCase):
         with self.assertRaises(ValidationError):self.expense()
         self.assertEqual(self.client.get(reverse('event_reports:detail',args=[self.event.pk])).status_code,200)
     def test_category_history_and_usage_portal(self):
-        self.expense();self.client.force_login(self.admin,backend="django.contrib.auth.backends.ModelBackend");response=self.client.get(reverse('event_reports:categories'));self.assertEqual(response.status_code,200);self.assertContains(response,'1 historical expense references')
+        self.expense();self.client.force_login(self.admin,backend="django.contrib.auth.backends.ModelBackend");response=self.client.get(reverse('event_reports:categories'));self.assertEqual(response.status_code,200);self.assertContains(response,'used 1 time')
     def test_financial_history_portal(self):
         obj=self.expense();response=self.client.get(reverse('event_reports:action',args=['expense',obj.pk,'history']));self.assertEqual(response.status_code,200);self.assertContains(response,'event_reports.expense.created')
     def test_compensation_settings_not_duplicated(self):

@@ -54,7 +54,7 @@ class StaffAccountGroupingTests(TestCase):
         self.assertNotIn('can_finalize_event_reports', names)
         self.assertNotIn('can_approve_weekly_payroll', names)
         for name in ('existing_profile', 'existing_account', 'login_mode', 'my_pay_access', 'confirm_identity'):
-            self.assertEqual(names.count(name), 1, name)
+            self.assertEqual(names.count(name), {'login_mode': 3, 'my_pay_access': 2}.get(name, 1), name)
 
     def test_grouping_preserves_every_visible_field_once(self):
         form = StaffAccountForm(actor=self.admin)

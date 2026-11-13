@@ -196,7 +196,7 @@ def review(request,event_id):
 def categories(request):
     svc.require_configure(request.user);readonly(request)
     rows=ExpenseCategory.objects.annotate(usage=Count('expenses'))
-    return page(request,'categories',page_title='Expense Categories',rows=rows)
+    return page(request,'categories',page_title='Expense categories',rows=rows)
 
 @portal
 def category_edit(request,category_id=None):
@@ -205,8 +205,17 @@ def category_edit(request,category_id=None):
     form=CategoryForm(instance=obj)
     if request.method=='POST':
         saved,form=svc.save_category(actor=request.user,data=request.POST,category_id=category_id)
-        if saved:messages.success(request,'Expense category saved. Historical expense labels and accounting treatment were preserved.');return redirect('event_reports:categories')
-    return page(request,'form',page_title='Edit expense category' if obj else 'Add expense category',form=form,back=reverse('event_reports:categories'),status=400 if form.is_bound else 200)
+        if saved:
+            messages.success(request,'Category saved. Past expenses are unchanged.')
+            from apps.internal_ui.record_editors import editor_success
+            return editor_success(request,reverse('event_reports:categories'))
+    title='Edit category' if obj else 'Add category'
+    if request.headers.get('X-BTW-Editor')=='1':
+        from apps.internal_ui.record_editors import editor_response
+        return editor_response(request,template='event_reports/form.html',panel='internal/ui/record_form_panel.html',context={
+            'form':form,'page_title':title,'editor_context':obj.name if obj else '','back':reverse('event_reports:categories'),
+            'save_label':'Save changes','fields_template':'internal/ui/section_fields.html','full_page_editor':False})
+    return page(request,'form',page_title=title,form=form,back=reverse('event_reports:categories'),status=400 if form.is_bound else 200)
 
 def csv_response(request,filename,headers,rows,event=None):
     svc.require_report(request.user)

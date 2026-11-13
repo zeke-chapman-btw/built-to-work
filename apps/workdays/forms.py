@@ -42,14 +42,15 @@ class CompensationConfigurationForm(RevisionForm):
         return data
 
 class RoleForm(CompensationConfigurationForm):
-    name = forms.CharField(max_length=80)
-    is_active = forms.BooleanField(required=False,initial=True)
-    per_diem_eligible = forms.TypedChoiceField(choices=[('unknown','Needs manager review'),('yes','Eligible under configured daily policy'),('no','Not eligible')],coerce=lambda v:{'unknown':None,'yes':True,'no':False}[v])
+    name = forms.CharField(max_length=80,label='Role name')
+    is_active = forms.BooleanField(required=False,initial=True,label='Active')
+    per_diem_eligible = forms.TypedChoiceField(label='Gets per diem?',choices=[('yes','Yes'),('no','No'),('unknown','Not sure yet')],coerce=lambda v:{'unknown':None,'yes':True,'no':False}[v],
+        widget=forms.RadioSelect(attrs={'class':'btw-chip-choices'}),help_text='"Not sure yet" means a manager checks it on each workday.')
 class RateForm(CompensationConfigurationForm):
     kind = forms.ChoiceField(choices=CompensationRate.KINDS)
     role = forms.ModelChoiceField(queryset=StaffRole.objects.all(),required=False)
     amount = forms.DecimalField(max_digits=12,decimal_places=4,min_value=0,label='Approved amount (USD; mileage is USD per mile)')
-    effective_from = forms.DateField(widget=forms.DateInput(attrs={'type':'date'}))
+    effective_from = forms.DateField(label='Starts on',widget=forms.DateInput(attrs={'type':'date'}),help_text='Days before this keep the old rate.')
     def clean(self):
         data=super().clean()
         if data.get('kind')=='role' and not data.get('role'):self.add_error('role','Select the daily-pay role.')
