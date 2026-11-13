@@ -1,6 +1,7 @@
 {% load ui_patterns %}<div class="btw-editor-grid">
 <div>{% ui_field form.first_name %}</div><div>{% ui_field form.last_name %}</div>
-<div>{% ui_field form.preferred_name %}</div><div>{% ui_field form.primary_identifier %}</div>
+<div>{% ui_field form.preferred_name %}</div><div></div>
 <div>{% ui_field form.contact_phone %}</div><div>{% ui_field form.contact_email %}</div>
 </div>
 <div class="btw-editor-grid pp-address-row"><div>{% ui_field form.city %}</div><div>{% ui_field form.state %}</div><div>{% ui_field form.postal_code %}</div></div>
+<div class="btw-editor-grid" style="margin-top:12px"><div class="btw-editor-wide">{% ui_field form.primary_identifier %}</div></div>

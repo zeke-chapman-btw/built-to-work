@@ -76,7 +76,6 @@ class AcquisitionForm(forms.ModelForm):
     """How we first met this person: at an event, online, or not known."""
     revision = forms.CharField(widget=forms.HiddenInput)
     audit_reason = forms.CharField(max_length=1000, required=False, widget=forms.HiddenInput)
-    found_on = forms.DateField(required=False, label="Date", widget=forms.DateInput(attrs={"type": "date"}))
     class Meta:
         model = ParticipantAcquisition
         fields = ("channel", "event", "online_source")
@@ -84,15 +83,12 @@ class AcquisitionForm(forms.ModelForm):
     def __init__(self, *args, participant, user, **kwargs):
         super().__init__(*args, **kwargs)
         self.instance.participant = participant
-        self.fields["channel"].choices = [("event", "At an event"), ("online", "Online"), ("unknown", "Not known")]
+        choices = [("event", "Event"), ("online", "Online"), ("unknown", "Not known")]
+        self.fields["channel"].choices = choices
+        self.fields["channel"].widget = forms.RadioSelect(attrs={"class": "btw-chip-choices"}, choices=choices)
         self.fields["event"].queryset = Event.objects.order_by("-start_at") if user.has_perm("events.view_event") else Event.objects.none()
         self.fields["event"].empty_label = "Choose an event"
         self.fields["online_source"].widget.attrs["placeholder"] = "Website, Facebook, Indeed, a friend..."
-        self.order_fields(["channel", "found_on", "event", "online_source"])
-        if self.instance.pk and self.instance.acquired_at:
-            from zoneinfo import ZoneInfo
-            from django.utils import timezone
-            self.initial.setdefault("found_on", timezone.localtime(self.instance.acquired_at, ZoneInfo("America/New_York")).date())
     def clean(self):
         data = super().clean()
         channel = data.get("channel")
@@ -102,17 +98,11 @@ class AcquisitionForm(forms.ModelForm):
             self.add_error("event", "Choose the event.")
         if channel != "online":
             data["online_source"] = ""
-        found = data.get("found_on")
-        if channel == "unknown" or not found:
+        existing = self.instance.acquired_at if self.instance.pk else None
+        if channel == "unknown":
             data["acquired_at"] = None
         else:
-            from datetime import datetime, time
-            from zoneinfo import ZoneInfo
-            from django.utils import timezone
-            when = datetime.combine(found, time(12), ZoneInfo("America/New_York"))
-            if when > timezone.now():
-                self.add_error("found_on", "The date can't be in the future.")
-            data["acquired_at"] = when
+            data["acquired_at"] = existing
         data["source_submission"] = self.instance.source_submission if self.instance.pk else None
         data["provenance"] = self.instance.provenance if self.instance.pk else ""
         return data

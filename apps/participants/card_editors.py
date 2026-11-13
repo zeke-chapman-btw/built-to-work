@@ -48,6 +48,7 @@ class ProfileCardForm(forms.Form):
         if card == 'identity':
             self.fields['primary_identifier'] = Participant._meta.get_field('primary_identifier').formfield(label='Type')
             self.fields['primary_identifier'].choices = [('', 'Not set')] + [(value, label) for value, label in self.fields['primary_identifier'].choices if value]
+            self.fields['primary_identifier'].widget = forms.RadioSelect(attrs={'class': 'btw-chip-choices'}, choices=self.fields['primary_identifier'].choices)
             self.fields['type_revision'] = forms.CharField(widget=forms.HiddenInput)
             self.initial.update(primary_identifier=person.primary_identifier, type_revision=type_revision(person))
         if card == 'preferences':
@@ -77,6 +78,20 @@ class ProfileCardForm(forms.Form):
                         self.fields[key].choices = [(v, 'Not set' if str(l).lower() in ('unknown', 'not recorded', '---------') else l) for v, l in self.fields[key].choices]
                 self.fields['recruiting_revision'] = forms.IntegerField(widget=forms.HiddenInput)
                 self.initial['recruiting_revision'] = initial['revision']
+                # Catalog classifications repeat the questions above; only show them when the catalog has options or a value is set.
+                for key in ('employment_classification', 'availability_classification'):
+                    if len(list(self.fields[key].choices)) <= 1 and not self.initial.get(key):
+                        del self.fields[key]
+            # Standard answers as tap-to-pick chips.
+            labels = {'employment_interest': 'Seeking work', 'travel': 'Will travel', 'willing_to_relocate': 'Will relocate',
+                      'current_employment_status': 'Working now', 'preferred_work_type': 'Work type wanted',
+                      'availability_classification': 'Availability', 'employment_classification': 'Employment type'}
+            for key, label in labels.items():
+                if key in self.fields:
+                    self.fields[key].label = label
+            for key in ('employment_interest', 'travel', 'willing_to_relocate', 'current_employment_status', 'preferred_work_type'):
+                if key in self.fields:
+                    self.fields[key].widget = forms.RadioSelect(attrs={'class': 'btw-chip-choices'}, choices=self.fields[key].choices)
         if card == 'preferences':
             self.order_fields(['employment_interest','travel','willing_to_relocate','current_employment_status','preferred_work_type','availability_classification','employment_classification','career_interests','preferred_locations'])
         self.initial['revision'] = profile_revision(person)

@@ -24,6 +24,40 @@
 </div>
 {% endif %}
 
+<div class="pv-top-row">
+<section id="profile-identity" aria-label="Contact" tabindex="-1" class="card p3-reading-section">
+  <header class="btw-panel-heading"><h2>Contact</h2>{% if can_edit_profile and not participant.archived_at %}<a data-profile-manager data-record-editor href="{% url 'participants:profile-card-edit' participant.pk 'identity' %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit contact details">Edit</a>{% endif %}</header>
+  <dl class="pv-facts">
+    <dt>Phone</dt><dd>{% if participant.contact_phone %}<a href="tel:{{ participant.contact_phone|people_phone_link }}">{{ participant.contact_phone|people_phone }}</a>{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Email</dt><dd>{% if participant.contact_email %}<a class="pv-wrap" href="mailto:{{ participant.contact_email }}">{{ participant.contact_email }}</a>{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Location</dt><dd>{% if participant.city or participant.state %}{{ participant.city }}{% if participant.city and participant.state %}, {% endif %}{{ participant.state }}{% if participant.postal_code %} {{ participant.postal_code }}{% endif %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+  </dl>
+</section>
+
+<section id="profile-details" tabindex="-1" class="card p3-reading-section" aria-labelledby="profile-details-title">
+  <header class="btw-panel-heading"><h2 id="profile-details-title">Details</h2>{% if can_edit_profile and not participant.archived_at %}<a data-profile-manager data-record-editor href="{% url 'participants:profile-card-edit' participant.pk 'identity' %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit type">Edit</a>{% endif %}</header>
+  <dl class="pv-facts">
+    <dt>Type</dt><dd>{% if participant.primary_identifier %}{% ui_badge participant.get_primary_identifier_display 'info' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Found us</dt><dd class="pv-found">{% if acquisition_record and acquisition_record.channel != 'unknown' %}{% if acquisition_record.channel == 'event' %}{% ui_badge 'Event' 'success' %}{% if acquisition_record.event_id %}{% if can_view_events %}<a href="{% url 'events:event_detail' acquisition_record.event_id %}">{{ acquisition_record.event.name }}</a>{% else %}<span>{{ acquisition_record.event.name }}</span>{% endif %}{% endif %}{% else %}{% ui_badge 'Online' 'info' %}{% if acquisition_record.online_source %}<span>{{ acquisition_record.online_source }}</span>{% endif %}{% endif %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}{% if can_manage_acquisition and not participant.archived_at %}<a class="pv-inline-edit" data-record-editor href="{% url 'participants:acquisition-edit' participant.pk %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit how they found us">Edit</a>{% endif %}</dd>
+    <dt>Date joined</dt><dd>{{ participant.created_at|date:'M j, Y' }}</dd>
+  </dl>
+</section>
+
+{% with prefs=current_profile_preferences %}<section id="profile-preferences" tabindex="-1" class="card p3-reading-section" aria-labelledby="profile-work-preferences-title">
+  <header class="btw-panel-heading"><h2 id="profile-work-preferences-title">Work preferences</h2>{% if can_edit_profile and not participant.archived_at %}<a data-profile-manager data-record-editor href="{% url 'participants:profile-card-edit' participant.pk 'preferences' %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit work preferences">Edit</a>{% endif %}</header>
+  <dl class="pv-facts">
+    <dt>Seeking work</dt><dd>{% if prefs and prefs.interest != 'Not recorded' %}{% ui_badge prefs.interest prefs.interest|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Will travel</dt><dd>{% if prefs and prefs.travel != 'Not recorded' %}{% ui_badge prefs.travel prefs.travel|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Will relocate</dt><dd>{% if prefs and prefs.relocation != 'Not recorded' %}{% ui_badge prefs.relocation prefs.relocation|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Work type</dt><dd>{% if career.preferred_work_type %}{% ui_badge career.get_preferred_work_type_display 'neutral' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Working now</dt><dd>{% if prefs and prefs.employment.value != 'Not recorded' %}{% ui_badge prefs.employment.value 'neutral' %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Availability</dt><dd>{% if prefs and prefs.availability.value != 'Not recorded' %}{{ prefs.availability.value }}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Trade interest</dt><dd>{% if current_interests %}{{ current_interests|truncatechars:80 }}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Locations</dt><dd>{% if career.preferred_locations %}{{ career.preferred_locations|truncatechars:80 }}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+  </dl>
+</section>{% endwith %}
+</div>
+
 <div class="pv-columns">
 <div class="pv-main">
 
@@ -62,32 +96,6 @@
 
 </div>
 <div class="pv-side">
-
-<section id="profile-identity" aria-label="Contact" tabindex="-1" class="card p3-reading-section">
-  <header class="btw-panel-heading"><h2>Contact</h2>{% if can_edit_profile and not participant.archived_at %}<a data-profile-manager data-record-editor href="{% url 'participants:profile-card-edit' participant.pk 'identity' %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit contact details">Edit</a>{% endif %}</header>
-  <dl class="pv-facts">
-    <dt>Phone</dt><dd>{% if participant.contact_phone %}<a href="tel:{{ participant.contact_phone|people_phone_link }}">{{ participant.contact_phone|people_phone }}</a>{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Email</dt><dd>{% if participant.contact_email %}<a class="pv-wrap" href="mailto:{{ participant.contact_email }}">{{ participant.contact_email }}</a>{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Location</dt><dd>{% if participant.city or participant.state %}{{ participant.city }}{% if participant.city and participant.state %}, {% endif %}{{ participant.state }}{% if participant.postal_code %} {{ participant.postal_code }}{% endif %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    {% if participant.primary_identifier %}<dt>Type</dt><dd>{{ participant.get_primary_identifier_display }}</dd>{% endif %}
-    {% if profile_life_stage %}<dt>Situation</dt><dd>{{ profile_life_stage }}</dd>{% endif %}
-    <dt>Found us</dt><dd class="pv-found">{% if acquisition_record and acquisition_record.channel != 'unknown' %}<span>{% if acquisition_record.channel == 'event' %}At an event{% else %}Online{% endif %}{% if acquisition_record.event_id %} · {% if can_view_events %}<a href="{% url 'events:event_detail' acquisition_record.event_id %}">{{ acquisition_record.event.name }}</a>{% else %}{{ acquisition_record.event.name }}{% endif %}{% elif acquisition_record.online_source %} · {{ acquisition_record.online_source }}{% endif %}{% if acquisition_record.acquired_at %} <small class="pv-meta">{{ acquisition_record.acquired_at|date:'M j, Y' }}</small>{% endif %}</span>{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}{% if can_manage_acquisition and not participant.archived_at %} <a class="pv-inline-edit" data-record-editor href="{% url 'participants:acquisition-edit' participant.pk %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit how they found us">Edit</a>{% endif %}</dd>
-  </dl>
-</section>
-
-{% with prefs=current_profile_preferences %}<section id="profile-work-preferences" tabindex="-1" class="card p3-reading-section" aria-labelledby="profile-work-preferences-title">
-  <header class="btw-panel-heading"><h2 id="profile-work-preferences-title">Work preferences</h2>{% if can_edit_profile and not participant.archived_at %}<a data-profile-manager data-record-editor href="{% url 'participants:profile-card-edit' participant.pk 'preferences' %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit work preferences">Edit</a>{% endif %}</header>
-  <dl class="pv-facts">
-    <dt>Seeking work</dt><dd>{% if prefs and prefs.interest != 'Not recorded' %}{% ui_badge prefs.interest prefs.interest|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Will travel</dt><dd>{% if prefs and prefs.travel != 'Not recorded' %}{% ui_badge prefs.travel prefs.travel|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Will relocate</dt><dd>{% if prefs and prefs.relocation != 'Not recorded' %}{% ui_badge prefs.relocation prefs.relocation|people_answer_tone %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Employment</dt><dd>{% if prefs and prefs.employment.value != 'Not recorded' %}{{ prefs.employment.value }}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Availability</dt><dd>{% if prefs and prefs.availability.value != 'Not recorded' %}{{ prefs.availability.value }}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Trade interest</dt><dd>{% if current_interests %}{{ current_interests|truncatechars:80 }}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Work type</dt><dd>{% if career.preferred_work_type %}{{ career.get_preferred_work_type_display|default:career.preferred_work_type }}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Locations</dt><dd>{% if career.preferred_locations %}{{ career.preferred_locations|truncatechars:80 }}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-  </dl>
-</section>{% endwith %}
 
 <section id="profile-qualifications" tabindex="-1" class="card p3-reading-section pv-qualifications" aria-labelledby="profile-qualifications-title">
   <header class="btw-panel-heading"><h2 id="profile-qualifications-title">Qualifications</h2>{% if can_view_qualifications %}<a data-profile-manager data-record-editor href="{% url 'participants:staff-participant-qualifications' participant.pk %}?from={{ directory_origin|urlencode }}&amp;return_to={{ request.get_full_path|urlencode }}" aria-label="Manage qualifications">Manage</a>{% endif %}</header>

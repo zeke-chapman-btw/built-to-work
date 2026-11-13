@@ -230,3 +230,12 @@ body.internal-app #main-content .people-workspace .people-form.card, body.intern
 body.internal-app #main-content .ls-section-head h2 { border:0 !important; padding:0 !important; }
 body.internal-app.has-tasks-refinement #main-content .ls-back { margin:16px 0 0 24px; }
 body.internal-app.has-settings-workspace #main-content > :is(.event-back,.btw-focused-editor,.cleanup-sections,.settings-navigation-frame) { margin-left:24px !important; margin-right:24px !important; }
+
+/* Chip-style choices (radio buttons that look like the profile chips) */
+div:has(> div > label > input.btw-chip-choices) { display:flex; flex-wrap:wrap; gap:8px; }
+div:has(> label > input.btw-chip-choices) { margin:0; }
+label:has(> input.btw-chip-choices) { position:relative; display:inline-flex !important; align-items:center; min-height:36px; padding:0 14px; border:1px solid #d5d9de; border-radius:999px; background:#fff; color:#333; font-size:14px; font-weight:500; cursor:pointer; margin:0 !important; gap:0 !important; }
+label:has(> input.btw-chip-choices) > input.btw-chip-choices { position:absolute; opacity:0; width:1px !important; height:1px !important; pointer-events:none; }
+label:has(> input.btw-chip-choices:checked) { background:#fde2e4; border-color:#d91f2a; color:#b3141f; }
+label:has(> input.btw-chip-choices:focus-visible) { outline:2px solid #d91f2a; outline-offset:2px; }
+label:has(> input.btw-chip-choices[value=""]) { color:#6b7280; }

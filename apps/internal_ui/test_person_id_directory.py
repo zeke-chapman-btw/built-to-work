@@ -111,7 +111,7 @@ class PersonIdDirectoryTests(TestCase):
         self.assertNotContains(response,'>Edit type</a>')
         self.assertContains(response,reverse('participants:profile-card-edit',args=[self.person.pk,'identity']))
         self.assertContains(response,f'>ID {self.person.pk}</span>')
-        self.assertNotContains(response,'<dt>Type</dt>')
+        self.assertContains(response,'<dt>Type</dt><dd><span class="pv-unset"')
         form_response=self.client.get(edit)
         self.assertEqual(form_response.context['form'].fields['identifier'].label,'Type')
         revision=form_response.context['form'].initial['revision']

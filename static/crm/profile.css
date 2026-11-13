@@ -243,3 +243,13 @@ body.internal-app.has-participant-workspace.has-participants-pass3.has-participa
 .has-crm-ux-profile .pv-found { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px; }
 .has-crm-ux-profile .pv-inline-edit { margin-left:auto; font-size:13px; }
 .has-crm-ux-profile #profile-work-preferences .pv-facts dd .badge { margin:0; }
+
+/* Three-column profile: Contact, Details and Work preferences across the top, then a 2/3 + 1/3 layout */
+.has-crm-ux-profile .pv-top-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin:0 0 16px; align-items:stretch; }
+.has-crm-ux-profile .pv-top-row > .card { margin:0; }
+.has-crm-ux-profile .pv-columns { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.has-crm-ux-profile .pv-columns > .pv-main { grid-column:span 2; }
+.has-crm-ux-profile .pv-found { display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; }
+.has-crm-ux-profile .pv-facts dd .badge { margin:0; }
+@media (max-width:1100px) { .has-crm-ux-profile .pv-top-row { grid-template-columns:1fr 1fr; } .has-crm-ux-profile .pv-top-row > :last-child { grid-column:1/-1; } }
+@media (max-width:760px) { .has-crm-ux-profile .pv-top-row { grid-template-columns:1fr; } .has-crm-ux-profile .pv-top-row > :last-child { grid-column:auto; } .has-crm-ux-profile .pv-columns > .pv-main { grid-column:auto; } }

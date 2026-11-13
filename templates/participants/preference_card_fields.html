@@ -1,1 +1,1 @@
-{% load ui_patterns %}<div class="btw-editor-grid">{% for field in form.visible_fields %}<div class="{% if field.widget_type == 'textarea' %}btw-editor-wide{% endif %}">{% ui_field field %}</div>{% endfor %}</div>
+{% load ui_patterns %}<div class="btw-editor-grid">{% for field in form.visible_fields %}<div class="{% if field.widget_type == 'textarea' or field.widget_type == 'radioselect' %}btw-editor-wide{% endif %}">{% ui_field field %}</div>{% endfor %}</div>
