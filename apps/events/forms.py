@@ -27,7 +27,7 @@ class EventForm(forms.ModelForm):
 
     FIELD_GROUPS = (
         ("Basic information", ("name", "event_type", "event_type_other", "description", "simulator_qualification_threshold")),
-        ("Location", ("location_name", "address_line_1", "address_line_2", "city", "state", "postal_code", "country")),
+        ("Location", ("location_name", "address_line_1", "address_line_2", "city", "state", "postal_code", "country", "map_latitude", "map_longitude")),
         ("Schedule", ("timezone_name", "setup_date", "staff_arrival_time", "start_at", "end_at", "daily_start_time", "daily_end_time", "return_date")),
         ("Contact and logistics", ("contact_name", "contact_email", "contact_phone", "housing_information", "logistics_instructions")),
         ("Participant registration settings", ("registration_opens_at", "registration_closes_at", "registration_deadline_at", "registration_capacity", "group_mode", "group_label")),
@@ -38,7 +38,7 @@ class EventForm(forms.ModelForm):
         model = Event
         fields = tuple(name for title, names in (
             ("basic", ("name", "event_type", "event_type_other", "description", "simulator_qualification_threshold")),
-            ("location", ("location_name", "address_line_1", "address_line_2", "city", "state", "postal_code", "country")),
+            ("location", ("location_name", "address_line_1", "address_line_2", "city", "state", "postal_code", "country", "map_latitude", "map_longitude")),
             ("schedule", ("timezone_name", "setup_date", "staff_arrival_time", "start_at", "end_at", "daily_start_time", "daily_end_time", "return_date")),
             ("logistics", ("contact_name", "contact_email", "contact_phone", "housing_information", "logistics_instructions")),
             ("registration", ("registration_opens_at", "registration_closes_at", "registration_deadline_at", "registration_capacity", "group_mode", "group_label")),

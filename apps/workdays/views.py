@@ -74,7 +74,7 @@ def checkin(request,event_id):
     if request.method=='POST':
         saved,form=svc.checkin(actor=request.user,event_id=event.pk,data=request.POST)
         if saved:
-            messages.success(request,'Daily check-in recorded. No clock-out is needed. Driving declarations remain pending manager review.')
+            messages.success(request,'You\'re checked in for today.')
             return redirect('workdays:checkin',event_id=event.pk)
     return page(request,'checkin',page_title='Daily Check-In',event=event,today=today,already=already,eligible=eligible,form=form,assigned_days=assigned,days=own[:100])
 
@@ -100,7 +100,11 @@ def event_roster(request,event_id):
     approved=[d for d in checked_in if d.approval=='approved']
     from decimal import Decimal
     day_totals={'pay':sum((d.pay_amount or Decimal('0')) for d in approved),'per_diem':sum((d.per_diem_amount or Decimal('0')) for d in approved),'count':len(checked_in)}
-    return page(request,'event',page_title=event.name,event=event,calendar=calendar,selected=selected,roster=roster,days=days,trips=trips,day_tabs=day_tabs,checked_in=checked_in,missing=missing,day_totals=day_totals,distance=EventMileage.objects.filter(event=event).first(),origin=ORIGIN,totals=reports.totals(Workday.objects.filter(event=event),trips))
+    current=EventMileage.objects.filter(event=event).first()
+    if current and current.destination!=svc.destination(event):current=None
+    trip_by_staff={t.staff_id:t for t in trips if t.status!='void'}
+    for d in days:d.event_trip=trip_by_staff.get(d.staff_id) if d.drove else None
+    return page(request,'event',page_title=event.name,mileage=current,estimate=svc.automatic_miles(event),event=event,calendar=calendar,selected=selected,roster=roster,days=days,trips=trips,day_tabs=day_tabs,checked_in=checked_in,missing=missing,day_totals=day_totals,distance=EventMileage.objects.filter(event=event).first(),origin=ORIGIN,totals=reports.totals(Workday.objects.filter(event=event),trips))
 
 @staff_view
 def workday_edit(request,event_id=None,record_id=None):
@@ -108,13 +112,24 @@ def workday_edit(request,event_id=None,record_id=None):
     obj=get_object_or_404(Workday,pk=record_id) if record_id else None
     event=get_object_or_404(Event,pk=obj.event_id if obj else event_id)
     with timezone.override(ZoneInfo(event.timezone_name)):
-        form=WorkdayForm(record=obj,initial={'work_date':event.local_start_at.date(),'per_diem':'review'})
+        try:start_day=date.fromisoformat(request.GET.get('date',''))
+        except ValueError:start_day=event.local_start_at.date()
+        initial={'work_date':start_day,'per_diem':'review','drove':'no'}
+        if request.GET.get('staff'):initial['staff']=request.GET.get('staff')
+        role=StaffRole.objects.filter(name='Staff',is_active=True).first()
+        if role:initial['role']=role.pk
+        form=WorkdayForm(record=obj,initial=initial)
         if request.method=='POST':
             saved,form=svc.save_workday(actor=request.user,event_id=event.pk,record_id=record_id,data=request.POST)
             if saved:
-                messages.success(request,'Workday saved. Staff assignments were not changed.')
+                messages.success(request,'Work day saved.')
+                from apps.internal_ui.record_editors import editor_success
+                if request.headers.get('X-BTW-Editor')=='1':return editor_success(request,reverse('workdays:event',args=[event.pk])+'?date='+saved.work_date.isoformat())
                 return redirect('workdays:record',record_id=saved.pk)
-        return form_page(request,'Correct workday' if obj else 'Add manager workday',form,('workdays:event',event.pk),event)
+        title='Edit work day' if obj else 'Add missed work day'
+        if request.headers.get('X-BTW-Editor')=='1':
+            return wd_editor(request,title,form,(f'{obj.staff} · {obj.work_date:%a, %b %-d}' if obj else event.name),reverse('workdays:event',args=[event.pk]))
+        return form_page(request,title,form,('workdays:event',event.pk),event)
 
 @staff_view
 def record(request,record_id):
@@ -143,9 +158,16 @@ def distance_edit(request,event_id):
     if request.method=='POST':
         saved,form=svc.save_distance(actor=request.user,event_id=event.pk,data=request.POST)
         if saved:
-            messages.success(request,'Verified event driving mileage saved. Approved trip snapshots were preserved.')
+            messages.success(request,'Mileage saved. Trips already approved keep their miles.')
+            from apps.internal_ui.record_editors import editor_success
+            if request.headers.get('X-BTW-Editor')=='1':return editor_success(request,reverse('workdays:event',args=[event.pk]))
             return redirect('workdays:event',event_id=event.pk)
-    return form_page(request,'Verify event driving distance',form,('workdays:event',event.pk),event,summary=f'Origin: {ORIGIN}. Event physical destination: {svc.destination(event)}. Enter verified one-way driving miles, not straight-line distance.')
+    est=svc.automatic_miles(event)
+    if obj and obj.method=='manager' and obj.destination==svc.destination(event):form.initial['one_way_miles']=obj.one_way_miles
+    else:form.initial['one_way_miles']=None
+    if est:form.fields['one_way_miles'].help_text=f"Worked out: {est['straight_line']} mi straight line (by {est['based_on']}) + 20% = {est['one_way']} each way, {est['round_trip']} round trip. Leave blank to use this."
+    if request.headers.get('X-BTW-Editor')=='1':return wd_editor(request,'Change mileage',form,svc.destination(event),reverse('workdays:event',args=[event.pk]))
+    return form_page(request,'Change mileage',form,('workdays:event',event.pk),event,summary=f'From {ORIGIN} to {svc.destination(event)}.')
 
 @staff_view
 def trip_edit(request,event_id=None,trip_id=None):
@@ -172,7 +194,7 @@ def trip_action(request,trip_id,action):
         if saved:
             messages.success(request,'Mileage '+action+' recorded. Approval records a reimbursement amount; it does not issue payment.')
             return redirect('workdays:event',event_id=obj.event_id)
-    return form_page(request,action.title()+' mileage claim',form,('workdays:event',obj.event_id),obj.event,summary=f'{obj.staff} · Trip {obj.number} · {obj.get_status_display()}. Verified round-trip miles: {shown(obj.round_trip_miles)}; rate: {shown(obj.rate_amount)} USD/mile; reimbursement: {shown(obj.amount)} USD. Approval retains the verified snapshot. Verify and review the amount first.')
+    return form_page(request,action.title()+' mileage claim',form,('workdays:event',obj.event_id),obj.event,summary=f'{obj.staff} · {obj.get_status_display()}. Round trip: {shown(obj.round_trip_miles)} miles (worked out automatically unless a manager changed it). Approving locks in the miles and the current per-mile rate.')
 
 @staff_view
 def settings(request):
@@ -224,6 +246,12 @@ def rate_edit(request,kind):
     if request.headers.get('X-BTW-Editor')=='1':return pay_editor(request,title,form,str(role) if role else '')
     return form_page(request,title+(' · '+str(role) if role else ''),form,('workdays:settings',None))
 
+
+def wd_editor(request,title,form,context_line,back):
+    from apps.internal_ui.record_editors import editor_response
+    return editor_response(request,template='workdays/form.html',panel='internal/ui/record_form_panel.html',context={
+        'form':form,'page_title':title,'editor_context':context_line,'back':back,'save_label':'Save',
+        'fields_template':'internal/ui/section_fields.html','full_page_editor':False})
 
 def pay_editor(request,title,form,context_line):
     from apps.internal_ui.record_editors import editor_response

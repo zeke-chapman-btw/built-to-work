@@ -37,6 +37,9 @@ class Event(models.Model):
     state = models.CharField(max_length=100, blank=True)
     postal_code = models.CharField(max_length=24, blank=True)
     country = models.CharField(max_length=100, blank=True)
+    # Optional exact map pin. When blank, mileage uses the ZIP code (or city) instead.
+    map_latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, validators=[MinValueValidator(-90), MaxValueValidator(90)])
+    map_longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, validators=[MinValueValidator(-180), MaxValueValidator(180)])
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.DRAFT)
     allow_station_auto_check_in = models.BooleanField(default=False)
     registration_opens_at = models.DateTimeField(null=True, blank=True)

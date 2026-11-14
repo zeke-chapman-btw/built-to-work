@@ -32,11 +32,17 @@ class EventMileage(UUIDModel,TimestampedModel):
     event = models.OneToOneField('events.Event',on_delete=models.PROTECT)
     destination = models.TextField()
     one_way_miles = models.DecimalField(max_digits=9,decimal_places=2,validators=[MinValueValidator(0)])
+    METHODS = [('auto','Worked out automatically'),('manager','Set by a manager')]
+    method = models.CharField(max_length=10,choices=METHODS,default='manager')
+    straight_line_miles = models.DecimalField(max_digits=9,decimal_places=2,null=True,blank=True,validators=[MinValueValidator(0)])
+    based_on = models.CharField(max_length=120,blank=True)
     verified_by = actor('event_mileage_verified')
     verified_at = models.DateTimeField()
     reason = models.TextField()
     class Meta:
         constraints = [models.CheckConstraint(condition=Q(one_way_miles__gte=0),name='workdays_distance_nonnegative')]
+    @property
+    def round_trip_miles(self): return self.one_way_miles*2
 class Ledger(UUIDModel,TimestampedModel):
     event = models.ForeignKey('events.Event',on_delete=models.PROTECT)
     staff = models.ForeignKey('staffing.StaffProfile',on_delete=models.PROTECT)

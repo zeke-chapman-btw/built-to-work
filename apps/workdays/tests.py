@@ -4,6 +4,7 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from io import StringIO
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
@@ -132,12 +133,13 @@ class Workday9ETests(TestCase):
         with self.assertRaises(ValidationError):self.action(obj)
     def test_per_diem_edit_does_not_duplicate_daily_amount(self):
         obj=self.manual();obj=self.manual(old=obj);self.assertEqual(Workday.objects.count(),1);self.assertEqual(obj.per_diem_amount,20)
-    def test_effective_checkin_must_match_local_work_date(self):
-        with self.assertRaises(ValidationError):self.manual(effective_checkin_at='2030-07-03T09:00')
+    def test_manager_checkin_time_is_optional_and_kept_on_the_work_date(self):
+        obj=self.manual(effective_checkin_at='2030-07-03T09:00');self.assertEqual(timezone.localdate(obj.effective_checkin_at,ZoneInfo('America/New_York')).isoformat(),'2030-07-01')
+        obj=self.manual(work_date='2030-07-02',effective_checkin_at='');self.assertEqual(timezone.localdate(obj.effective_checkin_at,ZoneInfo('America/New_York')).isoformat(),'2030-07-02')
     def test_missing_distance_and_rate_block_claim_approval(self):
-        obj=self.trip()
+        Event.objects.filter(pk=self.event.pk).update(address_line_1='',city='',state='',postal_code='');self.event.refresh_from_db();obj=self.trip()
         with self.assertRaises(ValidationError):self.trip_action(obj)
-        self.distance();self.mile.delete()
+        Event.objects.filter(pk=self.event.pk).update(city='Athens',state='GA');self.event.refresh_from_db();self.distance();self.mile.delete()
         with self.assertRaises(ValidationError):self.trip_action(obj)
     def test_round_trip_true_per_mile_calculation(self):
         self.distance('123.45');obj=self.trip_action(self.trip());self.assertEqual(obj.round_trip_miles,Decimal('246.90'));self.assertEqual(obj.amount,Decimal('123.45'))
@@ -164,10 +166,11 @@ class Workday9ETests(TestCase):
     def test_void_trip_excluded_from_totals(self):
         self.distance();obj=self.trip_action(self.trip());self.trip_action(obj,'void');self.assertEqual(reports.totals(Workday.objects.all(),MileageTrip.objects.all())['mileage'],0)
     def test_new_event_location_requires_distance_reverification(self):
-        self.distance();self.event.address_line_1='SYNTHETIC changed venue';self.event.save();obj=self.trip()
-        with self.assertRaises(ValidationError):self.trip_action(obj)
+        self.distance();self.event.postal_code='30904';self.event.save();obj=self.trip()
+        verified=self.trip_action(obj,'verify');self.assertEqual(verified.one_way_miles,Decimal('102'));self.assertEqual(verified.round_trip_miles,Decimal('204'))
+        self.assertEqual(EventMileage.objects.get(event=self.event).method,'auto')
     def test_negative_distance_and_missing_confirmation_invalid(self):
-        for value,confirm in [('-1','on'),('100','')]:
+        for value,confirm in [('-1','on'),('abc','on')]:
             obj,form=svc.save_distance(actor=self.manager,event_id=self.event.pk,data=dict(revision='new',reason='SYNTHETIC',one_way_miles=value,confirm=confirm));self.assertIsNone(obj)
 
     def new_rate(self,**changes):
@@ -244,7 +247,7 @@ class Workday9ETests(TestCase):
         self.check();self.client.force_login(self.employee,backend='django.contrib.auth.backends.ModelBackend')
         with patch('apps.workdays.views.timezone.localdate',return_value=date(2030,7,1)):
             r=self.client.get(reverse('workdays:checkin',args=[self.event.pk]))
-        self.assertContains(r,'Already checked in for today');self.assertContains(self.client.get(reverse('staffing:schedule')+'?view=assignments'),'Daily Check-In')
+        self.assertContains(r,"You're checked in for today");self.assertContains(self.client.get(reverse('staffing:schedule')+'?view=assignments'),'Daily Check-In')
     def test_audit_contains_original_and_corrected_values(self):
         obj=self.check();self.manual(old=obj,per_diem='ineligible');log=AuditLog.objects.get(action='workdays.workday.corrected');self.assertEqual(log.old_data['per_diem'],'eligible');self.assertEqual(log.new_data['per_diem'],'ineligible');self.assertEqual(log.actor,self.manager)
     def test_verified_reference_seed_and_no_invented_mileage_default(self):
@@ -257,10 +260,10 @@ class Workday9ETests(TestCase):
         CompensationRate.objects.create(kind='role',role=self.role,amount=999,effective_from=date(2030,1,1),reason='SYNTHETIC later configuration')
         CompensationRate.objects.create(kind='per_diem',amount=888,effective_from=date(2030,1,1),reason='SYNTHETIC later configuration')
         obj=self.action(obj);self.assertEqual(obj.pay_amount,100);self.assertEqual(obj.per_diem_amount,20)
-    def test_pending_mileage_cannot_skip_verification(self):
+    def test_pending_mileage_approves_in_one_step_with_snapshot(self):
         self.distance();obj=self.trip()
-        with self.assertRaises(ValidationError):svc.trip_action(actor=self.manager,trip_id=obj.pk,action='approve',data={'revision':obj.updated_at.isoformat(),'reason':'SYNTHETIC attempt'})
-        obj.refresh_from_db();self.assertEqual(obj.status,'pending')
+        result,form=svc.trip_action(actor=self.manager,trip_id=obj.pk,action='approve',data={'revision':obj.updated_at.isoformat(),'reason':'SYNTHETIC attempt'})
+        self.assertEqual(result.status,'approved');self.assertEqual(result.round_trip_miles,Decimal('200'));self.assertIsNotNone(result.amount)
     def test_verified_trip_approval_preserves_reviewed_amount(self):
         self.distance();obj=self.trip_action(self.trip(),'verify')
         self.distance('999');CompensationRate.objects.create(kind='mileage',amount=9,effective_from=date(2030,1,1),reason='SYNTHETIC later rate')

@@ -14,7 +14,7 @@ from .views import staff_permission_required
 
 SECTIONS={
  'event':('Event details',('name','event_type','event_type_other','description','simulator_qualification_threshold')),
- 'location':('Location',('location_name','address_line_1','address_line_2','city','state','postal_code','country')),
+ 'location':('Location',('location_name','address_line_1','address_line_2','city','state','postal_code','country','map_latitude','map_longitude')),
  'schedule':('Schedule',('timezone_name','setup_date','staff_arrival_time','start_at','end_at','daily_start_time','daily_end_time','return_date')),
  'contact':('Event contact',('contact_name','contact_email','contact_phone')),
  'housing':('Housing notes',('housing_information',)),
@@ -27,7 +27,8 @@ SECTIONS={
 LABELS={
  'name':('Event name',''),'event_type':('Event type',''),'event_type_other':('Describe the event type',''),
  'simulator_qualification_threshold':('Simulator passing score (%)','Scores at or above this count as qualified. Usually 50.'),
- 'location_name':('Venue',''),'address_line_1':('Street address',''),'address_line_2':('Address line 2',''),'postal_code':('ZIP code',''),
+ 'location_name':('Venue',''),'address_line_1':('Street address',''),'address_line_2':('Address line 2',''),'postal_code':('ZIP code','Used to work out staff mileage when there is no map pin.'),
+ 'map_latitude':('Map pin latitude','Optional, for an exact pin. In Google Maps, right-click the spot and copy the first number.'),'map_longitude':('Map pin longitude','The second number, usually negative in the US.'),
  'timezone_name':('Time zone','Every time on this event uses this time zone.'),
  'setup_date':('Setup day',''),'staff_arrival_time':('Staff arrive (setup day)',''),
  'start_at':('Event starts','Tickets and trailer stations work between the start and end.'),'end_at':('Event ends',''),
