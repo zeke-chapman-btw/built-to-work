@@ -43,3 +43,19 @@ body.internal-app #main-content .pos-facts dt{font-size:12px;color:#5b6470}
 body.internal-app #main-content .pos-facts dd{margin:0}
 @media (max-width:1000px){body.internal-app #main-content .pos-board{grid-template-columns:repeat(5,minmax(200px,1fr));overflow-x:auto}body.internal-app #main-content .pos-cols{grid-template-columns:1fr}body.internal-app #main-content .pos-tiles{grid-template-columns:1fr 1fr}}
 body.internal-app #main-content .pos-card-head a,body.internal-app #main-content .pos-empty a,body.internal-app #main-content .pos-facts a{color:var(--brand-red-dark,#a51d24)}
+body.internal-app #main-content .pos-stack{display:flex;flex-direction:column;gap:16px;min-width:0}
+body.internal-app #main-content .cp-tr{display:grid;grid-template-columns:minmax(0,1.5fr) 90px 100px 80px 80px;gap:12px;align-items:center;padding:12px 20px;border-top:1px solid #f1f2f4;font-size:14px;color:#1a1a1a;text-decoration:none}
+body.internal-app #main-content a.cp-tr:hover,body.internal-app #main-content a.cp-ev:hover,body.internal-app #main-content a.cp-act:hover{background:#fafbfc}
+body.internal-app #main-content .cp-th{font-size:12px;color:#5b6470;background:#fafbfc;border-top:0;padding:8px 20px}
+body.internal-app #main-content .cp-tr strong{font-weight:600}
+body.internal-app #main-content .cp-ev{display:grid;grid-template-columns:46px minmax(0,1fr) 70px 100px;gap:12px;align-items:center;padding:12px 20px;border-top:1px solid #f1f2f4;font-size:14px;color:#1a1a1a;text-decoration:none}
+body.internal-app #main-content .cp-ev strong{display:block;font-weight:600}
+body.internal-app #main-content .cp-ev small{display:block;font-size:12px;color:#5b6470}
+body.internal-app #main-content .cp-date{width:42px;height:42px;border-radius:50%;background:#fde8ea;color:#a3192d;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}
+body.internal-app #main-content .cp-date small{font-size:9px;font-weight:700;color:#a3192d}
+body.internal-app #main-content .cp-date b{font-size:15px}
+body.internal-app #main-content .cp-act{display:block;padding:10px 20px;border-top:1px solid #f1f2f4;font-size:14px;color:#1a1a1a;text-decoration:none}
+body.internal-app #main-content .cp-act strong{font-weight:600}
+body.internal-app #main-content .cp-act small{display:block;font-size:12px;color:#5b6470}
+body.internal-app #main-content .pos-sub a{color:var(--brand-red-dark,#a51d24)}
+body.internal-app #main-content .pos-stack > .card,body.internal-app #main-content .pos-cols > .card{margin:0}

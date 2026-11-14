@@ -20,6 +20,7 @@ from apps.workdays.models import Workday,MileageTrip
 from apps.workdays.reports import safe
 from . import services as svc,reporting
 from .models import ExpenseCategory,ManualExpense,IncentiveLine,CostReview
+from decimal import Decimal
 from .expense_context import expense_list_url, expense_return_url
 from .forms import ExpenseForm,IncentiveForm,CategoryForm,ReviewForm,RevisionForm,EventFilter,ExpenseFilter
 
@@ -105,7 +106,30 @@ def detail(request,event_id):
                 versioned_report_url = reverse('reporting:event', args=[event.pk])
         except ReportingAccessDenied:
             pass
-    return page(request,'detail',versioned_report_url=versioned_report_url,expense_return_base=expense_list_url(event,request.GET).split('#')[0],page_title=title,report_section=report_section,event=event,report=report,expense_filter=form,expenses=Paginator(expenses,30).get_page(request.GET.get('page')),incentives=Paginator(lines,30).get_page(request.GET.get('incentive_page')),review_form=review_form,notes=notes,notes_access=notes_access,definitions=reporting.METRIC_DEFINITIONS,category_totals=category_totals,staff_pay=staff_pay,staff_pay_totals=staff_pay_totals,metric_rows=metric_rows,status=200 if valid else 400)
+    money=expense_summary(event,report,category_totals) if report_section=='expenses' else None
+    used_categories=ExpenseCategory.objects.filter(expenses__event=event,expenses__is_active=True).distinct().order_by('name') if report_section=='expenses' else []
+    return page(request,'detail',money=money,used_categories=used_categories,selected_category=request.GET.get('category',''),versioned_report_url=versioned_report_url,expense_return_base=expense_list_url(event,request.GET).split('#')[0],page_title=title,report_section=report_section,event=event,report=report,expense_filter=form,expenses=Paginator(expenses,30).get_page(request.GET.get('page')),incentives=Paginator(lines,30).get_page(request.GET.get('incentive_page')),review_form=review_form,notes=notes,notes_access=notes_access,definitions=reporting.METRIC_DEFINITIONS,category_totals=category_totals,staff_pay=staff_pay,staff_pay_totals=staff_pay_totals,metric_rows=metric_rows,status=200 if valid else 400)
+
+def expense_summary(event,report,category_totals):
+    """Totals for the Expenses tab: staff pay, per diem and mileage count as one 'Staff' line."""
+    cost=report['cost'];metrics=report['metrics']
+    rows=[{'label':'Staff (day pay, per diem & mileage)','amount':cost['staff_cost']}]
+    rows+=[{'label':r['category_name'],'amount':r['amount']} for r in category_totals]
+    if cost['incentives']:rows.append({'label':'Gift cards & incentives','amount':cost['incentives']})
+    rows=[r for r in rows if r['amount']] or rows[:1]
+    top=max([r['amount'] for r in rows]+[Decimal('0')])
+    for r in rows:r['bar']=int(r['amount']*100/top) if top else 0
+    rows.sort(key=lambda r:-r['amount'])
+    recorded=cost['recorded'];people=metrics.get('registered') or 0;done=metrics.get('completed_experiences') or 0
+    checks=[{'label':'Staff pay approved','ok':not cost['pending_days'] and not cost['pending_trips'] and not cost['missing_days'],
+             'note':' · '.join(x for x in [f"{cost['pending_days']} day(s) waiting" if cost['pending_days'] else '',f"{cost['pending_trips']} trip(s) waiting" if cost['pending_trips'] else '',f"{cost['missing_days']} booked day(s) not checked in" if cost['missing_days'] else ''] if x)}]
+    for c in cost['components']:
+        name={'Manual operating expenses':'Expenses checked','Distributed gift cards and incentives':'Gift cards checked','Approved Build 9E staff cost':'Staff cost checked'}.get(c['label'],c['label'])
+        checks.append({'label':name,'ok':c['state'].startswith(('Confirmed','Reconciled')),'note':''})
+    return {'rows':rows,'recorded':recorded,'complete':cost['complete'],'people':people,'completed':done,
+        'per_person':(recorded/people).quantize(Decimal('1')) if people else None,
+        'per_completion':(recorded/done).quantize(Decimal('1')) if done else None,'checks':checks,
+        'reconciled':bool(cost['review']) and all(c['ok'] for c in checks[1:])}
 
 @portal
 def entry(request,event_id=None,record_id=None,kind='expense'):

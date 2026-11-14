@@ -293,6 +293,9 @@ def event_detail(request, event_id):
     elif request.method != "GET":
         return HttpResponse(status=405)
     registrations = EventRegistration.objects.filter(event=event, status="active").select_related("participant").order_by("participant__last_name", "participant__first_name") if can_view_records and section == "registrations" else EventRegistration.objects.none()
+    reg_rows, reg_tiles = ([], None)
+    if can_view_records and section == "registrations":
+        reg_rows, reg_tiles = _registration_rows(event, registrations, request.GET)
     from .experience_operations import can_view_event_operations, event_experience_overview
     can_view_operations = can_view_event_operations(request.user)
     can_view_offline = request.user.has_perms(("events.view_offlineeventpreparation", "events.view_syncoutboxitem", "events.view_centraleventdownload"))
@@ -303,6 +306,7 @@ def event_detail(request, event_id):
         return render(request, "events/event_detail.html", {**overview_data,
             "page_title": event.name, "page_description": "Event configuration and recorded experience progress.",
             "section": section, "management_actions": available_actions(event), "event": event, "registrations": registrations, "registration_form": form,
+            "reg_rows": reg_rows, "reg_tiles": reg_tiles, "reg_q": request.GET.get("q", ""), "reg_show": request.GET.get("show", ""),
             "can_view_records": can_view_records, "can_view_operations": can_view_operations, "overview": overview,
             "station_form": StationForEventForm(), "station_assignments": event.station_assignments.select_related("station"),
             "experience_sessions": overview["sessions"] if overview else [],
@@ -345,6 +349,48 @@ def _overview_data(user, event, can_view_records):
         data["ov_coverage"] = coverage(event)
     data["ov_ready"] = _getting_ready(event, data)
     return data
+
+
+def _registration_rows(event, registrations, params):
+    """Registrations list: best simulator score, looking-for-work, interests and follow-up since they signed up."""
+    from zoneinfo import ZoneInfo
+    from apps.participants.eligibility import official_simulator_captures
+    from apps.crm.models import Interaction
+    regs = list(registrations.select_related("participant__career_profile"))
+    ids = [r.participant_id for r in regs]
+    best = {}
+    for cap in official_simulator_captures().filter(event=event, participant_id__in=ids, total_score__isnull=False).select_related("station").order_by("-total_score"):
+        best.setdefault(cap.participant_id, cap)
+    touches = {}
+    for item in Interaction.objects.filter(participant_id__in=ids, archived_at__isnull=True, occurred_at__gte=event.start_at).order_by("-occurred_at"):
+        touches.setdefault(item.participant_id, item)
+    threshold = int(event.simulator_qualification_threshold) if event.simulator_qualification_threshold is not None else 50
+    zone = ZoneInfo(event.timezone_name)
+    rows = []
+    for reg in regs:
+        person = reg.participant
+        career = getattr(person, "career_profile", None)
+        interest = career.employment_interest if career else ""
+        trades = [t.strip() for t in (career.career_interests if career else "").replace(";", ",").split(",") if t.strip()]
+        cap = best.get(person.pk)
+        score = int(cap.total_score.quantize(1)) if cap else None
+        rows.append(dict(reg=reg, person=person, day=timezone.localtime(reg.registered_at, zone),
+            where="online" if reg.source in ("online", "public") else "trailer", score=score,
+            sim=(cap.station.name if cap and cap.station_id else "Simulator"), passed=score is not None and score >= threshold,
+            looking={"seeking": "Yes", "open": "Maybe", "not_seeking": "No"}.get(interest, ""), trades=trades[:2], more=max(0, len(trades) - 2),
+            touch=touches.get(person.pk)))
+    tiles = dict(total=len(rows), online=sum(r["where"] == "online" for r in rows), played=sum(r["score"] is not None for r in rows),
+        passed=sum(r["passed"] for r in rows), looking=sum(r["looking"] in ("Yes", "Maybe") for r in rows), threshold=threshold)
+    tiles["trailer"] = tiles["total"] - tiles["online"]
+    tiles["played_pct"] = round(tiles["played"] * 100 / tiles["total"]) if tiles["total"] else 0
+    q = (params.get("q") or "").strip().lower()
+    if q:
+        rows = [r for r in rows if q in f"{r['person'].first_name} {r['person'].preferred_name} {r['person'].last_name} {r['person'].email} {r['person'].phone}".lower()]
+    show = params.get("show")
+    if show == "passed": rows = [r for r in rows if r["passed"]]
+    elif show == "looking": rows = [r for r in rows if r["looking"] in ("Yes", "Maybe")]
+    elif show == "new": rows = [r for r in rows if not r["touch"]]
+    return rows, tiles
 
 
 def _schedule_rows(event):

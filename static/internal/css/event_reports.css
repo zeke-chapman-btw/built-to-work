@@ -99,3 +99,34 @@ body.internal-app #main-content .er-pay-detail summary{padding:0;margin:0}
 body.internal-app #main-content .er-print{all:unset;cursor:pointer;color:var(--brand-red-dark,#a51d24);font-weight:500}
 body.internal-app #main-content .er-print:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 @media print{body.internal-app #main-content .er-pay-note{display:none}}
+
+/* Expenses tab rebuild (ex2) */
+body.internal-app #main-content .ex2-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+body.internal-app #main-content .ex2-status{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+body.internal-app #main-content .ex2-label{font-weight:600;color:#5b6470}
+body.internal-app #main-content .ex2-pill{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:#eceef0;color:#46505b;white-space:nowrap}
+body.internal-app #main-content .ex2-pill.is-ok{background:#e3f4e8;color:#1d6b35}
+body.internal-app #main-content .ex2-pill.is-warn{background:#fff4d6;color:#7a5200}
+body.internal-app #main-content .ex2-muted{font-size:12px;color:#5b6470}
+body.internal-app #main-content .ex2-btns{display:flex;gap:8px;flex-wrap:wrap}
+body.internal-app #main-content .ex2-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+body.internal-app #main-content .ex2-tile{background:#fff;border:1px solid #e3e5e8;border-radius:10px;padding:12px 16px}
+body.internal-app #main-content .ex2-tile span{display:block;font-size:12px;color:#5b6470}
+body.internal-app #main-content .ex2-tile b{display:block;font-size:22px;font-weight:700}
+body.internal-app #main-content .ex2-tile small{font-size:12px;color:#5b6470}
+body.internal-app #main-content .ex2-cols{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+body.internal-app #main-content .ex2-main,body.internal-app #main-content .ex2-side{display:flex;flex-direction:column;gap:16px;min-width:0}
+body.internal-app #main-content .ex2-chips{display:flex;gap:6px;flex-wrap:wrap}
+body.internal-app #main-content .ex2-chip{font-size:13px;padding:5px 11px;border-radius:999px;border:1px solid #d6dade;background:#fff;color:#3d4450;text-decoration:none}
+body.internal-app #main-content .ex2-chip[aria-current]{font-weight:600;border-color:#ac1929;background:#fdf1f2;color:#ac1929}
+body.internal-app #main-content .ex2-type{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:#e6effb;color:#205087;white-space:nowrap}
+body.internal-app #main-content .ex2-money{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+body.internal-app #main-content .ex2-money-row{display:flex;justify-content:space-between;gap:12px;font-size:13px}
+body.internal-app #main-content .ex2-money-bar{display:block;height:8px;background:#d0212f;border-radius:4px;margin-top:4px;min-width:2px}
+body.internal-app #main-content .ex2-money > div + div .ex2-money-bar{opacity:.65}
+body.internal-app #main-content .ex2-money p{margin:4px 0 0}
+body.internal-app #main-content .ex2-checks{padding:12px 16px;display:flex;flex-direction:column;gap:10px;font-size:14px}
+body.internal-app #main-content .ex2-checks > div{display:flex;justify-content:space-between;align-items:center;gap:8px}
+body.internal-app #main-content .ex2-checks small{display:block;font-size:12px;color:#5b6470}
+body.internal-app #main-content .ex2-final{justify-content:center;margin-top:4px}
+@media (max-width:900px){body.internal-app #main-content .ex2-tiles{grid-template-columns:1fr 1fr}body.internal-app #main-content .ex2-cols{grid-template-columns:1fr}}

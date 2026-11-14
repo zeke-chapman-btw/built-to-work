@@ -68,9 +68,24 @@ def campaigns(request):
 def campaign_detail(request, campaign_id):
     from .foundation import visible_campaigns
     item = get_object_or_404(visible_campaigns(request.user).select_related('organization'), pk=campaign_id)
-    positions = opportunities_for(request.user).filter(need__campaign=item, archived_at__isnull=True)
+    positions = opportunities_for(request.user).filter(need__campaign=item, archived_at__isnull=True).select_related('need__effective_revision')
+    from django.db.models import Count
+    from apps.events.models import Event, EventRegistration
+    rows, openings, interested, sent, hired = [], 0, 0, 0, 0
+    for op in positions:
+        cands = CandidateOpportunity.objects.filter(opportunity=op, merged_into__isnull=True)
+        terms = op.need.display_revision
+        n_open = getattr(terms, 'worker_quantity', None) or 0
+        r = dict(op=op, title=op.need.title, openings=n_open, candidates=cands.filter(active=True).count(),
+                 sent=cands.filter(stage_id__in=('submitted', 'employer_reviewing', 'interview', 'hired')).count(), hired=cands.filter(stage_id='hired').count())
+        rows.append(r); openings += n_open; interested += r['candidates']; sent += r['sent']; hired += r['hired']
+    events = list(Event.objects.filter(campaign=item).exclude(status='archived').annotate(met=Count('registrations', filter=Q(registrations__status='active'), distinct=True)).order_by('start_at'))
+    reached = EventRegistration.objects.filter(event__campaign=item, status='active').values('participant_id').distinct().count()
+    recent = CandidateOpportunity.objects.filter(opportunity__in=positions).select_related('participant', 'stage', 'opportunity__need').order_by('-updated_at')[:5]
     return page(request, 'recruiting/campaign_detail.html', page_title=item.name,
-        campaign=item, positions=positions, can_manage=manager(request.recruiting_actor))
+        campaign=item, positions=positions, rows=rows, events=events, recent=recent,
+        tiles=dict(reached=reached, interested=interested, sent=sent, hired=hired, openings=openings, events=len(events)),
+        can_manage=manager(request.recruiting_actor))
 
 
 @staff

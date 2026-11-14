@@ -95,3 +95,38 @@ body.internal-app #main-content .wd-table .wd-note { display:block; font-size:12
 .wd-checkin .wd-done { background:#e3f4e8; color:#1d6b35; border-radius:10px; padding:12px 14px; font-weight:600; }
 body.internal-app #main-content td.wd-links { display:table-cell; text-align:right; white-space:nowrap; }
 body.internal-app #main-content td.wd-links a + a { margin-left:12px; }
+
+/* Pay settings rebuild (ps2) */
+body.internal-app #main-content .ps2{display:flex;flex-direction:column;gap:16px}
+body.internal-app #main-content .ps2-cols{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+body.internal-app #main-content .ps2-side{display:flex;flex-direction:column;gap:16px;min-width:0}
+body.internal-app #main-content .card.ps2-card{padding:0 !important;overflow:hidden;margin:0}
+body.internal-app #main-content .ps2-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid #eef0f2}
+body.internal-app #main-content .ps2-head h2{margin:0;font-size:15px}
+body.internal-app #main-content .ps2-head a:not(.button){color:var(--brand-red-dark,#a51d24);font-size:14px}
+body.internal-app #main-content .ps2-tr{display:grid;grid-template-columns:minmax(0,1fr) 100px 120px 120px 120px;gap:12px;align-items:center;padding:12px 20px;border-top:1px solid #f1f2f4;font-size:14px}
+body.internal-app #main-content .ps2-th{font-size:12px;color:#5b6470;background:#fafbfc;border-top:0;padding:8px 20px}
+body.internal-app #main-content .ps2-tr.is-off{opacity:.6}
+body.internal-app #main-content .ps2-role{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:#eceef0;color:#46505b}
+body.internal-app #main-content .ps2-driver,body.internal-app #main-content .ps2-combined{background:#e6effb;color:#205087}
+body.internal-app #main-content .ps2-staff-lead{background:#f1eafb;color:#5b3492}
+body.internal-app #main-content .ps2-pill{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:#eceef0;color:#46505b}
+body.internal-app #main-content .ps2-pill.is-ok{background:#e3f4e8;color:#1d6b35}
+body.internal-app #main-content .ps2-pill.is-warn{background:#fff4d6;color:#7a5200}
+body.internal-app #main-content .ps2-muted{color:#5b6470;font-size:13px}
+body.internal-app #main-content .ps2-links{display:flex;gap:12px;justify-content:flex-end}
+body.internal-app #main-content .ps2-links a{color:var(--brand-red-dark,#a51d24)}
+body.internal-app #main-content .ps2-note{margin:0;padding:10px 20px;font-size:12px;color:#5b6470;background:#fafbfc;border-top:1px solid #f1f2f4}
+body.internal-app #main-content .ps2-body{padding:14px 20px;display:flex;flex-direction:column;gap:6px}
+body.internal-app #main-content .ps2-body p{margin:0}
+body.internal-app #main-content .ps2-big{font-size:14px;color:#5b6470}
+body.internal-app #main-content .ps2-big b{font-size:22px;color:#1a1a1a}
+body.internal-app #main-content .ps2-info{background:#f6f7f8;border-radius:8px;padding:10px 12px;font-size:13px;margin-top:4px !important}
+body.internal-app #main-content .ps2-facts{display:grid;grid-template-columns:max-content 1fr;gap:8px 16px;margin:0;padding:14px 20px;font-size:14px}
+body.internal-app #main-content .ps2-facts dt{font-size:12px;color:#5b6470}
+body.internal-app #main-content .ps2-facts dd{margin:0}
+body.internal-app #main-content .ps2-hist{display:grid;grid-template-columns:120px minmax(0,1fr) 200px;gap:12px;align-items:center;padding:12px 20px;border-top:1px solid #f1f2f4;font-size:14px}
+body.internal-app #main-content .ps2-hist small{display:block;font-size:12px;color:#5b6470}
+body.internal-app #main-content .ps2-empty{margin:0;padding:14px 20px;color:#5b6470}
+@media (max-width:900px){body.internal-app #main-content .ps2-cols{grid-template-columns:1fr}body.internal-app #main-content .ps2-th{display:none}body.internal-app #main-content .ps2-tr{grid-template-columns:1fr 1fr}body.internal-app #main-content .ps2-hist{grid-template-columns:1fr}}
+body.internal-app #main-content .ps2-head h2{border:0 !important;padding:0 !important}

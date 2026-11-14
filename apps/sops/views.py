@@ -60,11 +60,17 @@ def index(request):
     items = visible(request.user)
     if q:
         items = items.filter(Q(title__icontains=q) | Q(summary__icontains=q) | Q(category__icontains=q) | Q(body__icontains=q))
+    areas = sorted({(c or "General") for c in visible(request.user).values_list("category", flat=True)}, key=str.lower)
+    area = request.GET.get("area", "")
+    if area:
+        items = items.filter(category="") if area == "General" else items.filter(category=area)
     groups = {}
     for item in items.order_by("position", "title"):
         groups.setdefault(item.category or "General", []).append(item)
-    return page(request, "sops/index.html", page_title="SOPs", groups=list(groups.items()), q=q,
-                can_manage=can_manage(request.user))
+    recent = list(items.order_by("-updated_at")[:3]) if not q and not area else []
+    rows = sorted(items, key=lambda i: ((i.category or "General").lower(), i.position, i.title.lower()))
+    return page(request, "sops/index.html", page_title="SOPs", groups=list(groups.items()), q=q, areas=areas, area=area,
+                recent=recent, rows=rows, can_manage=can_manage(request.user))
 
 
 @staff_only

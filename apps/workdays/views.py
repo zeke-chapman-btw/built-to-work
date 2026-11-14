@@ -200,7 +200,8 @@ def trip_action(request,trip_id,action):
 def settings(request):
     svc.require_admin(request.user);readonly(request)
     today=timezone.localdate()
-    roles=list(StaffRole.objects.all())
+    from .forms import ROLE_ORDER
+    roles=list(StaffRole.objects.order_by('-is_active',*ROLE_ORDER))
     for role in roles:role.current_rate=svc.rate_for('role',today,role)
     rates=CompensationRate.objects.select_related('role','created_by')
     return page(request,'settings',page_title='Pay',roles=roles,rates=Paginator(rates,40).get_page(request.GET.get('page')),per_diem=svc.rate_for('per_diem',today),mileage=svc.rate_for('mileage',today),origin=ORIGIN)
