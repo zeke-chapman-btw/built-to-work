@@ -50,3 +50,27 @@ class RecommendedIntakeTests(TestCase):
         form = RegistrationForm.objects.get(name="SYNTHETIC Fresh")
         keys = {q["key"] for q in form.versions.get().snapshot["questions"]}
         self.assertNotIn("prior_employment", keys)
+
+
+class TradeListLinkTests(TestCase):
+    def setUp(self):
+        self.admin = get_user_model().objects.create_superuser(username="trades-admin", email="t@example.test", password="x")
+        self.client.force_login(self.admin, backend="django.contrib.auth.backends.ModelBackend")
+
+    def test_new_trade_reaches_form_through_a_draft(self):
+        from apps.recruiting.models import Classification
+        from apps.participants.intake_trades import trades_out_of_date
+        version = create_form(actor=self.admin, name="SYNTHETIC Trades form", snapshot=recommended_contract())
+        Classification.objects.create(kind="trade", key="roofing", label="SYNTHETIC Roofing", position=999)
+        self.assertTrue(trades_out_of_date(version.snapshot))
+        url = reverse("participants:intake-config-detail", args=[version.form_id])
+        self.assertContains(self.client.get(url), "Trade list changed")
+        self.client.post(url, {"action": "update_trades", "revision": revision(version)})
+        latest = version.form.versions.order_by("-version").first()
+        interests = next(q for q in latest.snapshot["questions"] if q["key"] == "industry_interests")
+        self.assertIn("roofing", [o["value"] for o in interests["options"]])
+        area = next(c for q in latest.snapshot["questions"] if q["key"] == "experiences" for c in q["children"] if c["key"] == "area")
+        self.assertIn("roofing", [o["value"] for o in area["options"]])
+        self.assertIn("supervision", [o["value"] for o in area["options"]])
+        self.assertFalse(trades_out_of_date(latest.snapshot))
+        self.assertNotContains(self.client.get(url), "Trade list changed")

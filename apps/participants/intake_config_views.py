@@ -84,7 +84,8 @@ def index(request):
     if request.method == "POST":
         try:
             from .intake_defaults import recommended_contract
-            version = create_form(actor=request.user, name=request.POST.get("name"), snapshot=recommended_contract())
+            from .intake_trades import with_trades
+            version = create_form(actor=request.user, name=request.POST.get("name"), snapshot=with_trades(recommended_contract()))
         except ValidationError as exc:
             error = _message(exc)
         else:
@@ -220,8 +221,16 @@ def detail(request, form_id):
                 # Keep this form's own skill lists and qualification mappings.
                 contract["area_skills"] = deepcopy(latest.snapshot.get("area_skills", contract["area_skills"]))
                 contract["qualification_mappings"] = deepcopy(latest.snapshot.get("qualification_mappings", []))
+                from .intake_trades import with_trades
+                contract = with_trades(contract)
                 save_draft(actor=request.user, form_id=model.pk, contract=contract, expected_revision=request.POST.get("revision"))
                 messages.success(request, "Draft made with the recommended questions. Preview it, then publish when you're happy. The live form hasn't changed.")
+                return redirect("participants:intake-config-detail", form_id=model.pk)
+            if action == "update_trades":
+                from .intake_trades import with_trades
+                save_draft(actor=request.user, form_id=model.pk, contract=with_trades(latest.snapshot),
+                           expected_revision=request.POST.get("revision"))
+                messages.success(request, "Trade choices updated in a draft. Preview it, then publish. The live form hasn't changed.")
                 return redirect("participants:intake-config-detail", form_id=model.pk)
             if action == "publish":
                 _confirmed(request)
@@ -262,9 +271,11 @@ def detail(request, form_id):
     from .intake_defaults import RETIRED_FROM_RECOMMENDED
     keys = set(by_key)
     can_use_recommended = model.is_active and bool(keys & set(RETIRED_FROM_RECOMMENDED))
+    from .intake_trades import trades_out_of_date
+    trades_stale = model.is_active and not can_use_recommended and trades_out_of_date(latest.snapshot)
     return render(request, "participants/intake_config_detail.html", context(request,
         page_title=model.name, intake_form=model, version=latest, revision=revision(latest),
-        questions=latest.snapshot["questions"], question_groups=question_groups, can_use_recommended=can_use_recommended,
+        questions=latest.snapshot["questions"], question_groups=question_groups, can_use_recommended=can_use_recommended, trades_stale=trades_stale,
         version_label=("Draft · v" if latest.status == "draft" else "Live · v") + str(latest.version),
         question_total=len(latest.snapshot["questions"]), versions=model.versions.order_by("-version"),
         published=model.versions.filter(status="published"), assignments=model.intake_assignments.select_related(
