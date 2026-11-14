@@ -148,12 +148,16 @@ def event_list(request):
                 short += 1
         list_alerts = {"short": short,
                        "requests": AvailabilityRequest.objects.filter(status="pending", event__status__in=("upcoming", "draft")).count(),
-                       "details": _E.objects.filter(status="upcoming", end_at__gte=now, details_finalized_at__isnull=True).count()}
+                       "details": _E.objects.filter(status="upcoming", end_at__gte=now, details_finalized_at__isnull=True).count(),
+                       "next30": _E.objects.filter(status="upcoming", end_at__gte=now, start_at__lte=now + timedelta(days=30)).count()}
     for event in rows:
         try:
             event.days_until = (timezone.localtime(event.start_at).date() - today).days
         except Exception:
             event.days_until = None
+        first = event.first_day
+        event.list_day = first
+        event.month_label = first.strftime("%B %Y")
     page.object_list = rows
     parameters = request.GET.copy(); parameters.pop("page", None)
     tabs = []
@@ -321,6 +325,17 @@ def _overview_data(user, event, can_view_records):
         people |= set(ExperienceSession.objects.filter(event=event, participant__isnull=False).values_list("participant_id", flat=True))
         data["ov_people"] = len(people)
         data["ov_signed_up"] = EventRegistration.objects.filter(event=event, status="active").values("participant_id").distinct().count()
+        data["ov_recent_registrations"] = list(EventRegistration.objects.filter(event=event, status="active").select_related("participant").order_by("-registered_at")[:5])
+    from apps.operations.services import manager as ops_manager
+    if ops_manager(user, "event_notes"):
+        data["ov_notes"] = list(event.operational_notes.filter(archived_at__isnull=True).select_related("author").order_by("-created_at")[:3])
+        data["ov_note_count"] = event.operational_notes.filter(archived_at__isnull=True).count()
+    from apps.workdays import services as wd
+    if wd.manager(user):
+        current = wd.EventMileage.objects.filter(event=event).first()
+        data["ov_mileage"] = current if current and current.destination == wd.destination(event) else None
+        data["ov_mileage_estimate"] = wd.automatic_miles(event)
+    data["ov_schedule"] = _schedule_rows(event)
     from apps.staffing.services import coverage, require_manager
     try:
         require_manager(user)
@@ -328,7 +343,45 @@ def _overview_data(user, event, can_view_records):
         pass
     else:
         data["ov_coverage"] = coverage(event)
+    data["ov_ready"] = _getting_ready(event, data)
     return data
+
+
+def _schedule_rows(event):
+    """One row per day: setup, each event day, arrive home."""
+    from datetime import timedelta
+    rows = []
+    start, end = event.local_start_at, event.local_end_at
+    if event.setup_date and event.setup_date < start.date():
+        rows.append(dict(date=event.setup_date, label="Setup day", open="", staff=f"Arrive {event.staff_arrival_time:%-I:%M %p}" if event.staff_arrival_time else ""))
+    day = start.date()
+    staff = f"{event.daily_start_time:%-I:%M %p} – {event.daily_end_time:%-I:%M %p}" if event.daily_start_time and event.daily_end_time else ""
+    while day <= end.date() and len(rows) < 40:
+        first, last = day == start.date(), day == end.date()
+        opens = f"{start:%-I:%M %p}" if first else ""
+        closes = f"{end:%-I:%M %p}" if last else ""
+        rows.append(dict(date=day, label="Setup + event day" if event.setup_date == day else "", open=(opens + " – " + closes) if opens and closes else (("Opens " + opens) if opens else ("Closes " + closes) if closes else "Event day"), staff=staff))
+        day += timedelta(days=1)
+    if event.return_date and event.return_date > end.date():
+        rows.append(dict(date=event.return_date, label="Arrive home", open="", staff=""))
+    return rows
+
+
+def _getting_ready(event, data):
+    """Checklist chips for the top of the event overview."""
+    chips = [dict(label="Details", done=bool(event.details_finalized_at), url="#event-details")]
+    chips.append(dict(label="Sign-up open", done=event.public_registration_status == "open", url="#event-signup"))
+    stations = data.get("ov_stations") or []
+    chips.append(dict(label="Stations", done=bool(stations), url="#event-stations"))
+    chips.append(dict(label="Housing", done=event.lodgings.exists() or bool(event.housing_information), url="#housing-and-logistics"))
+    cov = data.get("ov_coverage")
+    if cov and cov["required"]:
+        short = next((d for d in cov["days"] if d["unfilled"]), None)
+        if short:
+            chips.append(dict(label=f"Staff {short['date']:%b} {short['date'].day}: {short['confirmed']} of {short['required']}", done=False, url=reverse("staffing:event", args=[event.pk])))
+        else:
+            chips.append(dict(label="Staff", done=True, url="#event-staffing-summary"))
+    return chips
 
 
 @staff_permission_required('events.view_eventregistration')

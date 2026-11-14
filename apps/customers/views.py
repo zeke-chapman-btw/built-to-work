@@ -95,6 +95,14 @@ def directory(request):
             relationship_interactions__audience="btw", relationship_interactions__archived_at__isnull=True,
             relationship_interactions__participant__isnull=True)))
     term, status, prepared = request.GET.get("q", "").strip(), request.GET.get("status", ""), request.GET.get("provisioned", "")
+    chip = request.GET.get("show", "")
+    tiles = _directory_tiles(request.user, show_last_contact)
+    if chip == "active": status = "active"
+    elif chip == "archived": status = "archived"
+    elif chip == "portal": prepared = "yes"
+    elif chip == "hiring": query = query.filter(open_position_count__gt=0)
+    elif chip == "followup" and show_last_contact: query = query.filter(pk__in=tiles["followup_ids"])
+    elif chip == "quiet" and show_last_contact: query = query.filter(pk__in=tiles["quiet_ids"])
     if term:
         query = query.filter(Q(name__icontains=term) | Q(legal_name__icontains=term) | Q(industry__icontains=term))
     if status in Org.Status.values:
@@ -105,7 +113,55 @@ def directory(request):
     panel = directory_sections(request, CUSTOMER_LIST_TABS)
     if panel['directory_listing'] != 'search':
         panel.update(directory_panel(request, 'customers'))
-    return render(request, "customers/directory.html", context(request, rows=page(request, query), q=term, status=status, provisioned=prepared, statuses=Org.Status.choices, directory_context=request.get_full_path(), show_last_contact=show_last_contact, **panel))
+    rows = page(request, query)
+    if show_last_contact:
+        _attach_touchpoints(rows.object_list)
+    for org in rows.object_list:
+        place = org.locations.filter(is_active=True).exclude(city="").order_by("name", "pk").first()
+        org.list_city = place.city if place else ""
+    tiles.pop("followup_ids", None); tiles.pop("quiet_ids", None)
+    return render(request, "customers/directory.html", context(request, rows=rows, q=term, status=status, provisioned=prepared, statuses=Org.Status.choices, directory_context=request.get_full_path(), show_last_contact=show_last_contact, chip=chip, tiles=tiles, chips=[("active","Active"),("hiring","Hiring now"),("followup","Follow-up due"),("portal","Has portal"),("archived","Archived")], **panel))
+
+
+def _btw_touchpoints():
+    from apps.crm.models import Interaction
+    return Interaction.objects.filter(audience="btw", archived_at__isnull=True, participant__isnull=True, organization__isnull=False)
+
+
+def _directory_tiles(user, can_see_touchpoints):
+    """Counts for the tiles at the top of the customer list."""
+    from django.db.models import Sum, Max
+    from datetime import timedelta
+    from django.utils import timezone
+    orgs = organizations(user)
+    active = orgs.filter(status="active")
+    data = {"active": active.count(),
+            "positions": active.aggregate(n=Count("workforce_needs", filter=Q(workforce_needs__status__in=["active", "hold"]), distinct=True))["n"] or 0}
+    if can_see_touchpoints:
+        today = timezone.localdate()
+        latest = {}
+        for row in _btw_touchpoints().filter(organization__in=orgs).order_by("organization_id", "-occurred_at").values("organization_id", "follow_up_on", "occurred_at"):
+            latest.setdefault(row["organization_id"], row)
+        data["followup_ids"] = [k for k, v in latest.items() if v["follow_up_on"] and v["follow_up_on"] <= today]
+        cutoff = timezone.now() - timedelta(days=30)
+        data["quiet_ids"] = [pk for pk in active.values_list("pk", flat=True) if pk not in latest or latest[pk]["occurred_at"] < cutoff]
+        data["followups"] = len(data["followup_ids"]); data["quiet"] = len(data["quiet_ids"])
+    return data
+
+
+def _attach_touchpoints(orgs):
+    from django.utils import timezone
+    ids = [o.pk for o in orgs]
+    latest = {}
+    for item in _btw_touchpoints().filter(organization_id__in=ids).order_by("organization_id", "-occurred_at", "-created_at"):
+        latest.setdefault(item.organization_id, item)
+    today = timezone.localdate()
+    for org in orgs:
+        item = latest.get(org.pk)
+        org.latest_touch = item
+        due = item.follow_up_on if item else None
+        org.next_due = due
+        org.next_state = None if not due else "overdue" if due < today else "today" if due == today else "later"
 
 
 @staff_view

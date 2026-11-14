@@ -64,6 +64,18 @@ def report_export(request,actor,title,columns,rows,filters,*,status="Live calcul
         meta={**exports.metadata(title,filters,status=status,version=version,source=source),**(extra_meta or {})},private=private)
 
 
+def quick_ranges(request,tab):
+    """One-tap date ranges shown as chips above the reports."""
+    from datetime import timedelta
+    from urllib.parse import urlencode
+    from django.utils import timezone
+    today=timezone.localdate();start=request.GET.get("start","");end=request.GET.get("end","")
+    options=[("This month",today.replace(day=1),today),("Last 90 days",today-timedelta(days=89),today),("This year",today.replace(month=1,day=1),today)]
+    keep={k:v for k,v in request.GET.items() if k not in ("start","end","page","format")};keep["tab"]=tab
+    rows=[dict(label=label,url="?"+urlencode({**keep,"start":a.isoformat(),"end":b.isoformat()}),active=start==a.isoformat() and end==b.isoformat()) for label,a,b in options]
+    rows.append(dict(label="All time",url="?"+urlencode(keep),active=not start and not end))
+    return rows
+
 @login_required(login_url="accounts:login")
 @require_http_methods(["GET"])
 @never_cache
@@ -89,13 +101,16 @@ def workspace(request):
         additional = [card for card in cards if card['label'] not in HIGHLIGHT_SUMMARY_LABELS]
         if not primary:
             primary, additional = cards[:4], cards[4:]
-        overview_titles = {'Event lead trends', 'Recruiting pipeline', 'Confirmed hiring trend'}
-        featured = [graph for graph in charts if graph['title'] in overview_titles or 'acquisition' in graph['title'].lower()][:4]
+        overview_titles = ['Event lead trends', 'Recruiting pipeline', 'What people want', 'Confirmed hiring trend']
+        featured = [graph for title in overview_titles for graph in charts if graph['title'] == title][:4]
         if not featured:
             featured = charts[:2]
+        for graph in featured:
+            if graph['title'] in ('Event lead trends', 'Confirmed hiring trend') and graph.get('rows'):
+                graph['columns'] = True
         context.update(highlight_cards=primary, additional_cards=additional,
             highlight_charts=featured, additional_charts=[graph for graph in charts if graph not in featured])
-    return page(request,"reporting/workspace.html",page_title="Reports & Analytics",report_tabs=tabs_for(actor,tab),selected_tab=tab,filters=form,
+    return page(request,"reporting/workspace.html",page_title="Reports & Analytics",quick_ranges=quick_ranges(request,tab),report_tabs=tabs_for(actor,tab),selected_tab=tab,filters=form,
         definitions=METRICS,exports=export_links(request) if actor.has_perm("reporting.export_reports") else [],
         legacy_reports=destinations,report_destinations=destinations,**context)
 

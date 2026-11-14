@@ -34,7 +34,7 @@ class LandingConsistencyTests(ReportingFixtures):
         ('/internal/customers/', 'Customers', 'none'),
         ('/recruiting/', 'Recruiting', 'sections'),
         ('/internal/workspaces/approvals/', 'Approvals', 'sections'),
-        ('/events/', 'Events', 'filters'),
+        ('/events/', 'Events', 'none'),
         ('/internal/workspaces/operations/', 'Operations', 'sections'),
         ('/internal/reports/', 'Reports &amp; Analytics', 'sections'),
         ('/internal/settings/', 'Settings', 'sections'),

@@ -86,6 +86,8 @@ class Visibility(models.TextChoices):
     STAFF="staff", "Assigned event staff"
 class EventNote(UUIDModel, TimestampedModel):
     event=models.ForeignKey("events.Event",on_delete=models.PROTECT,related_name="operational_notes")
+    CATEGORIES=[("general","General"),("equipment","Equipment"),("incident","Incident"),("feedback","Feedback")]
+    category=models.CharField(max_length=12,choices=CATEGORIES,default="general")
     content=models.TextField()
     visibility=models.CharField(max_length=12,choices=Visibility.choices,default=Visibility.MANAGERS)
     author=models.ForeignKey(settings.AUTH_USER_MODEL,null=True,on_delete=models.SET_NULL,related_name="operational_notes")

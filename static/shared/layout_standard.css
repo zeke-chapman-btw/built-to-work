@@ -290,5 +290,14 @@ body.internal-app #main-content > .settings-navigation-frame { padding-left:0 !i
 /* No top header row on desktop (staff): the bell sits in the top-right corner of the page instead. */
 @media (min-width:901px){
   .internal-app:not(.has-portal-shell):not(.has-customer-shell) .main-column{position:relative}
+  .internal-app:not(.has-portal-shell):not(.has-customer-shell) .btw-landing-header .btw-landing-actions{padding-right:48px !important}
   .internal-app:not(.has-portal-shell):not(.has-customer-shell) .main-column>.topbar{position:absolute;top:14px;right:24px;left:auto;min-height:0;height:auto;width:auto;padding:0;border:0;background:transparent;box-shadow:none;z-index:40}
 }
+
+/* Event header: date avatar (first day incl. setup) beside the title */
+.event-record-header .ev2-id{display:flex;gap:16px;align-items:center;min-width:0}
+.event-record-header .ev2-avatar{flex:none;width:60px;height:60px;border-radius:50%;background:#d0212f;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}
+.event-record-header .ev2-avatar small{font-size:11px;font-weight:700;letter-spacing:.04em}
+.event-record-header .ev2-avatar b{font-size:21px;font-weight:700}
+.event-record-header .event-header-actions{display:flex;gap:8px;align-items:center;flex:none}
+@media (max-width:700px){.event-record-header .ev2-avatar{width:46px;height:46px}.event-record-header .ev2-avatar b{font-size:17px}}

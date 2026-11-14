@@ -98,12 +98,18 @@ class NoteForm(forms.ModelForm):
     reason=forms.CharField(max_length=500,required=False,widget=forms.HiddenInput)
     class Meta:
         model=EventNote
-        fields=("content","visibility")
-        widgets={"content":forms.Textarea(attrs={"rows":4})}
+        fields=("category","content","visibility")
+        widgets={"content":forms.Textarea(attrs={"rows":4}),"category":forms.RadioSelect(attrs={"class":"btw-chip-choices"})}
+        labels={"category":"Type of note"}
     def __init__(self,*args,manager=False,**kwargs):
         super().__init__(*args,**kwargs)
+        self.fields["category"].required=False
+        self.fields["category"].choices=EventNote.CATEGORIES
+        if not self.instance.pk:self.initial.setdefault("category","general")
         self.initial["revision"]=self.instance.updated_at.isoformat() if self.instance.updated_at else "new"
         if not manager:self.fields["visibility"].choices=[("staff","Assigned event staff")];self.initial["visibility"]="staff"
+    def clean_category(self):
+        return self.cleaned_data.get("category") or self.instance.category or "general"
 class DocumentForm(forms.ModelForm):
     file=forms.FileField()
     reason=forms.CharField(max_length=500,required=False,widget=forms.HiddenInput)

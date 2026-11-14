@@ -23,7 +23,7 @@ class CardParser(HTMLParser):
         attrs=dict(attrs)
         if tag=='a':
             if self.inside:self.nested=True
-            if 'event-directory-card' in attrs.get('class',''):
+            if 'ev2-row' in attrs.get('class',''):
                 self.inside=True;self.parts=[]
     def handle_data(self,data):
         if self.inside:self.parts.append(data)
@@ -96,7 +96,7 @@ class EventsPassTwoTests(TestCase):
         self.assertEqual(directory_counts(self.viewer,[self.event]),{})
         self.client.force_login(self.viewer,backend='django.contrib.auth.backends.ModelBackend')
         response=self.client.get('/events/')
-        self.assertContains(response,'Registered count unavailable for your role')
+        self.assertContains(response,'Signed up count unavailable for your role')
         self.assertEqual(self.client.get(reverse('staffing:event',args=[self.event.pk])).status_code,403)
 
     def test_clock_reuses_existing_owned_or_manager_routes_only(self):
@@ -154,17 +154,16 @@ class EventsPassTwoTests(TestCase):
         parser=CardParser();parser.feed(response.content.decode())
         self.assertFalse(parser.nested);self.assertEqual(len(parser.cards),1)
         card=parser.cards[0]
-        for text in [self.event.name,self.event.city,'Jul 1, 2030','Details in progress']:self.assertIn(text,card)
-        for text in ['Registered:']:self.assertIn(text,card)
+        for text in [self.event.name,self.event.city,'Jul 1–2, 2030','Details in progress']:self.assertIn(text,card)
+        for text in ['Signed up']:self.assertIn(text,card)
         self.assertIn('0',card)
         for text in ['confirmed assignments','View daily coverage']:self.assertNotIn(text,card)
         self.assertNotContains(response,'<th scope="col">Checked In</th>')
-        self.assertNotIn('SYNTHETIC Venue',card)
         self.assertNotIn('Checked In:',card)
         self.assertNotIn('Upcoming',card)
         self.event.details_finalized_at=self.event.start_at;self.event.save()
         response=self.client.get('/events/');parser=CardParser();parser.feed(response.content.decode())
-        self.assertIn('Details finalized',parser.cards[0])
+        self.assertIn('Ready',parser.cards[0])
 
     def test_gets_leave_domain_records_audit_and_finalization_unchanged(self):
         before=(AuditLog.objects.count(),EventExecution.objects.count(),Event.objects.count(),EventRegistration.objects.count(),Participant.objects.count())
@@ -177,7 +176,7 @@ class EventsPassTwoTests(TestCase):
 
     def test_existing_info_fields_and_dirty_guard_are_present_without_global_leak(self):
         response=self.client.get(reverse('events:event_detail',args=[self.event.pk]))
-        for text in ['Venue','Address','Event days','Time zone','Housing','SYNTHETIC lodging<br>Second line','ev-overview']:self.assertContains(response,text)
+        for text in ['Venue','Address','Event hours','Times are','Housing','SYNTHETIC lodging<br>Second line','ev-overview']:self.assertContains(response,text)
         self.assertContains(self.client.get(reverse('events:event_edit',args=[self.event.pk])),'data-event-dirty-guard')
         self.assertNotContains(self.client.get('/internal/'),'data-event-dirty-guard')
 
@@ -187,19 +186,19 @@ class EventsPassTwoTests(TestCase):
         response=self.client.get('/events/')
         parser=CardParser();parser.feed(response.content.decode())
         card=' '.join(parser.cards[0].split())
-        self.assertIn('Registered: 1',card)
+        self.assertIn('Signed up 1',card)
         self.assertNotIn('Checked In:',card)
         Attendance.objects.create(event=self.event,registration=reg,participant=person)
         response=self.client.get('/events/');parser=CardParser();parser.feed(response.content.decode())
-        self.assertIn('Registered: 1',' '.join(parser.cards[0].split()))
+        self.assertIn('Signed up 1',' '.join(parser.cards[0].split()))
         self.assertNotIn('Checked In:',' '.join(parser.cards[0].split()))
         self.assertTrue(Attendance.objects.filter(event=self.event,registration=reg).exists())
         self.client.force_login(self.viewer,backend='django.contrib.auth.backends.ModelBackend')
         response=self.client.get('/events/');parser=CardParser();parser.feed(response.content.decode())
         card=' '.join(parser.cards[0].split())
-        self.assertIn('Registered: Unavailable',card)
+        self.assertIn('Signed up —',card)
         self.assertNotIn('Checked In:',card)
-        self.assertNotIn('Registered: 1',card)
+        self.assertNotIn('Signed up 1',card)
         self.assertNotIn(person.last_name,card)
 
     def test_pass_a_readable_navigation_keeps_every_authorized_destination(self):

@@ -254,7 +254,7 @@ class EventFocusedEditorTests(FixtureMixin,TestCase):
         self.event.status='cancelled';self.event.save(update_fields=['status'])
         response=self.client.get(reverse('events:event_list'),{'view':'all','location':'Athens, GA','details':'progress'})
         self.assertEqual(response.status_code,200);self.assertEqual(response.context['page_obj'].paginator.count,1)
-        self.assertNotContains(response,'Checked In');self.assertNotContains(response,'SYNTHETIC Venue')
+        self.assertNotContains(response,'Checked In')
         self.assertContains(response,'Details in progress');self.assertContains(response,'Cancelled')
         self.assertNotContains(response,'Related tools')
 

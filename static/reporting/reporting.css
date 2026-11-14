@@ -51,3 +51,22 @@
 .r17-label{text-transform:none;letter-spacing:0;font-size:13px;font-weight:500;color:#4b5563}
 .r17-workspace h2{font-size:15px}
 .r17-kpi,.r17-chart,.r17-report,.r17-filters{border-radius:12px}
+
+/* Reports rebuild (rp2): range chips + filters in one row, column charts, simpler tiles */
+body.internal-app #main-content .rp2-bar{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-bottom:6px}
+body.internal-app #main-content .rp2-ranges{display:flex;gap:6px;flex-wrap:wrap;padding-top:4px}
+body.internal-app #main-content .rp2-chip{font-size:13px;padding:7px 12px;border-radius:999px;border:1px solid #d6dade;background:#fff;color:#3d4450;text-decoration:none}
+body.internal-app #main-content .rp2-chip[aria-current]{font-weight:600;border-color:#ac1929;background:#fdf1f2;color:#ac1929}
+body.internal-app #main-content .rp2-more{flex:1 1 100%;margin:0}
+body.internal-app #main-content .rp2-more:not([open]){flex:0 0 auto;padding:0;border:0;background:transparent;box-shadow:none}
+body.internal-app #main-content .rp2-more:not([open]) > summary{font-size:13px;padding:7px 12px;border-radius:999px;border:1px solid #d6dade;background:#fff}
+body.internal-app #main-content .r17-kpi{padding:14px 16px}
+body.internal-app #main-content .r17-kpi .r17-card-context{display:none}
+body.internal-app #main-content .rp2-cols{display:flex;align-items:flex-end;gap:14px;height:190px;padding:20px 4px 0;border-bottom:1px solid #e3e5e8;margin-top:8px}
+body.internal-app #main-content .rp2-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;min-width:0}
+body.internal-app #main-content .rp2-col b{font-size:12px;font-weight:600;color:#3d4450}
+body.internal-app #main-content .rp2-col-bar{display:block;width:100%;max-width:64px;min-height:2px;background:#f1b8bf;border-radius:4px 4px 0 0}
+body.internal-app #main-content .rp2-col.is-last .rp2-col-bar{background:#d0212f}
+body.internal-app #main-content .rp2-col small{font-size:11px;color:#5b6470;white-space:nowrap;transform:translateY(18px)}
+body.internal-app #main-content .rp2-cols + .rp2-hidden{display:none}
+body.internal-app #main-content .r17-chart:has(.rp2-cols){padding-bottom:32px}

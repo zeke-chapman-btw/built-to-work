@@ -46,8 +46,8 @@ class FinalRefinementETests(TestCase):
     def test_directory_retains_years_in_both_table_and_phone_card(self):
         self.login()
         response = self.client.get(reverse('events:event_list'), {'view': 'all'})
-        self.assertContains(response, 'Jul 1, 2030', count=2)
-        self.assertContains(response, 'Jul 2, 2030', count=2)
+        self.assertContains(response, 'Jul 1, 2030', count=1)
+        self.assertContains(response, 'Jul 2, 2030', count=1)
 
     def test_four_summary_and_structured_evidence_combinations_remain_independent(self):
         self.login()

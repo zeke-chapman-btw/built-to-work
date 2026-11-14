@@ -152,6 +152,32 @@ class Event(models.Model):
     def local_end_at(self):
         return timezone.localtime(self.end_at, ZoneInfo(self.timezone_name))
 
+    @property
+    def first_day(self):
+        """Setup day when there is one, otherwise the first event day."""
+        start = self.local_start_at.date()
+        return min(self.setup_date, start) if self.setup_date else start
+
+    @property
+    def last_day(self):
+        """Arrive-home day when it is after the event, otherwise the last event day."""
+        end = self.local_end_at.date()
+        return max(self.return_date, end) if self.return_date else end
+
+    @property
+    def date_span(self):
+        """Short range covering setup, event and travel home days: 'Dec 9–12', 'Dec 30 – Jan 2, 2027'."""
+        a, b = self.first_day, self.last_day
+        year = timezone.localdate().year
+        tail = "" if b.year == year and a.year == year else f", {b.year}"
+        if a == b:
+            return a.strftime("%b ") + str(a.day) + tail
+        if (a.year, a.month) == (b.year, b.month):
+            return f"{a:%b} {a.day}\u2013{b.day}{tail}"
+        if a.year == b.year:
+            return f"{a:%b} {a.day} \u2013 {b:%b} {b.day}{tail}"
+        return f"{a:%b} {a.day}, {a.year} \u2013 {b:%b} {b.day}, {b.year}"
+
     def __str__(self):
         return self.name
 

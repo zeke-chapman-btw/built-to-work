@@ -76,6 +76,18 @@ def event_summary(actor,events,filters):
     return rows,{"leads":total("leads") if rows else 0,"qualified":total("qualified"),"plays":total("plays") if rows else 0,"interested":total("interested")},charts
 
 
+PRIORITY_LABELS={"pay":"Good pay","benefits":"Benefits","advancement":"Room to grow","learning":"Learning new skills","security":"Steady, reliable work","balance":"A schedule that fits","close_to_home":"Close to home","enjoyment":"Work they enjoy","difference":"Making a difference","other":"Other"}
+def what_people_want(population):
+    """Counts of the sign-up answer "What matters most to you in a job?" across the same participant group."""
+    from apps.participants.models import ParticipantCareerProfile
+    tally=defaultdict(int)
+    for answer in ParticipantCareerProfile.objects.filter(participant__in=population).values_list("intake_data__career_priorities",flat=True).iterator():
+        if isinstance(answer,str):answer=[answer]
+        for key in answer or []:
+            if isinstance(key,str):tally[key]+=1
+    rows=[{"label":PRIORITY_LABELS.get(k,k.replace("_"," ").capitalize()),"count":n} for k,n in sorted(tally.items(),key=lambda kv:-kv[1])[:8]]
+    return chart("What people want",rows,"From the sign-up question \u201cWhat matters most to you in a job?\u201d People can pick more than one.")
+
 def workspace_data(actor,tab,filters,request,*,export=False):
     tabs=allowed_tabs(actor);data={"cards":[],"charts":[],"notes":[],"columns":[],"report_rows":[],"page":None,"title":dict(TAB_LABELS)[tab],"source_detail":""}
     def add(label,value,detail,url=None,kind="number"):data["cards"].append(card(label,value,detail,url,kind))
@@ -141,6 +153,7 @@ def workspace_data(actor,tab,filters,request,*,export=False):
         else:
             add("Participant acquisitions" if filters.get("start") or filters.get("end") else "Active participants",population.count(),"Current canonical directory cohort; original-acquisition date filters use existing UTC discovery semantics. Unknown dates are not inferred.",reverse("internal:reports")+"?tab=participants")
             data["charts"] += [g for g in intelligence["charts"] if g.get("dimension") in ("acquisition_month","participation")]
+            data["charts"].append(what_people_want(population))
     if tab in ("highlights","opportunities") and "opportunities" in tabs and not filters.get("event"):
         opps,candidates,counts,stages,months=metrics.recruiting_metrics(actor,filters)
         add("Active opportunities",counts["active_opportunities"],"Authorized active positions with approved revisions.",reverse("internal:reports")+"?tab=opportunities")

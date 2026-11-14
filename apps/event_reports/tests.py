@@ -260,7 +260,7 @@ class Reporting9FTests(TestCase):
         from datetime import datetime,UTC
         self.event.start_at=datetime(2030,1,2,2,tzinfo=UTC);self.event.end_at=datetime(2030,1,3,2,tzinfo=UTC);self.event.save()
         detail=self.client.get(reverse('event_reports:detail',args=[self.event.pk]))
-        self.assertContains(detail,'Jan 1 – ');self.assertContains(detail,'Jan 2, 2030')
+        self.assertContains(detail,'Jan 1–2, 2030')
         comparison=self.client.get(reverse('event_reports:index'),{'q':self.event.name})
         self.assertContains(comparison,'Jan 1, 2030')
 

@@ -126,7 +126,7 @@ class Build10CTests(TestCase):
         html=response.content.decode()
         self.assertLess(html.index('event-primary-create'),html.index('name="q"'))
         form=html.split('aria-label="Find events"',1)[1].split('</form>',1)[0]
-        self.assertIn('Advanced filters',form);self.assertEqual(form.count('>Reset</a>'),1);self.assertEqual(form.count('>Apply</button>'),1)
+        self.assertIn('More filters',form);self.assertEqual(form.count('>Reset</a>'),1);self.assertEqual(form.count('>Apply</button>'),1)
 
     def test_status_filters_and_invalid_input_are_preserved(self):
         self.login();response=self.client.get(reverse('events:event_list'),{'q':'SYNTHETIC 10C','view':'upcoming'})
