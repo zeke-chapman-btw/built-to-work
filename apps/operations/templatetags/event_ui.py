@@ -135,7 +135,7 @@ def event_editor_sections(form):
         ("basics", "Basic information", ("name", "event_type", "event_type_other", "description", "simulator_qualification_threshold"), False),
         ("purpose", "Purpose", ("purpose", "customer", "campaign"), True),
         ("schedule", "Event dates", ("start_at", "end_at", "timezone_name"), False),
-        ("location", "Location", ("location_name", "address_line_1", "address_line_2", "city", "state", "postal_code", "country"), False),
+        ("location", "Location", ("location_name", "address_line_1", "address_line_2", "city", "state", "postal_code", "country", "map_latitude", "map_longitude"), False),
         ("travel-dates", "Setup and travel dates", ("setup_date", "staff_arrival_time", "return_date"), True),
         ("staff-defaults", "Staff assignment defaults", ("daily_start_time", "daily_end_time"), True),
         ("contact-logistics", "Event contact", ("contact_name", "contact_email", "contact_phone"), True),
