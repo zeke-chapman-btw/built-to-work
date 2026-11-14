@@ -132,6 +132,6 @@ class Post16B1Tests(EmployerFixtures, TestCase):
         self.client.force_login(self.admin, backend='django.contrib.auth.backends.ModelBackend')
         response = self.client.get(url)
         self.assertContains(response, campaign.name)
-        self.assertContains(response, reverse('recruiting:matching', args=[self.opportunity.pk]))
+        self.assertContains(response, reverse('recruiting:position', args=[self.opportunity.pk]))
         self.client.force_login(self.customer, backend=BACKEND)
         self.assertEqual(self.client.get(url).status_code, 403)
