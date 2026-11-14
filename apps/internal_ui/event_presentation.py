@@ -89,6 +89,45 @@ def operations_home(user):
         event_index_url=reverse("events:event_list" if user.has_perm("events.view_event") else "staffing:schedule"))
 
 
+def operations_overview_extras(user, data):
+    """Next-event card, station status and open equipment issues for the Operations overview."""
+    from django.db.models import Max
+    from apps.stations.models import Station, EventStation
+    out = dict(next_card=None, station_rows=[], equipment_notes=[])
+    featured = data.get("featured")
+    if featured:
+        event = featured["event"]
+        assigned = EventStation.objects.filter(event=event).select_related("station")
+        kinds = {}
+        for row in assigned:
+            kinds[row.station.get_station_type_display()] = kinds.get(row.station.get_station_type_display(), 0) + 1
+        form_name = ""
+        try:
+            from apps.participants.intake_models import IntakeFormAssignment
+            a = IntakeFormAssignment.objects.filter(event=event, channel="event", is_active=True).select_related("form", "active_version").first()
+            if a:
+                form_name = a.form.name + (f" · v{a.active_version.number}" if a.active_version_id else "")
+        except Exception:
+            form_name = ""
+        out["next_card"] = dict(event=event, url=featured["url"], leaves=event.first_day, arrival=event.staff_arrival_time,
+            stations=assigned.count(), kinds=", ".join(f"{n} {k.lower()}{'s' if n != 1 else ''}" for k, n in kinds.items()),
+            form=form_name, signups=event.registrations.filter(status="active").count())
+    if user.has_perm("stations.view_station"):
+        last = {}
+        try:
+            from apps.simulators.models import SimulatorCapture
+            last = dict(SimulatorCapture.objects.values("station_id").annotate(t=Max("created_at")).values_list("station_id", "t"))
+        except Exception:
+            last = {}
+        for st in Station.objects.order_by("-is_active", "station_type", "name")[:8]:
+            out["station_rows"].append(dict(station=st, last=last.get(st.pk)))
+    from apps.operations.services import manager as ops_manager
+    if ops_manager(user, "event_notes"):
+        from apps.operations.models import EventNote
+        out["equipment_notes"] = list(EventNote.objects.filter(category__in=("equipment", "incident"), archived_at__isnull=True).select_related("event", "author").order_by("-created_at")[:5])
+    return out
+
+
 def staff_tabs(user, event):
     """Link existing staff and workday views without widening endpoint policy."""
     tabs = []

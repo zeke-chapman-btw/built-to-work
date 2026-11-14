@@ -351,6 +351,46 @@ def _overview_data(user, event, can_view_records):
     return data
 
 
+def _registration_story(user, event, registration):
+    """Scores, a timeline of the day, sign-up answers and permissions for one registration."""
+    from apps.participants.eligibility import official_simulator_captures
+    from apps.event_reports.activity import activity_sources
+    from apps.crm.models import Interaction
+    person = registration.participant
+    can_records = user.has_perm("participants.view_participant")
+    timeline = [dict(at=registration.registered_at, text="Signed up " + ("online" if registration.source in ("online", "public") else "at the trailer"), tag="Sign-up", tone="")]
+    checkin = registration.attendance_records.filter(is_void=False).first()
+    if checkin:
+        timeline.append(dict(at=checkin.checked_in_at, text="Checked in" + (" by QR scan" if checkin.source == "qr_scan" else ""), tag="Checked in", tone="ok"))
+    sources = activity_sources(event)
+    quiz = sources["finished_quizzes"].filter(participant=person).order_by("completed_at").first()
+    if quiz:
+        timeline.append(dict(at=quiz.completed_at, text="Finished the kiosk quiz", tag="Kiosk", tone=""))
+    threshold = int(event.simulator_qualification_threshold) if event.simulator_qualification_threshold is not None else 50
+    best = None
+    for cap in official_simulator_captures().filter(event=event, participant=person, total_score__isnull=False).select_related("station").order_by("captured_at"):
+        score = int(cap.total_score.quantize(1))
+        name = cap.station.name if cap.station_id else "Simulator"
+        timeline.append(dict(at=cap.captured_at, text=f"{name} · {score}", tag="Passed" if score >= threshold else "Played", tone="ok" if score >= threshold else ""))
+        if best is None or score > best["score"]:
+            best = dict(score=score, name=name, passed=score >= threshold)
+    timeline.sort(key=lambda r: r["at"])
+    touch = Interaction.objects.filter(participant=person, archived_at__isnull=True, occurred_at__gte=event.start_at).order_by("-occurred_at").first() if can_records else None
+    career = getattr(person, "career_profile", None)
+    answers = dict(looking={"seeking": "Yes", "open": "Maybe", "not_seeking": "No"}.get(career.employment_interest if career else "", ""),
+        work_type=career.get_preferred_work_type_display() if career and career.preferred_work_type else "",
+        trades=[t.strip() for t in (career.career_interests if career else "").replace(";", ",").split(",") if t.strip()][:4]) if can_records else None
+    consents = []
+    if can_records:
+        seen = set()
+        for acc in person.consent_acceptances.select_related("document").order_by("-accepted_at"):
+            key = getattr(acc.document, "key", acc.document_id)
+            if key in seen: continue
+            seen.add(key); consents.append(dict(title=getattr(acc.document, "title", "Consent"), at=acc.accepted_at))
+    return dict(story_timeline=timeline, story_best=best, story_threshold=threshold, story_quiz=quiz, story_checkin=checkin,
+        story_touch=touch, story_answers=answers, story_consents=consents, story_can_records=can_records)
+
+
 def _registration_rows(event, registrations, params):
     """Registrations list: best simulator score, looking-for-work, interests and follow-up since they signed up."""
     from zoneinfo import ZoneInfo
@@ -442,6 +482,7 @@ def registration_detail(request, event_id, registration_id):
             "ticket_qr_data": _ticket_qr_data(request, ticket) if ticket else None,
             "reissue_form": ReissueTicketForm(initial={"expected_ticket_id": ticket.pk}) if ticket else None,
             "void_form": VoidRegistrationForm() if registration.status == EventRegistration.Status.ACTIVE else None,
+            **_registration_story(request.user, event, registration),
         })
 
 

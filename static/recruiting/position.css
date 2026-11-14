@@ -59,3 +59,19 @@ body.internal-app #main-content .cp-act strong{font-weight:600}
 body.internal-app #main-content .cp-act small{display:block;font-size:12px;color:#5b6470}
 body.internal-app #main-content .pos-sub a{color:var(--brand-red-dark,#a51d24)}
 body.internal-app #main-content .pos-stack > .card,body.internal-app #main-content .pos-cols > .card{margin:0}
+body.internal-app #main-content a.pos-tile{color:#1a1a1a;text-decoration:none}
+body.internal-app #main-content .pos-tile.is-warn b{color:#7a5200}
+body.internal-app #main-content .rh-row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 130px;gap:12px;align-items:center;padding:12px 20px;border-top:1px solid #f1f2f4;font-size:14px;color:#1a1a1a;text-decoration:none}
+body.internal-app #main-content .pos-card-head + .rh-row{border-top:0}
+body.internal-app #main-content a.rh-row:hover,body.internal-app #main-content a.rh-pos:hover{background:#fafbfc}
+body.internal-app #main-content .pos-muted-s{font-size:12px;color:#5b6470}
+body.internal-app #main-content .pos-chip.is-info{background:#e6effb;color:#205087}
+body.internal-app #main-content .rh-row .pos-chip{justify-self:start}
+body.internal-app #main-content .rh-note{margin:0;padding:10px 20px;font-size:12px;color:#5b6470;background:#fafbfc;border-top:1px solid #f1f2f4}
+body.internal-app #main-content .rh-pos{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 20px;border-top:1px solid #f1f2f4;font-size:14px;color:#1a1a1a;text-decoration:none}
+body.internal-app #main-content .rh-pos strong{display:block;font-weight:600}
+body.internal-app #main-content .rh-pos small{display:block;font-size:12px;color:#5b6470}
+body.internal-app #main-content .rh-funnel{padding:12px 20px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+body.internal-app #main-content .rh-funnel-row{display:flex;justify-content:space-between}
+body.internal-app #main-content .rh-bar{display:block;height:8px;border-radius:4px;background:#d0212f;margin-top:3px;min-width:2px}
+body.internal-app #main-content .rh-bar.is-hired{background:#1d6b35}

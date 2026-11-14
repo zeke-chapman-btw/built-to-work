@@ -1,6 +1,6 @@
 {% extends 'shared/application_base.html' %}{% load static %}
 {% block title %}{{ company.name|default:'Customer access' }} · Built to Work{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'customers/portal.css' %}?v=pos-1">{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'customers/portal.css' %}?v=cd2-2">{% endblock %}
 {% block preview_notice %}{% if customer_admin_preview %}<div class="application-notice-frame"><aside class="application-preview-notice" aria-label="Administrator preview"><strong>Admin Preview — Customer Portal</strong><p>View only · Synthetic company · Your administrator account remains signed in. Forms can be inspected; changes and communications are disabled.</p></aside></div>{% endif %}{% endblock %}
 {% block content_start %}{% endblock %}
 {% block workspace_tabs %}<div class="portal-workspace">{% if local_navigation %}<nav data-scroll-current class="ux-local-nav btw-workspace-nav" aria-label="{{ local_navigation.label }}">{% for item in local_navigation.links %}<a href="{{ item.url }}"{% if item.current %} aria-current="{{ item.current }}"{% endif %}>{{ item.label }}</a>{% endfor %}</nav>{% endif %}{% if customer_admin_preview %}<fieldset class="portal-preview-content" disabled><legend class="sr-only">View-only customer preview</legend>{% endif %}{% endblock %}

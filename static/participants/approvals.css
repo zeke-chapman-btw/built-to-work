@@ -34,3 +34,22 @@ body.internal-app #main-content .ap-review-item strong{display:block;font-weight
 body.internal-app #main-content .ap-review-item small{display:block;font-size:12px;color:#5b6470}
 body.internal-app #main-content .ap-hint{margin:0;font-size:12px;color:#5b6470}
 @media (max-width:900px){body.internal-app #main-content .ap-cols{grid-template-columns:1fr}body.internal-app #main-content .ap-review{position:static}}
+body.internal-app #main-content .sd-tr{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 100px 100px 60px;gap:12px;align-items:center;padding:12px 20px;border-top:1px solid #f1f2f4;font-size:14px}
+body.internal-app #main-content .sd-th{font-size:12px;color:#5b6470;background:#fafbfc;border-top:0;padding:8px 20px}
+body.internal-app #main-content .sd-tr.is-selected{background:#fdf7f8;box-shadow:inset 3px 0 0 #d0212f}
+body.internal-app #main-content .sd-who{color:#1a1a1a;text-decoration:none;min-width:0}
+body.internal-app #main-content .sd-who strong{display:block;font-weight:600}
+body.internal-app #main-content .sd-who small{display:block;font-size:12px;color:#5b6470}
+body.internal-app #main-content .sd-chips{display:flex;gap:4px;flex-wrap:wrap}
+body.internal-app #main-content .ap-item.sd-staff,body.internal-app #main-content .ap-item.sd-office{background:#eceef0;color:#46505b}
+body.internal-app #main-content .ap-item.sd-staff-lead{background:#f1eafb;color:#5b3492}
+body.internal-app #main-content .ap-doc.sd-ok{background:#e3f4e8;color:#1d6b35}
+body.internal-app #main-content .sd-muted{color:#a3a9b1;font-size:13px}
+body.internal-app #main-content .sd-tr .pay-toggle-form{margin:0}
+body.internal-app #main-content .sd-facts{display:grid;grid-template-columns:max-content 1fr;gap:10px 16px;margin:0;padding:14px 20px;font-size:14px}
+body.internal-app #main-content .sd-facts dt{font-size:12px;color:#5b6470}
+body.internal-app #main-content .sd-facts dd{margin:0}
+body.internal-app #main-content .sd-year{padding:0 20px 14px;font-size:14px}
+body.internal-app #main-content .sd-year small{display:block;font-size:12px;color:#5b6470;margin-bottom:6px}
+body.internal-app #main-content .sd-year div{display:flex;gap:16px}
+@media (max-width:900px){body.internal-app #main-content .sd-th{display:none}body.internal-app #main-content .sd-tr{grid-template-columns:1fr 1fr}}

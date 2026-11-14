@@ -51,10 +51,24 @@ def recruiting_context(actor, organization_id, *, can_needs, can_campaigns):
                     'subject': candidate['position'], 'at': item['occurred_at'],
                     'url': reverse('crm:employer-detail', args=[candidate['id'], item['id']])})
         recent.sort(key=lambda item: item['at'], reverse=True)
+        import uuid as _uuid
+        to_review = [dict(c, operation_id=_uuid.uuid4()) for c in candidates if c['can_respond'] and not c['latest_response']]
+        by_position = {}
+        for c in candidates:
+            row = by_position.setdefault(c['position_id'], {'sent': 0, 'hired': 0})
+            row['sent'] += 1
+            row['hired'] += 1 if c['btw_confirmed_hire'] else 0
+        for p in positions:
+            p.update(by_position.get(str(p['id']), {'sent': 0, 'hired': 0}))
+        active_rows = [row for row in positions if row['record_status'] == 'active']
+        dashboard = {'to_review': to_review[:5], 'to_review_total': len(to_review),
+            'interviews': sum(1 for c in candidates if c['latest_response'] and c['latest_response']['label'] == 'Request Interview'),
+            'hired': sum(1 for c in candidates if c['btw_confirmed_hire']),
+            'openings': sum(row['quantity'] or 0 for row in active_rows)}
         return {'positions': positions, 'requests': requests,
             'standalone_positions': [row for row in positions if str(row['id']) not in grouped_ids],
             'recruiting_campaigns': campaigns,
             'released_candidates': candidates, 'action_required': actions[:8],
             'action_required_total': len(actions), 'customer_recent': recent[:8],
             'active_positions': [row for row in positions if row['record_status'] == 'active'],
-            'active_campaigns': [row for row in campaigns if row['record_status'] == 'active']}
+            'active_campaigns': [row for row in campaigns if row['record_status'] == 'active'], 'dash': dashboard}

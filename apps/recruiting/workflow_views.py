@@ -43,7 +43,37 @@ def overview(request):
         outreach_count=outreach.count(),outreach=outreach[:5],overdue_count=overdue.count(),overdue_tasks=overdue.order_by('due_date','pk')[:5],
         interview_count=pending_responses.filter(kind='interview').count(),pending_response_count=pending_responses.count(),
         pending_responses=pending_responses.order_by('-created_at')[:8],
-        employer_responses=responses.order_by('-created_at')[:8])
+        employer_responses=responses.order_by('-created_at')[:8],**_overview_extras(items,candidates))
+
+
+def _overview_extras(items,candidates):
+    """Counts and rows for the rebuilt Recruiting overview."""
+    from datetime import timedelta
+    active=candidates.filter(active=True)
+    month_start=timezone.localdate().replace(day=1)
+    last_month_start=(month_start-timedelta(days=1)).replace(day=1)
+    hired=candidates.filter(stage_id='hired')
+    waiting=active.filter(stage_id__in=('submitted','employer_reviewing'))
+    oldest=waiting.order_by('updated_at').values_list('updated_at',flat=True).first()
+    to_contact=active.filter(stage_id='identified').select_related('participant','opportunity__need').order_by('created_at')
+    positions=[]
+    for op in items.filter(need__status='active').select_related('need__organization','need__effective_revision')[:6]:
+        terms=op.need.display_revision
+        positions.append(dict(op=op,title=op.need.title,customer=op.need.organization.name,
+            candidates=active.filter(opportunity=op).count(),hired=hired.filter(opportunity=op).count(),openings=getattr(terms,'worker_quantity',None)))
+    funnel=[]
+    for label,keys in BOARD:
+        n=(candidates if 'hired' in keys else active).filter(stage_id__in=keys).count()
+        funnel.append(dict(label=label,count=n,hired='hired' in keys))
+    top=max([f['count'] for f in funnel]+[1])
+    for f in funnel:f['bar']=int(f['count']*100/top)
+    openings=sum(p['openings'] or 0 for p in positions)
+    return dict(to_contact_count=to_contact.count(),to_contact=to_contact[:5],waiting_count=waiting.count(),
+        waiting_days=(timezone.now()-oldest).days if oldest else None,
+        hired_month=hired.filter(updated_at__date__gte=month_start).count(),
+        hired_last_month=hired.filter(updated_at__date__gte=last_month_start,updated_at__date__lt=month_start).count(),
+        positions_rows=positions,funnel=funnel,openings_total=openings,
+        customer_count=items.filter(need__status='active').values('need__organization').distinct().count())
 
 
 @staff

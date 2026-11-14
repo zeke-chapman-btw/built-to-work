@@ -94,8 +94,9 @@ def workspace(request,workspace_id):
         from apps.events.experience_operations import can_view_event_operations
         if data["featured"] and can_view_event_operations(request.user):
             links=links+[dict(label="Simulator Scoring",url=reverse("events:event_detail",args=[data["featured"]["event"].pk])+"?section=results",description="View recorded simulator results for the next upcoming event.",context_label=data["featured"]["event"].name)]
+        from .event_presentation import operations_overview_extras
         return render(request,"internal/operations_home.html",_staff_context(request,page_title="Operations",page_description="Manage event resources, quizzes, games, forms and consents.",workspace_links=links,
-            reporting_available=bool(report_destinations(request.user)),**data))
+            reporting_available=bool(report_destinations(request.user)),**operations_overview_extras(request.user,data),**data))
     return render(request,"internal/workspace.html",_staff_context(request,page_title=item["label"].title(),page_description=item["description"],workspace_id=workspace_id,workspace_links=links))
 
 

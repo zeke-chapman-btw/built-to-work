@@ -55,7 +55,44 @@ def directory(request):
     for person in page_people:
         person.roster_roles=(["Admin"] if person.user_id and person.user.is_superuser else [])+([labels[r] for r in sorted(roles_for(person.user)) if r in labels] if person.user_id else [])
         person.pay_revision=person.updated_at.isoformat()
-    return render(request,"staffing/directory.html",dict(page_title="Staff",people=page_people,q=q,selected_status=state,can_manage_staff=manager(request.user),back=request.get_full_path()))
+    show=request.GET.get("show","")
+    _directory_extras(page_people)
+    if show in ("event","office","nosignin","driver"):
+        page_people.object_list=[p for p in page_people.object_list if
+            (show=="event" and "Event staff" in p.roster_roles) or (show=="office" and any(r in p.roster_roles for r in ("Admin","Manager","Recruiter")))
+            or (show=="nosignin" and not p.user_id) or (show=="driver" and "Driver" in p.booked_roles)]
+    selected=None;wanted=request.GET.get("person")
+    for person in page_people.object_list:
+        if wanted and str(person.pk)==wanted:selected=person
+    if selected is None and page_people.object_list:selected=page_people.object_list[0]
+    if selected:_directory_detail(selected)
+    return render(request,"staffing/directory.html",dict(page_title="Staff",people=page_people,q=q,selected_status=state,show=show,selected=selected,
+        chips=[("","Everyone"),("event","Event staff"),("office","Office"),("driver","Drivers"),("nosignin","No sign-in yet")],
+        can_manage_staff=manager(request.user),back=request.get_full_path()))
+
+
+def _directory_extras(page_people):
+    """Next booked day and the roles each person has been booked as."""
+    from .models import AssignmentDay, StaffAssignment as EventAssignment
+    today=timezone.localdate();ids=[p.pk for p in page_people]
+    nxt={}
+    for row in AssignmentDay.objects.filter(assignment__staff_id__in=ids,assignment__status="confirmed",date__gte=today).select_related("assignment__event").order_by("date"):
+        nxt.setdefault(row.assignment.staff_id,row)
+    booked={}
+    for staff_id,role in EventAssignment.objects.filter(staff_id__in=ids).exclude(coverage_role="").values_list("staff_id","coverage_role").distinct():
+        booked.setdefault(staff_id,set()).add({"staff":"Staff","staff_lead":"Staff Lead","driver":"Driver","combined":"Combined"}.get(role,role))
+    for p in page_people:
+        p.next_day=nxt.get(p.pk);p.booked_roles=sorted(booked.get(p.pk,()))
+
+
+def _directory_detail(person):
+    """This year's days, miles and events for the side panel."""
+    from apps.workdays.models import Workday, MileageTrip
+    start=timezone.localdate().replace(month=1,day=1)
+    days=Workday.objects.filter(staff=person,is_active=True,work_date__gte=start)
+    person.year_days=days.count();person.year_events=days.values("event").distinct().count()
+    person.year_miles=sum((t.round_trip_miles or 0) for t in MileageTrip.objects.filter(staff=person,claim_date__gte=start).exclude(status="void"))
+    person.last_login=person.user.last_login if person.user_id else None
 
 
 @staff_view
