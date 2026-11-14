@@ -21,7 +21,7 @@ class Post16C1Tests(WorkflowFixtures, TestCase):
     def test_home_is_distinct_uses_current_preferences_and_omits_irrelevant_cards(self):
         self.sign_in()
         response = self.client.get(reverse('participants:portal-home'))
-        self.assertContains(response, 'Welcome,')
+        self.assertContains(response, 'Welcome back,')
         self.assertContains(response, 'Keep your profile current')
         self.assertContains(response, 'Current employment situation')
         self.assertNotContains(response, 'My upcoming events')

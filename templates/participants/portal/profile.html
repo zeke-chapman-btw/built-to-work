@@ -1,7 +1,7 @@
 {% extends 'participants/portal/base.html' %}
 {% load tz current_preferences %}{% current_preferences_for account.participant as preferences %}
 {% block title %}My profile · Built to Work{% endblock %}
-{% block page_identity %}<div class="cp3-who"><span class="cp3-av is-lg" aria-hidden="true">{{ profile_initials }}</span><div><h1 class="page-title">{{ profile_name }}</h1><p class="cp3-sub">{% if profile_current_role %}{{ profile_current_role }}{% elif profile_interests %}Interested in {{ profile_interests }}{% endif %}{% if profile_location %}{% if profile_current_role or profile_interests %} · {% endif %}{{ profile_location }}{% endif %}</p></div></div>{% endblock %}
+{% block page_identity %}<div class="cp3-who"><span class="cp3-av is-lg" aria-hidden="true">{{ profile_initials }}</span><div><h1 class="page-title profile-name">{{ profile_name }}</h1><p class="cp3-sub">{% if profile_current_role %}{{ profile_current_role }}{% elif profile_interests %}Interested in {{ profile_interests }}{% endif %}{% if profile_location %}{% if profile_current_role or profile_interests %} · {% endif %}{{ profile_location }}{% endif %}</p></div></div>{% endblock %}
 {% block page_actions %}<a class="button" href="#documents">Documents</a>{% if not request.portal_preview %}<a class="button button-primary" href="{% url 'recruiting:portal-preferences' %}">Update what I'm looking for</a>{% endif %}{% endblock %}
 {% block content %}
 <div class="profile-workspace">
