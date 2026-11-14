@@ -310,6 +310,9 @@ def ticket(request, ticket_id):
     owned = QrTicket.objects.filter(registration__participant_id__in=identity_members(request.portal_account.participant_id),
         registration__status='active', is_current=True, revoked_at__isnull=True, expires_at__gte=timezone.now())
     qr = get_object_or_404(owned.select_related('registration__participant', 'registration__event'), pk=ticket_id)
+    if request.GET.get('page') == '1':
+        return render(request, 'participants/portal/ticket_page.html', {'section': 'activity', 'ticket': qr,
+            'event': qr.registration.event, 'preview': bool(getattr(request, 'portal_preview', None))})
     if getattr(request, 'portal_preview', None) and request.GET.get('image') != '1':
         return render(request, 'participants/portal/preview_ticket.html', {'section':'activity'})
     from apps.events.ticket_renderer import ticket_phone_png_bytes

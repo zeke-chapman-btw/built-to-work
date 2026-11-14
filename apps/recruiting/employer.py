@@ -16,7 +16,9 @@ from .models import (CandidateDisclosure,DisclosureMemberPermission,EmployerCand
 
 CATEGORIES=[('identity','Professional name'),('summary','Professional summary and skills'),
     ('region','General city/state'),('experience','Reported overall experience'),
-    ('qualifications','Qualification names and effective verification'),('assessments','Accepted official assessment summaries')]
+    ('qualifications','Qualification names and effective verification'),('assessments','Accepted official assessment summaries'),
+    ('work_history','Work history (jobs, dates, places)'),('references','Work references (name, role, contact)'),
+    ('documents','Documents the participant can see (resume, certificates)')]
 
 
 def digest(value):return hashlib.sha256(json.dumps(value,sort_keys=True,separators=(',',':'),default=str).encode()).hexdigest()
@@ -69,6 +71,22 @@ def build_projection(actor,item,categories):
             results.append({'type':'Simulator','label':capture.profile.name,'result':whole_percent(capture.total_score),
                 'version':capture.profile_version,'date':capture.captured_at.isoformat()})
         data['assessments']=results
+    if 'work_history' in categories:
+        from apps.participants.workspace_models import ParticipantWorkExperience
+        data['work_history']=[{'role':w.role,'employer':w.employer,'location':w.location,
+            'started':w.started_on.strftime('%b %Y') if w.started_on else '','ended':'Present' if w.is_current else (w.ended_on.strftime('%b %Y') if w.ended_on else ''),
+            'reported':w.reported_duration,'description':w.description}
+            for w in ParticipantWorkExperience.objects.filter(participant_id__in=identity_members(item.pk),archived_at__isnull=True)]
+    if 'references' in categories:
+        from apps.participants.workspace_models import ParticipantReference
+        # The staff reference check result stays private; only who they are and how to reach them is shared.
+        data['references']=[{'name':r.name,'role':r.role,'company':r.company,'worked_together':r.worked_together,'phone':r.phone,'email':r.email}
+            for r in ParticipantReference.objects.filter(participant_id__in=identity_members(item.pk),archived_at__isnull=True).order_by('pk')]
+    if 'documents' in categories:
+        if not actor.has_perm('participants.view_participantdocument'):raise PermissionDenied('Document release requires document permission.')
+        from apps.participants.participant_document_models import ParticipantDocument
+        data['documents']=[{'id':str(d.uuid),'name':d.original_filename,'category':d.category.name,'date':d.uploaded_at.date().isoformat(),'size':d.file_size}
+            for d in ParticipantDocument.objects.filter(participant_id__in=identity_members(item.pk),state='active',participant_visible=True).select_related('category').order_by('-uploaded_at','pk')]
     return data
 
 
@@ -153,9 +171,15 @@ def customer_grant(actor,organization_id,disclosure_id,*,write=False):
     return member,row
 
 
+def company_feedback(row):
+    """Responses for this candidate from this company, kept across re-releases when BTW shares more."""
+    return EmployerCandidateFeedback.objects.filter(disclosure__candidate_id=row.candidate_id,disclosure__organization_id=row.organization_id,
+        disclosure__need_id=row.need_id)
+
+
 def safe_projection(row,member):
-    latest = row.feedback.order_by('-created_at', '-pk').first()
-    confirmed = row.feedback.filter(kind='report_hired', confirmed_at__isnull=False).exists()
+    latest = company_feedback(row).order_by('-created_at', '-pk').first()
+    confirmed = company_feedback(row).filter(kind='report_hired', confirmed_at__isnull=False).exists()
     labels = {'interested': 'Company expressed interest', 'interview': 'Company requested an interview',
         'not_interested': 'Company reported not interested', 'report_hired': 'Company reported a hire · awaiting BTW confirmation',
         'feedback': 'Company feedback recorded'}
@@ -183,9 +207,24 @@ def detail(actor,organization_id,disclosure_id):
         member,row=customer_grant(actor,organization_id,disclosure_id)
         projection=safe_projection(row,member)
         projection['feedback']=[{'kind':event.get_kind_display(),'message':event.message,'date':event.created_at,
-            'btw_confirmed':bool(event.confirmed_at)} for event in row.feedback.order_by('-created_at')[:30]]
+            'btw_confirmed':bool(event.confirmed_at)} for event in company_feedback(row).order_by('-created_at')[:30]]
         audit(member.identity.user,'disclosure.viewed',row,data={'organization':str(row.organization_id),'position':str(row.need_id),'membership':str(member.pk)})
         return projection
+
+
+def released_document(actor,organization_id,disclosure_id,document_id):
+    """A document BTW released to this company for this candidate, still active and participant-visible."""
+    from apps.participants.participant_document_models import ParticipantDocument,ParticipantDocumentAudit
+    with policy_transaction():
+        member,row=customer_grant(actor,organization_id,disclosure_id)
+        released={item.get('id') for item in (row.approved_projection or {}).get('documents') or []}
+        if str(document_id) not in released:raise PermissionDenied('This document was not shared with your company.')
+        document=ParticipantDocument.objects.filter(uuid=document_id,participant_id__in=identity_members(row.participant_id),state='active',participant_visible=True).first()
+        if not document:raise PermissionDenied('This document is no longer available.')
+        ParticipantDocumentAudit.objects.create(document=document,actor=actor,action='employer_view',
+            reason='Released to employer',details={'disclosure':str(row.pk),'organization':str(organization_id),'membership':str(member.pk)})
+        audit(member.identity.user,'disclosure.document_viewed',row,data={'organization':str(row.organization_id),'document':str(document.uuid),'membership':str(member.pk)})
+        return document
 
 
 def feedback(*,actor,organization_id,disclosure_id,kind,message,operation_id):

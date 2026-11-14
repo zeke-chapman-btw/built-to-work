@@ -50,6 +50,21 @@ def customer_candidate(request,record_id):
         **interaction_context(request,record_id,data)))
 
 
+@customer_view
+@require_http_methods(['GET'])
+def customer_candidate_document(request,record_id,document_id):
+    from pathlib import Path
+    from django.http import FileResponse,Http404
+    if getattr(request,'customer_preview',False):raise PermissionDenied('Customer Administrator Preview is view-only.')
+    document=employer.released_document(request.user,request.customer_member.organization_id,record_id,document_id)
+    try:handle=document.file.open('rb')
+    except (OSError,ValueError):raise Http404('This file is temporarily unavailable. Please contact BTW.')
+    response=FileResponse(handle,as_attachment=True,filename=Path(document.original_filename).name,content_type='application/octet-stream')
+    response['Content-Security-Policy']="sandbox; default-src 'none'"
+    response['X-Content-Type-Options']='nosniff'
+    return response
+
+
 @staff
 @require_http_methods(['GET','POST'])
 def disclosure(request,candidate_id):

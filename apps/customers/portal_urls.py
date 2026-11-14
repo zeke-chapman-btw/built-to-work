@@ -4,6 +4,7 @@ from apps.recruiting import employer_views
 app_name = 'customer_portal'
 urlpatterns = [
     path('candidates/<uuid:record_id>/',employer_views.customer_candidate,name='recruiting-candidate'),
+    path('candidates/<uuid:record_id>/documents/<uuid:document_id>/',employer_views.customer_candidate_document,name='recruiting-candidate-document'),
     path('', v.workspace, name='home'),
     path('auth/login/', a.sign_in, name='login'),
     path('auth/logout/', a.sign_out, name='logout'),

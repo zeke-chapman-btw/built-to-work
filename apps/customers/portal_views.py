@@ -150,12 +150,18 @@ def workspace(request, tab='overview'):
                 'role': m.get_role_display(), 'member_role': m.role == 'member', 'state': m.get_state_display(),
                 'accepted': bool(m.accepted_at), 'invitation': token_state, 'manage_needs': m.manage_needs, 'manage_campaigns': m.manage_campaigns})
         data['members'] = rows
-    if tab in {'company', 'users', 'access'}:
+    if tab in {'company', 'users', 'access', 'account'}:
         plan = org.access_plan
         data['allowances'] = [{'label': 'Leads', 'used': s.seat_usage(org)['lead'], 'limit': plan.lead_limit}, {'label': 'Members', 'used': s.seat_usage(org)['member'], 'limit': plan.member_limit}]
         data['need_service'] = plan.workforce_need_creation is True
     if tab == 'history':
+        from . import portal_pages as pages
+        from apps.recruiting.employer import list_candidates
         data['recent'], data['feedback'] = p.history(request.user, org.pk), p.feedback(request.user, org.pk)
+        show = request.GET.get('show', 'all')
+        rows = pages.activity_rows(data['recent'], data['feedback'], list_candidates(request.user, org.pk))
+        data['activity_filters'] = pages.activity_filters(rows, show)
+        data['activity_groups'] = pages.activity_groups([r for r in rows if show == 'all' or r['kind'] == show])
     return render(request, 'customers/portal/workspace.html', data)
 
 
@@ -173,7 +179,11 @@ def add_error(form, error):
         form.add_error(None, error.messages)
 
 
-def form_page(request, title, form, *, tab, notice='', save=None, success=None, cancel_url=None):
+POPUP_FORMS = (f.InviteForm, f.MemberForm, f.ActionForm)
+
+
+def form_page(request, title, form, *, tab, notice='', save=None, success=None, cancel_url=None, context_line=''):
+    popup = request.headers.get('X-BTW-Editor') == '1' and isinstance(form, POPUP_FORMS)
     if request.method == 'POST' and form.is_valid():
         try:
             obj = save(form.cleaned_data)
@@ -181,7 +191,11 @@ def form_page(request, title, form, *, tab, notice='', save=None, success=None, 
             add_error(form, error)
         else:
             messages.success(request, 'Your change was saved.' )
-            return redirect(success(obj) if success else reverse('customer_portal:workspace', args=[tab]))
+            url = success(obj) if success else reverse('customer_portal:workspace', args=[tab])
+            if popup:
+                from apps.internal_ui.record_editors import editor_success
+                return editor_success(request, url)
+            return redirect(url)
     if isinstance(form, f.NeedForm):
         submit_label = 'Save draft'
     elif isinstance(form, f.CampaignForm):
@@ -193,9 +207,15 @@ def form_page(request, title, form, *, tab, notice='', save=None, success=None, 
     else:
         submit_label = {'Submit': 'Submit to BTW', 'Withdraw': 'Withdraw submission',
                         'Resend': 'Resend invitation', 'Revoke': 'Revoke invitation'}.get(title.split()[0], title)
+    if popup:
+        from apps.internal_ui.record_editors import editor_response
+        return editor_response(request, template='customers/portal/form.html', panel='customers/portal/popup_form.html', context=context(request, tab,
+            form=form, page_title=title, editor_context=context_line, notice=notice, save_label=submit_label,
+            back=cancel_url or reverse('customer_portal:workspace', args=[tab]), full_page_editor=False))
     return render(request, 'customers/portal/form.html', context(request, tab, title=title, form=form, notice=notice, submit_label=submit_label,
         cancel_url=cancel_url or reverse('customer_portal:workspace', args=[tab]),
-        editor_mode=isinstance(form, (f.NeedForm, f.CampaignForm)),
+        editor_mode=isinstance(form, (f.NeedForm, f.CampaignForm)), campaign_plan=isinstance(form, f.CampaignForm),
+        plan_positions=[p.need_row(n) for n in form.instance.workforce_needs.select_related('effective_revision', 'working_revision')] if isinstance(form, f.CampaignForm) and form.instance.pk else [],
         need_setup=need_prerequisites(request.customer_member.organization, form.instance) if isinstance(form, f.NeedForm) else None))
 
 
@@ -279,11 +299,15 @@ def campaign_detail(request, record_id):
     from . import portal_pages as pages
     org = organization(request)
     obj = get_object_or_404(Campaign, pk=record_id, organization=org)
-    row = pages.campaign_extras(p.campaign_row(obj), obj, list_candidates(request.user, org.pk))
+    candidates = list_candidates(request.user, org.pk)
+    row = pages.campaign_extras(p.campaign_row(obj), obj, candidates)
+    ids = {str(n['id']) for n in row['positions']}
+    row['interviews'] = sum(1 for c in pages.with_status([c for c in candidates if c['position_id'] in ids]) if c['status_label'] == 'Interview requested')
+    row['waiting'] = sum(1 for c in pages.with_status([c for c in candidates if c['position_id'] in ids]) if c['status_group'] == 'waiting')
     return render(request, 'customers/portal/campaign.html', context(request, 'campaigns', campaign=row, review_state=obj.review_state,
         record_restriction=record_restriction(obj, 'campaign'),
         editable=obj.status not in {'completed', 'cancelled'} and obj.review_state not in {'submitted', 'review'},
-        needs=row['positions'],
+        needs=row['positions'], events=pages.campaign_events(obj),
         feedback=p.feedback(request.user, org.pk, campaign_id=obj.pk), recent=p.history(request.user, org.pk, campaign_id=obj.pk)))
 
 

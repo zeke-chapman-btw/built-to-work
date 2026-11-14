@@ -16,7 +16,8 @@ class DisclosureForm(forms.Form):
         super().__init__(*args,**kwargs)
         self.fields['categories'].choices=[item for item in CATEGORIES if
             (item[0]!='qualifications' or actor.has_perm('participants.view_participantqualification')) and
-            (item[0]!='assessments' or actor.has_perms(['assessments.view_quizattempt','simulators.view_simulatorcapture']))]
+            (item[0]!='assessments' or actor.has_perms(['assessments.view_quizattempt','simulators.view_simulatorcapture'])) and
+            (item[0]!='documents' or actor.has_perm('participants.view_participantdocument'))]
 
 
 class RevokeForm(OptionalReasonMixin, forms.Form):

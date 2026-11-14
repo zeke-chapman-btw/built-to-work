@@ -41,4 +41,22 @@ def home_context(actor, account, *, preview=False):
         step = {'title': 'Find your next opportunity', 'text': 'Explore approved opportunities and let BTW know what interests you.',
             'label': 'Browse opportunities', 'url': reverse('participants:portal-jobs')}
     return {'next_step': step, 'update_requests': pending, 'interests': [jobs.interest_projection(r) for r in interests],
-        'registrations': registrations, 'freshness': confirmation}
+        'registrations': registrations, 'freshness': confirmation, **home_numbers(actor, person)}
+
+
+def home_numbers(actor, person):
+    """Small, participant-owned numbers for the Home tiles and a few open jobs."""
+    from apps.core.scores import whole_number
+    from apps.event_reports.activity import activity_sources
+    ids = identity_members(person.pk)
+    attended = EventRegistration.objects.filter(participant_id__in=ids, status='active', event__end_at__lt=timezone.now()).count()
+    best = (activity_sources()['captures'].filter(participant_id__in=ids, total_score__isnull=False, total_score__gte=0, total_score__lte=100)
+            .select_related('profile').order_by('-total_score', '-captured_at').first())
+    try:
+        open_jobs = jobs.browse(actor)[:3]
+    except Exception:
+        open_jobs = []
+    return {'events_attended': attended, 'interest_total': jobs.own_interests(actor).count(),
+            'best_score': {'value': whole_number(best.total_score), 'label': best.profile.name if best.profile_id else 'Simulator',
+                           'date': best.captured_at} if best else None,
+            'open_jobs': open_jobs}

@@ -72,13 +72,13 @@ class ActionForm(ScopedForm):
 class InviteForm(ScopedForm):
     first_name = forms.CharField(max_length=100)
     last_name = forms.CharField(max_length=100, required=False)
-    email = forms.EmailField(label='Member email')
+    email = forms.EmailField(label='Work email')
 
 
 class MemberForm(ScopedForm):
-    state = forms.ChoiceField(choices=[('enabled', 'Enabled'), ('suspended', 'Suspended'), ('removed', 'Removed')])
-    manage_needs = forms.BooleanField(required=False, label='Manage Positions')
-    manage_campaigns = forms.BooleanField(required=False, label='Manage Campaigns')
+    state = forms.ChoiceField(choices=[('enabled', 'Active'), ('suspended', 'Paused'), ('removed', 'Removed')], label='Access')
+    manage_needs = forms.BooleanField(required=False, label='Can request and edit positions')
+    manage_campaigns = forms.BooleanField(required=False, label='Can plan campaigns')
 
 
 class SwitchForm(forms.Form):

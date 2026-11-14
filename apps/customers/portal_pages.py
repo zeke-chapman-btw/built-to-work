@@ -124,14 +124,21 @@ MORE_SECTIONS = [
     ('assessments', 'Simulator & quiz results', 'Official results from Built to Work events.'),
     ('documents', 'Documents', 'Resume, certificates and other files the candidate agrees to share.'),
     ('references', 'References', 'People who can speak to their work.'),
-    ('history', 'Work history', 'Past jobs and how long they stayed.'),
+    ('work_history', 'Work history', 'Past jobs and how long they stayed.'),
+    ('contact', 'Contact details', 'Built to Work sets up interviews and keeps contact details private.'),
 ]
 
 
 def more_sections(projection):
     shared, waiting = [], []
     for key, title, about in MORE_SECTIONS:
-        (shared if projection.get(key) is not None else waiting).append({'key': key, 'title': title, 'about': about})
+        value = projection.get(key)
+        item = {'key': key, 'title': title, 'about': about}
+        if value is not None:
+            item['count'] = len(value) if isinstance(value, list) else None
+            shared.append(item)
+        else:
+            waiting.append(item)
     return shared, waiting
 
 
@@ -162,3 +169,59 @@ def campaign_extras(row, campaign, candidates):
     return dict(row, positions=needs, sent=len(mine), hired=sum(1 for c in mine if c['btw_confirmed_hire']),
         openings=sum(n['quantity'] or 0 for n in needs if n['record_status'] == 'active'),
         status_label=label, status_tone=tone)
+
+
+def campaign_events(campaign):
+    """Customer-safe event list for a campaign: when, where and how many people came."""
+    from django.db.models import Count, Q
+    from django.utils import timezone
+    from apps.events.models import Event
+    rows = []
+    today = timezone.localdate()
+    for e in Event.objects.filter(campaign=campaign).exclude(status='archived').annotate(
+            met=Count('registrations', filter=Q(registrations__status='active'), distinct=True)).order_by('start_at'):
+        start, end = e.local_start_at, e.local_end_at
+        done = end.date() < today
+        rows.append({'name': e.name, 'when': start.strftime('%a, %b %-d · %-I:%M %p').replace(':00 ', ' '), 'first': start.date(), 'city': ', '.join(v for v in (e.city, e.state) if v),
+                     'met': e.met, 'done': done, 'cancelled': e.status == 'cancelled'})
+    return rows
+
+
+ACTIVITY_FILTERS = [('all', 'Everything'), ('position', 'Positions'), ('campaign', 'Campaigns'), ('candidate', 'Candidates'), ('note', 'Notes from Built to Work')]
+
+
+def activity_rows(history, feedback, candidates):
+    from django.urls import reverse
+    rows = []
+    for item in history:
+        kind = 'campaign' if '/campaigns/' in (item.get('url') or '') else 'position'
+        rows.append({'kind': kind, 'at': item['at'], 'title': item['label'], 'subject': item.get('subject', ''), 'url': item.get('url', ''),
+                     'chip': 'Campaign' if kind == 'campaign' else 'Position', 'tone': ''})
+    for item in feedback:
+        rows.append({'kind': 'note', 'at': item['created_at'], 'title': 'Note from Built to Work', 'subject': item['body'][:140],
+                     'url': '', 'chip': 'Note', 'tone': 'v'})
+    for c in with_status(candidates):
+        url = reverse('customer_portal:recruiting-candidate', args=[c['id']])
+        name = c['candidate'].get('name') or 'A candidate'
+        rows.append({'kind': 'candidate', 'at': c['released_at'], 'title': 'Built to Work sent you ' + name, 'subject': c['position'],
+                     'url': url, 'chip': 'Waiting on you' if c['status_group'] == 'waiting' else 'Candidate', 'tone': 'y' if c['status_group'] == 'waiting' else 'b'})
+        if c.get('latest_response'):
+            rows.append({'kind': 'candidate', 'at': c['latest_response']['date'], 'title': 'Your company responded: ' + c['latest_response']['label'],
+                         'subject': name + ' · ' + c['position'], 'url': url, 'chip': 'Candidate', 'tone': 'b'})
+    rows = [r for r in rows if r['at']]
+    rows.sort(key=lambda r: r['at'], reverse=True)
+    return rows[:80]
+
+
+def activity_filters(rows, show):
+    counts = {key: sum(1 for r in rows if r['kind'] == key) for key, _ in ACTIVITY_FILTERS}
+    return [{'key': key, 'label': label, 'count': counts.get(key, 0), 'on': key == show} for key, label in ACTIVITY_FILTERS]
+
+
+def activity_groups(rows):
+    from datetime import timedelta
+    from django.utils import timezone
+    cutoff = timezone.now() - timedelta(days=7)
+    week = [r for r in rows if r['at'] >= cutoff]
+    earlier = [r for r in rows if r['at'] < cutoff]
+    return [g for g in (('This week', week), ('Earlier', earlier)) if g[1]]
