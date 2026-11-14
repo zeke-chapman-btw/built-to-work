@@ -57,7 +57,7 @@ class CustomerSharedShellTests(PortalFixtures,TestCase):
         self.assertContains(response,'data-structured-form');self.assertEqual(len(response.context['form'].groups),7)
         self.assertContains(response,'Number of workers needed');self.assertContains(response,'Save draft')
         self.assertEqual([x['url'] for x in ShellLinks(response.content.decode()).links if x['active']],
-                         [reverse('customer_portal:workspace',args=['recruiting'])])
+                         [reverse('customer_portal:workspace',args=['needs'])])
 
     def test_member_flags_do_not_become_staff_or_lead_navigation(self):
         org,lead,lead_user=self.lead();self.plan(org,member_limit=4)
@@ -69,7 +69,7 @@ class CustomerSharedShellTests(PortalFixtures,TestCase):
                 self.client.logout();self.assertEqual(self.client.post(reverse('accounts:login'),
                     {'account_type':'customer','email':member.identity.email,'password':PASSWORD}).status_code,302)
                 response=self.client.get(reverse('customer_portal:home'));links=chrome(self,response)
-                self.assertEqual(len(links),4)
+                self.assertEqual(len(links),5)
                 self.assertFalse(any(x['url'].startswith(('/internal/','/operations/','/participants/')) for x in links))
                 self.assertEqual(self.client.get(reverse('customer_portal:need-create')).status_code,200 if needs else 403)
                 self.assertEqual(self.client.get(reverse('customer_portal:campaign-create')).status_code,200 if campaigns else 403)
@@ -186,7 +186,7 @@ class PreviewSharedShellTests(PortalFixtures,TestCase):
         self.client.force_login(self.admin,backend='django.contrib.auth.backends.ModelBackend')
         self.assertEqual(self.client.post(reverse('internal:portal-preview-customer-enter')).status_code,302)
         response=self.client.get(reverse('customer_portal:home'));links=chrome(self,response)
-        self.assertEqual(len(links),4);self.assertTrue(all(x['url'].startswith('/customer/') for x in links))
+        self.assertEqual(len(links),5);self.assertTrue(all(x['url'].startswith('/customer/') for x in links))
         self.assertContains(response,'View-only customer preview');self.assertContains(response,'Return to Admin',count=1)
         self.assertNotContains(response,'data-task-create');self.assertContains(response,'application-preview-notice')
         self.assertEqual(self.client.post(reverse('customer_portal:logout')).status_code,302)

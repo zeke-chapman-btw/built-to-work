@@ -15,12 +15,17 @@ from . import employer
 
 
 def directory_content(request):
-    data=employer.list_candidates(request.user,request.customer_member.organization_id)
+    from apps.customers import portal_pages as pages
+    data=pages.with_status(employer.list_candidates(request.user,request.customer_member.organization_id))
     position = request.GET.get('position', '')
     if position:
         data = [item for item in data if item['position_id'] == position]
+    show = request.GET.get('show') or pages.default_candidate_filter(data)
+    filters = pages.candidate_filters(data, show)
+    shown = [item for item in data if show == 'all' or item['status_group'] == show]
     return render(request,'recruiting/customer/candidates.html',context(request,'candidates',
-        candidates=Paginator(data,20).get_page(request.GET.get('page'))))
+        candidates=Paginator(shown,20).get_page(request.GET.get('page')),candidate_filters=filters,show=show,
+        position_filter=position,position_title=data[0]['position'] if position and data else ''))
 
 
 @customer_view
@@ -37,7 +42,12 @@ def customer_candidate(request,record_id):
             except ValidationError as exc:form.add_error(None,exc)
             else:messages.success(request,'Your response was sent to BTW. Official recruiting decisions remain with BTW.');return redirect('customer_portal:recruiting-candidate',record_id=record_id)
     from apps.crm.portal_views import interaction_context
-    return render(request,'recruiting/customer/candidate.html',context(request,'candidates',candidate=data,feedback_form=form,**interaction_context(request,record_id,data)))
+    from apps.customers import portal_pages as pages
+    data=pages.with_status([data])[0]
+    shared,waiting=pages.more_sections(data['candidate'])
+    return render(request,'recruiting/customer/candidate.html',context(request,'candidates',candidate=data,feedback_form=form,
+        more_shared=shared,more_waiting=waiting,response_kinds=[('interview','Request an interview',True),('interested','Interested',False),('not_interested','Not a fit',False),('report_hired','We hired them',False)],
+        **interaction_context(request,record_id,data)))
 
 
 @staff

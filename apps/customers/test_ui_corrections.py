@@ -107,7 +107,7 @@ class CustomerUICorrectionsTests(PortalFixtures, TestCase):
         self.assertFalse(any(row['url'] == reverse('customer_portal:need', args=[need.pk]) for row in submitted.context['action_required']))
         pending = self.client.get(reverse('customer_portal:workspace', args=['needs']))
         self.assertEqual(pending.context['needs'][0]['review_state'], 'submitted')
-        self.assertContains(pending, 'Submitted')
+        self.assertContains(pending, 'Waiting on Built to Work')
         self.transition(org,need,'return')
         response=self.client.get(reverse('customer_portal:home'))
         self.assertContains(response,'Review requested changes')

@@ -3,7 +3,7 @@ from django import template
 from django.urls import reverse
 
 register = template.Library()
-CUSTOMER_ICONS = {'overview':'home','recruiting':'campaigns','company':'customers','needs':'people',
+CUSTOMER_ICONS = {'overview':'home','recruiting':'campaigns','company':'customers','needs':'tasks',
                   'campaigns':'campaigns','candidates':'people','users':'staff','access':'settings','history':'clock'}
 PARTICIPANT_LINKS = (
     ('home','Home','home','participants:portal-home'),

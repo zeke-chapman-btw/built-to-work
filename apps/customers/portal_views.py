@@ -15,10 +15,10 @@ from .portal_policy import identity_for, eligible_memberships, require_membershi
 from .presentation import HIRING_LABELS
 from .models import WorkforceNeed as Need, WorkforceNeedRevision as Revision, Campaign, CustomerMembership as Membership, TERM_FIELD_NAMES
 
-TABS = [('overview', 'Dashboard'), ('recruiting', 'Recruiting'), ('candidates', 'Candidates'), ('company', 'Company')]
-SECONDARY_TABS = {'needs':'Positions', 'campaigns':'Campaigns', 'users':'Team',
-    'access':'Access', 'history':'History & feedback', 'account':'Account & security'}
-TAB_GROUPS = {'needs':'recruiting', 'campaigns':'recruiting', 'users':'company', 'access':'company', 'history':'company', 'account':'account'}
+TABS = [('overview', 'Dashboard'), ('candidates', 'Candidates'), ('needs', 'Positions'), ('campaigns', 'Campaigns'), ('company', 'Company & team')]
+SECONDARY_TABS = {'recruiting':'Recruiting overview', 'users':'Company & team',
+    'access':'Seats & access', 'history':'Activity', 'account':'Account & security'}
+TAB_GROUPS = {'recruiting':'overview', 'users':'company', 'access':'company', 'history':'company', 'account':'account'}
 
 
 def customer_view(view):
@@ -51,12 +51,13 @@ def customer_view(view):
     return guarded
 
 LOCAL_NAVIGATION = (
-    ('Recruiting tools', (('recruiting', 'Recruiting overview'), ('needs', 'Positions'), ('campaigns', 'Campaigns'), ('candidates', 'Candidates'))),
-    ('Company tools', (('company', 'Company information'), ('users', 'Team'), ('access', 'Access'), ('history', 'History & feedback'))),
+    ('Company & team', (('company', 'Team & details'), ('history', 'Activity'), ('access', 'Seats & access'))),
 )
+LOCAL_ALIASES = {'users': 'company'}
 
 
 def local_navigation(request, tab):
+    tab = LOCAL_ALIASES.get(tab, tab)
     for label, items in LOCAL_NAVIGATION:
         if tab in dict(items):
             links = []
@@ -76,6 +77,16 @@ def context(request, tab='overview', **extra):
             'effective_access': effective_access(request.user, m.organization_id, preview=bool(getattr(request, 'customer_preview', False))),
             'can_needs': (m.role == 'lead' or m.manage_needs) and m.organization.access_plan.workforce_need_creation is True,
             'can_campaigns': m.role == 'lead' or m.manage_campaigns, **extra}
+
+
+def campaign_rows(org, user):
+    from apps.recruiting.employer import list_candidates
+    from . import portal_pages as pages
+    candidates = list_candidates(user, org.pk)
+    rows = []
+    for c in Campaign.objects.filter(organization=org).order_by('-updated_at'):
+        rows.append(pages.campaign_extras(p.campaign_row(c), c, candidates))
+    return rows
 
 
 def organization(request):
@@ -112,17 +123,22 @@ def workspace(request, tab='overview'):
             account_role=request.customer_member.get_role_display())
     if tab == 'needs':
         data['need_setup'] = need_prerequisites(org)
-    if tab in {'overview', 'needs'}:
-        rows = p.needs(request.user, org.pk)
-        data['needs'] = rows[:5] if tab == 'overview' else Paginator(rows, 20).get_page(request.GET.get('page'))
-    if tab in {'overview', 'campaigns'}:
-        rows = p.campaigns(request.user, org.pk)
-        data['campaigns'] = rows[:5] if tab == 'overview' else Paginator(rows, 20).get_page(request.GET.get('page'))
-    if tab == 'company':
+    if tab == 'needs':
+        from apps.recruiting.employer import list_candidates
+        from . import portal_pages as pages
+        objects = {str(n.pk): n for n in Need.objects.filter(organization=org).select_related('effective_revision', 'working_revision')}
+        rows = pages.position_rows(p.needs(request.user, org.pk), objects, list_candidates(request.user, org.pk))
+        show = request.GET.get('show') or ('open' if any(r['status_group'] == 'open' for r in rows) else 'all')
+        data['position_filters'] = pages.position_filters(rows, show)
+        data['show'] = show
+        data['needs'] = Paginator([r for r in rows if show == 'all' or r['status_group'] == show], 20).get_page(request.GET.get('page'))
+    if tab == 'campaigns':
+        data['campaigns'] = Paginator(campaign_rows(org, request.user), 20).get_page(request.GET.get('page'))
+    if tab in {'company', 'users'}:
         data['details'] = {key: getattr(org, key) for key in ('name', 'legal_name', 'industry', 'website', 'business_email', 'phone', 'description')}
         data['locations'] = list(org.locations.filter(is_active=True).values('name', 'kind', 'address_line1', 'address_line2', 'city', 'state', 'postal_code', 'country'))
         data['contacts'] = list(org.contacts.filter(is_active=True).values('first_name', 'last_name', 'title', 'email', 'phone'))
-    if tab == 'users':
+    if tab in {'company', 'users'}:
         rows = []
         for m in org.memberships.exclude(state='removed').select_related('identity'):
             token = m.invitations.filter(purpose='invite').order_by('-created_at').first()
@@ -134,7 +150,7 @@ def workspace(request, tab='overview'):
                 'role': m.get_role_display(), 'member_role': m.role == 'member', 'state': m.get_state_display(),
                 'accepted': bool(m.accepted_at), 'invitation': token_state, 'manage_needs': m.manage_needs, 'manage_campaigns': m.manage_campaigns})
         data['members'] = rows
-    if tab == 'access':
+    if tab in {'company', 'users', 'access'}:
         plan = org.access_plan
         data['allowances'] = [{'label': 'Leads', 'used': s.seat_usage(org)['lead'], 'limit': plan.lead_limit}, {'label': 'Members', 'used': s.seat_usage(org)['member'], 'limit': plan.member_limit}]
         data['need_service'] = plan.workforce_need_creation is True
@@ -186,17 +202,39 @@ def form_page(request, title, form, *, tab, notice='', save=None, success=None, 
 @customer_view
 @require_http_methods(['GET'])
 def need_detail(request, record_id):
+    from apps.recruiting.employer import list_candidates
+    from . import portal_pages as pages
     org = organization(request)
     obj = get_object_or_404(Need.objects.select_related('effective_revision', 'working_revision'), organization=org, pk=record_id)
-    revisions = [{'number': r.number, 'state': r.get_state_display()} for r in obj.revisions.order_by('-number')]
+    revisions = [{'number': r.number, 'state': r.get_state_display(), 'at': r.updated_at} for r in obj.revisions.order_by('-number')]
     latest = obj.revisions.order_by('-number').first()
-    return render(request, 'customers/portal/need.html', context(request, 'needs', need=p.need_row(obj),
+    row = p.need_row(obj)
+    group, label, tone = pages.position_status(row)
+    effective, proposed = p.terms(obj.effective_revision), p.terms(obj.working_revision)
+    shown = effective or proposed
+    candidates = pages.with_status([c for c in list_candidates(request.user, org.pk) if c['position_id'] == str(obj.pk)])
+    view = request.GET.get('view') if request.GET.get('view') in {'details', 'history'} else 'overview'
+    quantity = row['quantity'] or 0
+    hired = sum(1 for c in candidates if c['btw_confirmed_hire'])
+    waiting = sum(1 for c in candidates if c['status_group'] == 'waiting')
+    interviews = sum(1 for c in candidates if c['status_label'] == 'Interview requested')
+    tiles = [
+        {'label': 'Sent to you', 'value': len(candidates), 'note': f'{waiting} waiting on you' if waiting else 'By Built to Work', 'hot': bool(waiting)},
+        {'label': 'Interviews', 'value': interviews, 'note': 'You requested'},
+        {'label': 'Hired', 'value': f'{hired} of {quantity}' if quantity else hired, 'note': 'Confirmed by Built to Work'},
+        {'label': 'Status', 'value': label, 'note': 'Built to Work is finding candidates' if group == 'open' and row['record_status'] == 'active' else 'Not recruiting yet' if group in {'draft', 'waiting'} else ''},
+    ]
+    feedback = p.feedback(request.user, org.pk, need_id=obj.pk)
+    return render(request, 'customers/portal/need.html', context(request, 'needs', need=row,
         record_restriction=record_restriction(obj, 'need'),
         need_setup=need_prerequisites(org, obj.working_revision or obj.effective_revision),
         editable=obj.status not in {'closed', 'cancelled'} and (not obj.working_revision or obj.working_revision.state == 'draft'),
         pending_state=obj.working_revision.state if obj.working_revision else '',
-        effective=p.terms(obj.effective_revision), proposed=p.terms(obj.working_revision), previous=p.terms(latest) if not obj.working_revision_id and latest and latest.state == 'returned' else None, revisions=revisions,
-        feedback=p.feedback(request.user, org.pk, need_id=obj.pk), recent=p.history(request.user, org.pk, need_id=obj.pk)))
+        effective=effective, proposed=proposed, previous=p.terms(latest) if not obj.working_revision_id and latest and latest.state == 'returned' else None, revisions=revisions,
+        status_label=label, status_tone=tone, summary=pages.position_summary(obj), view=view, tiles=tiles,
+        position_candidates=candidates[:8], candidate_total=len(candidates), key_details=pages.key_details(shown and shown['position']),
+        shown=shown, campaign=obj.campaign if obj.campaign_id else None,
+        feedback=feedback, recent=p.history(request.user, org.pk, need_id=obj.pk)))
 
 
 @customer_view
@@ -237,12 +275,15 @@ def need_action(request, record_id, action):
 @customer_view
 @require_http_methods(['GET'])
 def campaign_detail(request, record_id):
+    from apps.recruiting.employer import list_candidates
+    from . import portal_pages as pages
     org = organization(request)
     obj = get_object_or_404(Campaign, pk=record_id, organization=org)
-    return render(request, 'customers/portal/campaign.html', context(request, 'campaigns', campaign=p.campaign_row(obj), review_state=obj.review_state,
+    row = pages.campaign_extras(p.campaign_row(obj), obj, list_candidates(request.user, org.pk))
+    return render(request, 'customers/portal/campaign.html', context(request, 'campaigns', campaign=row, review_state=obj.review_state,
         record_restriction=record_restriction(obj, 'campaign'),
         editable=obj.status not in {'completed', 'cancelled'} and obj.review_state not in {'submitted', 'review'},
-        needs=[p.need_row(n) for n in obj.workforce_needs.select_related('effective_revision', 'working_revision')],
+        needs=row['positions'],
         feedback=p.feedback(request.user, org.pk, campaign_id=obj.pk), recent=p.history(request.user, org.pk, campaign_id=obj.pk)))
 
 

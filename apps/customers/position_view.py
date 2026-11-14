@@ -77,7 +77,8 @@ def start_text(rev):
     return rev.start_timeframe or ""
 
 
-def position_view(rev):
+def position_view(rev, keep_blank=False):
+    """keep_blank shows every intake question, answered or not (customer view)."""
     if not rev:
         return None
     shift = _display(rev, "shift") if rev.shift else ""
@@ -158,6 +159,6 @@ def position_view(rev):
         ]},
     ]
     optional = {"Notes", "Pay notes", "Paid", "Other", "Decide by"}
-    for card in cards:
+    for card in cards if not keep_blank else ():
         card["rows"] = [r for r in card["rows"] if r["value"] or r["chip"] or r["label"] not in optional]
     return {"tiles": tiles, "cards": cards}

@@ -50,7 +50,7 @@ class SecondaryNavigationTests(PortalFixtures, TestCase):
     def test_each_secondary_destination_marks_exactly_one_current_link(self):
         org, member, user = self.lead()
         self.customer_login(user)
-        for tab in ('recruiting', 'needs', 'campaigns', 'company', 'users', 'access', 'history'):
+        for tab in ('company', 'access', 'history'):
             with self.subTest(tab=tab):
                 response = self.client.get(reverse('customer_portal:workspace', args=[tab]))
                 self.assertEqual(response.status_code, 200)
@@ -64,6 +64,7 @@ class SecondaryNavigationTests(PortalFixtures, TestCase):
         self.customer_login(user)
         response = self.client.get(reverse('customer_portal:need-create'))
         self.assertEqual(response.status_code, 200)
-        links = response.context['local_navigation']['links']
-        self.assertEqual([x['label'] for x in links if x['current'] == 'location'], ['Positions'])
+        # Positions is a main destination now; the form keeps it active in the sidebar.
+        self.assertIsNone(response.context['local_navigation'])
+        self.assertEqual(response.context['navigation_tab'], 'needs')
 

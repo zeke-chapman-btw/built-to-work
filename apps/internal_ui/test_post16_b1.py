@@ -23,8 +23,8 @@ class Post16B1Tests(EmployerFixtures, TestCase):
     def test_four_main_destinations_and_company_secondary_urls_remain_available(self):
         response = self.workspace()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['tabs'], [('overview', 'Dashboard'), ('recruiting', 'Recruiting'),
-            ('candidates', 'Candidates'), ('company', 'Company')])
+        self.assertEqual(response.context['tabs'], [('overview', 'Dashboard'), ('candidates', 'Candidates'),
+            ('needs', 'Positions'), ('campaigns', 'Campaigns'), ('company', 'Company & team')])
         for tab in ['recruiting', 'needs', 'campaigns', 'company', 'users', 'access', 'history', 'account']:
             response = self.workspace(tab)
             self.assertEqual(response.status_code, 200, tab)

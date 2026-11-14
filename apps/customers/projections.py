@@ -81,7 +81,7 @@ def terms(rev):
         if values:
             groups.append({'title': title, 'values': values})
     from .position_view import position_view
-    return {'number': rev.number, 'state': rev.get_state_display(), 'sections': groups, 'position': position_view(rev)}
+    return {'number': rev.number, 'state': rev.get_state_display(), 'sections': groups, 'position': position_view(rev, keep_blank=True)}
 
 
 def need_row(obj):
