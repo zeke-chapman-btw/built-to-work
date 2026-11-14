@@ -35,9 +35,9 @@ class Post16B1Tests(EmployerFixtures, TestCase):
         self.need.internal_note = 'SYNTHETIC PRIVATE STAFF CANARY'
         self.need.save()
         response = self.workspace()
-        self.assertContains(response, 'Active recruiting')
+        self.assertContains(response, 'Open positions')
         self.assertContains(response, 'Released for your review')
-        self.assertContains(response, 'Review released candidate')
+        self.assertContains(response, 'Candidates to review')
         self.assertNotContains(response, 'PRIVATE STAFF CANARY')
         rows = response.context['released_candidates']
         self.assertEqual(len(rows), 1)
