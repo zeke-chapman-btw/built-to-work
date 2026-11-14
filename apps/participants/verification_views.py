@@ -45,8 +45,66 @@ def qualification_approvals(request):
         summary = document_verification_summary(document)
         if summary["status"] in ("pending", "expired"):
             pending.append({"kind": "document", "target": document, "summary": summary})
-    page = Paginator(pending, 25).get_page(request.GET.get("page"))
-    return render(request, "participants/qualification_approvals.html", {"pending_items": page, "page_obj": page, "can_decide": can_review_qualification_approvals(request.user), "page_title": "Approvals", "page_description": "Review participant qualifications and supporting documents."})
+    groups = _group_by_person(pending)
+    q = request.GET.get("q", "").strip().lower()[:100]
+    show = request.GET.get("show", "")
+    if q:
+        groups = [g for g in groups if q in g["name"].lower() or any(q in item["name"].lower() for item in g["items"])]
+    if show == "document":
+        groups = [g for g in groups if g["has_document"]]
+    elif show == "nodocument":
+        groups = [g for g in groups if not g["has_document"]]
+    if show == "oldest":
+        groups.sort(key=lambda g: g["oldest"])
+    page = Paginator(groups, 25).get_page(request.GET.get("page"))
+    selected = None
+    wanted = request.GET.get("person")
+    for group in page.object_list:
+        if wanted and str(group["participant"].pk) == wanted:
+            selected = group
+    if selected is None and page.object_list:
+        selected = page.object_list[0]
+    return render(request, "participants/qualification_approvals.html", {"pending_items": page, "page_obj": page, "groups": page, "selected": selected,
+        "pending_total": len(pending), "other_queues": _other_queues(request.user), "q": request.GET.get("q", ""), "show": show,
+        "chips": [("", "All"), ("document", "Has a document"), ("nodocument", "No document"), ("oldest", "Oldest first")],
+        "can_decide": can_review_qualification_approvals(request.user), "page_title": "Approvals", "page_description": "Review participant qualifications and supporting documents."})
+
+
+def _group_by_person(pending):
+    """One row per person with everything they sent, so one review covers it all."""
+    groups = {}
+    for item in pending:
+        target = item["target"]; person = target.participant
+        group = groups.setdefault(person.pk, {"participant": person, "name": str(person), "items": [], "has_document": False, "oldest": target.created_at})
+        name = target.title if item["kind"] == "document" and getattr(target, "title", "") else str(target)
+        has_doc = item["kind"] == "document" or (item["kind"] == "qualification" and target.document_links.exists())
+        group["items"].append({**item, "name": name, "has_document": has_doc, "url": reverse("participants:staff-qualification-approval-detail", args=[item["kind"], target.pk])})
+        group["has_document"] = group["has_document"] or has_doc
+        group["oldest"] = min(group["oldest"], target.created_at)
+    return sorted(groups.values(), key=lambda g: g["name"].lower())
+
+
+def _other_queues(user):
+    """Counts for the other things waiting on a yes or no, shown as tiles when the person can act on them."""
+    tiles = []
+    try:
+        from apps.staffing import services as staffing
+        from apps.staffing.models import AvailabilityRequest
+        staffing.require_manager(user)
+        pending = AvailabilityRequest.objects.filter(status="pending", event__status__in=("upcoming", "draft"))
+        tiles.append({"label": "Staff day requests", "count": pending.count(), "note": f"For {pending.values('event').distinct().count()} event(s)", "url": reverse("staffing:queue")})
+    except Exception:
+        pass
+    try:
+        from apps.workdays import services as wd
+        from apps.workdays.models import Workday, MileageTrip
+        if wd.manager(user):
+            days = Workday.objects.filter(is_active=True, approval="pending").count()
+            trips = MileageTrip.objects.filter(status__in=("pending", "verified")).count()
+            tiles.append({"label": "Work days & mileage", "count": days + trips, "note": f"{days} day(s) · {trips} trip(s)", "url": reverse("workdays:reports")})
+    except Exception:
+        pass
+    return tiles
 
 
 @require_http_methods(["GET", "POST"])

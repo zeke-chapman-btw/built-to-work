@@ -70,3 +70,44 @@ body.internal-app #main-content .rp2-col.is-last .rp2-col-bar{background:#d0212f
 body.internal-app #main-content .rp2-col small{font-size:11px;color:#5b6470;white-space:nowrap;transform:translateY(18px)}
 body.internal-app #main-content .rp2-cols + .rp2-hidden{display:none}
 body.internal-app #main-content .r17-chart:has(.rp2-cols){padding-bottom:32px}
+
+/* Payroll week rebuild (pw) */
+body.internal-app #main-content .pw-page{display:flex;flex-direction:column;gap:16px}
+body.internal-app #main-content .pw-back{font-size:13px;color:#5b6470}
+body.internal-app #main-content .pw-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+body.internal-app #main-content .pw-head h1{margin:0;font-size:24px;font-weight:600}
+body.internal-app #main-content .pw-head h1 small{font-size:16px;color:#5b6470;font-weight:500}
+body.internal-app #main-content .pw-sub{margin:4px 0 0;font-size:14px;color:#5b6470}
+body.internal-app #main-content .pw-btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+body.internal-app #main-content .pw-checks{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+body.internal-app #main-content .pw-checks-label{font-size:13px;font-weight:600;color:#5b6470;margin-right:4px}
+body.internal-app #main-content .pw-chip{font-size:13px;font-weight:600;padding:5px 12px;border-radius:999px;text-decoration:none}
+body.internal-app #main-content .pw-chip.is-ok,body.internal-app #main-content .pw-pill.is-ok{background:#e3f4e8;color:#1d6b35}
+body.internal-app #main-content .pw-chip.is-warn,body.internal-app #main-content .pw-pill.is-warn{background:#fff4d6;color:#7a5200}
+body.internal-app #main-content .pw-pill{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+body.internal-app #main-content .pw-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+body.internal-app #main-content .pw-tile{background:#fff;border:1px solid #e3e5e8;border-radius:10px;padding:12px 16px}
+body.internal-app #main-content .pw-tile.is-total{border-color:#d0212f}
+body.internal-app #main-content .pw-tile span{display:block;font-size:12px;color:#5b6470}
+body.internal-app #main-content .pw-tile b{display:block;font-size:22px;font-weight:700}
+body.internal-app #main-content .pw-tile small{font-size:12px;color:#5b6470}
+body.internal-app #main-content .pw-card{padding:0;overflow:hidden}
+body.internal-app #main-content .pw-card-head{padding:14px 20px;border-bottom:1px solid #eef0f2}
+body.internal-app #main-content .pw-card-head h2{margin:0;font-size:15px}
+body.internal-app #main-content details.pw-card > summary{padding:14px 20px;font-weight:600;cursor:pointer}
+body.internal-app #main-content details.pw-card[open] > summary{border-bottom:1px solid #eef0f2}
+body.internal-app #main-content .pw-issues ul{margin:0;padding:12px 40px;font-size:14px}
+body.internal-app #main-content .pw-tr{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.5fr) 90px 90px 130px 80px 100px 80px;gap:12px;align-items:center;padding:12px 20px;border-top:1px solid #f1f2f4;font-size:14px}
+body.internal-app #main-content .pw-th{font-size:12px;color:#5b6470;background:#fafbfc;border-top:0;padding:8px 20px}
+body.internal-app #main-content .pw-total{background:#fafbfc;font-weight:600}
+body.internal-app #main-content .pw-tr .num{text-align:right}
+body.internal-app #main-content .pw-who strong{display:block;font-weight:600}
+body.internal-app #main-content .pw-who small{display:block;font-size:12px;color:#5b6470}
+body.internal-app #main-content .pw-days{display:flex;gap:4px;flex-wrap:wrap}
+body.internal-app #main-content .pw-role{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#eceef0;color:#46505b;white-space:nowrap}
+body.internal-app #main-content .pw-driver,body.internal-app #main-content .pw-combined{background:#e6effb;color:#205087}
+body.internal-app #main-content .pw-staff-lead{background:#f1eafb;color:#5b3492}
+body.internal-app #main-content .pw-muted{color:#a3a9b1;font-weight:400}
+body.internal-app #main-content .pw-empty{padding:16px 20px;color:#5b6470;margin:0}
+body.internal-app #main-content .pw-note{margin:0;padding:10px 20px;font-size:12px;color:#5b6470;background:#fafbfc;border-top:1px solid #f1f2f4}
+@media (max-width:900px){body.internal-app #main-content .pw-tiles{grid-template-columns:1fr 1fr}body.internal-app #main-content .pw-th{display:none}body.internal-app #main-content .pw-tr{grid-template-columns:1fr 1fr}body.internal-app #main-content .pw-tr .num{text-align:left}}

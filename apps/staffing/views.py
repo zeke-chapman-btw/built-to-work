@@ -188,6 +188,16 @@ def event_staffing(request,event_id):
         worked={d.date for d in assignment.days.all()}
         assignment.day_chips=[dict(date=d,on=d in worked) for d in days] or [dict(date=d,on=True) for d in sorted(worked)]
     context["signup_open"]=services.opportunity_open(event,plan)
+    context["grid_days"]=days if 0<len(days)<=7 else []
+    for assignment in context["confirmed_assignments"]:
+        worked={d.date for d in assignment.days.all()}
+        short={"staff":"Staff","staff_lead":"Lead","driver":"Driver","combined":"Combined"}.get(assignment.coverage_role,"No role")
+        assignment.grid=[dict(date=d,on=d in worked,label=short) for d in context["grid_days"]]
+    context["still_needed"]=[d for d in (summary["days"] if summary else []) if d["unfilled"]]
+    from apps.workdays import services as wd
+    context["travel"]=dict(mileage=wd.automatic_miles(event) if wd.manager(request.user) else None,
+        lodging=event.lodgings.first() if hasattr(event,"lodgings") else None,
+        lodging_count=event.lodgings.count() if hasattr(event,"lodgings") else 0)
     with timezone.override(ZoneInfo(event.timezone_name)):
         return render(request,"staffing/event_manage.html",context)
 

@@ -301,3 +301,16 @@ body.internal-app #main-content > .settings-navigation-frame { padding-left:0 !i
 .event-record-header .ev2-avatar b{font-size:21px;font-weight:700}
 .event-record-header .event-header-actions{display:flex;gap:8px;align-items:center;flex:none}
 @media (max-width:700px){.event-record-header .ev2-avatar{width:46px;height:46px}.event-record-header .ev2-avatar b{font-size:17px}}
+
+/* My stuff: today card + pay-week summary */
+body.internal-app #main-content .my-today{border:2px solid #d0212f;display:flex;flex-direction:column;gap:8px;padding:16px 18px;margin-bottom:12px}
+body.internal-app #main-content .my-today-kicker{margin:0;font-size:12px;font-weight:700;color:#d0212f;letter-spacing:.03em}
+body.internal-app #main-content .my-today h2{margin:0;font-size:19px}
+body.internal-app #main-content .my-today-sub{margin:0;font-size:13px;color:#5b6470}
+body.internal-app #main-content .my-today-go{min-height:52px;font-size:17px;font-weight:700;justify-content:center;width:100%;max-width:420px}
+body.internal-app #main-content .my-today-done{margin:0;background:#e3f4e8;color:#1d6b35;border-radius:10px;padding:10px 12px;font-weight:600}
+body.internal-app #main-content .my-today-links{display:flex;gap:16px;flex-wrap:wrap;font-size:14px}
+body.internal-app #main-content .my-week{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 18px;margin-bottom:12px;color:#1a1a1a;text-decoration:none}
+body.internal-app #main-content .my-week small{display:block;font-size:12px;color:#5b6470}
+body.internal-app #main-content .my-week strong{font-size:17px}
+body.internal-app #main-content .my-week-link{font-size:14px;color:var(--brand-red-dark,#a51d24)}

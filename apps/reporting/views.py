@@ -256,6 +256,42 @@ def period_date(value):
     return parsed
 
 
+def payroll_people(snapshot):
+    """Group the frozen weekly lines by person for the summary table, plus the before-approving checks."""
+    from collections import OrderedDict
+    from datetime import date as _d
+    D=lambda v:Decimal(v) if v not in (None,"") else None
+    people=OrderedDict();days_total=0;per_diem_days=0;miles=Decimal("0")
+    for row in snapshot["rows"]:
+        p=people.setdefault(row.get("staff_id") or row["contractor"],dict(name=row["contractor"],events=set(),days=[],base=Decimal("0"),per_diem=Decimal("0"),mileage=Decimal("0"),miles=Decimal("0"),extras=Decimal("0"),total=Decimal("0"),missing=False,review=False))
+        p["events"].add(row["event"])
+        for key,target in (("base","base"),("per_diem","per_diem"),("mileage","mileage")):
+            v=D(row.get(key))
+            if v is None:p["missing"]=True
+            else:p[target]+=v
+        for key in ("incentives","adjustments"):
+            v=D(row.get(key));p["extras"]+=v or 0
+        t=D(row.get("total"))
+        if t is None:p["missing"]=True
+        else:p["total"]+=t
+        if row["source_kind"]=="workday":
+            days_total+=1
+            if (D(row.get("per_diem")) or 0)>0:per_diem_days+=1
+            try:weekday=_d.fromisoformat(row["occurred_on"]).strftime("%a")
+            except ValueError:weekday=row["occurred_on"]
+            role=row.get("role","")
+            p["days"].append(dict(label=weekday+" "+{"Staff Lead":"Lead"}.get(role,role),role=role))
+            if row.get("source_status")!="approved":p["review"]=True
+        elif row["source_kind"]=="trip":
+            p["miles"]+=D(row.get("round_trip_miles")) or 0;miles+=D(row.get("round_trip_miles")) or 0
+            if row.get("source_status")!="approved":p["review"]=True
+    for p in people.values():p["events"]=sorted(p["events"])
+    issues=snapshot.get("issues") or []
+    checks=dict(days=days_total,per_diem_days=per_diem_days,miles=miles,people=len(people),
+        workday_issues=sum(1 for i in issues if i.startswith("Workday")),trip_issues=sum(1 for i in issues if i.startswith("Mileage")),
+        other_issues=sum(1 for i in issues if not i.startswith(("Workday","Mileage"))))
+    return list(people.values()),checks
+
 @login_required(login_url="accounts:login")
 @require_http_methods(["GET","POST"])
 @never_cache
@@ -284,11 +320,16 @@ def payroll_detail(request,starts_on):
         return response
     current,fingerprint=payroll.compile_data(start)
     detail_page=Paginator(snapshot["rows"],25).get_page(request.GET.get("page"))
+    people,checks=payroll_people(snapshot)
+    from datetime import timedelta as _td
+    neighbours=dict(prev=PayrollPeriod.objects.filter(pk__lt=start).order_by("-pk").values_list("pk",flat=True).first(),
+        next=PayrollPeriod.objects.filter(pk__gt=start).order_by("pk").values_list("pk",flat=True).first())
     return page(request,'reporting/payroll.html',page_title="Weekly Payroll",period=period,snapshot=snapshot,selected_version=selected,approval=approval,
         reason_form=form,selected_report_status=status,can_approve=can_approve_payroll(actor),source_changed=fingerprint!=selected.source_fingerprint,
         versions=period.versions.select_related('compiled_by').all(),submissions=selected.submissions.select_related('submitted_by').order_by('-submitted_at'),ap_status="Historical version — its submission evidence is listed below" if request.GET.get("version") else payroll.submission_status(period),operation_id=uuid.uuid4(),
         report_table=table(PAY_COLUMNS,detail_page.object_list),page=detail_page,exports=export_links(request) if actor.has_perm('reporting.export_reports') else [],
-        adjustments=CompensationAdjustment.objects.filter(occurred_on__range=(start,period.ends_on)).select_related('staff','event'))
+        adjustments=CompensationAdjustment.objects.filter(occurred_on__range=(start,period.ends_on)).select_related('staff','event'),
+        people=people,checks=checks,neighbours=neighbours)
 
 
 @login_required(login_url="accounts:login")

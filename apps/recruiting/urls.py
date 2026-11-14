@@ -13,6 +13,7 @@ urlpatterns = [
     path('requests/group/',workflow_views.request_group,name='request-group'),
     path('pipelines/',workflow_views.pipeline,name='pipeline'),
     path('candidates/<uuid:candidate_id>/',workflow_views.candidate_detail,name='candidate-detail'),
+    path('positions/<uuid:opportunity_id>/',workflow_views.position,name='position'),
     path('opportunities/<uuid:opportunity_id>/settings/',workflow_views.opportunity_settings,name='opportunity-settings'),
     path('opportunities/<uuid:opportunity_id>/followup/',workflow_views.followup,name='followup'),
     path('interests/',workflow_views.interests,name='interests'),

@@ -291,3 +291,42 @@ def identity_history(request):
         return redirect('recruiting:identity-history')
     return page(request,'recruiting/identity_history.html',page_title='Merged records',
         rows=IdentityConsolidation.objects.select_related('source','target','actor').order_by('-created_at')[:50])
+
+
+BOARD=[('Identified',('identified',)),('Contacting',('contacting','interested','qualification_review')),
+       ('Sent to customer',('ready_for_employer','submitted','employer_reviewing')),('Interview',('interview',)),('Hired',('hired',))]
+
+@staff
+@require_http_methods(['GET'])
+def position(request,opportunity_id):
+    """One position: header, counts, pipeline board, top matches and details."""
+    from datetime import timedelta
+    item=opportunity_for(request.user,opportunity_id)
+    need=item.need;terms=need.display_revision
+    rows=CandidateOpportunity.objects.filter(opportunity=item,merged_into__isnull=True).select_related('participant','stage','assignee').order_by('stage__position','participant__last_name','pk')
+    active=rows.filter(active=True)
+    columns=[]
+    for label,keys in BOARD:
+        found=[r for r in (rows if 'hired' in keys else active) if r.stage_id in keys]
+        columns.append(dict(label=label,count=len(found),rows=found[:6],more=max(0,len(found)-6),hired='hired' in keys))
+    week_ago=timezone.now()-timedelta(days=7)
+    sent=active.filter(stage_id__in=('submitted','employer_reviewing')).count()
+    waiting=active.filter(stage_id='employer_reviewing').count()
+    hired=rows.filter(stage_id='hired').count()
+    tiles=dict(candidates=active.count(),new=active.filter(created_at__gte=week_ago).count(),sent=sent,waiting=waiting,
+        interviews=active.filter(stage_id='interview').count(),hired=hired,openings=getattr(terms,'worker_quantity',None))
+    matches=[]
+    try:
+        from . import matching
+        _form,ranked,_not_ready=matching.recommendations(request.user,item,{})
+        taken=set(rows.values_list('participant_id',flat=True))
+        matches=[m for m in ranked if m['participant'].pk not in taken][:3]
+    except Exception:
+        matches=[]
+    pay=''
+    if terms and terms.pay_minimum is not None:
+        pay='$'+format(terms.pay_minimum.normalize(),'f')+('–$'+format(terms.pay_maximum.normalize(),'f') if terms.pay_maximum and terms.pay_maximum!=terms.pay_minimum else '')+({'hour':'/hr','day':'/day','week':'/wk','month':'/mo','year':'/yr'}.get(terms.pay_basis,''))
+    place=(terms.city if terms and terms.city else (terms.location.city if terms and terms.location_id else '')) if terms else ''
+    if terms and terms.location_state:place=(place+', ' if place else '')+terms.location_state
+    return page(request,'recruiting/position.html',page_title=need.title,opportunity=item,need=need,terms=terms,columns=columns,tiles=tiles,
+        matches=matches,pay=pay,place=place,can_edit=can_manage(request.user,item))

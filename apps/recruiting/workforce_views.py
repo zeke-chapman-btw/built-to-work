@@ -97,6 +97,7 @@ def directory(request):
             'campaign_url': reverse('recruiting:campaign-detail', args=[need.campaign_id]) if need.campaign_id else '',
             'need_url': reverse('customers:need', args=[need.organization_id, need.pk]) if can_customers else '',
             'match_url': reverse('recruiting:matching', args=[item.pk]) if item and ready else '',
+            'position_url': reverse('recruiting:position', args=[item.pk]) if item else '',
             'setup_url': reverse('recruiting:matching-directory') + '?' + urlencode({'need': need.pk}) if ready and not need.has_recruiting_setup and manager(actor) else '',
             'pipeline_url': reverse('recruiting:pipeline') + '?' + urlencode({'opportunity': item.pk}) if item else '',
         })

@@ -35,6 +35,7 @@ def _event(event):
                 venue=event.location_name, city=event.city, state=event.state,
                 address=", ".join(v for v in (event.address_line_1, event.city, event.state) if v),
                 setup_date=event.setup_date, arrival=event.staff_arrival_time, return_date=event.return_date,
+                timezone=event.timezone_name, date_span=event.date_span,
                 url=reverse("staffing:staff-event", args=[event.pk]))
 
 
@@ -71,7 +72,25 @@ def schedule(request):
         for event in (published_events().filter(status="upcoming", end_at__gt=now, staffing_plan__is_published=True)
                       .exclude(pk__in=assigned_ids | pending_ids).order_by("start_at")[:20]):
             open_events.append(_event(event))
+    today_item, week = None, None
+    if profile:
+        from zoneinfo import ZoneInfo
+        from datetime import timedelta
+        from apps.workdays.models import Workday, MileageTrip
+        for item in upcoming:
+            local_today = timezone.localdate(now, ZoneInfo(item["timezone"]))
+            if local_today in item["days"]:
+                done = Workday.objects.filter(event_id=item["id"], staff=profile, work_date=local_today, is_active=True).first()
+                today_item = dict(item, today=local_today, day_number=sorted(item["days"]).index(local_today) + 1, day_total=len(item["days"]), checked_in=done)
+                break
+        today = timezone.localdate()
+        start = today - timedelta(days=today.weekday())
+        days = Workday.objects.filter(staff=profile, is_active=True, work_date__range=(start, start + timedelta(days=6)))
+        trips = MileageTrip.objects.filter(staff=profile, claim_date__range=(start, start + timedelta(days=6))).exclude(status="void")
+        week = dict(start=start, end=start + timedelta(days=6), days=days.count(),
+                    miles=sum((t.round_trip_miles or 0) for t in trips))
     response = render(request, "staffing/my_schedule.html", _staff_context(request, page_title="My stuff",
-        my_tabs=my_tabs(request, "schedule"), profile=profile, upcoming=upcoming, past=past, requests=requests, open_events=open_events))
+        my_tabs=my_tabs(request, "schedule"), profile=profile, upcoming=upcoming, past=past, requests=requests, open_events=open_events,
+        today_item=today_item, week=week))
     response["Cache-Control"] = "private, no-store"
     return response
