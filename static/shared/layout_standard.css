@@ -353,3 +353,12 @@ form.ops-filterline{margin:0}
 .internal-app .pd-doc>details[open]{display:block;margin:8px 0;padding:10px 12px;border:1px solid #eef0f2;border-radius:8px}
 .internal-app .pd-doc>details>summary{font-size:13px;color:#ac1929;cursor:pointer;font-weight:500}
 .internal-app .pd-doc>.actions{margin:8px 0 0}
+/* CRM recent */
+.crm-recent-chips{margin:0 0 10px}
+.internal-app .crm-recent-filter{margin:0 0 16px}
+.crm-more-dates{display:flex;align-items:center;gap:6px;font-size:13px}
+.crm-more-dates[open]{flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.crm-more-dates>summary{cursor:pointer;color:#ac1929;font-weight:500;padding:0 6px}
+.internal-app .crm-more-dates input{flex:0 1 180px !important}
+.crm-recent-cols{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+.crm-recent-cols>.crm-card{margin:0 !important}
