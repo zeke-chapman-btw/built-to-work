@@ -314,3 +314,42 @@ body.internal-app #main-content .my-week{display:flex;justify-content:space-betw
 body.internal-app #main-content .my-week small{display:block;font-size:12px;color:#5b6470}
 body.internal-app #main-content .my-week strong{font-size:17px}
 body.internal-app #main-content .my-week-link{font-size:14px;color:var(--brand-red-dark,#a51d24)}
+/* ls-35: header buttons never sit under the notification bell; shared card headings stay plain */
+.internal-app:not(.has-portal-shell):not(.has-customer-shell) #main-content>.page-header .page-actions:not(:empty){padding-right:48px !important}
+.internal-app .cp3-head h2{border:0 !important;padding:0 !important;text-transform:none !important;letter-spacing:0 !important}
+.internal-app .cp3-card .ux-pagination,.internal-app .cp3-card>nav[aria-label*="pages" i],.internal-app .cp3-card>p:last-child:not(.cp3-empty):not(.cp3-note){padding:10px 20px;margin:0}
+/* Shared list filter bar: chips + one search line (operations, stations, quizzes, templates…) */
+.internal-app form.ops-filterbar{display:flex !important;flex-direction:column;gap:10px;background:none !important;border:0 !important;padding:0 !important;margin:0 0 14px !important;box-shadow:none !important}
+.internal-app .ops-filterbar .ops-chips{margin:0}
+.internal-app .ops-filterline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid #e3e5e8;border-radius:10px;padding:10px 14px}
+.internal-app .ops-filterline input{flex:2 1 220px;min-height:38px !important;height:38px;border:1px solid #cfd3d8;border-radius:6px;padding:0 10px;font:inherit;font-size:14px}
+.internal-app .ops-filterline select{flex:0 1 170px;min-height:38px !important;height:38px;border:1px solid #cfd3d8;border-radius:6px;padding:0 8px;font:inherit;font-size:14px;background:#fff}
+.internal-app .ops-filterline .button{min-height:38px !important;height:38px;padding:0 14px}
+.internal-app:not(.has-portal-shell):not(.has-customer-shell) #main-content>.page-header.btw-section-heading{padding-right:56px !important}
+.internal-app section.card:has(> form.ops-filterbar:only-child),.internal-app div.card:has(> form.ops-filterbar:only-child){background:none !important;border:0 !important;padding:0 !important;box-shadow:none !important;margin:0 !important}
+.ops-exec-row{grid-template-columns:56px minmax(0,1fr) 220px;align-items:start}
+.ops-exec-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ops-exec-chips .cp3-chip{white-space:normal}
+.ops-exec-links{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:13px}
+@media (max-width:760px){.ops-exec-row{grid-template-columns:56px minmax(0,1fr)}.ops-exec-links{grid-column:2;align-items:flex-start}}
+.ops-ck-row{grid-template-columns:minmax(0,1fr) auto 80px;align-items:start}
+.ops-ck-chips{display:flex;gap:6px}
+form.ops-filterline{margin:0}
+.internal-app .cp3-head h2{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pd-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.pd-grow{flex:1 1 400px}
+.pd-row{grid-template-columns:minmax(0,1fr) auto;color:#1a1a1a}
+.pd-row a.cp3-who{color:#1a1a1a;text-decoration:none}
+.pd-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.internal-app .pd-empty-title{font-size:15px !important;margin:0 0 4px !important}
+.pd-upload>summary{cursor:pointer;list-style:none}.pd-upload>summary h2{color:#ac1929}
+.internal-app .pd-doc{padding:14px 20px !important;border-top:1px solid #f1f2f4;margin:0 !important;border-radius:0 !important;box-shadow:none !important;border-left:0 !important;border-right:0 !important;border-bottom:0 !important}
+.pd-doc-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:6px}
+.internal-app .pd-doc-top h3{margin:0 !important;font-size:15px !important}
+.pd-doc-top small{display:block;font-size:12px;color:#5b6470}
+.pd-doc details{margin:4px 0}
+.pd-links{margin:0 0 12px}
+.internal-app .pd-upload>summary.cp3-head{display:flex;padding:14px 20px !important}
+.internal-app .pd-doc>details{display:inline-block;margin:6px 18px 0 0;vertical-align:top}
+.internal-app .pd-doc>details[open]{display:block;margin:8px 0;padding:10px 12px;border:1px solid #eef0f2;border-radius:8px}
+.internal-app .pd-doc>details>summary{font-size:13px;color:#ac1929;cursor:pointer;font-weight:500}
+.internal-app .pd-doc>.actions{margin:8px 0 0}

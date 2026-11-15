@@ -1,31 +1,12 @@
-{% extends 'reporting/base.html' %}{% load reporting_ui %}{% block content %}
+{% extends 'reporting/base.html' %}{% load reporting_ui static %}{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'shared/portal_pages.css' %}?v=pp3-2">{% endblock %}{% block content %}
 {% if my_tabs %}{% include 'internal/ui/my_tabs.html' %}{% endif %}
-<div class="mypay">
-<form method="get" class="mypay-year" aria-label="Choose a year">
-<label for="earnings-year">Year</label>
-<input id="earnings-year" type="number" min="1900" max="2100" name="year" value="{{ year }}">
-<button class="button secondary">Show</button>
-</form>
-
-<section class="mypay-totals" aria-labelledby="mypay-totals-title">
-<h2 id="mypay-totals-title">{{ year }}{% if current_year == year %} so far{% endif %}</h2>
-<div class="mypay-tiles">
-<div class="mypay-tile"><span>Day pay</span><strong>{{ earnings.base|money }}</strong></div>
-<div class="mypay-tile"><span>Per diem</span><strong>{{ earnings.per_diem|money }}</strong></div>
-<div class="mypay-tile"><span>Mileage</span><strong>{{ earnings.mileage|money }}</strong></div>
-<div class="mypay-tile"><span>Bonuses &amp; adjustments</span><strong>{{ earnings.incentives|add_money:earnings.adjustments|money }}</strong></div>
-<div class="mypay-tile mypay-total"><span>Total</span><strong>{{ earnings.total|money }}</strong></div>
-</div>
-</section>
-
-<section class="mypay-stubs" aria-labelledby="mypay-stubs-title">
-<h2 id="mypay-stubs-title">Weekly pay stubs</h2>
-{% for stub in stubs %}<a class="mypay-stub" href="{% url 'reporting:my-statement' stub.version_id %}">
-<span class="mypay-week">{% if stub.start %}Week of {{ stub.start|date:'M j' }} – {{ stub.end|date:'M j, Y' }}{% else %}Pay stub{% endif %}{% if stub.corrected %} <span class="badge warning">Corrected</span>{% endif %}</span>
-<strong>{{ stub.total|money }}</strong>
-<span class="mypay-view">View stub</span>
-</a>{% empty %}<p class="mypay-empty">No pay stubs yet</p>{% endfor %}
-{% include 'reporting/pages.html' with page=statements %}
-</section>
+<div class="mypay cp3">
+<div class="mypay-bar"><nav class="cp3-chips" aria-label="Year"><a class="cp3-fchip{% if year == current_year %} is-on{% endif %}" href="?year={{ current_year }}">This year</a><a class="cp3-fchip{% if year == current_year|add:'-1' %} is-on{% endif %}" href="?year={{ current_year|add:'-1' }}">Last year</a></nav>
+<form method="get" class="mypay-year" aria-label="Choose a year"><label for="earnings-year">Year</label><input id="earnings-year" type="number" min="1900" max="2100" name="year" value="{{ year }}"><button class="button secondary">Show</button></form></div>
+<section class="mypay-totals" aria-labelledby="mypay-totals-title"><h2 id="mypay-totals-title" class="sr-only">{{ year }}{% if current_year == year %} so far{% endif %}</h2>
+<div class="cp3-tiles mypay-tiles5"><div class="cp3-tile is-hot"><span>{{ year }}{% if current_year == year %} so far{% endif %} · Total</span><b>{{ earnings.total|money }}</b><small>Approved pay stubs</small></div><div class="cp3-tile"><span>Day pay</span><b>{{ earnings.base|money }}</b></div><div class="cp3-tile"><span>Per diem</span><b>{{ earnings.per_diem|money }}</b></div><div class="cp3-tile"><span>Mileage</span><b>{{ earnings.mileage|money }}</b></div><div class="cp3-tile"><span>Bonuses &amp; adjustments</span><b>{{ earnings.incentives|add_money:earnings.adjustments|money }}</b></div></div></section>
+<section class="cp3-card" aria-labelledby="mypay-stubs-title"><header class="cp3-head"><h2 id="mypay-stubs-title">Weekly pay stubs</h2><span>Approval is not proof of payment</span></header>
+{% for stub in stubs %}<a class="cp3-row mypay-row" href="{% url 'reporting:my-statement' stub.version_id %}"><span><strong>{% if stub.start %}Week of {{ stub.start|date:'M j' }} – {{ stub.end|date:'M j, Y' }}{% else %}Pay stub{% endif %}</strong>{% if stub.status %}<small>{{ stub.status }}</small>{% endif %}</span>{% if stub.corrected %}<span class="cp3-chip y">Corrected</span>{% else %}<span></span>{% endif %}<b class="cp3-num">{{ stub.total|money }}</b><span class="cp3-go">View stub</span></a>{% empty %}<p class="cp3-empty mypay-empty">No pay stubs yet</p>{% endfor %}
+{% include 'reporting/pages.html' with page=statements %}</section>
 </div>
 {% endblock %}

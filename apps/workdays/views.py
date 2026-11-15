@@ -45,9 +45,20 @@ def history(obj):
 def index(request):
     svc.require_manager(request.user);readonly(request)
     q=request.GET.get('q','').strip()[:200]
-    events=Event.objects.all()
+    from django.db.models import Count,Q as DQ,OuterRef,Subquery,IntegerField,Value
+    from django.db.models.functions import Coalesce
+    def _count(model,**flt):
+        sub=model.objects.filter(event=OuterRef('pk'),**flt).values('event').annotate(n=Count('pk')).values('n')
+        return Coalesce(Subquery(sub,output_field=IntegerField()),Value(0))
+    events=Event.objects.annotate(wd_total=_count(Workday,is_active=True),
+        wd_pending=_count(Workday,is_active=True,approval='pending'),trips_pending=_count(MileageTrip,status='pending'))
     if q:events=events.filter(name__icontains=q)
-    return page(request,'index',page_title='Workdays',events=Paginator(events.order_by('-start_at','pk'),25).get_page(request.GET.get('page')),q=q)
+    show=request.GET.get('show','')
+    if show=='review':events=events.filter(DQ(wd_pending__gt=0)|DQ(trips_pending__gt=0))
+    elif show=='worked':events=events.filter(wd_total__gt=0)
+    tiles={'days':Workday.objects.filter(is_active=True,approval='pending').count(),'trips':MileageTrip.objects.filter(status='pending').count(),
+        'events':Workday.objects.filter(is_active=True,approval='pending').values('event').distinct().count()}
+    return page(request,'index',page_title='Workdays',events=Paginator(events.order_by('-start_at','pk'),25).get_page(request.GET.get('page')),q=q,show=show,tiles=tiles)
 
 @staff_view
 def mine(request):

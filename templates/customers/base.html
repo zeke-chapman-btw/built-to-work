@@ -1,21 +1,20 @@
 {% extends "internal/base.html" %}{% load customer_ui ui_patterns %}{% load static %}
 {% block title %}{% if organization %}{{ organization.name }} · {% endif %}Customers · Built to Work{% endblock %}
-{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/customers.css' %}?v=cx-layout-13"><link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=rui-1112">{% include 'internal/ui/event_editor_assets.html' %}{% endblock %}
+{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/customers.css' %}?v=cx-layout-15"><link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=rui-1112"><link rel="stylesheet" href="{% static 'shared/portal_pages.css' %}?v=pp3-2">{% include 'internal/ui/event_editor_assets.html' %}{% endblock %}
 {% block body_class %}{{ block.super }} customer-app{% if organization %} has-customer-page{% endif %}{% endblock %}
 {% block page_heading %}{% endblock %}{% block page_actions %}{% endblock %}
 {% block content %}<div class="customer-page">
-{% if organization %}{% block cx_back %}{% if active_tab == 'overview' %}<a class="customer-back" href="{{ back_url }}">← Customers</a>{% else %}<a class="customer-back" href="{% customer_url 'customers:workspace' organization.pk 'overview' %}">← {{ organization.name }}</a>{% endif %}{% endblock %}
+{% if organization %}{% block cx_back %}<a class="customer-back" href="{{ back_url }}">← Customers</a>{% endblock %}
 <header class="cx-hero">
 <div class="cx-who">
 <span class="cx-avatar" aria-hidden="true">{{ organization.name|customer_initials }}</span>
 <div>
-<h1>{% block cx_title %}{% if active_tab == 'overview' %}{{ organization.name }}{% else %}{% for item in customer_tabs %}{% if item.key == active_tab %}{{ item.label }}{% endif %}{% endfor %}{% endif %}{% endblock %}</h1>
-<p class="cx-meta">{% if active_tab != 'overview' %}{{ organization.name }}{% if organization.industry %} · {% endif %}{% endif %}{{ organization.industry }}</p>
-<div class="cx-chips">{% block cx_chips %}{% ui_badge organization.get_status_display organization.status|customer_status_tone %}{% endblock %}</div>
+<div class="cx-titlerow"><h1>{% block cx_title %}{{ organization.name }}{% endblock %}</h1><span class="cx-chips">{% block cx_chips %}{% ui_badge organization.get_status_display organization.status|customer_status_tone %}{% endblock %}</span></div>
+<p class="cx-meta">{% block cx_meta %}{{ organization.industry }}{% endblock %}</p>
 </div>
 </div>
 <div class="cx-actions">
-{% block cx_primary %}{% if crm_can_add and crm_new_url %}<a class="button button-primary" data-record-editor href="{{ crm_new_url }}">+ Log touchpoint</a>{% endif %}
+{% block cx_primary %}{% if active_tab == 'needs' %}{% if organization.status != 'archived' and organization.access_plan.workforce_need_creation %}<a class="button button-primary" href="{% customer_url 'customers:need-new' organization.pk %}">+ New position</a>{% endif %}{% elif active_tab == 'campaigns' %}{% if organization.status != 'archived' %}<a class="button button-primary" href="{% customer_url 'customers:campaign-new' organization.pk %}">+ New campaign</a>{% endif %}{% elif active_tab == 'users' %}{% if organization.status != 'archived' %}<a class="button button-primary" data-record-editor href="{% customer_url 'customers:member-new' organization.pk %}">+ New portal user</a>{% endif %}{% elif active_tab == 'company' %}{% if organization.status != 'archived' %}<a class="button button-primary" data-record-editor href="{% customer_url 'customers:child-new' organization.pk 'location' %}">+ New location</a>{% endif %}{% elif crm_can_add and crm_new_url %}<a class="button button-primary" data-record-editor href="{{ crm_new_url }}">+ Log touchpoint</a>{% endif %}
 {% if organization.status != 'archived' %}<a class="button secondary" data-record-editor href="{% customer_url 'customers:edit' organization.pk %}">Edit customer</a>{% endif %}{% endblock %}
 <details class="cx-more" data-ui-menu><summary>More</summary><div>
 {% for item in customer_tabs %}<a href="{{ item.url }}"{% if item.key == active_tab %} aria-current="page"{% endif %}>{{ item.label }}</a>{% endfor %}
@@ -23,5 +22,6 @@
 </div></details>
 </div>
 </header>
+{% block cx_tabs %}<nav class="cx-tabs" aria-label="Customer sections">{% for item in customer_tabs %}{% if item.key != 'matches' %}<a href="{{ item.url }}"{% if item.key == active_tab %} aria-current="page"{% endif %}>{{ item.label }}</a>{% endif %}{% endfor %}</nav>{% endblock %}
 {% if organization.status == 'archived' %}<p class="customer-notice" role="status">Archived customer. <a data-record-editor href="{% customer_url 'customers:organization-action' organization.pk 'restore' %}">Restore customer</a></p>{% endif %}{% endif %}
 {% block customer_content %}{% endblock %}</div>{% endblock %}

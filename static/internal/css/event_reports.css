@@ -130,3 +130,7 @@ body.internal-app #main-content .ex2-checks > div{display:flex;justify-content:s
 body.internal-app #main-content .ex2-checks small{display:block;font-size:12px;color:#5b6470}
 body.internal-app #main-content .ex2-final{justify-content:center;margin-top:4px}
 @media (max-width:900px){body.internal-app #main-content .ex2-tiles{grid-template-columns:1fr 1fr}body.internal-app #main-content .ex2-cols{grid-template-columns:1fr}}
+/* ex-layout-12: source link and versioned report link share one row */
+.event-source-navigation{margin:0 0 12px}
+.event-source-navigation+.er-versioned{display:flex;justify-content:flex-end;margin:-56px 0 16px;pointer-events:none}
+.event-source-navigation+.er-versioned a{pointer-events:auto}

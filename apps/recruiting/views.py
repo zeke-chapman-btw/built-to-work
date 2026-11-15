@@ -143,7 +143,7 @@ def candidate_foundation(request, participant_id):
             return redirect('recruiting:candidate', participant_id=item.pk)
     duplicates = participant_candidates(email=item.contact_email, phone=item.contact_phone).exclude(pk=item.pk)
     from .selection import opportunities_for
-    from .models import CampaignSource
+    from .models import CampaignSource, CandidateOpportunity
     from apps.participants.identity import identity_members
     from datetime import timedelta
     from django.utils import timezone
@@ -159,7 +159,8 @@ def candidate_foundation(request, participant_id):
         freshness=service.freshness(item), fingerprint=service.profile_fingerprint(item), form=form,
         candidate_lists=service.visible_lists(request.user).filter(owner=request.user, archived_at__isnull=True),
         possible_duplicates=duplicates[:20], available_opportunities=opportunities_for(request.user).filter(need__status='active',archived_at__isnull=True), page_title='Recruiting · ' + str(item), administrator=request.recruiting_actor.is_superuser,
-        source_form=source_form,campaign_sources=sources)
+        source_form=source_form,campaign_sources=sources,
+        person_positions=CandidateOpportunity.objects.filter(participant_id__in=identity_members(item.pk),opportunity__in=opportunities_for(request.user)).select_related('opportunity__need__organization','opportunity__need__effective_revision','stage').order_by('-active','-updated_at')[:20])
 
 
 @staff

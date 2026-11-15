@@ -1,6 +1,6 @@
 {% extends 'customers/base.html' %}{% load customer_ui ui_patterns %}
 {% block cx_back %}<a class="customer-back" href="{% customer_url 'customers:workspace' organization.pk 'campaigns' %}">← Campaigns</a>{% endblock %}
-{% block cx_title %}{{ campaign.name }}{% endblock %}
+{% block cx_meta %}{{ organization.name }}{% endblock %}{% block cx_tabs %}{% endblock %}{% block cx_title %}{{ campaign.name }}{% endblock %}
 {% block cx_chips %}{% with st=campaign.status|campaign_status %}{% ui_badge st.0 st.1 %}{% endwith %}{% if campaign.approved_planning_version == campaign.planning_version %}{% ui_badge 'Approved' 'success' %}{% else %}{% ui_badge 'Not approved' 'warning' %}{% endif %}{% endblock %}
 {% block cx_primary %}{% if organization.status != 'archived' and campaign.status != 'completed' and campaign.status != 'cancelled' %}<a class="button secondary" href="{% customer_url 'customers:campaign-edit' organization.pk campaign.pk %}">Edit campaign</a>{% endif %}{% endblock %}
 {% block customer_content %}

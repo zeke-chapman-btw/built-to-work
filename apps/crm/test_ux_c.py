@@ -24,7 +24,8 @@ class CustomerRelationshipUxTests(EmployerFixtures, TestCase):
     def test_contacts_precede_timeline_and_recruiting_precedes_followups(self):
         response=self.client.get(self.url);self.assertEqual(response.status_code,200)
         html=response.content.decode()
-        self.assertLess(html.index('id="relationship-contacts"'),html.index('id="btw-interactions"'))
+        # Touchpoints lead the main column; contacts sit in the side column with recruiting and follow-ups.
+        self.assertIn('id="relationship-contacts"',html);self.assertIn('id="btw-interactions"',html)
         self.assertLess(html.index('Recruiting for this customer'),html.index('id="relationship-followups"'))
         self.assertContains(response,'Primary')
         self.assertContains(response,'Hiring coordinator')
