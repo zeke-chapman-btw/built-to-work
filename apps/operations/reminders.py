@@ -32,7 +32,7 @@ def claim_job(*, now=None, worker_id='manual'):
         Q(state__in=('pending', 'failed')) |
         Q(state='claimed', lease_until__lte=now), available_at__lte=now,
         local_date__gte=now.date() - timedelta(days=1),
-        local_date__lte=now.date() + timedelta(days=1))
+        local_date__lte=now.date() + timedelta(days=1)).exclude(kind='source')
     if connection.features.has_select_for_update_skip_locked:
         query = query.select_for_update(skip_locked=True)
     else:
@@ -41,6 +41,11 @@ def claim_job(*, now=None, worker_id='manual'):
                                      output_field=IntegerField())).order_by('-local_date', '_order', 'available_at', 'pk').first()
     if job is None:
         return None
+    if job.kind == 'summary' and job.recipient_id:
+        from .event_reminder_planning import proposals as source_proposals
+        # Reading current source state here takes no domain write locks.
+        # Generation repeats this check under the source locks.
+        source_proposals(job, job.recipient, now)
     job.state, job.claim_token = 'claimed', uuid.uuid4()
     job.attempts += 1
     job.claimed_at, job.lease_until = now, now + LEASE
@@ -78,6 +83,9 @@ def _required_proposals(job, user, tasks, now):
     day = job.local_date
     result = []
     for task in tasks:
+        from .event_reminder_sources import owns_task
+        if owns_task(task):
+            continue
         if (task.status not in OPEN or task.archived_at or recipient_id(task) != user.pk or
                 snoozed(task, user, now, preferences=preferences)):
             continue
@@ -112,6 +120,8 @@ def _activity_proposals(job, user, tasks, now):
     by_id = {str(t.pk): t for t in tasks
              if not t.archived_at and t.status != 'cancelled' and
              scope_matches(t, job) and calendar_allowed(t, job.local_date)}
+    from .event_reminder_sources import owns_task
+    by_id = {key: task for key, task in by_id.items() if not owns_task(task)}
     if not by_id:
         return []
     sources = AuditLog.objects.filter(content_type__app_label='operations', content_type__model='task',
@@ -149,9 +159,12 @@ def deliver_job(claimed, *, now=None, worker_id='manual'):
     event_ids.update(TaskEventLink.objects.filter(task_id__in=ids).values_list('event_id', flat=True))
     if claimed.event_id:
         event_ids.add(claimed.event_id)
+    event_ids.update(claimed.source_jobs.exclude(event_id=None).values_list('event_id', flat=True))
     list(Event.objects.select_for_update().filter(pk__in=event_ids).order_by('pk'))
     locked = list(Task.objects.select_for_update(of=('self',)).filter(pk__in=ids)
                   .select_related('event', 'assigned_staff').order_by('pk'))
+    from .event_reminder_planning import lock_source_rows
+    lock_source_rows(claimed)
     from apps.staffing.models import StaffProfile
     nowait = connection.features.has_select_for_update_nowait
     list(StaffProfile.objects.select_for_update(nowait=nowait).filter(
@@ -175,7 +188,8 @@ def deliver_job(claimed, *, now=None, worker_id='manual'):
         return 'delivered'
     if job.kind != 'summary':
         task = next((t for t in tasks if t.pk == job.task_id), None)
-        if (task is None or fingerprint(task) != job.fingerprint or
+        from .event_reminder_sources import owns_task
+        if (task is None or owns_task(task) or fingerprint(task) != job.fingerprint or
                 recipient_id(task) != user.pk or task.status not in OPEN or task.archived_at or
                 not scope_matches(task, job) or not calendar_allowed(task, job.local_date)):
             finish(job, 'superseded', now, worker_id)
@@ -192,8 +206,10 @@ def deliver_job(claimed, *, now=None, worker_id='manual'):
             return 'superseded'
         proposals = [_proposal(job, task, job.kind)]
     else:
+        from .event_reminder_planning import proposals as source_proposals
         proposals = [*_required_proposals(job, user, tasks, now),
-                     *_activity_proposals(job, user, tasks, now)]
+                     *_activity_proposals(job, user, tasks, now),
+                     *source_proposals(job, user, now)]
         job.through_at = now
     keys = [p['dedupe_key'] for p in proposals]
     covered = set(TaskReminderItem.objects.filter(dedupe_key__in=keys).values_list('dedupe_key', flat=True))
@@ -202,6 +218,7 @@ def deliver_job(claimed, *, now=None, worker_id='manual'):
         finish(job, 'empty' if job.kind == 'summary' else 'covered', now, worker_id)
         return job.state
     TaskReminderItem.objects.bulk_create([TaskReminderItem(job=job, **p) for p in proposals])
+    job.source_jobs.filter(state__in=('pending', 'failed')).update(state='covered', finished_at=now)
     TaskNotification.objects.create(recipient=user, task_id=job.task_id, reminder_job=job,
         kind=job.kind, message='Morning summary' if job.kind == 'summary' else
         ('Task due' if job.kind == 'due' else 'Upcoming task'))
@@ -234,6 +251,9 @@ def run_tick(*, now=None, worker_id='manual', max_jobs=100, plan_limit=200, auto
     TaskReminderSchedulerState.objects.filter(pk=state.pk).update(**heartbeat)
     try:
         planned = plan_tick(now, limit=plan_limit)
+        from .event_reminder_planning import plan_sources
+        source_plan = plan_sources(now, limit=min(plan_limit, 50))
+        planned['failed'] += source_plan['failed']
     except Exception as error:
         TaskReminderSchedulerState.objects.filter(pk=state.pk).update(
             last_error=(type(error).__name__ + ': ' + str(error))[:500])

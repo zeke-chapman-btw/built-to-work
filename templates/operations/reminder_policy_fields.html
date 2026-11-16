@@ -1,0 +1,7 @@
+{% load ui_patterns %}
+<div class="cp3 cp3-stack">
+{% for group in form.field_groups %}
+<section class="cp3-card"><header class="cp3-head"><h2>{{ group.title }}</h2></header>
+<div class="cp3-body btw-editor-grid">{% for field in group.fields %}<div>{% ui_field field %}</div>{% endfor %}</div></section>
+{% endfor %}
+</div>

@@ -69,23 +69,27 @@ def _staff_counts(user, events):
         event.staff_short = bool(event.staff_needed) and event.staff_assigned < event.staff_needed
 
 
-def _more_attention(user, unavailable):
+def _more_attention(user, unavailable, covered=None):
     """Extra Needs-attention rows from existing queues; each read uses that queue's own access rule."""
     from django.db import DatabaseError
     from apps.internal_ui.approvals import access_flags
     rows = []
+    covered = covered or {'staffing-review': set(), 'job-review': set(), 'staffing': set()}
     flags = access_flags(user)
     if flags.get("events"):
         try:
             from apps.events.models import Event
             from apps.staffing.models import AvailabilityRequest, StaffingPlan, StaffAssignment
             from django.db.models import Count
-            pending = AvailabilityRequest.objects.filter(status="pending").count()
+            pending = AvailabilityRequest.objects.filter(status="pending").exclude(pk__in=covered['staffing-review']).count()
             if pending:
                 rows.append(dict(id="staff-requests", count=pending, label="Staff requests to approve",
                                  action="Review", url=reverse("internal:workspace", args=["approvals"]) + "?tab=events"))
             soon = Event.objects.filter(status=Event.Status.UPCOMING, start_at__gte=timezone.now(),
                                         start_at__lte=timezone.now() + __import__('datetime').timedelta(days=30))
+            if covered['staffing']:
+                from apps.operations.reminder_home import covered_staffing_events
+                soon = soon.exclude(pk__in=covered_staffing_events(soon, covered['staffing']))
             plans = {p.event_id: p.required_staff + p.required_drivers for p in StaffingPlan.objects.filter(event__in=soon)}
             got = dict(StaffAssignment.objects.filter(event_id__in=plans, status="confirmed").values("event_id")
                        .annotate(n=Count("staff_id", distinct=True)).values_list("event_id", "n"))
@@ -99,7 +103,7 @@ def _more_attention(user, unavailable):
         from apps.customers.access import is_manager
         if flags.get("jobs") and is_manager(user):
             from apps.customers.models import WorkforceNeedRevision
-            waiting = WorkforceNeedRevision.objects.filter(state__in=("submitted", "review")).count()
+            waiting = WorkforceNeedRevision.objects.filter(state__in=("submitted", "review")).exclude(pk__in=covered['job-review']).count()
             if waiting:
                 rows.append(dict(id="positions", count=waiting, label="Customer job requests to approve",
                                  action="Review", url=reverse("internal:workspace", args=["approvals"]) + "?tab=jobs"))
@@ -118,9 +122,19 @@ def home_data(user):
     from apps.participants.intake_review import require_review
 
     attention, unavailable = [], []
+    from apps.operations.reminder_home import coverage as reminder_coverage
+    try:
+        covered = reminder_coverage(user)
+    except DatabaseError:
+        covered = {'tasks': set(), 'staffing': set(), 'staffing-review': set(), 'job-review': set(), 'closeout': set()}
+        unavailable.append('Reminder check unavailable')
     try:
         result = _work_data(user)
         result.update(home_work_state="available", home_attention_count=result["home_metrics"][1]["value"])
+        if covered['tasks']:
+            covered_overdue = task_access.tasks_for(user).filter(pk__in=covered['tasks'],
+                archived_at__isnull=True, status__in=('todo', 'in_progress'), due_date__lt=timezone.localdate()).count()
+            result['home_attention_count'] = max(0, result['home_attention_count'] - covered_overdue)
         if result["home_attention_count"]:
             attention.append(dict(id="tasks", count=result["home_attention_count"],
                 label="Overdue tasks", action="View tasks", scope="Open tasks you can access",
@@ -149,7 +163,7 @@ def home_data(user):
     # Reuse the existing scheduled-end candidate rule and end-action authorization.
     from apps.operations.overview_presentation import end_attention_events
     try:
-        end_count = end_attention_events(user).count()
+        end_count = end_attention_events(user).exclude(pk__in=covered['closeout']).count()
         if end_count:
             attention.append(dict(id="event-end", count=end_count, label="Events ended but not closed out", action="Close out",
                 scope="Not marked ended · your existing end-action access",
@@ -181,7 +195,7 @@ def home_data(user):
     except DatabaseError:
         result.update(home_recruiting_state='unavailable')
         unavailable.append('Recruiting review check unavailable')
-    attention.extend(_more_attention(user, unavailable))
+    attention.extend(_more_attention(user, unavailable, covered))
     result.update(home_attention=attention, home_attention_unavailable=unavailable)
     # Unique source signals remain links, not invented Tasks or replayed notices.
     result['home_unique_attention'] = [item for item in attention if item['id'] != 'tasks']

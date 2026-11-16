@@ -104,16 +104,21 @@ def save_policy(*, actor, values, expected_revision, event=None):
     obj, created = TaskReminderPolicy.objects.get_or_create(key=key, defaults={'event': event})
     obj = TaskReminderPolicy.objects.select_for_update().get(pk=obj.pk)
     check_revision(None if created else obj, expected_revision)
-    before = {field: getattr(obj, field) for field in POLICY_FIELDS} if not created else None
+    from . import event_reminder_policy as source_policy
+    source_fields = [field for field in source_policy.FIELDS if field in values]
+    before = ({**{field: getattr(obj, field) for field in POLICY_FIELDS},
+               **source_policy.snapshot(obj, source_fields)} if not created else None)
     for field in POLICY_FIELDS:
         value = values.get(field)
         if value not in (True, False, None) or (not event and value is None):
             raise ValidationError('Choose a reminder setting.')
         setattr(obj, field, value)
+    source_policy.apply(obj, values, event=event)
     obj.full_clean()
     obj.save()
     record_audit(actor=actor, action='operations.reminders.policy_updated', instance=obj,
-                 old_data=before, new_data={field: getattr(obj, field) for field in POLICY_FIELDS},
+                 old_data=before, new_data={**{field: getattr(obj, field) for field in POLICY_FIELDS},
+                                            **source_policy.snapshot(obj, source_fields)},
                  source='staff', reason='Reminder settings updated.')
     return obj
 

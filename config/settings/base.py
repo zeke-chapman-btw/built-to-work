@@ -14,6 +14,7 @@ BTW_TASK_REMINDERS_ENABLED = (
     and os.environ.get('BTW_PREVIEW_GATE_ENABLED', '').lower() == 'true'
     and os.environ.get('EMAIL_BACKEND') == 'django.core.mail.backends.locmem.EmailBackend'
 )
+BTW_EVENT_APPROVAL_REMINDERS_ENABLED = BTW_TASK_REMINDERS_ENABLED
 ALLOWED_HOSTS = [
     host.strip() for host in os.environ.get("ALLOWED_HOSTS", "").split(",") if host.strip()
 ]

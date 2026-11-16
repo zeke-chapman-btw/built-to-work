@@ -59,13 +59,13 @@ def permissions(preferences):
     return values, optional
 
 
-def visible_items(user, notices, *, now=None):
+def visible_items(user, notices, *, now=None, include_snoozed=False):
     now = now or timezone.now()
     user = fresh_staff(user)
     if user is None:
         return {}
     jobs = [n.reminder_job_id for n in notices if n.reminder_job_id]
-    items = list(TaskReminderItem.objects.filter(job_id__in=jobs, task__in=task_access.tasks_for(user))
+    items = list(TaskReminderItem.objects.filter(job_id__in=jobs, job__recipient=user, task__in=task_access.tasks_for(user))
                  .select_related('job', 'task', 'task__event', 'task__assigned_staff'))
     preferences = preference(user)
     hydrate(item.task for item in items)
@@ -89,7 +89,10 @@ def visible_items(user, notices, *, now=None):
     result = {}
     for item in items:
         task = item.task
-        if expected(task.pk, item.kind) != item.fingerprint or snoozed(task, user, now, preferences=preferences):
+        from .event_reminder_sources import owns_task
+        if owns_task(task):
+            continue
+        if expected(task.pk, item.kind) != item.fingerprint or (not include_snoozed and snoozed(task, user, now, preferences=preferences)):
             continue
         if item.kind in REQUIRED:
             if item.kind == 'advance' and not values(task)['advance_enabled']:
@@ -100,7 +103,37 @@ def visible_items(user, notices, *, now=None):
         elif task.archived_at or task.status == 'cancelled' or not optional(task, item.kind == 'completed'):
             continue
         result.setdefault(item.job_id, []).append(item)
+    for item in current_source_items(user, jobs, now, include_snoozed=include_snoozed):
+        result.setdefault(item.job_id, []).append(item)
     return result
+
+
+def current_source_items(user, jobs, now, *, include_snoozed=False):
+    from .event_reminder_sources import resolve, enabled
+    from .event_reminder_snooze import snoozed as source_snoozed
+    if not enabled():
+        return []
+    items = list(TaskReminderItem.objects.filter(job_id__in=jobs, task__isnull=True,
+                 job__recipient=user).select_related('job'))
+    resolved = {}
+    cache = {}
+    for item in items:
+        source = resolve(item.source_ref, now, cache=cache)
+        if source and source.user.pk == user.pk and source.version == item.fingerprint:
+            item.current_source = source
+            resolved[source.identity] = source
+    latest = {}
+    receipts = TaskReminderItem.objects.filter(task__isnull=True, job__recipient=user,
+        job__notification__isnull=False, source_ref__in=[source.ref for source in resolved.values()])
+    from .reminder_planning import digest
+    for receipt in receipts.select_related('job').order_by('-job__scheduled_for', '-created_at'):
+        identity = digest(receipt.source_ref)
+        source = resolved.get(identity)
+        if source and receipt.fingerprint == source.version:
+            latest.setdefault(identity, receipt.job_id)
+    return [item for item in items if hasattr(item, 'current_source') and
+            latest.get(item.current_source.identity) == item.job_id and
+            (include_snoozed or not source_snoozed(item.current_source, user, now))]
 
 
 def visible_queryset(user):
@@ -153,7 +186,12 @@ def decorate(user, notices):
         job = notice.reminder_job
         items = system_items.get(job.pk, [])
         rows = {}
-        for item in sorted(items, key=lambda i: (i.kind not in REQUIRED, LABELS.get(i.kind, ''), i.task.title)):
+        for item in sorted(items, key=lambda i: (i.kind not in REQUIRED, LABELS.get(i.kind, ''), i.task.title if i.task_id else i.current_source.title)):
+            if not item.task_id:
+                source = item.current_source
+                rows['source:' + source.identity] = dict(title=source.title, label=source.label,
+                    destination=source.destination, section=source.section)
+                continue
             if item.task_id in rows:
                 continue
             label = LABELS[item.kind]
@@ -167,12 +205,14 @@ def decorate(user, notices):
                 label = (label + ' · ' if item.kind == 'advance' else '') + 'Work ' + date_format(work, fmt)
             rows[item.task_id] = dict(title=item.task.title, label=label,
                 destination=reverse('operations:task', args=[item.task_id]), section=SECTIONS[item.kind])
-        for section in ('Today', 'Coming up', 'Since your last summary'):
+        for section in ('Today', 'Coming up', 'Staffing', 'Event preparation', 'Event closeout', 'Approvals', 'Since your last summary'):
             values = [row for row in rows.values() if row['section'] == section]
             if values:
-                notice.summary_sections.append({'title': section, 'rows': values})
+                notice.summary_sections.append({'title': section, 'rows': values,
+                    'count': len(values), 'more': max(0, len(values)-5)})
         event = job.event
-        scope_current = event and all(primary_event(item.task) and primary_event(item.task).pk == event.pk for item in items)
+        item_events = [primary_event(item.task) if item.task_id else item.current_source.event for item in items]
+        scope_current = event and all(item_event and item_event.pk == event.pk for item_event in item_events)
         notice.scope_label = ((event.name if event.pk in events else 'Event work') + ' · ' + job.timezone_name) if scope_current else ''
         notice.display_title = ('Morning summary' if job.kind == 'summary' else
                                 (rows[next(iter(rows))]['title'] if rows else 'Task reminder'))
