@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "apps.games.apps.GamesConfig",
     "apps.simulators.apps.SimulatorsConfig",
     "apps.sops.apps.SopsConfig",
+    "apps.messaging.apps.MessagingConfig",
 ]
 
 MIDDLEWARE = [
@@ -165,6 +166,10 @@ BTW_SMS_PROVIDER = os.environ.get("BTW_SMS_PROVIDER", "")
 EZTEXTING_USERNAME = os.environ.get("EZTEXTING_USERNAME", "")
 EZTEXTING_PASSWORD = os.environ.get("EZTEXTING_PASSWORD", "")
 BTW_SMS_PROVIDER_URL = os.environ.get("BTW_SMS_PROVIDER_URL", "")
+# "Connect your Gmail": an Internal OAuth client in the company's Google Cloud project.
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "")
+GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET", "")
+GOOGLE_OAUTH_ALLOWED_DOMAIN = os.environ.get("GOOGLE_OAUTH_ALLOWED_DOMAIN", "").strip().lower()
 BTW_SMS_PROVIDER_TOKEN = os.environ.get("BTW_SMS_PROVIDER_TOKEN", "")
 BTW_CENTRAL_SYNC_URL = os.environ.get("BTW_CENTRAL_SYNC_URL", "")
 

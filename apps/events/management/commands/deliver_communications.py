@@ -24,6 +24,12 @@ class Command(BaseCommand):
                         result = deliver(pk)
                         if result:
                             self.stdout.write(f"{model.__name__} {pk}: {result.status}")
+                # Ask EZ Texting which already-sent texts were delivered (no-op unless configured).
+                from apps.messaging.text_status import check_recent
+                try:
+                    check_recent()
+                except Exception as exc:  # Status checks must never stop sending.
+                    self.stderr.write(f"Text delivery check skipped: {type(exc).__name__}")
                 if not options["loop"]:
                     return
                 time.sleep(options["poll_seconds"])
