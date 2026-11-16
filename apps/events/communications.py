@@ -109,42 +109,18 @@ def emit_incident(*, kind, fingerprint, summary, event=None):
 def _provider_send(channel, destination, *, subject, body, idempotency_key, attachment=None):
     """Provider settings are deployment-owned; no credentials enter model fields."""
     if channel == "email":
-        sender = getattr(settings, "BTW_TICKET_EMAIL_FROM", "")
+        sender = getattr(settings, "BTW_TICKET_EMAIL_FROM", "") or getattr(settings, "BTW_EMAIL_FROM", "")
         if not sender:
             raise ConnectionError("Email delivery is not configured")
-        message = EmailMessage(subject, body, sender, [destination], headers={"Message-ID": f"<{idempotency_key}@btw.local>"})
+        message = EmailMessage(subject, body, sender, [destination], headers={"Message-ID": f"<{idempotency_key}@btw.local>"},
+                               reply_to=list(getattr(settings, "BTW_EMAIL_REPLY_TO", []) or []) or None)
         if attachment is not None:
             message.attach("built-to-work-ticket.png", attachment, "image/png")
         if message.send(fail_silently=False) != 1:
             raise ConnectionError("Email provider did not accept the message")
         return idempotency_key
-    endpoint = getattr(settings, "BTW_SMS_PROVIDER_URL", "")
-    token = getattr(settings, "BTW_SMS_PROVIDER_TOKEN", "")
-    if not endpoint or not token:
-        raise ConnectionError("SMS delivery is not configured")
-    parsed = urlsplit(endpoint)
-    if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
-        raise ValueError("SMS provider endpoint must use HTTPS without embedded credentials")
-    payload = json.dumps({"to": destination, "message": body, "idempotency_key": idempotency_key}).encode("utf-8")
-    req = request.Request(endpoint, data=payload, headers={
-        "Content-Type": "application/json", "Authorization": f"Bearer {token}",
-        "Idempotency-Key": idempotency_key,
-    }, method="POST")
-    try:
-        with request.urlopen(req, timeout=5) as response:
-            if response.status not in (200, 201, 202):
-                raise RuntimeError("SMS provider did not accept the message")
-            return response.headers.get("X-Message-ID", idempotency_key)[:160]
-    except error.HTTPError as exc:
-        if exc.code == 429:
-            raise ConnectionError("SMS provider rate limited the request") from None
-        if exc.code >= 500:
-            raise TimeoutError("SMS provider acceptance is uncertain") from None
-        raise ValueError("SMS provider rejected the message") from None
-    except error.URLError as exc:
-        if isinstance(exc.reason, (TimeoutError, socket.timeout)):
-            raise TimeoutError("SMS response timed out") from None
-        raise ConnectionError("SMS provider unavailable") from None
+    from .sms_providers import send_sms
+    return send_sms(destination, body, idempotency_key=idempotency_key)
 
 
 def _ticket_message(delivery):

@@ -152,7 +152,18 @@ EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "25"))
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "false").lower() == "true"
-BTW_TICKET_EMAIL_FROM = os.environ.get("BTW_TICKET_EMAIL_FROM", "")
+# Generic sender for automatic email, e.g. "Built to Work <noreply@example.com>".
+# Messages people may answer can carry BTW_EMAIL_REPLY_TO (a watched inbox).
+BTW_EMAIL_FROM = os.environ.get("BTW_EMAIL_FROM", "")
+BTW_EMAIL_REPLY_TO = [a.strip() for a in os.environ.get("BTW_EMAIL_REPLY_TO", "").split(",") if a.strip()]
+if BTW_EMAIL_FROM:
+    DEFAULT_FROM_EMAIL = BTW_EMAIL_FROM
+    SERVER_EMAIL = BTW_EMAIL_FROM
+BTW_TICKET_EMAIL_FROM = os.environ.get("BTW_TICKET_EMAIL_FROM", "") or BTW_EMAIL_FROM
+# Texting: EZ Texting signs in with a dedicated teammate login (never a personal one).
+BTW_SMS_PROVIDER = os.environ.get("BTW_SMS_PROVIDER", "")
+EZTEXTING_USERNAME = os.environ.get("EZTEXTING_USERNAME", "")
+EZTEXTING_PASSWORD = os.environ.get("EZTEXTING_PASSWORD", "")
 BTW_SMS_PROVIDER_URL = os.environ.get("BTW_SMS_PROVIDER_URL", "")
 BTW_SMS_PROVIDER_TOKEN = os.environ.get("BTW_SMS_PROVIDER_TOKEN", "")
 BTW_CENTRAL_SYNC_URL = os.environ.get("BTW_CENTRAL_SYNC_URL", "")
