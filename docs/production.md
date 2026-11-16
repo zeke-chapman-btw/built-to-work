@@ -6,7 +6,7 @@
 | Branch | render-preview (every tested change) | production (only approved releases) |
 | Data | Sample data, can be reset | Real data only; never reset |
 | Password gate | Yes | No (normal sign-in only) |
-| Address | preview.<company domain> | app.<company domain> |
+| Address | preview.builttoworkusa.com | app.builttoworkusa.com |
 
 ## One-time setup (Render dashboard)
 1. Blueprints → New Blueprint Instance → this repository, branch `production`,
@@ -17,10 +17,9 @@
    (choose the password yourself; nobody else needs to see it).
 3. Sign in at https://btw-production.onrender.com and create staff accounts.
    Until email is set up, set each staff password in /admin/ → Users → change password.
-4. Custom address: Settings → Custom Domains → add `app.<company domain>`, and ask the
-   domain manager for a CNAME `app` → `btw-production.onrender.com`. Then add the
-   domain to `ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` (https://…) in
-   render-production.yaml (Claude does this) so the site accepts it.
+4. Custom address: the Blueprint already lists app.builttoworkusa.com. Ask the domain
+   manager for CNAME `app` → `btw-production.onrender.com` (and `preview` →
+   `btw-preview.onrender.com`); Render issues HTTPS once DNS points at it.
 5. Backups: in btw-production-db, confirm daily backups / point-in-time recovery
    are available on the chosen plan before entering real data.
 

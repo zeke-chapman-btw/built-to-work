@@ -20,6 +20,8 @@ services:
     healthCheckPath: /health/
     autoDeployTrigger: commit
     numInstances: 1
+    domains:
+      - app.builttoworkusa.com
     disk:
       name: btw-production-private-files
       mountPath: /var/data
@@ -35,11 +37,10 @@ services:
         fromDatabase:
           name: btw-production-db
           property: connectionString
-      # Add the company subdomain (e.g. app.example.com) here and below once DNS is ready.
       - key: ALLOWED_HOSTS
-        value: btw-production.onrender.com
+        value: btw-production.onrender.com,app.builttoworkusa.com
       - key: CSRF_TRUSTED_ORIGINS
-        value: https://btw-production.onrender.com
+        value: https://btw-production.onrender.com,https://app.builttoworkusa.com
       - key: BTW_PREVIEW_GATE_ENABLED
         value: "false"
       - key: PRIVATE_DOCUMENT_ROOT
