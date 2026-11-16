@@ -70,7 +70,28 @@ def connections(request):
         "history": history,
         "mailchimp": _mailchimp_summary(rows.get("mailchimp")),
         "replies": _replies_summary(rows.get("replies")),
+        "email_replies": _email_replies_summary(),
     })
+
+
+def _email_replies_summary():
+    from .email_replies import site_enabled
+    from .models import GmailConnection
+    connected = list(GmailConnection.objects.exclude(refresh_token_encrypted=""))
+    return {"enabled": site_enabled(), "connected": len(connected),
+            "reading": sum(1 for c in connected if c.can_read and c.track_replies and not c.needs_reconnect)}
+
+
+@login_required(login_url="/admin/login/")
+@require_POST
+def email_replies_toggle(request):
+    _admin(request)
+    from .email_replies import set_enabled
+    on = request.POST.get("on") == "1"
+    set_enabled(actor=request.user, enabled=on)
+    messages.success(request, "Email replies turned on. Staff reconnect their Gmail once to start." if on
+                     else "Email replies turned off. No Gmail mailboxes will be checked.")
+    return redirect(_home() + "#email-replies")
 
 
 def _replies_summary(row):
@@ -101,7 +122,7 @@ def replies_setup(request):
         except texting.TextError as exc:
             messages.error(request, str(exc))
         else:
-            messages.success(request, "Replies are on. Texts people send back will now show up in Text replies.")
+            messages.success(request, "Replies are on. Texts people send back will now show up in the Inbox.")
     return redirect(_home() + "#replies")
 
 

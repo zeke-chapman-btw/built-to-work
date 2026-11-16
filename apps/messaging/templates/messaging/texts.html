@@ -1,7 +1,7 @@
-{% extends 'internal/base.html' %}{% block page_heading %}<header class="page-header btw-section-heading"><h1>Text replies</h1></header>{% endblock %}
+{% extends 'internal/base.html' %}{% block page_heading %}<header class="page-header btw-section-heading"><h1>Inbox</h1></header>{% endblock %}
 {% block content %}<div class="btw-standard-workspace cp3">
 {% if not forwarding %}<p class="cp3-warn">Replies aren't coming into the app yet. An administrator can turn them on in Settings → Connections → Text replies.</p>{% endif %}
-<nav class="cp3-tabs" aria-label="Text replies">{% for key, label, count in tabs %}<a href="?tab={{ key }}" {% if tab == key %}aria-current="page"{% endif %}>{{ label }}{% if count %} <b class="cp3-num">{{ count }}</b>{% endif %}</a>{% endfor %}</nav>
+<nav class="cp3-tabs" aria-label="Inbox">{% for key, label, count in tabs %}<a href="?tab={{ key }}" {% if tab == key %}aria-current="page"{% endif %}>{{ label }}{% if count %} <b class="cp3-num">{{ count }}</b>{% endif %}</a>{% endfor %}</nav>
 <section class="cp3-card" style="margin-top:12px"><header class="cp3-head"><h2>{% if tab == 'sent' %}Texts sent from the app{% elif tab == 'mine' %}Replies for you{% elif tab == 'unassigned' %}Replies no one owns yet{% else %}All replies{% endif %}</h2>{% if tab != 'sent' %}<a class="cp3-fchip{% if show_done %} is-on{% endif %}" href="?tab={{ tab }}{% if not show_done %}&done=1{% endif %}">{% if show_done %}Showing handled{% else %}Show handled{% endif %}</a>{% endif %}</header>
 {% for m in page %}<div class="cp3-row cp3-x" style="--cols:minmax(0,1.1fr) minmax(0,2fr) auto">
 <span>{% if m.participant %}<a href="{% url 'participants:staff-profile' m.participant.pk %}"><strong>{{ m.participant.first_name }} {{ m.participant.last_name }}</strong></a>{% else %}<strong>Unknown number</strong>{% endif %}<small>…{{ m.phone|slice:'6:' }} · {{ m.created_at|date:'M j · g:i A' }}</small></span>

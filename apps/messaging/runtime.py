@@ -55,6 +55,11 @@ def _work():
         except Exception:
             log.exception("MAILCHIMP_SYNC_FAILED")
         try:
+            from .email_replies import check_recent
+            check_recent()
+        except Exception:
+            log.exception("GMAIL_REPLIES_FAILED")
+        try:
             outcome = run_pass()
             if outcome["sent"] or outcome["checked"]:
                 log.info("MESSAGE_WORKER_PASS sent=%s checked=%s", outcome["sent"], outcome["checked"])

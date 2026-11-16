@@ -59,7 +59,7 @@ def staff_item(actor, row):
         "archived": bool(row.archived_at), "url": reverse("crm:detail", args=[row.pk]),
         "source": "Manually recorded" if row.source == "manual" else ("Received in app" if row.direction == "inbound" else "Sent by app"),
         "sent_by_app": row.source == "provider",
-        "app_label": "Text reply" if row.direction == "inbound" else "Sent by app",
+        "app_label": ("Email reply" if row.activity_type == "email" else "Text reply") if row.direction == "inbound" else "Sent by app",
         "can_edit": False, "tasks": [],
         "audience": "BTW staff" if row.audience == "btw" else "Employer-owned",
         "correct_url": reverse("crm:correct", args=[row.pk]),

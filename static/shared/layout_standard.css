@@ -362,3 +362,11 @@ form.ops-filterline{margin:0}
 .internal-app .crm-more-dates input{flex:0 1 180px !important}
 .crm-recent-cols{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
 .crm-recent-cols>.crm-card{margin:0 !important}
+
+/* ls-40: menu counts (Inbox) */
+.internal-app .nav-item .nav-count{margin-left:auto;min-width:20px;padding:1px 6px;border-radius:10px;background:#d0212f;color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center}
+/* ls-40: the bell sits in a circle, red when there is something unread */
+.internal-app .topbar .notification-bell>summary{width:40px;height:40px;min-width:40px;min-height:40px;padding:0;border:1.5px solid #d4d4d8 !important;border-radius:50% !important;background:#fff;color:#52525b}
+.internal-app .topbar .notification-bell>summary:has(.notification-count){border:2px solid #d0212f !important;color:#d0212f;background:#fdf1f2;box-shadow:0 0 0 3px #d0212f22}
+.internal-app .topbar .notification-bell>summary .notification-count{top:-6px;right:-6px;border:2px solid #fff;box-sizing:content-box}
+.internal-app .nav-item.active .nav-count{background:#fff;color:#d0212f}

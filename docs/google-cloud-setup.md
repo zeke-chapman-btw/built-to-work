@@ -11,6 +11,8 @@ Two separate pieces. Both are free and take about 15 minutes each.
    - User type: **Internal** (only built2work.com accounts can use it; no Google review needed).
    - App name: `Built to Work`. Support email: an admin address. Save.
    - **Data access / Scopes** → add `.../auth/gmail.send`, `openid` and `email`. Save.
+     Optional (only if "Email replies" will be used): also add `.../auth/gmail.readonly`.
+     It can be added later; staff then click Reconnect once.
 5. **APIs & Services → Credentials → Create credentials → OAuth client ID**:
    - Application type: **Web application**. Name: `Built to Work web`.
    - **Authorized redirect URIs** — add all four:

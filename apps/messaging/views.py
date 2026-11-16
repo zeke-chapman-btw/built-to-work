@@ -48,7 +48,23 @@ def gmail_connect(request):
     request.session[SESSION_STATE] = state
     request.session[SESSION_NEXT] = _next(request, request.POST.get("next"))
     hint = getattr(request.user, "email", "") or ""
-    return redirect(google.authorization_url(redirect_uri=_callback_uri(request), state=state, login_hint=hint))
+    from .email_replies import site_enabled
+    return redirect(google.authorization_url(redirect_uri=_callback_uri(request), state=state, login_hint=hint,
+                                             read=site_enabled()))
+
+
+@login_required(login_url="/admin/login/")
+@require_POST
+def gmail_replies_toggle(request):
+    """A staff member turns reply copying on or off for their own Gmail."""
+    _staff(request)
+    connection = GmailConnection.objects.filter(user=request.user).first()
+    if connection:
+        connection.track_replies = request.POST.get("on") == "1"
+        connection.save(update_fields=["track_replies"])
+        messages.success(request, "Replies will be copied to the person's activity." if connection.track_replies
+                         else "Replies will stay in your Gmail only.")
+    return redirect(_next(request, request.POST.get("next")))
 
 
 @login_required(login_url="/admin/login/")
@@ -141,7 +157,8 @@ def _send_participant_email(request, connection, participant, data):
         raise ValidationError("This email is already being sent. Check the person's activity before trying again.")
     message = EmailMessage(data["subject"], data["body"], f"{sender_name} <{connection.google_email}>", [participant.contact_email])
     try:
-        reference = google.send(connection, message)
+        sent_info = {}
+        reference = google.send(connection, message, result=sent_info)
     except google.GmailError as exc:
         row.status = SentEmail.Status.UNCERTAIN if exc.uncertain else SentEmail.Status.FAILED
         row.error = str(exc)[:240]
@@ -154,7 +171,8 @@ def _send_participant_email(request, connection, participant, data):
             raise ValidationError("Gmail didn't confirm the send. Check your Gmail Sent folder before trying again.")
         raise ValidationError(f"The email was not sent: {exc}.")
     row.status, row.provider_reference, row.sent_at = SentEmail.Status.SENT, reference[:160], timezone.now()
-    row.save(update_fields=["status", "provider_reference", "sent_at"])
+    row.thread_id = (sent_info.get("thread_id") or "")[:80]
+    row.save(update_fields=["status", "provider_reference", "sent_at", "thread_id"])
     from apps.crm.services import record_app_message
     try:
         interaction = record_app_message(actor=request.user, participant_id=participant.pk, activity_type="email",

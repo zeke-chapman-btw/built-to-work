@@ -12,7 +12,12 @@ def gmail_card(context):
     request = context["request"]
     return {"request": request, "configured": google.configured(), "next": reverse("my:schedule"),
             "connection": GmailConnection.objects.filter(user=request.user).first(),
-            "csrf_token": context.get("csrf_token")}
+            "replies_on": _replies_on(), "csrf_token": context.get("csrf_token")}
+
+
+def _replies_on():
+    from apps.messaging.email_replies import site_enabled
+    return site_enabled()
 
 
 @register.inclusion_tag("messaging/ticket_messages.html")

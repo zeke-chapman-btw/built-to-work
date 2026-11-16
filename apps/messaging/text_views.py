@@ -54,7 +54,7 @@ class TextForm(forms.Form):
     body = forms.CharField(label="Message", max_length=600, widget=forms.Textarea(attrs={"rows": 5, "maxlength": 600}),
                            help_text="Texts over 160 characters are sent as more than one text.")
     replies_to = forms.ChoiceField(label="Send replies to",
-                                   help_text="When they text back, the reply shows up in this person's Text replies.")
+                                   help_text="When they text back, the reply shows up in this person's Inbox.")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -130,7 +130,7 @@ def inbox(request):
             rows = rows.filter(state="new")
     page = Paginator(rows.order_by("-created_at"), 40).get_page(request.GET.get("page"))
     return render(request, "messaging/texts.html", {
-        "page_title": "Text replies", "tab": tab, "tabs": [(k, label, counts[k]) for k, label in TABS],
+        "page_title": "Inbox", "tab": tab, "tabs": [(k, label, counts[k]) for k, label in TABS],
         "page": page, "show_done": show_done, "staff": staff_choices(include_blank=True), "me": user,
         "ready": texting.ready(), "forwarding": texting.reply_settings()[1].get("forwarding"),
     })

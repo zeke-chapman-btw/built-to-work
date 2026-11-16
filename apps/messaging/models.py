@@ -18,12 +18,18 @@ class GmailConnection(models.Model):
     last_sent_at = models.DateTimeField(null=True, blank=True)
     needs_reconnect = models.BooleanField(default=False)
     last_error = models.CharField(max_length=240, blank=True)
+    # Only used when an administrator turns on "Email replies" and the person granted read access.
+    track_replies = models.BooleanField(default=True)
 
     class Meta:
         default_permissions = ()
 
     def __str__(self):
         return f"{self.user} · {self.google_email}"
+
+    @property
+    def can_read(self):
+        return "gmail.readonly" in (self.scopes or "")
 
     @property
     def active(self):
@@ -51,6 +57,8 @@ class SentEmail(models.Model):
     interaction = models.ForeignKey("crm.Interaction", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     created_at = models.DateTimeField(auto_now_add=True)
     sent_at = models.DateTimeField(null=True, blank=True)
+    thread_id = models.CharField(max_length=80, blank=True)
+    replies_checked_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         default_permissions = ()
@@ -88,6 +96,7 @@ class ConnectionSetting(models.Model):
         EMAIL = "email", "Automatic email"
         SENDING = "sending", "Automatic messages"
         REPLIES = "replies", "Text replies"
+        GMAIL_REPLIES = "gmail_replies", "Email replies"
 
     key = models.CharField(max_length=20, choices=Key.choices, unique=True)
     values = models.JSONField(default=dict, blank=True)
@@ -195,3 +204,19 @@ class TextOptOut(models.Model):
 
     class Meta:
         default_permissions = ()
+
+
+class EmailReply(models.Model):
+    """A reply that arrived in a staff member's Gmail to an email they sent from the app."""
+    sent_email = models.ForeignKey(SentEmail, on_delete=models.CASCADE, related_name="replies")
+    gmail_message_id = models.CharField(max_length=80, unique=True)
+    from_address = models.CharField(max_length=254, blank=True)
+    subject = models.CharField(max_length=200, blank=True)
+    body = models.TextField(blank=True)
+    received_at = models.DateTimeField()
+    interaction = models.ForeignKey("crm.Interaction", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        default_permissions = ()
+        ordering = ("-received_at",)

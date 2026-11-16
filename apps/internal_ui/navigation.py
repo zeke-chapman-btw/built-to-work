@@ -243,6 +243,21 @@ def _destination_allowed(user, item):
     return True
 
 
+def _inbox_entry(user):
+    """Inbox (text replies) for staff who can see participant messages, with a count of new ones for them."""
+    if not getattr(user, "is_authenticated", False):
+        return None
+    try:
+        from apps.participants.workspace_access import can_notes
+        if not can_notes(user):
+            return None
+        from apps.messaging.text_views import new_reply_count
+        count = new_reply_count(user)
+    except Exception:
+        return None
+    return dict(id="inbox", label="Inbox", icon="message", url=reverse("messaging:texts"), active=False, count=count)
+
+
 def staff_destinations(user, current_path=""):
     """Owner-approved staff navigation; existing endpoint policies still guard tools."""
     legacy = {entry["id"]: entry for entry in visible_legacy_workspaces(user, current_path)}
@@ -268,6 +283,10 @@ def staff_destinations(user, current_path=""):
         entries.insert(position, dict(id="sops", label="SOPs", icon="sop", url=reverse("sops:index"), active=False))
     if has_profile:
         entries.insert(position, dict(id="my-stuff", label="My stuff", icon="me", url=reverse("my:schedule"), active=False))
+    inbox = _inbox_entry(user)
+    if inbox:
+        after = next((i + 1 for i, entry in enumerate(entries) if entry["id"] == "tasks"), 1)
+        entries.insert(after, inbox)
     if not report_destinations(user):entries=[entry for entry in entries if entry['id']!='reports']
     active = next((entry["id"] for entry in entries if entry["active"]), None)
     if any(legacy.get(key, {}).get("active") for key in ("administration", "platform-tools")):
@@ -279,6 +298,7 @@ def staff_destinations(user, current_path=""):
     if current_path.startswith(("/internal/reports/my-pay/", "/my/", "/workdays/mine/")):active="my-stuff"
     if current_path.startswith("/sops/") and not current_path.startswith("/sops/library/"):active="sops"
     if current_path.startswith("/sops/library/"):active="settings"
+    if current_path.startswith("/messaging/texts/"):active="inbox"
     for entry in entries:
         entry["active"] = entry["id"] == active
     return entries
