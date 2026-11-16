@@ -39,6 +39,12 @@ class Source:
     def coverage(self):
         return digest('source', self.user.pk, self.identity, self.version, self.window)
 
+    @property
+    def schedule_version(self):
+        # A timing edit can replace a still-pending advance window without
+        # making the unresolved work disappear from an older readable receipt.
+        return digest(self.version, self.window)
+
 
 def active_user(profile):
     if not profile or not profile.is_active or not profile.user_id:

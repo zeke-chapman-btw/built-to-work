@@ -44,7 +44,7 @@ def _schedule_current(source, now):
     TaskReminderJob.objects.get_or_create(key=key, defaults=dict(
         kind='source', recipient=source.user, event=source.event, summary=parent,
         local_date=day, timezone_name=zone, scheduled_for=when, available_at=when,
-        source_ref=source.ref, fingerprint=source.version))
+        source_ref=source.ref, fingerprint=source.schedule_version))
 
 
 @transaction.atomic
@@ -119,7 +119,7 @@ def proposals(job, user, now):
     children = list(job.source_jobs.filter(state__in=REPLACEABLE).order_by('pk'))
     for child in children:
         source = sources.resolve(child.source_ref, now, cache=cache)
-        if (source is None or source.user.pk != user.pk or source.version != child.fingerprint or
+        if (source is None or source.user.pk != user.pk or source.schedule_version != child.fingerprint or
                 local_day(now, source.event) != child.local_date):
             TaskReminderJob.objects.filter(pk=child.pk).update(state='superseded', finished_at=now)
             continue

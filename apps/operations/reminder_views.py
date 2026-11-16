@@ -82,7 +82,8 @@ def responsibility_setup(actor):
             if event is None:
                 continue
             label = event.name + ' · Review responsibility'
-            url = reverse('operations:execution-manager', args=[event.pk])
+            route = 'operations:health' if issue.get('category') == 'preparation' else 'operations:execution'
+            url = reverse(route, args=[event.pk])
         else:
             category = {'staffing': 'Staffing', 'verification': 'Verification',
                         'jobs': 'Job-posting', 'customers': 'Customer-approval'}.get(issue.get('category'))

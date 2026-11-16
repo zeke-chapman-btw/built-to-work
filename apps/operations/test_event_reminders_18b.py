@@ -1,6 +1,8 @@
 """Source-backed reminders use fictional fixtures and the existing durable clock."""
 from datetime import date, timedelta
+from decimal import Decimal
 from unittest.mock import patch
+from uuid import uuid4
 
 from django.contrib.auth.models import Permission
 from django.test import TestCase, override_settings
@@ -99,6 +101,9 @@ class EventReminders18BTests(Fixtures, TestCase):
         StaffAssignment.objects.create(event=self.event, staff=self.profiles[self.other.pk])
         prep = [source for source in event_sources(self.event, clock(17)) if source.ref['type'] == 'preparation']
         self.assertEqual({source.user.pk for source in prep}, {self.admin.pk, self.other.pk})
+        self.profiles[self.other.pk].is_active = False; self.profiles[self.other.pk].save()
+        prep = [source for source in event_sources(self.event, clock(17)) if source.ref['type'] == 'preparation']
+        self.assertEqual(len(prep), 1)  # An inactive assignee does not fall back to the owner.
         assigned.state = 'na'; assigned.na_reason = 'SAMPLE not needed'; assigned.save()
         self.assertEqual(len([s for s in event_sources(self.event, clock(17)) if s.ref['type'] == 'preparation']), 1)
 
@@ -127,6 +132,26 @@ class EventReminders18BTests(Fixtures, TestCase):
         self.event.start_at, self.event.end_at = clock(6, 9), clock(6, 17)
         self.event.status = 'completed'; self.event.save()
         self.assertEqual(event_sources(self.event, clock()), [])
+
+    def test_recorded_financial_closeout_stops_only_after_explicit_current_review(self):
+        from apps.event_reports.models import ExpenseCategory, ManualExpense, CostReview
+        from apps.event_reports.services import fingerprint
+        self.event.start_at, self.event.end_at = clock(6, 9), clock(6, 17)
+        self.event.status = 'completed'; self.event.save()
+        category = ExpenseCategory.objects.create(name='SAMPLE closeout cost')
+        expense = ManualExpense.objects.create(event=self.event, category=category,
+            category_name=category.name, description='SAMPLE recorded expense', expense_date=date(2026, 11, 6),
+            amount=Decimal('10.00'), reason='SAMPLE fixture', request_key=uuid4(), created_by=self.admin)
+        count = AuditLog.objects.count()
+        self.assertEqual([s.ref['type'] for s in event_sources(self.event, clock())], ['closeout'])
+        self.assertEqual(AuditLog.objects.count(), count)
+        self.assertFalse(CostReview.objects.filter(event=self.event).exists())
+        CostReview.objects.create(event=self.event, manual_reviewed=True, incentives_reviewed=True,
+            staff_reviewed=True, source_fingerprint=fingerprint(self.event), reviewed_by=self.admin,
+            reason='SAMPLE explicit review')
+        self.assertEqual(event_sources(self.event, clock()), [])
+        expense.refresh_from_db()
+        self.assertEqual(expense.amount, Decimal('10.00'))
 
     def test_explicit_closeout_task_is_not_sent_by_the_task_reminder_path(self):
         task = self.task(assignee=self.admin)
@@ -160,6 +185,27 @@ class EventReminders18BTests(Fixtures, TestCase):
         self.assertEqual(TaskReminderItem.objects.filter(kind='source').count(), 2)
         request.status = 'withdrawn'; request.save()
         self.assertEqual(self.notices(now=clock(16))[0].item_count, 0)
+
+    def test_designated_staffing_reviewer_does_not_get_their_own_request(self):
+        AvailabilityRequest.objects.create(event=self.event, staff=self.profiles[self.admin.pk], requested_dates=['2026-11-20'])
+        TaskReminderPolicy.objects.create(key='company', staffing_review_recipient=self.admin)
+        self.plan.required_staff = 0; self.plan.save()
+        run_tick(now=clock())
+        self.assertFalse(TaskNotification.objects.filter(kind='summary').exists())
+
+    def test_weekend_approval_requires_actual_requested_event_work_that_day(self):
+        self.event.start_at, self.event.end_at = clock(16, 9), clock(16, 17)
+        self.event.setup_date = date(2026, 11, 14); self.event.save()
+        AvailabilityRequest.objects.create(event=self.event, staff=self.profiles[self.staff.pk], requested_dates=['2026-11-15'])
+        TaskReminderPolicy.objects.create(key='company', staffing_review_recipient=self.admin)
+        self.plan.required_staff = 0; self.plan.save()
+        run_tick(now=clock(14))
+        self.assertFalse(TaskNotification.objects.filter(kind='summary').exists())
+        run_tick(now=clock(15))
+        notice = self.summaries(self.admin).get()
+        self.assertEqual(notice.reminder_job.event_id, self.event.pk)
+        self.event.setup_date = None; self.event.save()
+        self.assertEqual(self.notices(now=clock(15))[0].item_count, 0)
 
     def test_qualification_only_explicit_latest_pending_snapshot_qualifies(self):
         person = Participant.objects.create(first_name='SAMPLE', last_name='Review')
@@ -236,6 +282,17 @@ class EventReminders18BTests(Fixtures, TestCase):
         self.assertEqual(self.notices()[0].item_count, 0)
         self.assertEqual(TaskReminderItem.objects.filter(kind='source').count(), 1)
         self.assertEqual(TaskNotification.objects.filter(kind='summary').count(), 1)
+
+    def test_changed_timing_supersedes_obsolete_children_before_delivery(self):
+        plan_sources(clock(18, 6))
+        TaskReminderPolicy.objects.create(key='company', staffing_days=[10, 3])
+        plan_sources(clock(18, 6))
+        self.assertEqual(TaskReminderJob.objects.filter(kind='source').count(), 2)
+        outcome = run_tick(now=clock(18))
+        self.assertFalse(outcome['outcomes'].get('failed'))
+        self.assertEqual(TaskReminderJob.objects.filter(kind='source', state='superseded').count(), 1)
+        self.assertEqual(TaskReminderItem.objects.filter(kind='source').count(), 1)
+        self.assertEqual(self.summaries(self.admin).count(), 1)
 
     def test_source_snooze_preserves_work_and_audits_it(self):
         run_tick(now=clock())
