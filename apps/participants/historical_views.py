@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from apps.internal_ui.people_editors import people_render as render, people_saved
 from django.views.decorators.http import require_http_methods, require_POST
-from .historical import (EXPORT_FIELDS, IMPORT_FIELDS, IMPORT_GROUPS, guess_mapping, MAX_FILE_BYTES, MAX_ROWS, MAX_COLUMNS, _read_rows, create_batch, export_participants,
+from .historical import (COLUMNS, FIXED, columns_spec, fixed_spec, spec_columns, EXPORT_FIELDS, IMPORT_FIELDS, IMPORT_GROUPS, guess_mapping, MAX_FILE_BYTES, MAX_ROWS, MAX_COLUMNS, _read_rows, create_batch, export_participants,
                          import_ready, preview_batch, resolve_review)
 from .models import (HistoricalImportBatch, HistoricalImportRow, HistoricalMappingTemplate, Participant)
 
@@ -34,6 +34,23 @@ def historical_index(request):
         "import_max_mb": MAX_FILE_BYTES // (1024 * 1024), "import_max_rows": MAX_ROWS, "import_max_columns": MAX_COLUMNS})
 
 
+def _posted_spec(post, field):
+    choice = post.get("map_" + field, "")
+    if choice == "__fixed__":
+        value = post.get("fixed_" + field, "").strip()[:500]
+        return fixed_spec(value) if value else ""
+    if choice == "__cols__":
+        columns = [c for c in post.getlist("cols_" + field) if c][:60]
+        return columns_spec(columns) if columns else ""
+    return choice
+
+
+def _field_choice(name, label, spec):
+    mode = "fixed" if spec.startswith(FIXED) else "cols" if spec.startswith(COLUMNS) else "column"
+    return {"name": name, "label": label, "mode": mode, "chosen": spec if mode == "column" else "",
+            "fixed": spec[len(FIXED):] if mode == "fixed" else "", "columns": spec_columns(spec) if mode == "cols" else []}
+
+
 @login_required
 @require_http_methods(["GET", "POST"])
 def historical_map(request, batch_id):
@@ -50,8 +67,8 @@ def historical_map(request, batch_id):
     template = templates.filter(pk=selected).first() if selected and selected.isdigit() else None
     mapping = template.mapping if template else (batch.mapping or guess_mapping(headers))
     if request.method == "POST" and headers:
-        mapping = {field: request.POST.get("map_" + field, "") for field in IMPORT_FIELDS}
-        mapping = {field: column for field, column in mapping.items() if column}
+        mapping = {field: _posted_spec(request.POST, field) for field in IMPORT_FIELDS}
+        mapping = {field: spec for field, spec in mapping.items() if spec}
         try:
             preview_batch(batch, mapping, actor=request.user)
             name = request.POST.get("template_name", "").strip()[:120]
@@ -63,9 +80,9 @@ def historical_map(request, batch_id):
             error = "; ".join(exc.messages)
     first = rows[0][1] if rows else {}
     examples = [{"header": header, "example": (first.get(header) or "")[:40]} for header in headers]
-    groups = [{"title": title, "fields": [{"name": name, "label": label, "chosen": mapping.get(name, "")} for name, label in fields]}
+    groups = [{"title": title, "fields": [_field_choice(name, label, mapping.get(name, "")) for name, label in fields]}
               for title, fields in IMPORT_GROUPS]
-    used = set(mapping.values())
+    used = {column for spec in mapping.values() for column in spec_columns(spec)}
     return render(request, "participants/historical_map.html", {"batch": batch, "headers": headers, "examples": examples,
         "groups": groups, "row_count": len(rows), "unused": [h for h in headers if h not in used],
         "templates": templates, "error": error, "page_title": "Match your columns"})
