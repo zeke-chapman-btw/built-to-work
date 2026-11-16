@@ -115,3 +115,34 @@ body.has-portal-shell .cp3-dl{margin:0 !important;padding:14px 20px !important}
 .mypay-tiles5{grid-template-columns:1.4fr repeat(4,minmax(0,1fr))}
 .mypay-row{grid-template-columns:minmax(0,1fr) auto 110px 80px}
 @media (max-width:900px){.mypay-tiles5{grid-template-columns:1fr 1fr}}
+/* Generic helpers for the smaller staff pages */
+.cp3-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.cp3-bar .cp3-actions{margin-left:auto}
+.cp3-x{grid-template-columns:var(--cols,minmax(0,1fr) auto)}
+.cp3-row form{margin:0}
+.cp3-row .cp3-actions{justify-self:end;align-items:center}
+.cp3-row .cp3-actions a{font-size:13px;color:#a51d24}
+.cp3-chips button.cp3-fchip{cursor:pointer;font:inherit;font-size:13px}
+.cp3-card > details > summary,.cp3-card.cp3-fold > summary{padding:14px 20px;font-weight:600;font-size:15px;cursor:pointer;list-style-position:inside}
+.cp3-card.cp3-fold[open] > summary{border-bottom:1px solid #eef0f2}
+.cp3-form{padding:14px 20px;display:flex;flex-direction:column;gap:12px}
+.cp3-form > .cp3-actions{padding-top:4px}
+.cp3-form .field,.cp3-form .ux-field{margin:0 !important}
+.cp3-inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.cp3-inline input[type=text],.cp3-inline input:not([type]){min-height:34px;border:1px solid #cfd3d8;border-radius:6px;padding:0 10px;font:inherit;font-size:13px}
+.cp3-inline .button{min-height:34px !important;height:34px;padding:0 12px;font-size:13px}
+.cp3-warn{margin:0;padding:10px 20px;background:#fff8e6;border-top:1px solid #f4e3b5;font-size:13px;color:#5c3d00}
+.cp3-head + .cp3-warn{border-top:0}
+@media (max-width:1000px){.cp3-x{grid-template-columns:minmax(0,1fr) auto}.cp3-x>.cp3-hm{display:none}.cp3-bar .cp3-actions{margin-left:0}}
+.cp3-intro{margin:0;padding:10px 20px;background:#fafbfc;border-bottom:1px solid #f1f2f4;font-size:13px;color:#5b6470}
+.cp3-intro + .cp3-thead{border-top:0}
+.cp3-more{padding:12px 20px;border-top:1px solid #f1f2f4}
+.cp3-more > summary,.cp3-rm > summary{color:#a51d24;font-size:13px;cursor:pointer;list-style:none;font-weight:500}
+.cp3-more > summary::-webkit-details-marker,.cp3-rm > summary::-webkit-details-marker{display:none}
+.cp3-more[open] > summary{margin-bottom:10px}
+.cp3-more > form.cp3-form{padding:0}
+.cp3-rm{justify-self:end;text-align:right}
+.cp3-rm[open] > summary{margin-bottom:6px}
+.internal-app .cp3-chips button.cp3-fchip{background:#fff !important;color:#3d4450 !important;border:1px solid #d6dade !important;border-radius:999px !important;min-height:36px !important;height:36px;padding:0 14px !important;box-shadow:none !important;font-weight:400}
+.internal-app .cp3-chips button.cp3-fchip.is-on{border-color:#ac1929 !important;background:#fdf1f2 !important;color:#ac1929 !important;font-weight:600}
+.ops-filterline .cp3-actions{margin-left:auto}

@@ -1,5 +1,5 @@
-{% extends 'recruiting/base.html' %}{% block recruiting_content %}
-<section class="card ops-list-card"><header class="ops-list-head"><h2>Candidate lists</h2><a class="ops-quiet-link" data-record-editor href="{% url 'recruiting:lists' %}?edit=new">+ New list</a></header>
-<p class="ux-note rc-pad">Lists are people staff picked by hand. Saved searches (in Participants) update on their own.</p>
-{% for list in lists %}<div class="ops-list-row"><span class="ops-list-main"><strong><a href="{% url 'recruiting:list' list.pk %}">{{ list.name }}</a></strong><small>{% if list.shared %}Shared{% else %}Just me{% endif %} · {{ list.owner }}</small></span></div>{% empty %}<p class="ops-list-empty">No lists yet.</p>{% endfor %}
-</section>{% endblock %}
+{% extends 'recruiting/base.html' %}{% block recruiting_content %}<div class="cp3">
+<section class="cp3-card"><header class="cp3-head"><h2>Candidate lists</h2><a class="button button-primary" data-record-editor href="{% url 'recruiting:lists' %}?edit=new">+ New list</a></header>
+<p class="cp3-intro">Lists are people staff picked by hand. Saved searches (in Participants) update on their own.</p>
+{% for list in lists %}<a class="cp3-row cp3-x" style="--cols:minmax(0,1fr) 110px minmax(0,160px)" href="{% url 'recruiting:list' list.pk %}"><strong>{{ list.name }}</strong><span>{% if list.shared %}<span class="cp3-chip b">Shared</span>{% else %}<span class="cp3-chip">Just me</span>{% endif %}</span><span class="cp3-note cp3-hm">{{ list.owner }}</span></a>{% empty %}<p class="cp3-empty">No lists yet.</p>{% endfor %}
+</section></div>{% endblock %}

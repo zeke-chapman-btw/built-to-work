@@ -1,4 +1,4 @@
-{% extends 'reporting/base.html' %}{% load reporting_ui static %}{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'shared/portal_pages.css' %}?v=pp3-2">{% endblock %}{% block content %}
+{% extends 'reporting/base.html' %}{% load reporting_ui static %}{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'shared/portal_pages.css' %}?v=pp3-4">{% endblock %}{% block content %}
 {% if my_tabs %}{% include 'internal/ui/my_tabs.html' %}{% endif %}
 <div class="mypay cp3">
 <div class="mypay-bar"><nav class="cp3-chips" aria-label="Year"><a class="cp3-fchip{% if year == current_year %} is-on{% endif %}" href="?year={{ current_year }}">This year</a><a class="cp3-fchip{% if year == current_year|add:'-1' %} is-on{% endif %}" href="?year={{ current_year|add:'-1' }}">Last year</a></nav>
