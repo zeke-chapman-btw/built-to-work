@@ -47,7 +47,8 @@ def _count(payload):
 
 
 def _responses(message_id, status):
-    token = base64.b64encode(f"{settings.EZTEXTING_USERNAME}:{settings.EZTEXTING_PASSWORD}".encode()).decode("ascii")
+    username, password, _source = sms_providers.ez_credentials()
+    token = base64.b64encode(f"{username}:{password}".encode()).decode("ascii")
     url = REPORT_URL.format(id=parse.quote(message_id, safe="")) + "?" + parse.urlencode({"filters[status][eq]": status, "size": 10})
     req = request.Request(url, headers={"Authorization": f"Basic {token}", "Accept": "application/json"})
     try:

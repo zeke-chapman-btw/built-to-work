@@ -46,6 +46,8 @@ def _sections(user):
                  'description': 'The steps a candidate moves through.',
                  'url': reverse('recruiting:stages') + '?from=settings'},
             ]}]})
+    if user.is_superuser:
+        sections.append({'key': 'connections', 'label': 'Connections', 'url': reverse('messaging:connections'), 'groups': []})
     if advanced:
         sections.append({'key': 'advanced', 'label': 'Advanced', 'groups': advanced})
     return sections
@@ -70,6 +72,8 @@ def settings_context(request):
         selected = 'staff'
     elif path.startswith('/workdays/compensation/'):
         selected = 'compensation'
+    elif path.startswith(reverse('messaging:connections')):
+        selected = 'connections'
     elif path.startswith('/reports/categories/'):
         selected = 'advanced'
     else:
@@ -82,7 +86,7 @@ def settings_context(request):
     available = {section['key']: section for section in sections}
     # Root query strings choose presentation only. Protected tools use their
     # existing routes and independently recheck their existing authorization.
-    if selected not in available or (path == home and selected in {'portal', 'compensation', 'staff-pay', 'sops'}):
+    if selected not in available or (path == home and selected in {'portal', 'compensation', 'staff-pay', 'sops', 'connections'}):
         selected = 'account'
     tabs = []
     for section in sections:

@@ -74,3 +74,31 @@ class TextDeliveryResult(models.Model):
 
     class Meta:
         default_permissions = ()
+
+
+class ConnectionSetting(models.Model):
+    """Administrator-managed sign-in for a shared service (texting, automatic email).
+
+    Secrets are stored encrypted and are never shown again once saved. When no
+    setting is saved here, the app falls back to the Render environment values.
+    """
+
+    class Key(models.TextChoices):
+        EZTEXTING = "eztexting", "Texting (EZ Texting)"
+        EMAIL = "email", "Automatic email"
+        SENDING = "sending", "Automatic messages"
+
+    key = models.CharField(max_length=20, choices=Key.choices, unique=True)
+    values = models.JSONField(default=dict, blank=True)
+    secret_encrypted = models.TextField(blank=True)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    updated_at = models.DateTimeField(auto_now=True)
+    last_test_ok = models.BooleanField(null=True, blank=True)
+    last_test_at = models.DateTimeField(null=True, blank=True)
+    last_test_detail = models.CharField(max_length=240, blank=True)
+
+    class Meta:
+        default_permissions = ()
+
+    def __str__(self):
+        return self.get_key_display()

@@ -109,11 +109,15 @@ def emit_incident(*, kind, fingerprint, summary, event=None):
 def _provider_send(channel, destination, *, subject, body, idempotency_key, attachment=None):
     """Provider settings are deployment-owned; no credentials enter model fields."""
     if channel == "email":
-        sender = getattr(settings, "BTW_TICKET_EMAIL_FROM", "") or getattr(settings, "BTW_EMAIL_FROM", "")
+        from apps.messaging.store import email_settings, smtp_connection
+        config = email_settings()
+        sender = getattr(settings, "BTW_TICKET_EMAIL_FROM", "") or config["from_address"]
         if not sender:
             raise ConnectionError("Email delivery is not configured")
+        # A configured sign-in (Settings → Connections or Render) sends for real even
+        # when the site's own email backend is in test mode, as on the Preview.
         message = EmailMessage(subject, body, sender, [destination], headers={"Message-ID": f"<{idempotency_key}@btw.local>"},
-                               reply_to=list(getattr(settings, "BTW_EMAIL_REPLY_TO", []) or []) or None)
+                               reply_to=config["reply_to"] or None, connection=smtp_connection())
         if attachment is not None:
             message.attach("built-to-work-ticket.png", attachment, "image/png")
         if message.send(fail_silently=False) != 1:
