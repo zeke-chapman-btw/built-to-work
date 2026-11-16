@@ -1,7 +1,9 @@
 # Email and text setup (Build 19 groundwork)
 
-Nothing sends until these settings are filled in on Render
-(btw-preview → Environment). Secrets are typed there by an admin, never put in code.
+**The easy way: Settings → Connections** (administrators only). Enter the EZ Texting login
+and the noreply@ email sign-in there, send a test, then turn on **Automatic messages**.
+Passwords are stored encrypted and never shown again. If nothing is saved there, the app
+falls back to the Render environment values below. Google steps: docs/google-cloud-setup.md.
 
 ## Texting — EZ Texting
 

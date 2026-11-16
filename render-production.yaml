@@ -49,10 +49,10 @@ services:
         value: /var/data/consent_documents
       - key: PRIVATE_HISTORICAL_ROOT
         value: /var/data/historical_imports
-      # Email stays in test mode until Google Workspace sending is set up
-      # (see docs/messaging-setup.md); then switch to the SMTP backend.
+      # Site email uses the sign-in saved in Settings → Connections; until one
+      # exists, nothing leaves (messages are kept in memory like test mode).
       - key: EMAIL_BACKEND
-        value: django.core.mail.backends.locmem.EmailBackend
+        value: apps.messaging.backends.ConnectionsEmailBackend
       # Email/text/Gmail settings (see docs/messaging-setup.md) are added in the
       # Render dashboard when ready, so nothing here prompts for them.
 databases:

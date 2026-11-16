@@ -6,15 +6,15 @@ scope: the app can send as the person, but cannot read their mailbox.
 from __future__ import annotations
 
 import base64
-import hashlib
 import json
 import secrets
 import socket
 from urllib import error, parse, request
 
-from cryptography.fernet import Fernet, InvalidToken
 from django.conf import settings
 from django.utils import timezone
+
+from . import crypto
 
 AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -36,20 +36,12 @@ def configured():
     return bool(settings.GOOGLE_OAUTH_CLIENT_ID and settings.GOOGLE_OAUTH_CLIENT_SECRET)
 
 
-def _fernet():
-    key = hashlib.sha256(("btw-gmail-token:" + settings.SECRET_KEY).encode("utf-8")).digest()
-    return Fernet(base64.urlsafe_b64encode(key))
-
-
 def encrypt(token):
-    return _fernet().encrypt(token.encode("utf-8")).decode("ascii")
+    return crypto.encrypt(token, "gmail-token")
 
 
 def decrypt(value):
-    try:
-        return _fernet().decrypt(value.encode("ascii")).decode("utf-8")
-    except (InvalidToken, ValueError):
-        return ""
+    return crypto.decrypt(value, "gmail-token")
 
 
 def new_state():

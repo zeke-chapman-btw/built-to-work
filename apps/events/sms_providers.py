@@ -22,20 +22,24 @@ from django.conf import settings
 EZTEXTING_MESSAGES_URL = "https://a.eztexting.com/v1/messages"
 
 
+def ez_credentials():
+    """EZ Texting sign-in saved in Settings → Connections, else from deployment settings."""
+    from apps.messaging.store import ez_credentials as stored
+    return stored()
+
+
 def provider_name():
-    """``eztexting`` when EZ Texting sign-in settings exist, else the generic endpoint."""
+    """``eztexting`` when an EZ Texting sign-in exists, else the generic endpoint."""
     chosen = (getattr(settings, "BTW_SMS_PROVIDER", "") or "").strip().lower()
     if chosen:
         return chosen
-    if getattr(settings, "EZTEXTING_USERNAME", "") and getattr(settings, "EZTEXTING_PASSWORD", ""):
-        return "eztexting"
-    return "generic"
+    return "eztexting" if ez_credentials()[0] else "generic"
 
 
 def is_configured():
     name = provider_name()
     if name == "eztexting":
-        return bool(getattr(settings, "EZTEXTING_USERNAME", "") and getattr(settings, "EZTEXTING_PASSWORD", ""))
+        return bool(ez_credentials()[0])
     return bool(getattr(settings, "BTW_SMS_PROVIDER_URL", "") and getattr(settings, "BTW_SMS_PROVIDER_TOKEN", ""))
 
 
@@ -82,8 +86,7 @@ def _post(url, payload, headers, *, timeout):
 
 
 def _send_eztexting(destination, body):
-    username = getattr(settings, "EZTEXTING_USERNAME", "")
-    password = getattr(settings, "EZTEXTING_PASSWORD", "")
+    username, password, _source = ez_credentials()
     if not username or not password:
         raise ConnectionError("SMS delivery is not configured")
     number = us_number(destination)
