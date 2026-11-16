@@ -21,6 +21,7 @@ urlpatterns = [
     path("participants/<int:participant_id>/email/", views.email_participant, name="email-participant"),
     path("participants/<int:participant_id>/text/", text_views.text_participant, name="text-participant"),
     path("texts/", text_views.inbox, name="texts"),
+    path("texts/new/", text_views.new_text, name="new-text"),
     path("gmail/replies/", views.gmail_replies_toggle, name="gmail-replies"),
     path("connections/email-replies/", connections.email_replies_toggle, name="connections-email-replies"),
     path("texts/<int:pk>/handled/", text_views.text_handled, name="text-handled"),

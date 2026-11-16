@@ -157,3 +157,15 @@ class TextingTests(TestCase):
         self.send()
         texting.receive({"fromNumber": "17065550142", "message": "Yo"})
         self.assertContains(self.client.get(reverse("my:schedule")), "1 person has texted you back")
+
+
+class NewTextTests(TextingTests):
+    def test_inbox_new_text_search_finds_people_with_mobile_numbers(self):
+        self.assertContains(self.client.get(reverse("messaging:texts")), reverse("messaging:new-text"))
+        Participant.objects.create(first_name="SYNTHETIC", last_name="Nophone", contact_email="np@example.test")
+        page = self.client.get(reverse("messaging:new-text") + "?q=Texter", HTTP_X_BTW_EDITOR="1")
+        self.assertEqual(page["X-BTW-Editor"], "1")
+        self.assertContains(page, reverse("messaging:text-participant", args=[self.person.pk]))
+        self.assertContains(page, "(706) 555-0142")
+        self.assertNotContains(self.client.get(reverse("messaging:new-text") + "?q=Nophone"), "Nophone</strong>")
+        self.assertContains(self.client.get(reverse("messaging:new-text") + "?q=0142"), "Texter")

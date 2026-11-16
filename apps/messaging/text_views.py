@@ -192,3 +192,36 @@ def eztexting_webhook(request, token):
 
 def new_reply_count(user):
     return TextMessage.objects.filter(direction=TextMessage.Direction.IN, replies_to=user, state="new").count()
+
+
+@login_required(login_url="/admin/login/")
+@require_http_methods(["GET"])
+def new_text(request):
+    """Pick who to text (search by name, phone or email), then write the text."""
+    from django.db.models import Q
+    _inbox_user(request)
+    query = (request.GET.get("q") or "").strip()[:80]
+    people = []
+    if len(query) >= 2:
+        digits = "".join(ch for ch in query if ch.isdigit())
+        match = Q(contact_email__icontains=query)
+        for word in query.split()[:3]:
+            match |= Q(first_name__icontains=word) | Q(last_name__icontains=word) | Q(preferred_name__icontains=word)
+        if len(query.split()) >= 2:
+            first, last = query.split()[0], query.split()[-1]
+            match = (Q(first_name__icontains=first) & Q(last_name__icontains=last)) | Q(contact_email__icontains=query)
+        if len(digits) >= 4:
+            match |= Q(contact_phone__contains=digits)
+        people = list(Participant.objects.filter(match, archived_at__isnull=True, kind=Participant.Kind.PERSON)
+                      .exclude(contact_phone="").order_by("last_name", "first_name")[:15])
+    back = reverse("messaging:texts") + "?tab=sent"
+    rows = [{"person": p, "phone": texting.phone_key(p.contact_phone), "blocked": texting.opted_out(p.contact_phone),
+             "url": reverse("messaging:text-participant", args=[p.pk]) + "?next=" + back} for p in people]
+    context = {"page_title": "New text", "editor_context": "Find the person you want to text.", "query": query,
+               "rows": rows, "ready": texting.ready()}
+    fragment = request.headers.get("X-BTW-Editor") == "1"
+    response = render(request, "messaging/new_text_panel.html" if fragment else "messaging/new_text_page.html", context)
+    response["Cache-Control"] = "no-store"
+    if fragment:
+        response["X-BTW-Editor"] = "1"
+    return response
