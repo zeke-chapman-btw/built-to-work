@@ -54,6 +54,17 @@ class ConsentDocumentWorkflowTests(TestCase):
     def url(self, action, document):
         return reverse('admin:participants_consentdocumentversion_' + action, args=[document.pk])
 
+    def test_simple_upload_needs_only_name_and_pdf_and_numbers_versions(self):
+        self.client.force_login(self.admin, backend='django.contrib.auth.backends.ModelBackend')
+        page = self.client.get(reverse('participants:consent-upload'))
+        self.assertNotContains(page, 'Consent ID')
+        for _ in range(2):
+            response = self.client.post(reverse('participants:consent-upload'), {'title': 'Privacy Policy',
+                'original_pdf': SimpleUploadedFile('policy.pdf', synthetic_pdf(), content_type='application/pdf')})
+            self.assertEqual(response.status_code, 302)
+        self.assertEqual(list(ConsentDocumentVersion.objects.order_by('pk').values_list('key', 'version')),
+                         [('btw-intake', '1'), ('btw-intake', '2')])
+
     def test_upload_review_verify_publish_preserves_original_and_audit(self):
         self.client.force_login(self.admin, backend='django.contrib.auth.backends.ModelBackend')
         response = self.upload()

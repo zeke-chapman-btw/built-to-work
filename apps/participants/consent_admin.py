@@ -16,11 +16,25 @@ from .consent_documents import extract_consent_pdf
 from .models import ConsentDocumentVersion
 
 
+def _next_version(key):
+    """1, 2, 3… for each new upload of the same consent."""
+    numbers = [int(v) for v in ConsentDocumentVersion.objects.filter(key=key).values_list('version', flat=True) if str(v).isdigit()]
+    count = ConsentDocumentVersion.objects.filter(key=key).count()
+    return str(max(numbers + [count]) + 1)
+
+
 class ConsentUploadForm(forms.Form):
-    key = forms.SlugField(initial='btw-intake', max_length=80, label='Consent ID', help_text='Use the same ID for every version of the same consent.')
-    version = forms.CharField(max_length=40)
-    title = forms.CharField(max_length=200)
-    original_pdf = forms.FileField(label='Original PDF')
+    # The sign-up consent is the one people agree to; new uploads become its next version.
+    key = forms.SlugField(initial='btw-intake', max_length=80, required=False, widget=forms.HiddenInput)
+    version = forms.CharField(max_length=40, required=False, widget=forms.HiddenInput)
+    title = forms.CharField(max_length=200, label='Name people will see', help_text='For example: Privacy Policy')
+    original_pdf = forms.FileField(label='PDF', help_text='The app copies the text out of it. You check the text before it goes live.')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        latest = ConsentDocumentVersion.objects.filter(key='btw-intake').order_by('-created_at').first()
+        if latest and not self.is_bound:
+            self.fields['title'].initial = latest.title
 
     def clean_original_pdf(self):
         upload = self.cleaned_data['original_pdf']
@@ -29,6 +43,9 @@ class ConsentUploadForm(forms.Form):
 
     def clean(self):
         data = super().clean()
+        data['key'] = data.get('key') or 'btw-intake'
+        if not data.get('version'):
+            data['version'] = _next_version(data['key'])
         if data.get('key') and data.get('version') and ConsentDocumentVersion.objects.filter(
             key=data['key'], version=data['version']
         ).exists():
