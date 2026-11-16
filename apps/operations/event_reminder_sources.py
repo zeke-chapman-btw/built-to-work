@@ -123,7 +123,10 @@ def event_sources(event, now, *, issues=None):
         if ended <= now and today >= business_days_after(end_day, values['closeout_days']):
             checklist = EventChecklistItem.objects.filter(category__execution=execution,
                 category__phase='closeout', is_required=True, state='todo', archived_at__isnull=True).exists()
-            financial = closeout_financial(event) if can_report(recipient) else False
+            financial_pending = closeout_financial(event)
+            financial = financial_pending and can_report(recipient)
+            if financial_pending and not financial:
+                issues.append({'category': 'closeout', 'id': str(event.pk), 'code': 'owner-report-access'})
             task_open = bool(execution.closeout_task_id and task_access.tasks_for(recipient).filter(
                 pk=execution.closeout_task_id, archived_at__isnull=True, status__in=('todo', 'in_progress')).exists())
             if checklist or financial or task_open:

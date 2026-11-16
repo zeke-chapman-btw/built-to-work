@@ -74,7 +74,7 @@ def responsibility_setup(actor):
     issues = (state.responsibility_health or {}).get('issues', []) if state else []
     result, seen = [], set()
     for issue in issues[:50]:
-        event_id = issue.get('id') if issue.get('category') == 'event-owner' or issue.get('code') == 'owner-access' else None
+        event_id = issue.get('id') if issue.get('category') == 'event-owner' or issue.get('code') in ('owner-access', 'owner-report-access') else None
         if issue.get('category') == 'preparation':
             event_id = EventChecklistItem.objects.filter(pk=issue.get('id')).values_list('category__execution__event_id', flat=True).first()
         if event_id:

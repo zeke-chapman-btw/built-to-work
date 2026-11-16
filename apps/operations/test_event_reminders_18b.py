@@ -153,6 +153,24 @@ class EventReminders18BTests(Fixtures, TestCase):
         expense.refresh_from_db()
         self.assertEqual(expense.amount, Decimal('10.00'))
 
+    def test_owner_without_financial_access_is_visible_only_in_admin_setup_health(self):
+        from apps.event_reports.models import ExpenseCategory, ManualExpense
+        from .reminder_views import responsibility_setup
+        self.event.start_at, self.event.end_at = clock(6, 9), clock(6, 17)
+        self.event.status = 'completed'; self.event.save()
+        self.execution.primary_manager = self.profiles[self.other.pk]; self.execution.save()
+        category = ExpenseCategory.objects.create(name='SAMPLE private cost')
+        ManualExpense.objects.create(event=self.event, category=category, category_name=category.name,
+            description='SAMPLE restricted amount', expense_date=date(2026, 11, 6), amount=Decimal('123.45'),
+            reason='SAMPLE fixture', request_key=uuid4(), created_by=self.admin)
+        issues = []
+        self.assertEqual(event_sources(self.event, clock(), issues=issues), [])
+        self.assertIn({'category': 'closeout', 'id': str(self.event.pk), 'code': 'owner-report-access'}, issues)
+        self.assertNotIn('123.45', str(issues))
+        plan_sources(clock())
+        self.assertTrue(responsibility_setup(self.admin))
+        self.assertEqual(responsibility_setup(self.other), [])
+
     def test_explicit_closeout_task_is_not_sent_by_the_task_reminder_path(self):
         task = self.task(assignee=self.admin)
         self.execution.closeout_task = task; self.execution.save()
