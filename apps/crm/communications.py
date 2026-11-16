@@ -17,6 +17,13 @@ def gmail_compose(email):
 def participant_preferences(participant):
     from apps.participants.portal_accounts import intake_for
     from apps.participants.intake_contracts import canonical_answers
+    from apps.messaging.marketing import current
+    consent = current(participant)
+    if consent:
+        # The marketing email consent replaces the older intake "updates" question.
+        if consent.status == "on":
+            return "yes", "Marketing email: On"
+        return "no", f"Marketing email: {consent.get_status_display()}"
     submission = intake_for(participant)
     value = "unknown"
     if submission:

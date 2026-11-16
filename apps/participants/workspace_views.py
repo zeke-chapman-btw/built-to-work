@@ -350,10 +350,20 @@ def add_person(request):
     require_people(request.user, "participants.add_participant")
     form = StaffParticipantCreateForm(request.POST if request.method == "POST" else None)
     matches = Participant.objects.none()
+    marketing_on = request.POST.get("marketing_email") == "yes"
+    marketing_note = (request.POST.get("marketing_note") or "").strip()
+    if request.method == "POST" and marketing_on and not marketing_note:
+        form.is_valid()
+        form.add_error(None, "Say how they agreed to marketing email (for example, a paper sign-up form).")
     if request.method == "POST" and form.is_valid():
         matches = participant_candidates(email=form.cleaned_data.get("contact_email"), phone=form.cleaned_data.get("contact_phone"))
         try:
             person = create_person(actor=request.user, data=form.cleaned_data)
+            if marketing_on:
+                from apps.messaging import marketing
+                from apps.messaging.models import MARKETING_WORDING
+                marketing.set_status(participant=person, status="on", source="staff", actor=request.user,
+                                     note=marketing_note, wording=MARKETING_WORDING)
         except ValidationError as exc:
             form.add_error(None, exc)
             if matches.exists():
@@ -362,19 +372,18 @@ def add_person(request):
                 form.data = mutable
         else:
             messages.success(request, "Participant added.")
-            saved = people_saved(request,"participants:staff-profile", participant_id=person.pk)
-            if request.headers.get("X-BTW-Editor") == "1":
-                from apps.internal_ui.record_editors import editor_success
-                return editor_success(request, saved.url)
-            return saved
+            # people_saved already answers the pop-up (JSON) or the full page (redirect).
+            return people_saved(request,"participants:staff-profile", participant_id=person.pk)
     if request.headers.get("X-BTW-Editor") == "1":
         from apps.internal_ui.record_editors import editor_response
         return editor_response(request, template="participants/workspace_form.html", panel="internal/ui/record_form_panel.html",
             context={"form": form, "possible_matches": matches, "page_title": "Add participant", "back": reverse("participants:staff-directory"),
                      "save_label": "Add participant", "fields_template": "participants/add_person_fields.html", "editor_return_label": "participants",
-                     "editor_context": "Name is all you need. You can add the rest later.", "full_page_editor": False})
+                     "editor_context": "Name is all you need. You can add the rest later.", "full_page_editor": False,
+                     "marketing_on": marketing_on, "marketing_note": marketing_note})
     return render(request, "participants/workspace_form.html", context(request, form=form, possible_matches=matches,
-        page_title="Add participant", submit_label="Add participant", return_url=reverse("participants:staff-directory")),
+        page_title="Add participant", submit_label="Add participant", return_url=reverse("participants:staff-directory"),
+        marketing_on=marketing_on, marketing_note=marketing_note),
         status=400 if form.is_bound and form.errors else 200)
 
 

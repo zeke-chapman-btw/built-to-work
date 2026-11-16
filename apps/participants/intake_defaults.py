@@ -146,7 +146,9 @@ def default_contract():
 
 # Questions dropped from the recommended set: they repeated another question or were rarely useful.
 RETIRED_FROM_RECOMMENDED = ("street_address", "school_activities", "training", "job_responsibilities",
-                            "prior_employment", "certifications")
+                            "prior_employment", "certifications",
+                            # Replaced by the optional marketing email checkbox on the Consent page.
+                            "updates_preference")
 
 
 def recommended_contract():
@@ -198,9 +200,8 @@ def recommended_contract():
     relabel("travel_willingness", "Would you travel for work or training?")
     relabel("travel_range", "How far?")
     relabel("referral_source", "How did you hear about us?")
-    relabel("updates_preference", "Want updates about jobs, training and events?")
     step4 = ["career_timeline", "opportunity_types", "opportunity_other", "career_priorities", "desired_pay",
-             "travel_willingness", "travel_range", "referral_source", "updates_preference"]
+             "travel_willingness", "travel_range", "referral_source"]
     kept = [q for q in contract["questions"] if q["key"] not in RETIRED_FROM_RECOMMENDED and q["step"] != 4]
     contract["questions"] = kept + [by_key[key] for key in step4]
     return contract

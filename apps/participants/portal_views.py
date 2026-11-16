@@ -323,9 +323,24 @@ def ticket(request, ticket_id):
 
 
 @participant_view
-@require_GET
+@require_http_methods(['GET', 'POST'])
 def account(request):
-    return render(request, 'participants/portal/account.html', {'account': request.portal_account, 'section': 'account'})
+    from apps.messaging import marketing
+    from apps.messaging.models import MARKETING_WORDING, MarketingConsent
+    person = request.portal_account.participant
+    if request.method == 'POST' and request.POST.get('marketing') in ('on', 'off'):
+        if getattr(request, 'portal_preview', None):
+            messages.info(request, "Preview doesn't change anyone's email choices.")
+        else:
+            turn_on = request.POST['marketing'] == 'on'
+            marketing.set_status(participant=person, status='on' if turn_on else 'off',
+                source=MarketingConsent.Source.PORTAL, wording=MARKETING_WORDING if turn_on else '',
+                note='Changed by the participant on their Account page.')
+            messages.success(request, "You'll get job and event news by email." if turn_on else
+                             "You won't get job and event news by email anymore.")
+        return redirect('participants:portal-account')
+    return render(request, 'participants/portal/account.html', {'account': request.portal_account, 'section': 'account',
+        'marketing': marketing.current(person), 'marketing_wording': MARKETING_WORDING})
 
 
 @never_cache

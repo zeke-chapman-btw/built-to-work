@@ -1,4 +1,4 @@
-{% load people_ui verification_status participant_workspace crm_ui ui_patterns tz %}
+{% load people_ui verification_status participant_workspace crm_ui ui_patterns tz messaging_ui %}
 {% timezone profile_timezone %}
 {% if intake_pending_count %}<p class="btw-inline-notice p3-review-notice">{{ intake_pending_count }} intake update{{ intake_pending_count|pluralize }} waiting for review.{% if can_review_intake %} <a href="{% people_section_url 'acquisition' %}&amp;tools=source">Review</a>{% endif %}</p>{% endif %}
 <div class="pv-profile">
@@ -31,6 +31,7 @@
     <dt>Phone</dt><dd>{% if participant.contact_phone %}<a href="tel:{{ participant.contact_phone|people_phone_link }}">{{ participant.contact_phone|people_phone }}</a>{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
     <dt>Email</dt><dd>{% if participant.contact_email %}<a class="pv-wrap" href="mailto:{{ participant.contact_email }}">{{ participant.contact_email }}</a>{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
     <dt>Location</dt><dd>{% if participant.city or participant.state %}{{ participant.city }}{% if participant.city and participant.state %}, {% endif %}{{ participant.state }}{% if participant.postal_code %} {{ participant.postal_code }}{% endif %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    {% marketing_email_row participant can_edit_profile %}
   </dl>
 </section>
 

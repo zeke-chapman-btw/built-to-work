@@ -430,11 +430,13 @@ def preview_screen(request, version_id):
                           consent_only=(step == 2) if step <= 2 else None)
     fake_session = SimpleNamespace(consent_document=consent or SimpleNamespace(
         title="Consent", body="The approved consent text appears here. Add one under Operations → Consents."))
+    from apps.messaging.models import MARKETING_WORDING
     return render(request, "participants/intake_step.html", {**base,
         "session": fake_session, "form": form, "step": step, "step_name": UI_STEP_NAMES[step],
         "progress": step * 20, "questions": form.display_questions(), "experience_rows": form.display_rows(),
         "experience_question": form.experience_question, "event_fields": [], "contract": version.snapshot,
-        "prior_answers": answers, "revision": "", "previous_step": step - 1})
+        "prior_answers": answers, "revision": "", "previous_step": step - 1,
+        "marketing_wording": MARKETING_WORDING})
 
 
 class ScreensForm(forms.Form):
