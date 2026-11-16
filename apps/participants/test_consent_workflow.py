@@ -145,3 +145,11 @@ class ReadableConsentTextTests(TestCase):
             "We collect:", "• Your name and email.",
             "• Your scores, which help us to make the experience better for everyone who takes part in it.",
             "Data Security", "We protect it."])
+
+
+class ConsentTextDisplayTests(TestCase):
+    def test_marks_become_headings_bold_and_lists_and_html_is_escaped(self):
+        from apps.participants.templatetags.consent_ui import consent_text
+        html = consent_text("## Privacy\n\n**NOTICE:** read <this>\n\n### Cookies\n\n• One\n\n◦ Sub\n\n• Two __under__")
+        self.assertEqual(html, "<h3>Privacy</h3><p><strong>NOTICE:</strong> read &lt;this&gt;</p><h4>Cookies</h4>"
+                               "<ul><li>One<ul><li>Sub</li></ul></li><li>Two <u>under</u></li></ul>")
