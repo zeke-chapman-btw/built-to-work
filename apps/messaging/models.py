@@ -124,6 +124,7 @@ class MarketingConsent(models.Model):
     class Source(models.TextChoices):
         SIGNUP = "signup", "Sign-up form"
         STAFF = "staff", "Staff"
+        PORTAL = "portal", "Participant portal"
         MAILCHIMP = "mailchimp", "Mailchimp"
 
     participant = models.OneToOneField("participants.Participant", on_delete=models.CASCADE, related_name="marketing_consent")

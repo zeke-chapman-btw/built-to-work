@@ -59,9 +59,11 @@ def eligible(person, *, invitation=False):
     if not ConsentAcceptance.objects.filter(submission=submission).exists():
         return False
     if invitation:
-        # Use the latest immutable affirmative preference, never ticket-delivery consent.
+        # An affirmative choice to hear from BTW: the marketing email consent (current forms)
+        # or the older "updates" answer (earlier forms). Never ticket-delivery consent.
         answers = canonical_answers(submission.form_version.snapshot, submission.answers)
-        if answers.get('updates_preference') != 'yes':
+        from apps.messaging.marketing import status_of
+        if answers.get('updates_preference') != 'yes' and status_of(person) != 'on':
             return False
         email = normalize_email(person.contact_email)
         if not email or email != normalize_email(answers.get('email', '')):

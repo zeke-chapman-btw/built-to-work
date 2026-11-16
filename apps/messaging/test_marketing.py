@@ -167,3 +167,48 @@ class MailchimpTests(TestCase):
         page = self.client.get(reverse("messaging:connections"))
         self.assertContains(page, "Marketing email · Mailchimp")
         self.assertContains(page, "Connect Mailchimp")
+
+
+
+from apps.participants import test_portal_12 as portal_fixture
+
+
+class PortalOptInTests(TestCase):
+    setUp = portal_fixture.Portal12Tests.setUp
+    submit = portal_fixture.Portal12Tests.submit
+    account = portal_fixture.Portal12Tests.account
+
+    def test_participant_turns_news_on_and_off(self):
+        self.account()
+        url = reverse("participants:portal-account")
+        page = self.client.get(url)
+        self.assertContains(page, "Job &amp; event news")
+        self.assertContains(page, "Yes, send me news")
+        self.client.post(url, {"marketing": "on"})
+        row = MarketingConsent.objects.get(participant=self.person)
+        self.assertEqual((row.status, row.source, row.wording), ("on", "portal", MARKETING_WORDING))
+        self.client.post(url, {"marketing": "off"})
+        self.assertEqual(marketing.status_of(self.person), "off")
+
+
+class AddParticipantOptInTests(TestCase):
+    def setUp(self):
+        self.admin = get_user_model().objects.create_superuser(username="add-admin", password="x-test-only")
+        self.client.force_login(self.admin, backend="django.contrib.auth.backends.ModelBackend")
+
+    def test_add_with_marketing_needs_note(self):
+        url = reverse("participants:staff-add")
+        headers = {"HTTP_X_BTW_EDITOR": "1"}
+        self.assertContains(self.client.get(url, **headers), "Marketing email (optional)")
+        self.client.post(url, {"first_name": "SYNTHETIC", "last_name": "NoNote", "marketing_email": "yes"}, **headers)
+        self.assertFalse(Participant.objects.filter(last_name="NoNote").exists())
+        self.client.post(url, {"first_name": "SYNTHETIC", "last_name": "Paper", "marketing_email": "yes",
+                               "marketing_note": "Paper form, Augusta"}, **headers)
+        person = Participant.objects.get(last_name="Paper")
+        self.assertEqual(marketing.status_of(person), "on")
+
+
+class RecommendedFormTests(TestCase):
+    def test_old_updates_question_removed_from_recommended_form(self):
+        from apps.participants.intake_defaults import recommended_contract
+        self.assertNotIn("updates_preference", [q["key"] for q in recommended_contract()["questions"]])
