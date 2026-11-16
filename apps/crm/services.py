@@ -352,3 +352,27 @@ def save_contact_relationship(*, actor, contact_id, data, expected_revision, why
         record_audit(actor=actor, action="crm.contact.relationship_saved", instance=row,
             source="relationship_management", old_data=before, new_data=snapshot(row), reason=why)
         return row
+
+
+def record_app_message(*, actor, participant_id, activity_type, summary, notes, provider, reference, operation_id):
+    """Record a message the app actually handed to a provider (e.g. Gmail).
+
+    Unlike staff-entered history, provenance here is set by the sending code, never
+    by a form: ``source="provider"`` with the provider's own message reference.
+    """
+    with policy_transaction():
+        actor = access.fresh_staff(actor)
+        actor, links = internal_associations(actor, participant_id=participant_id)
+        existing = Interaction.objects.filter(operation_id=operation_id).first()
+        if existing:
+            return existing
+        values = {"activity_type": activity_type, "direction": "outbound", "summary": (summary or "Message")[:240],
+                  "notes": (notes or "")[:6000], "occurred_at": timezone.now()}
+        fingerprint = digest({"audience": "btw", "participant": str(participant_id), "provider": provider, "reference": reference})
+        row = Interaction(audience="btw", created_by=actor, operation_id=operation_id, payload_fingerprint=fingerprint,
+                          source="provider", provider=provider[:80], external_reference=reference[:240],
+                          delivery_status="sent", **links, **values)
+        row.full_clean()
+        row.save()
+        record_revision(row, actor, "created", f"Sent from the app through {provider}; recorded automatically.")
+        return row

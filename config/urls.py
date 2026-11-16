@@ -31,6 +31,7 @@ urlpatterns = [
     path("games/", include("apps.games.urls")),
     path("api/simulator/", include("apps.simulators.urls")),
     path("sops/", include("apps.sops.urls")),
+    path("messaging/", include("apps.messaging.urls")),
     path("my/", include("apps.staffing.my_urls")),
     path("", home, name="home"),
     path("health/", health, name="health"),

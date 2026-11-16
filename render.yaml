@@ -10,6 +10,8 @@ services:
     healthCheckPath: /health/
     autoDeployTrigger: commit
     numInstances: 1
+    domains:
+      - preview.builttoworkusa.com
     disk:
       name: btw-preview-private-files
       mountPath: /var/data
@@ -26,9 +28,9 @@ services:
           name: btw-preview-db
           property: connectionString
       - key: ALLOWED_HOSTS
-        value: btw-preview.onrender.com
+        value: btw-preview.onrender.com,preview.builttoworkusa.com
       - key: CSRF_TRUSTED_ORIGINS
-        value: https://btw-preview.onrender.com
+        value: https://btw-preview.onrender.com,https://preview.builttoworkusa.com
       - key: BTW_PREVIEW_GATE_ENABLED
         value: "true"
       - key: BTW_PREVIEW_GATE_USERNAME

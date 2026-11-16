@@ -112,7 +112,8 @@ def load_samples(*, allow_preview=False, reset=False):
     # Locmem prevents email delivery even if settings normally configure a
     # provider. All creation paths below are non-delivery domain operations.
     with override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
-                           BTW_SMS_PROVIDER_URL="", BTW_SMS_PROVIDER_TOKEN=""):
+                           BTW_SMS_PROVIDER_URL="", BTW_SMS_PROVIDER_TOKEN="",
+                           BTW_SMS_PROVIDER="", EZTEXTING_USERNAME="", EZTEXTING_PASSWORD=""):
         with transaction.atomic():
             if connection.vendor == "postgresql":
                 with connection.cursor() as cursor:

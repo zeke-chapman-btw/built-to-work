@@ -1,0 +1,76 @@
+import uuid
+
+from django.conf import settings
+from django.db import models
+
+
+class GmailConnection(models.Model):
+    """One staff member's permission for the app to send email as them.
+
+    Only the long-lived refresh token is kept, encrypted with a key derived from the
+    deployment secret. Disconnecting revokes it at Google and clears it here.
+    """
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="gmail_connection")
+    google_email = models.EmailField()
+    refresh_token_encrypted = models.TextField(blank=True)
+    scopes = models.CharField(max_length=500, blank=True)
+    connected_at = models.DateTimeField(auto_now_add=True)
+    last_sent_at = models.DateTimeField(null=True, blank=True)
+    needs_reconnect = models.BooleanField(default=False)
+    last_error = models.CharField(max_length=240, blank=True)
+
+    class Meta:
+        default_permissions = ()
+
+    def __str__(self):
+        return f"{self.user} · {self.google_email}"
+
+    @property
+    def active(self):
+        return bool(self.refresh_token_encrypted) and not self.needs_reconnect
+
+
+class SentEmail(models.Model):
+    """One staff-written email, claimed before sending so a double click cannot send twice."""
+
+    class Status(models.TextChoices):
+        SENDING = "sending", "Sending"
+        SENT = "sent", "Sent"
+        FAILED = "failed", "Failed"
+        UNCERTAIN = "uncertain", "Unconfirmed"
+
+    operation_id = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="sent_emails")
+    from_address = models.EmailField()
+    participant = models.ForeignKey("participants.Participant", null=True, blank=True, on_delete=models.PROTECT, related_name="app_emails")
+    to_address = models.EmailField()
+    subject = models.CharField(max_length=200)
+    status = models.CharField(max_length=12, choices=Status.choices, default=Status.SENDING)
+    provider_reference = models.CharField(max_length=160, blank=True)
+    error = models.CharField(max_length=240, blank=True)
+    interaction = models.ForeignKey("crm.Interaction", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        default_permissions = ()
+        ordering = ("-created_at",)
+
+
+class TextDeliveryResult(models.Model):
+    """What EZ Texting reports after it accepted a text: delivered, failed, or still waiting."""
+
+    class Result(models.TextChoices):
+        PENDING = "pending", "Waiting for carrier"
+        DELIVERED = "delivered", "Delivered"
+        FAILED = "failed", "Not delivered"
+
+    provider_reference = models.CharField(max_length=160, unique=True)
+    result = models.CharField(max_length=12, choices=Result.choices, default=Result.PENDING)
+    checks = models.PositiveSmallIntegerField(default=0)
+    first_seen_at = models.DateTimeField(auto_now_add=True)
+    checked_at = models.DateTimeField(null=True, blank=True)
+    detail = models.CharField(max_length=160, blank=True)
+
+    class Meta:
+        default_permissions = ()
