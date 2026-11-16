@@ -108,3 +108,29 @@ class ConsentDocumentWorkflowTests(TestCase):
         self.client.logout()
         response = self.client.get(reverse('participants:registration-form'))
         self.assertEqual(response.status_code, 503)
+
+
+class ReadableConsentTextTests(TestCase):
+    def test_wrapped_lines_bullets_and_page_numbers(self):
+        from apps.participants.consent_documents import readable_text
+
+        class Page:
+            def __init__(self, text):
+                self.text = text
+
+            def extract_text(self, extraction_mode="plain"):
+                return self.text
+
+        class Reader:
+            pages = [Page("PRIVACY POLICY\nIntroduction\nWe respect your privacy and are committed to protecting it through our\n"
+                          "compliance with this policy.\nWe collect:\n   ●​   Your name and   email.\n"
+                          "   ●   Your scores, which help us to make the experience better for everyone who takes\n"
+                          "        part in it.\n   2\n"),
+                     Page("Data Security\nWe protect it.\n")]
+
+        self.assertEqual(readable_text(Reader()).split("\n\n"), [
+            "PRIVACY POLICY", "Introduction",
+            "We respect your privacy and are committed to protecting it through our compliance with this policy.",
+            "We collect:", "• Your name and email.",
+            "• Your scores, which help us to make the experience better for everyone who takes part in it.",
+            "Data Security", "We protect it."])
