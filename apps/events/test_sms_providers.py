@@ -78,3 +78,14 @@ class EmailSenderTests(SimpleTestCase):
         self.assertIn("provider=eztexting configured=yes", text)
         self.assertIn("test mode", text)
         self.assertNotIn("test-only", text)
+
+
+class TestEmailCommandTests(SimpleTestCase):
+    @override_settings(BTW_EMAIL_FROM="noreply@example.test", EMAIL_HOST_USER="relay@example.test", BTW_EMAIL_REPLY_TO=[])
+    def test_test_email_uses_real_smtp_even_in_test_mode(self):
+        with patch("django.core.mail.backends.smtp.EmailBackend.send_messages", return_value=1) as smtp:
+            out = StringIO()
+            call_command("check_messaging", test_email="me@example.test", stdout=out)
+        smtp.assert_called_once()
+        self.assertIn("accepted by the mail server", out.getvalue())
+        self.assertEqual(len(mail.outbox), 0)

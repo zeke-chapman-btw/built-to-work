@@ -8,7 +8,7 @@ Nothing secret is printed. Tests go straight to the provider and are not
 recorded as participant communications.
 """
 from django.conf import settings
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage, get_connection
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.events import sms_providers
@@ -34,8 +34,13 @@ class Command(BaseCommand):
         if options["test_email"]:
             if not sender:
                 raise CommandError("Set BTW_EMAIL_FROM first.")
+            if not settings.EMAIL_HOST_USER:
+                raise CommandError("Set EMAIL_HOST, EMAIL_PORT, EMAIL_USE_TLS, EMAIL_HOST_USER and EMAIL_HOST_PASSWORD first.")
+            # The test always uses the real mail server settings, even while the site's
+            # own email stays in test mode (as the Preview does for task reminders).
+            connection = get_connection("django.core.mail.backends.smtp.EmailBackend", fail_silently=False)
             sent = EmailMessage("Built to Work test email", "This is a test from the Built to Work app. No action needed.",
-                                sender, [options["test_email"]],
+                                sender, [options["test_email"]], connection=connection,
                                 reply_to=list(getattr(settings, "BTW_EMAIL_REPLY_TO", []) or []) or None).send(fail_silently=False)
             self.stdout.write(f"Test email {'accepted by the mail server' if sent == 1 else 'not accepted'}.")
         if options["test_sms"]:

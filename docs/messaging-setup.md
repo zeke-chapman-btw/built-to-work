@@ -25,7 +25,7 @@ EZ Texting" is recorded as sent, not as delivered to the phone.
 | `EMAIL_PORT` | `587` |
 | `EMAIL_USE_TLS` | `true` |
 | `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | A Workspace account allowed to use the relay (app password) |
-| `EMAIL_BACKEND` | `django.core.mail.backends.smtp.EmailBackend` (see warning) |
+| `EMAIL_BACKEND` | Leave as-is on Preview (test mode); `django.core.mail.backends.smtp.EmailBackend` on production |
 
 Workspace admin steps: create `noreply@` (Google Group or alias), turn on
 Apps → Google Workspace → Gmail → Routing → SMTP relay service (require SMTP
@@ -44,6 +44,10 @@ ticket/text queue (`python manage.py deliver_communications --loop`).
     python manage.py check_messaging --test-sms 5551234567
 
 The first line never prints passwords. The tests send one real message each.
+The test email always uses the real mail server settings, so it works on Preview
+while the site's own email stays in test mode (Build 18A reminders keep running).
+Texting has no such interlock: adding the EZ Texting settings on Preview is enough.
+Nothing on Preview sends automatically yet, because no background sender runs.
 
 ## Still to build
 
