@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import connections, marketing_views, views
+from . import connections, marketing_views, text_views, views
 
 app_name = "messaging"
 urlpatterns = [
@@ -19,4 +19,10 @@ urlpatterns = [
     path("gmail/callback/", views.gmail_callback, name="gmail-callback"),
     path("gmail/disconnect/", views.gmail_disconnect, name="gmail-disconnect"),
     path("participants/<int:participant_id>/email/", views.email_participant, name="email-participant"),
+    path("participants/<int:participant_id>/text/", text_views.text_participant, name="text-participant"),
+    path("texts/", text_views.inbox, name="texts"),
+    path("texts/<int:pk>/handled/", text_views.text_handled, name="text-handled"),
+    path("texts/<int:pk>/reassign/", text_views.text_reassign, name="text-reassign"),
+    path("eztexting/webhook/<str:token>/", text_views.eztexting_webhook, name="eztexting-webhook"),
+    path("connections/replies/", connections.replies_setup, name="connections-replies"),
 ]

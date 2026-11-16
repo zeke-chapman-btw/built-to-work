@@ -69,7 +69,40 @@ def connections(request):
                   "people": GmailConnection.objects.select_related("user").order_by("user__first_name", "user__username")},
         "history": history,
         "mailchimp": _mailchimp_summary(rows.get("mailchimp")),
+        "replies": _replies_summary(rows.get("replies")),
     })
+
+
+def _replies_summary(row):
+    from . import texting
+    from .text_views import staff_choices
+    values = row.values if row else {}
+    owner = texting.default_owner()
+    return {"row": row, "forwarding": bool(values.get("forwarding")), "owner": owner,
+            "owner_id": str(owner.pk) if owner else "", "staff": staff_choices(include_blank=True)}
+
+
+@login_required(login_url="/admin/login/")
+@require_POST
+def replies_setup(request):
+    """Turn on reply forwarding from EZ Texting, and/or choose who gets unmatched replies."""
+    _admin(request)
+    from django.contrib.auth import get_user_model
+    from . import texting
+    if "owner" in request.POST:
+        owner_id = request.POST.get("owner") or ""
+        owner = get_user_model().objects.filter(pk=owner_id, is_active=True, is_staff=True).first() if owner_id else None
+        texting.set_owner(actor=request.user, owner=owner)
+        messages.success(request, "Saved who gets replies that don't belong to anyone.")
+    if request.POST.get("forward") == "on":
+        try:
+            texting.turn_on_replies(actor=request.user, callback_url=lambda token: request.build_absolute_uri(
+                reverse("messaging:eztexting-webhook", args=[token])))
+        except texting.TextError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, "Replies are on. Texts people send back will now show up in Text replies.")
+    return redirect(_home() + "#replies")
 
 
 def _mailchimp_summary(row):

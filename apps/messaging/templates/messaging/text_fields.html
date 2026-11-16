@@ -1,0 +1,6 @@
+{% if problem %}<p class="cp3-warn" style="margin:0 0 12px">{{ problem }}</p>{% endif %}
+{% if recent %}<div class="txt-thread" aria-label="Recent texts">{% for m in recent %}<div class="txt-bubble {% if m.direction == 'in' %}is-in{% else %}is-out{% endif %}"><p>{{ m.body|linebreaksbr }}</p><small>{% if m.direction == 'in' %}{{ participant.first_name }}{% else %}{{ m.sent_by.get_full_name|default:m.sent_by|default:'Automatic' }}{% endif %} · {{ m.created_at|date:'M j · g:i A' }}{% if m.state == 'failed' %} · <b>Not sent</b>{% endif %}</small></div>{% endfor %}</div>{% endif %}
+<input type="hidden" name="next" value="{{ back }}">
+{% include 'internal/ui/form_fields.html' %}
+<p class="cp3-note">Sent from the Built to Work texting number. A copy is added to {{ participant.first_name }}'s activity as “Sent by app”.</p>
+<style>.txt-thread{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow:auto;padding:4px 0 14px}.txt-bubble{max-width:80%;padding:8px 12px;border-radius:14px;font-size:14px}.txt-bubble p{margin:0;white-space:normal}.txt-bubble small{display:block;margin-top:4px;font-size:11px;opacity:.75}.txt-bubble.is-in{align-self:flex-start;background:#f1f2f4;color:#1a1a1a}.txt-bubble.is-out{align-self:flex-end;background:#fdf1f2;color:#1a1a1a}</style>

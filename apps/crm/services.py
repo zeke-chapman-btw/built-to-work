@@ -354,7 +354,8 @@ def save_contact_relationship(*, actor, contact_id, data, expected_revision, why
         return row
 
 
-def record_app_message(*, actor, participant_id, activity_type, summary, notes, provider, reference, operation_id):
+def record_app_message(*, actor, participant_id, activity_type, summary, notes, provider, reference, operation_id,
+                       direction="outbound"):
     """Record a message the app actually handed to a provider (e.g. Gmail).
 
     Unlike staff-entered history, provenance here is set by the sending code, never
@@ -366,7 +367,7 @@ def record_app_message(*, actor, participant_id, activity_type, summary, notes, 
         existing = Interaction.objects.filter(operation_id=operation_id).first()
         if existing:
             return existing
-        values = {"activity_type": activity_type, "direction": "outbound", "summary": (summary or "Message")[:240],
+        values = {"activity_type": activity_type, "direction": direction, "summary": (summary or "Message")[:240],
                   "notes": (notes or "")[:6000], "occurred_at": timezone.now()}
         fingerprint = digest({"audience": "btw", "participant": str(participant_id), "provider": provider, "reference": reference})
         row = Interaction(audience="btw", created_by=actor, operation_id=operation_id, payload_fingerprint=fingerprint,
@@ -374,5 +375,6 @@ def record_app_message(*, actor, participant_id, activity_type, summary, notes, 
                           delivery_status="sent", **links, **values)
         row.full_clean()
         row.save()
-        record_revision(row, actor, "created", f"Sent from the app through {provider}; recorded automatically.")
+        record_revision(row, actor, "created", (f"Sent from the app through {provider}" if direction == "outbound"
+                        else f"Received through {provider}") + "; recorded automatically.")
         return row

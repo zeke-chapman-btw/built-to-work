@@ -87,6 +87,7 @@ class ConnectionSetting(models.Model):
         EZTEXTING = "eztexting", "Texting (EZ Texting)"
         EMAIL = "email", "Automatic email"
         SENDING = "sending", "Automatic messages"
+        REPLIES = "replies", "Text replies"
 
     key = models.CharField(max_length=20, choices=Key.choices, unique=True)
     values = models.JSONField(default=dict, blank=True)
@@ -146,3 +147,51 @@ class MarketingConsent(models.Model):
 
     def __str__(self):
         return f"{self.participant} · {self.get_status_display()}"
+
+
+class TextMessage(models.Model):
+    """A one-to-one text: sent by staff from the app, or a reply that came in.
+
+    Replies are routed to whoever the latest staff text said replies should go to,
+    otherwise to the default reply owner chosen in Settings → Connections.
+    """
+
+    class Direction(models.TextChoices):
+        OUT = "out", "Sent"
+        IN = "in", "Received"
+
+    class State(models.TextChoices):
+        SENT = "sent", "Sent"
+        FAILED = "failed", "Not sent"
+        NEW = "new", "New"
+        DONE = "done", "Handled"
+
+    direction = models.CharField(max_length=3, choices=Direction.choices)
+    phone = models.CharField(max_length=16, db_index=True)  # last 10 digits
+    participant = models.ForeignKey("participants.Participant", null=True, blank=True, on_delete=models.SET_NULL, related_name="text_messages")
+    body = models.TextField(max_length=1600)
+    sent_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    replies_to = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+",
+                                   help_text="Outgoing: who replies should go to. Incoming: who it was routed to.")
+    state = models.CharField(max_length=8, choices=State.choices)
+    provider_reference = models.CharField(max_length=160, blank=True)
+    error = models.CharField(max_length=240, blank=True)
+    operation_id = models.UUIDField(null=True, blank=True, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    handled_at = models.DateTimeField(null=True, blank=True)
+    handled_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    interaction = models.ForeignKey("crm.Interaction", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+
+    class Meta:
+        default_permissions = ()
+        ordering = ("-created_at",)
+
+
+class TextOptOut(models.Model):
+    """A number that replied STOP. Texts to it are blocked until it replies START."""
+    phone = models.CharField(max_length=16, unique=True)
+    opted_out_at = models.DateTimeField(auto_now_add=True)
+    note = models.CharField(max_length=120, blank=True)
+
+    class Meta:
+        default_permissions = ()

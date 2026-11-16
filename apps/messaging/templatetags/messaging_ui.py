@@ -45,3 +45,15 @@ def marketing_email_row(context, participant, can_edit=False):
     request = context.get("request")
     return {"row": row, "tone": tone, "participant": participant, "can_edit": can_edit and not participant.archived_at,
             "return_to": request.get_full_path() if request else ""}
+
+
+@register.inclusion_tag("messaging/text_card.html", takes_context=True)
+def text_replies_card(context):
+    from apps.messaging.text_views import new_reply_count
+    from apps.participants.workspace_access import can_notes
+    user = context["request"].user
+    try:
+        allowed = bool(can_notes(user))
+    except Exception:
+        allowed = False
+    return {"show": allowed, "count": new_reply_count(user) if allowed else 0}

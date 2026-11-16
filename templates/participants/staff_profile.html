@@ -13,7 +13,7 @@
     </div>
     <div class="p3-profile-actions">
       {% if crm_can_add %}<a class="button button-primary" data-record-editor href="{{ crm_new_url }}">+ Log touchpoint</a>{% endif %}
-      {% if crm_can_add and participant.contact_email and not participant.archived_at %}<a class="button secondary" data-record-editor href="{% url 'messaging:email-participant' participant.pk %}">Email</a>{% endif %}
+      {% if crm_can_add and participant.contact_email and not participant.archived_at %}<a class="button secondary" data-record-editor href="{% url 'messaging:email-participant' participant.pk %}">Email</a>{% endif %}{% if crm_can_add and participant.contact_phone and not participant.archived_at %}<a class="button secondary" data-record-editor href="{% url 'messaging:text-participant' participant.pk %}">Text</a>{% endif %}
       {% if can_edit_profile and not participant.archived_at %}<a class="button secondary" data-record-editor href="{% url 'participants:profile-card-edit' participant.pk 'identity' %}?return_to={{ request.get_full_path|urlencode }}">Edit profile</a>{% endif %}
       {% profile_tools %}
     </div>
