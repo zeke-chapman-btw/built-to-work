@@ -281,11 +281,15 @@ def staff_destinations(user, current_path=""):
     position = len(entries) - 2  # before Reports & Analytics and Settings
     if has_profile or can_manage_sops(user):
         entries.insert(position, dict(id="sops", label="SOPs", icon="sop", url=reverse("sops:index"), active=False))
-    if has_profile:
+    from apps.accounts.roles import manager
+    bottom_mine = has_profile and manager(user)  # admins and managers: personal pages sit by their name
+    if has_profile and not bottom_mine:
         entries.insert(position, dict(id="my-stuff", label="My stuff", icon="me", url=reverse("my:schedule"), active=False))
+    if bottom_mine:
+        entries.append(dict(id="my-stuff", label="My stuff", icon="me", url=reverse("my:schedule"), active=False, bottom=True))
     inbox = _inbox_entry(user)
     if inbox:
-        entries.append(inbox)  # shown at the bottom of the menu, by the person's name
+        entries.append(dict(inbox, bottom=True))  # shown at the bottom of the menu, by the person's name
     if not report_destinations(user):entries=[entry for entry in entries if entry['id']!='reports']
     active = next((entry["id"] for entry in entries if entry["active"]), None)
     if any(legacy.get(key, {}).get("active") for key in ("administration", "platform-tools")):

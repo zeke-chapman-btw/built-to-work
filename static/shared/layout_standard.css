@@ -382,3 +382,6 @@ form.ops-filterline{margin:0}
 .consent-copy ul ul{margin:.2em 0 .2em;list-style:circle}
 .consent-copy li{margin:.2em 0}
 .consent-copy strong{font-weight:700}
+/* ls-43: personal links (My stuff, Inbox) stacked by the person's name */
+.internal-app .sidebar-bottom .sidebar-inbox{margin:0 0 2px}
+.internal-app .sidebar-bottom .sidebar-user{margin-top:8px}
