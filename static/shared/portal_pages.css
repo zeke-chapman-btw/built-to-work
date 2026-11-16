@@ -146,3 +146,11 @@ body.has-portal-shell .cp3-dl{margin:0 !important;padding:14px 20px !important}
 .internal-app .cp3-chips button.cp3-fchip{background:#fff !important;color:#3d4450 !important;border:1px solid #d6dade !important;border-radius:999px !important;min-height:36px !important;height:36px;padding:0 14px !important;box-shadow:none !important;font-weight:400}
 .internal-app .cp3-chips button.cp3-fchip.is-on{border-color:#ac1929 !important;background:#fdf1f2 !important;color:#ac1929 !important;font-weight:600}
 .ops-filterline .cp3-actions{margin-left:auto}
+.cp3-more.cp3-rev > summary{color:#1a1a1a;font-size:14px}
+.cp3 .crm-heading{margin:4px 0 0}
+.cp3-more .station-assign-form{display:flex;flex-direction:column;gap:12px;margin:0}
+/* Two-column field groups on the add-staff form */
+.internal-app fieldset.staff-account-form-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px;border:0;padding:0;margin:0 0 18px}
+.internal-app fieldset.staff-account-form-group > legend{grid-column:1/-1;font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
+.internal-app fieldset.staff-account-form-group > [data-staff-field="roles"],.internal-app fieldset.staff-account-form-group > [data-staff-field="notes"],.internal-app fieldset.staff-account-form-group > [data-staff-field="admin_notes"],.internal-app fieldset.staff-account-form-group > [data-staff-field="street_address"]{grid-column:1/-1}
+@media (max-width:760px){.internal-app fieldset.staff-account-form-group{grid-template-columns:1fr}}

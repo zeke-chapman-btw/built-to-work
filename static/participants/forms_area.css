@@ -63,3 +63,4 @@
 .fa-page .card.ff-steps{padding:8px}
 .ff-q{grid-template-columns:minmax(0,1fr) 110px 74px minmax(0,150px) 168px}
 .ff-row-actions .wd-more>summary.button{min-height:30px;min-width:32px;padding:0 6px;font-size:14px;line-height:1}
+.fa-new>summary.button{white-space:nowrap;padding:0 16px !important;width:auto !important;display:inline-flex;align-items:center;overflow:visible}

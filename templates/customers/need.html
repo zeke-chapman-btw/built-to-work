@@ -13,6 +13,6 @@
 </div>
 {% else %}<p class="customer-muted">No hiring details entered yet.</p>{% endif %}
 {% if need.working_revision and need.effective_revision %}<section class="customer-card cx-panel customer-pending"><header class="cx-panel-head"><h2>Changes waiting for approval</h2>{% ui_badge need.working_revision.get_state_display 'warning' %}</header>{% include 'customers/revision.html' with sections=working_sections %}</section>{% endif %}
-<details class="customer-card btw-disclosure"><summary>Past versions</summary>{% for item in revisions %}<details class="customer-revision"><summary>Version {{ item.revision.number }} · {{ item.revision.get_state_display }}</summary>{% if item.revision.decision_reason %}<p>{{ item.revision.decision_reason }}</p>{% endif %}{% include 'customers/revision.html' with sections=item.sections %}</details>{% endfor %}</details>
-<details class="customer-card btw-disclosure"><summary>Activity</summary>{% include 'customers/history.html' %}</details>
-<p><a class="cx-link" href="{% url 'customer_portal:staff-feedback' organization.pk 'need' need.pk %}">Customer feedback</a></p>{% endblock %}
+<div class="cp3-cols" style="grid-template-columns:1fr 1fr;margin-top:16px"><details class="cp3-card cp3-fold"><summary>Past versions</summary>{% for item in revisions %}<details class="customer-revision"><summary>Version {{ item.revision.number }} · {{ item.revision.get_state_display }}</summary>{% if item.revision.decision_reason %}<p>{{ item.revision.decision_reason }}</p>{% endif %}{% include 'customers/revision.html' with sections=item.sections %}</details>{% endfor %}</details>
+<details class="cp3-card cp3-fold"><summary>Activity</summary><div class="cp3-body">{% include 'customers/history.html' %}</div></details></div>
+<p class="cp3-note" style="margin-top:12px"><a class="cx-link" href="{% url 'customer_portal:staff-feedback' organization.pk 'need' need.pk %}">Customer feedback</a></p>{% endblock %}

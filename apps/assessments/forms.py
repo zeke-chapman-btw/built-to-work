@@ -120,6 +120,7 @@ class EventCategoryForm(forms.ModelForm):
         self.fields["question_set"].queryset = QuestionSet.objects.filter(status=QuestionSet.Status.PUBLISHED).select_related("category")
         self.fields["curated_questions"].required = False
         self.fields["curated_questions"].queryset = Question.objects.filter(is_active=True).order_by("difficulty", "created_at")
+        self.fields["curated_questions"].label_from_instance = lambda q: f"{q.get_difficulty_display()} · {q.text[:90]}"
         self.fields["curated_questions"].help_text = "Optional: select at least 15 questions from the chosen set, or leave blank to use its full pool."
 
     def clean(self):
