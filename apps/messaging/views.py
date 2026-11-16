@@ -1,4 +1,5 @@
 """Connect your Gmail, and email a participant from your own address."""
+import logging
 import uuid
 
 from django import forms
@@ -26,6 +27,9 @@ SESSION_NEXT = "btw_gmail_oauth_next"
 def _staff(request):
     if not active_staff(request.user):
         raise PermissionDenied
+
+
+log = logging.getLogger(__name__)
 
 
 def _callback_uri(request):
@@ -74,14 +78,17 @@ def gmail_callback(request):
     expected = request.session.pop(SESSION_STATE, None)
     destination = request.session.pop(SESSION_NEXT, None) or reverse("my:schedule")
     if not expected or request.GET.get("state") != expected:
-        messages.error(request, "That Google sign-in didn't match. Please try connecting again.")
+        log.warning("GMAIL_CONNECT_FAILED user=%s reason=state_mismatch had_state=%s", request.user.pk, bool(expected))
+        messages.error(request, "Gmail was not connected: that Google sign-in didn't match. Please try connecting again.")
         return redirect(destination)
     if request.GET.get("error") or not request.GET.get("code"):
-        messages.info(request, "Gmail was not connected.")
+        log.warning("GMAIL_CONNECT_FAILED user=%s reason=%s", request.user.pk, request.GET.get("error", "no_code")[:60])
+        messages.error(request, "Gmail was not connected: Google sign-in was cancelled or refused.")
         return redirect(destination)
     try:
         email, refresh, scopes = google.exchange_code(code=request.GET["code"], redirect_uri=_callback_uri(request))
     except google.GmailError as exc:
+        log.warning("GMAIL_CONNECT_FAILED user=%s reason=%s redirect=%s", request.user.pk, str(exc)[:120], _callback_uri(request))
         messages.error(request, f"Gmail was not connected: {exc}.")
         return redirect(destination)
     GmailConnection.objects.update_or_create(user=request.user, defaults={

@@ -73,7 +73,10 @@ def _post_form(url, fields):
             body = json.loads(exc.read() or b"{}")
         except ValueError:
             body = {}
-        raise GmailError(body.get("error", f"HTTP {exc.code}"), reconnect=body.get("error") == "invalid_grant") from None
+        detail = body.get("error", f"HTTP {exc.code}")
+        if body.get("error_description"):
+            detail += f" ({body['error_description'][:120]})"
+        raise GmailError(detail, reconnect=body.get("error") == "invalid_grant") from None
     except (error.URLError, socket.timeout, TimeoutError):
         raise GmailError("Google could not be reached") from None
 
