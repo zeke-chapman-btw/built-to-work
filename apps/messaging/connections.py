@@ -68,7 +68,24 @@ def connections(request):
         "gmail": {"configured": google.configured(),
                   "people": GmailConnection.objects.select_related("user").order_by("user__first_name", "user__username")},
         "history": history,
+        "mailchimp": _mailchimp_summary(rows.get("mailchimp")),
     })
+
+
+def _mailchimp_summary(row):
+    from .models import MarketingConsent
+    from . import mailchimp
+    consents = MarketingConsent.objects
+    connected = mailchimp.connected()
+    status = ("Not set up", "") if not connected else (
+        ("Problem", "r") if consents.exclude(sync_error="").exists() or (row and row.values.get("webhook_ok") is False)
+        else ("Connected", "g"))
+    return {"row": row, "connected": connected, "status": status,
+            "opted_in": consents.filter(status="on").count(),
+            "in_mailchimp": consents.exclude(synced_email="").count(),
+            "waiting": consents.filter(needs_sync=True).count() if connected else 0,
+            "errors": consents.exclude(sync_error="").count(),
+            "unsubscribed": consents.filter(status__in=("unsubscribed", "bounced")).count()}
 
 
 class TextForm(forms.Form):

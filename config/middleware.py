@@ -11,6 +11,8 @@ class PreviewAccessMiddleware:
     """HTTP Basic gate for an explicitly enabled non-production preview."""
 
     health_path = "/health/"
+    # Service callbacks that can't send the preview password; each checks its own secret.
+    callback_prefixes = ("/messaging/mailchimp/webhook/",)
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -23,7 +25,8 @@ class PreviewAccessMiddleware:
             )
 
     def __call__(self, request):
-        if not self.enabled or request.path_info == self.health_path:
+        if (not self.enabled or request.path_info == self.health_path
+                or request.path_info.startswith(self.callback_prefixes)):
             return self.get_response(request)
         if not self._authorized(request):
             response = HttpResponse("Preview access required.", status=401, content_type="text/plain")

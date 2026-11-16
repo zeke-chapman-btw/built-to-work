@@ -35,3 +35,13 @@ def ticket_messages(registration):
         items.append({"channel": d.get_channel_display(), "label": label, "tone": tone, "note": note,
                       "when": d.sent_at or d.last_attempt_at or d.created_at, "attempts": d.attempts})
     return {"items": items}
+
+
+@register.inclusion_tag("messaging/marketing_row.html", takes_context=True)
+def marketing_email_row(context, participant, can_edit=False):
+    from apps.messaging.marketing import current
+    row = current(participant)
+    tone = {"on": "g", "unsubscribed": "y", "bounced": "r"}.get(row.status if row else "off", "")
+    request = context.get("request")
+    return {"row": row, "tone": tone, "participant": participant, "can_edit": can_edit and not participant.archived_at,
+            "return_to": request.get_full_path() if request else ""}

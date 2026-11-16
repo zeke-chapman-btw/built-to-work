@@ -1,0 +1,4 @@
+<p class="cp3-note" style="margin:0 0 12px">What they agree to: “{{ wording }}”</p>
+{% if row %}<p class="cp3-note" style="margin:0 0 12px">Now: <strong>{{ row.get_status_display }}</strong> · {{ row.get_source_display }} · {{ row.changed_at|date:'M j, Y · g:i A' }}{% if row.note %} · {{ row.note }}{% endif %}</p>{% endif %}
+{% include 'internal/ui/form_fields.html' %}
+{% if history %}<details class="cp3-more" style="padding:12px 0 0"><summary>History</summary>{% for entry in history %}<p class="cp3-note" style="margin:6px 0">{{ entry.timestamp|date:'M j, Y · g:i A' }} · {{ entry.new_data.status|capfirst }} · {{ entry.actor|default:'Participant / Mailchimp' }}{% if entry.new_data.note %} · {{ entry.new_data.note }}{% endif %}</p>{% endfor %}</details>{% endif %}

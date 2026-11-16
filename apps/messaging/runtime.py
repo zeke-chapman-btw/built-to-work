@@ -42,9 +42,18 @@ def run_pass(limit=100):
     return {"sent": handled, "checked": checked, "enabled": True}
 
 
+def run_mailchimp():
+    from .mailchimp import sync_pending
+    return sync_pending()
+
+
 def _work():
     while not _stop.is_set():
         close_old_connections()
+        try:
+            run_mailchimp()
+        except Exception:
+            log.exception("MAILCHIMP_SYNC_FAILED")
         try:
             outcome = run_pass()
             if outcome["sent"] or outcome["checked"]:

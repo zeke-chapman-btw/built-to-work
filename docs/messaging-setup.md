@@ -55,3 +55,19 @@ Nothing on Preview sends automatically yet, because no background sender runs.
 
 - "Connect your Gmail" so staff can send one-off emails from their own address.
 - Delivery results and replies from EZ Texting (its Forwarding API → the app).
+
+## Marketing email and Mailchimp
+
+- Sign-up forms show an optional, unticked box on the Consent page:
+  “Send me job openings, training and event news from Built to Work by email. I can unsubscribe at any time.”
+  Ticking it turns **Marketing email** On for that person, saving when and the exact wording.
+  Leaving it unticked changes nothing.
+- Each profile's Contact card shows a **Marketing email** chip. Staff can change it (turning it
+  On needs a note saying how the person agreed). Every change is kept in its history.
+- **Settings → Connections → Connect Mailchimp**: paste a Mailchimp API key (Mailchimp → Profile →
+  Extras → API keys), pick the audience. The app then:
+  - adds/updates everyone with Marketing email On (name + tags: `State: GA`, `Trade: Welding`,
+    `Seeking work`, `Will travel`, `Event: <name>`), within a few minutes of any change;
+  - archives anyone turned Off, unsubscribed or bounced (never emailed, not billed);
+  - registers a Mailchimp webhook so unsubscribes and bounces in Mailchimp turn the person Off here.
+- Campaigns are written and sent in Mailchimp. Existing participants start Off.

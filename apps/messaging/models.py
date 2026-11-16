@@ -102,3 +102,46 @@ class ConnectionSetting(models.Model):
 
     def __str__(self):
         return self.get_key_display()
+
+
+MARKETING_WORDING = ("Send me job openings, training and event news from Built to Work by email. "
+                     "I can unsubscribe at any time.")
+
+
+class MarketingConsent(models.Model):
+    """Whether a participant agreed to marketing email, with proof of what they agreed to.
+
+    Separate from the required sign-up consent and from ticket messages. Mailchimp
+    (when connected) only ever receives people whose status is ``on``.
+    """
+
+    class Status(models.TextChoices):
+        ON = "on", "On"
+        OFF = "off", "Off"
+        UNSUBSCRIBED = "unsubscribed", "Unsubscribed"
+        BOUNCED = "bounced", "Email bounced"
+
+    class Source(models.TextChoices):
+        SIGNUP = "signup", "Sign-up form"
+        STAFF = "staff", "Staff"
+        MAILCHIMP = "mailchimp", "Mailchimp"
+
+    participant = models.OneToOneField("participants.Participant", on_delete=models.CASCADE, related_name="marketing_consent")
+    status = models.CharField(max_length=14, choices=Status.choices, default=Status.OFF)
+    source = models.CharField(max_length=12, choices=Source.choices, default=Source.STAFF)
+    wording = models.TextField(blank=True)
+    note = models.CharField(max_length=300, blank=True)
+    changed_at = models.DateTimeField()
+    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    submission = models.ForeignKey("participants.RegistrationSubmission", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    # Mailchimp bookkeeping
+    needs_sync = models.BooleanField(default=True, db_index=True)
+    synced_email = models.EmailField(blank=True)
+    synced_at = models.DateTimeField(null=True, blank=True)
+    sync_error = models.CharField(max_length=240, blank=True)
+
+    class Meta:
+        default_permissions = ()
+
+    def __str__(self):
+        return f"{self.participant} · {self.get_status_display()}"

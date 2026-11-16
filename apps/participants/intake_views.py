@@ -138,8 +138,14 @@ def wizard(request, session_id):
                     values = {**{key: value for key, value in session.answers.items() if key in personal_keys}, **values}
                 session = save_step(session=session, step=contract_step, values=values,
                     extras=form.extras(), expected_revision=request.POST.get("revision", ""))
+                if step == 2:
+                    # Optional and separate from the required consent: ticking it is the only way to opt in.
+                    from apps.messaging.intake import remember_choice
+                    remember_choice(session, request.POST.get("marketing_email") == "yes")
             if step == 5:
                 complete_session(session_id=session.pk, actor=request.user)
+                from apps.messaging.intake import apply_choice
+                apply_choice(session.pk)
                 return redirect("participants:intake-session", session_id=session.pk)
         except ValidationError as exc:
             _errors(form, exc)
@@ -153,7 +159,13 @@ def wizard(request, session_id):
         "event_fields": [form[name] for name in form.event_fields],
         "contract": session.form_version.snapshot,
         "prior_answers": session.answers, "revision": session_revision(session),
-        "previous_step": step - 1})
+        "previous_step": step - 1, "marketing_wording": _marketing_wording(),
+        "marketing_checked": bool((session.context or {}).get("marketing_email", {}).get("opt_in"))})
+
+
+def _marketing_wording():
+    from apps.messaging.models import MARKETING_WORDING
+    return MARKETING_WORDING
 
 
 def review_page(view):
