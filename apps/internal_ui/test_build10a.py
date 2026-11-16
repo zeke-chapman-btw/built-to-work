@@ -37,7 +37,7 @@ class Build10ATests(TestCase):
         self.assertEqual(item['url'],reverse('staffing:schedule'))
         self.login();self.assertEqual(self.client.get(reverse('events:event_list')).status_code,403)
     def test_legacy_workspace_deep_link_remains(self):
-        self.login();self.assertEqual(self.client.get(reverse('internal:workspace',args=['events'])).status_code,200)
+        self.login();self.assertEqual(self.client.get(reverse('internal:workspace',kwargs={'workspace_id':'events'})).status_code,200)
     def test_featured_is_chronological_future_not_current_or_assigned_priority(self):
         self.grant('events.view_event');StaffAssignment.objects.create(event=self.later,staff=self.profile)
         result=operations_home(self.staff)
@@ -48,7 +48,7 @@ class Build10ATests(TestCase):
         self.next.status='cancelled';self.next.save()
         self.assertEqual(operations_home(self.staff)['featured']['event'],self.later)
     def test_no_event_leak_for_unassigned_staff(self):
-        self.login();response=self.client.get(reverse('internal:workspace',args=['operations']))
+        self.login();response=self.client.get(reverse('internal:workspace',kwargs={'workspace_id':'operations'}))
         self.assertContains(response,'No authorized operational events')
         self.assertNotContains(response,self.next.name)
         self.assertNotContains(response,self.active.name)
@@ -146,7 +146,7 @@ class Build10ATests(TestCase):
     def test_operations_home_does_not_write_evidence_tasks_or_notes(self):
         self.grant('events.view_event');self.login()
         before=(Task.objects.count(),EventNote.objects.count())
-        self.client.get(reverse('internal:workspace',args=['operations']))
+        self.client.get(reverse('internal:workspace',kwargs={'workspace_id':'operations'}))
         self.assertEqual(before,(Task.objects.count(),EventNote.objects.count()))
 
     def test_event_has_one_floating_contextual_task_action(self):
@@ -160,7 +160,7 @@ class Build10ATests(TestCase):
         self.assertEqual(active,['administration'])
     def test_featured_simulator_link_reuses_existing_results(self):
         self.login(self.admin)
-        response=self.client.get(reverse('internal:workspace',args=['operations']))
+        response=self.client.get(reverse('internal:workspace',kwargs={'workspace_id':'operations'}))
         self.assertContains(response,'Simulator Scoring')
         self.assertContains(response,reverse('events:event_detail',args=[self.next.pk])+'?section=results')
 

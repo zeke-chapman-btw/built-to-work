@@ -68,13 +68,13 @@ def settings_context(request):
         selected = 'staff'
     elif path.startswith(reverse('sops:manage')):
         selected = 'sops'
-    elif path.startswith(('/accounts/staff/', reverse('staffing:directory'))):
+    elif path.startswith(('/settings/staff/', reverse('staffing:directory'))):
         selected = 'staff'
-    elif path.startswith('/workdays/compensation/'):
+    elif path.startswith('/settings/pay/'):
         selected = 'compensation'
     elif path.startswith(reverse('messaging:connections')):
         selected = 'connections'
-    elif path.startswith('/reports/categories/'):
+    elif path.startswith('/settings/expense-categories/'):
         selected = 'advanced'
     else:
         from apps.recruiting.ui_context import from_settings

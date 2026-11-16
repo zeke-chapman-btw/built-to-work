@@ -22,7 +22,7 @@ def directory_keys():
     return set(DiscoveryForm.base_fields)|{'page','saved'}|DIRECTORY_PANEL_KEYS
 
 def people_lists():
-    return {reverse('participants:staff-directory'):directory_keys(),reverse('participants:intelligence'):directory_keys()|{'view'},reverse('internal:workspace',args=['participants']):directory_keys(),reverse('participants:staff-document-directory'):{'q','page'},reverse('participants:staff-qualifications'):{'q'}}
+    return {reverse('participants:staff-directory'):directory_keys(),reverse('participants:intelligence'):directory_keys()|{'view'},reverse('internal:workspace', kwargs={'workspace_id': 'participants'}):directory_keys(),reverse('participants:staff-document-directory'):{'q','page'},reverse('participants:staff-qualifications'):{'q'}}
 
 def directory_origin(request):
     listing=reverse('participants:staff-directory')

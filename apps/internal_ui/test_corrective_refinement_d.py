@@ -101,7 +101,7 @@ class CorrectiveDWorkflowTests(TestCase):
         self.assertEqual((ready['completed'],ready['total'],ready['na']),(1,2,1))
         self.assertIsNone(rows[2]['indicators'][0]['percent'])
         self.login()
-        response=self.client.get(reverse('internal:workspace',args=['operations']))
+        response=self.client.get(reverse('internal:workspace',kwargs={'workspace_id':'operations'}))
         # Detailed checklist facts remain on Execution; the compact landing shows resource evidence.
         execution=self.client.get(reverse('operations:execution-index'))
         self.assertContains(execution,'Checklist not initialized · readiness not established.')
@@ -114,7 +114,7 @@ class CorrectiveDWorkflowTests(TestCase):
         models=(EventExecution,EventChecklistCategory,EventChecklistItem,Task,AuditLog)
         before=[m.objects.count() for m in models]
         original=list(Event.objects.order_by('pk').values())
-        for url in [reverse('internal:workspace',args=['operations']),reverse('operations:execution-index'),reverse('internal:home')]:
+        for url in [reverse('internal:workspace',kwargs={'workspace_id':'operations'}),reverse('operations:execution-index'),reverse('internal:home')]:
             self.assertEqual(self.client.get(url).status_code,200)
         self.assertEqual(before,[m.objects.count() for m in models])
         self.assertEqual(original,list(Event.objects.order_by('pk').values()))
@@ -176,7 +176,7 @@ class CorrectiveDWorkflowTests(TestCase):
 
     def test_operations_tools_stay_permission_aware_below_readiness(self):
         self.login()
-        response=self.client.get(reverse('internal:workspace',args=['operations']))
+        response=self.client.get(reverse('internal:workspace',kwargs={'workspace_id':'operations'}))
         html=response.content.decode()
         self.assertLess(html.index('aria-label="Operations sections"'),html.index('Resource configuration'))
         for route in ['operations:execution-index','participants:intake-config-index','participants:consent-index']:

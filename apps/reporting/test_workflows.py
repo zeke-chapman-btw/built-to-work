@@ -75,7 +75,7 @@ class PayrollWorkflowTests(ReportingFixtures):
         from django.test import RequestFactory
         from .presentation import workspace_data
         self.day();self.compile();self.approve()
-        data=workspace_data(self.admin,"payroll",{},RequestFactory().get("/internal/reports/"))
+        data=workspace_data(self.admin,"payroll",{},RequestFactory().get("/reports/"))
         self.assertEqual(Decimal(str(data["report_rows"][0]["total"])),120)
         self.assertIn("snapshot",list(data["page"].object_list)[0].current_version.get_deferred_fields())
     def test_source_change_after_approval_blocks_ap_submission(self):

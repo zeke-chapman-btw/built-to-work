@@ -153,9 +153,12 @@ def _nudge(row):
     who = f"{row.participant.first_name} {row.participant.last_name}" if row.participant else f"(…{row.phone[-4:]})"
     base = getattr(settings, "PARTICIPANT_PORTAL_BASE_URL", "") or ""
     link = (base.rstrip("/") + reverse("messaging:texts")) if base else ""
+    config = store.email_settings()
     try:
+        # A staff alert, sent through the saved noreply@ sign-in when there is one (also on the preview).
         send_mail(f"Text reply from {who}", f"{who} replied:\n\n{row.body}\n\n{('Open: ' + link) if link else ''}",
-                  None, [owner.email], fail_silently=True)
+                  config.get("from_address") or None, [owner.email], fail_silently=True,
+                  connection=store.smtp_connection())
     except Exception:
         pass
 

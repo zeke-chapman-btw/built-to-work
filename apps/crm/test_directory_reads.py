@@ -50,7 +50,7 @@ class DirectoryProjectionTests(EmployerFixtures, TestCase):
             data={'activity_type':'email','summary':'SYNTHETIC employer contact','occurred_at':self.stamp})
 
     def panel(self, subject='participants', view='activity', actor=None, **params):
-        path = reverse('customers:directory') if subject == 'customers' else reverse('internal:workspace',args=['participants'])
+        path = reverse('customers:directory') if subject == 'customers' else reverse('internal:workspace',kwargs={'workspace_id':'participants'})
         request = RequestFactory().get(path, {'rel_view':view, **params})
         request.user = actor or self.admin
         return directory_panel(request, subject)['directory_panel']
@@ -285,7 +285,7 @@ class DirectoryProjectionTests(EmployerFixtures, TestCase):
         tracked=[Interaction,InteractionRevision,Task,TaskNotification,AuditLog,CandidateOpportunity,CandidateInterest,CandidateDisclosure,ConsentAcceptance]
         before={m.__name__:m.objects.count()for m in tracked}
         candidate_before=list(CandidateOpportunity.objects.values_list('pk','active','outcome','stage_id','revision'))
-        for route in [reverse('internal:workspace',args=['participants']),reverse('participants:staff-directory'),reverse('customers:directory')]:
+        for route in [reverse('internal:workspace',kwargs={'workspace_id':'participants'}),reverse('participants:staff-directory'),reverse('customers:directory')]:
             for view in ['activity','followups']:
                 for audience in (['all','btw','employer']if view=='activity'else['all']):
                     response=self.client.get(route,{'rel_view':view,'rel_audience':audience})
@@ -301,7 +301,7 @@ class DirectoryProjectionTests(EmployerFixtures, TestCase):
     def test_saved_view_and_result_page_remain_independent_of_panel_selection(self):
         saved=SavedParticipantView.objects.create(owner=self.admin,name='SYNTHETIC panel retained view',criteria={'q':self.person.last_name})
         self.client.force_login(self.admin,backend='django.contrib.auth.backends.ModelBackend')
-        route=reverse('internal:workspace',args=['participants'])
+        route=reverse('internal:workspace',kwargs={'workspace_id':'participants'})
         response=self.client.get(route,{'saved':saved.pk,'page':'1','rel_view':'followups'})
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.context['directory_panel']['view'],'followups')

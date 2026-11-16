@@ -21,7 +21,7 @@ class WorkspaceSettingsAlignmentTests(PortalFixtures, TestCase):
         self.assertNotContains(response, '<p class="nav-group-label">Internal</p>', html=True)
         self.assertContains(response, reverse('accounts:password-change'))
         self.assertContains(response, reverse('workdays:mine'))
-        self.assertContains(response, reverse('staffing:schedule'))
+        self.assertContains(response, reverse('staffing:directory'))
 
     def test_event_staff_cannot_reveal_administrator_tools_using_query_parameters(self):
         self.staff_login(self.worker)

@@ -185,7 +185,7 @@ class OperationsConsentTests(ConsentDocumentWorkflowTests):
         navigation = visible_workspaces(self.admin, reverse("participants:consent-index"))
         self.assertEqual([item["id"] for item in navigation if item["active"]], ["operations"])
         self.assertContains(self.client.get(reverse("participants:consent-index")), "Consent documents")
-        home = self.client.get(reverse("internal:workspace", args=["operations"]))
+        home = self.client.get(reverse("internal:workspace",kwargs={'workspace_id':"operations"}))
         self.assertContains(home, 'aria-label="Operations sections"')
         self.assertContains(home, 'href="' + reverse("participants:consent-index") + '"')
 

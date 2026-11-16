@@ -30,7 +30,7 @@ class HeaderDirectoryFollowupTests(ReportingFixtures):
                 self.assertEqual([n['tag'] for n in children], ['h1'])
 
     def test_approvals_explanation_remains_in_the_results_content(self):
-        response = self.client.get('/internal/workspaces/approvals/')
+        response = self.client.get('/approvals/')
         description = response.context.get('description')
         self.assertTrue(description)
         self.assertContains(response, description)

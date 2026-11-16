@@ -95,7 +95,7 @@ class EventMetricTests(ReportingFixtures):
         from django.test import RequestFactory
         from .presentation import workspace_data
         self.event.status="archived";self.event.save()
-        request=RequestFactory().get("/internal/reports/")
+        request=RequestFactory().get("/reports/")
         def conducted():return next(c["value"] for c in workspace_data(self.admin,"events",{},request)["cards"] if c["label"]=="Events conducted")
         self.assertEqual(conducted(),0)
         EventExecution.objects.create(event=self.event,actual_ended_at=self.when,ended_by=self.admin)

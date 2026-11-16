@@ -178,7 +178,7 @@ class EventsPassTwoTests(TestCase):
         response=self.client.get(reverse('events:event_detail',args=[self.event.pk]))
         for text in ['Venue','Address','Event hours','Times are','Housing','SYNTHETIC lodging<br>Second line','ev-overview']:self.assertContains(response,text)
         self.assertContains(self.client.get(reverse('events:event_edit',args=[self.event.pk])),'data-event-dirty-guard')
-        self.assertNotContains(self.client.get('/internal/'),'data-event-dirty-guard')
+        self.assertNotContains(self.client.get('/home/'),'data-event-dirty-guard')
 
     def test_mobile_counts_preserve_zero_unavailable_and_valid_evidence(self):
         person=Participant.objects.create(first_name='SYNTHETIC',last_name='Card evidence')
@@ -221,4 +221,4 @@ class EventsPassTwoTests(TestCase):
             self.assertContains(response,'event-primary-scroll')
             self.assertContains(response,'event-nav-label')
         self.client.force_login(self.owner,backend='django.contrib.auth.backends.ModelBackend')
-        self.assertNotContains(self.client.get('/internal/'),'data-pass-a-event')
+        self.assertNotContains(self.client.get('/home/'),'data-pass-a-event')

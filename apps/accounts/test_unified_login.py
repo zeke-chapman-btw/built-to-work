@@ -66,7 +66,7 @@ class UnifiedLoginTests(PortalFixtures,TestCase):
         self.assertEqual(response.url,reverse('customer_portal:home'))
         self.assertEqual(self.client.session['_auth_user_backend'],auth.BACKENDS['customer'])
         self.assertEqual(self.client.get(response.url).status_code,200)
-        self.assertEqual(self.client.get('/internal/').status_code,403)
+        self.assertEqual(self.client.get('/home/').status_code,403)
 
     def test_participant_email_uses_own_portal_and_backend(self):
         response=self.attempt(self.account.login_email,account_type='customer')
@@ -224,7 +224,7 @@ class UnifiedLoginTests(PortalFixtures,TestCase):
         self.client.post(reverse('accounts:logout'));self.assertNotIn('_auth_user_id',self.client.session)
 
     def test_account_type_hint_never_authenticates_an_unrelated_identity(self):
-        response=self.attempt(self.account.login_email,account_type='staff',next='/internal/')
+        response=self.attempt(self.account.login_email,account_type='staff',next='/home/')
         self.assertEqual(response.url,reverse('participants:portal-home'))
         self.assertEqual(self.client.session['_auth_user_id'],str(self.participant.pk))
 

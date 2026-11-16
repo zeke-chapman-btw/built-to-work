@@ -83,7 +83,7 @@ def _more_attention(user, unavailable):
             pending = AvailabilityRequest.objects.filter(status="pending").count()
             if pending:
                 rows.append(dict(id="staff-requests", count=pending, label="Staff requests to approve",
-                                 action="Review", url=reverse("internal:workspace", args=["approvals"]) + "?tab=events"))
+                                 action="Review", url=reverse("internal:workspace", kwargs={'workspace_id': "approvals"}) + "?tab=events"))
             soon = Event.objects.filter(status=Event.Status.UPCOMING, start_at__gte=timezone.now(),
                                         start_at__lte=timezone.now() + __import__('datetime').timedelta(days=30))
             plans = {p.event_id: p.required_staff + p.required_drivers for p in StaffingPlan.objects.filter(event__in=soon)}
@@ -102,7 +102,7 @@ def _more_attention(user, unavailable):
             waiting = WorkforceNeedRevision.objects.filter(state__in=("submitted", "review")).count()
             if waiting:
                 rows.append(dict(id="positions", count=waiting, label="Customer job requests to approve",
-                                 action="Review", url=reverse("internal:workspace", args=["approvals"]) + "?tab=jobs"))
+                                 action="Review", url=reverse("internal:workspace", kwargs={'workspace_id': "approvals"}) + "?tab=jobs"))
     except DatabaseError:
         unavailable.append("Job request check unavailable")
     return rows

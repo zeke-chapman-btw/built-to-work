@@ -240,7 +240,7 @@ class OperationsTemplates10BTests(TestCase):
         rev=self.published();response=self.client.get(reverse('events:event_detail',args=[self.event.pk])+'?section=operations')
         self.assertContains(response,'Event setup');self.assertContains(response,'+ Task');self.assertContains(response,'Health Monitor')
         self.assertEqual(response.content.count(b'data-global-task-create'),1)
-        self.assertContains(self.client.get(reverse('internal:workspace',args=['operations'])),'Operations Templates')
+        self.assertContains(self.client.get(reverse('internal:workspace',kwargs={'workspace_id':'operations'})),'Operations Templates')
 
     def test_new_revision_does_not_auto_update_applied_event(self):
         rev=self.published();app,_=self.apply(rev);frozen=deepcopy(app.snapshot)

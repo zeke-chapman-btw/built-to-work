@@ -63,7 +63,7 @@ Nothing on Preview sends automatically yet, because no background sender runs.
 - A reply goes to whoever the last app text to that number (within 30 days) said replies
   should go to. Anything else (replies to automatic texts, unknown numbers) goes to the
   person picked in **Everything else goes to**, or stays Unassigned.
-- Replies show in **Text replies** (`/messaging/texts/`: Mine / Unassigned / All / Sent),
+- Replies show in **Text replies** (`/inbox/`: Mine / Unassigned / All / Sent),
   with Reply, Mark handled and a reassign menu, plus a count card in My stuff. The owner
   also gets a short email once site email is set up.
 - STOP (and similar words) blocks app texts to that number until they text START.

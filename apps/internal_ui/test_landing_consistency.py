@@ -30,14 +30,14 @@ class Document(HTMLParser):
 class LandingConsistencyTests(ReportingFixtures):
     routes = [
         ('/operations/tasks/', 'Tasks', 'filters'),
-        ('/internal/workspaces/participants/', 'Participants', 'none'),
-        ('/internal/customers/', 'Customers', 'none'),
+        ('/participants/', 'Participants', 'none'),
+        ('/customers/', 'Customers', 'none'),
         ('/recruiting/', 'Recruiting', 'sections'),
-        ('/internal/workspaces/approvals/', 'Approvals', 'sections'),
+        ('/approvals/', 'Approvals', 'sections'),
         ('/events/', 'Events', 'none'),
-        ('/internal/workspaces/operations/', 'Operations', 'sections'),
-        ('/internal/reports/', 'Reports &amp; Analytics', 'sections'),
-        ('/internal/settings/', 'Settings', 'sections'),
+        ('/operations/', 'Operations', 'sections'),
+        ('/reports/', 'Reports &amp; Analytics', 'sections'),
+        ('/settings/', 'Settings', 'sections'),
     ]
 
     def setUp(self):
@@ -93,7 +93,7 @@ class LandingConsistencyTests(ReportingFixtures):
         self.assertEqual(query['attrs'].get('value'), 'synthetic')
 
     def test_directory_controller_still_contains_search_and_extended_filters(self):
-        _, doc = self.landing('/internal/workspaces/participants/?q=synthetic&sort=name_desc')
+        _, doc = self.landing('/participants/?q=synthetic&sort=name_desc')
         frame, = [n for n in doc.nodes if n['attrs'].get('id')=='people-directory']
         filters, = doc.marked('data-workspace-filters')
         self.assertIn(frame, filters['parents'])
@@ -113,7 +113,7 @@ class LandingConsistencyTests(ReportingFixtures):
         self.assertTrue(any(n['tag']=='a' and header in n['parents'] for n in doc.nodes))
 
     def test_reporting_section_selection_preserves_region_and_filter_values(self):
-        response, doc = self.landing('/internal/reports/?tab=events&region=GA')
+        response, doc = self.landing('/reports/?tab=events&region=GA')
         selection, = [n for n in doc.marked('data-workspace-selection') if n['attrs']['data-workspace-selection']=='sections']
         selected, = [n for n in doc.nodes if n['tag']=='a' and selection in n['parents'] and n['attrs'].get('aria-current')]
         self.assertIn('tab=events', selected['attrs']['href'])
@@ -122,7 +122,7 @@ class LandingConsistencyTests(ReportingFixtures):
 
     def test_worker_settings_does_not_gain_administrator_sections(self):
         self.client.force_login(self.worker, backend='django.contrib.auth.backends.ModelBackend')
-        response, _ = self.landing('/internal/settings/?tab=advanced')
+        response, _ = self.landing('/settings/?tab=advanced')
         self.assertEqual(response.context['settings_section'],'account')
         for key in ['staff','portal','compensation','recruiting','advanced']:
             self.assertNotContains(response, 'data-settings-tab="'+key+'"')

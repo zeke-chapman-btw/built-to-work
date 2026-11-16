@@ -34,7 +34,7 @@ def staff_view(view):
 
 
 def local_return(request, value, fallback):
-    if (value and value.startswith(("/internal/customers/", "/internal/campaigns/"))
+    if (value and value.startswith(("/customers/", "/internal/campaigns/"))
             and url_has_allowed_host_and_scheme(value, allowed_hosts=set(), require_https=request.is_secure())):
         return value
     return fallback

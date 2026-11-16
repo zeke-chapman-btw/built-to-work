@@ -55,7 +55,7 @@ class CorrectivePassOneTests(TestCase):
         self.assertNotContains(response, 'Database admin')
 
     def test_one_active_destination_and_event_expense_context(self):
-        for path, expected in [('/events/', 'events'), ('/internal/reports/','reports'), ('/reports/categories/','settings'), ('/reports/events/123/','events'), ('/internal/settings/','settings'), ('/events/operations/','settings'), ('/operations/tasks/','tasks')]:
+        for path, expected in [('/events/', 'events'), ('/reports/','reports'), ('/settings/expense-categories/','settings'), ('/events/reports/123/','events'), ('/settings/','settings'), ('/settings/system/','settings'), ('/operations/tasks/','tasks')]:
             with self.subTest(path=path):
                 self.assertEqual([row['id'] for row in visible_workspaces(self.owner,path) if row['active']], [expected])
 
@@ -178,14 +178,14 @@ class CorrectivePassOneTests(TestCase):
 
     def test_extended_nested_routes_preserve_existing_primary_meanings(self):
         paths = {
-            '/participants/staff/intake-forms/12/edit/': 'operations',
-            '/participants/staff/consents/12/': 'operations',
+            '/operations/forms/12/edit/': 'operations',
+            '/operations/consents/12/': 'operations',
             '/operations/execution/events/123/': 'events',
             '/operations/setup/events/123/': 'events',
             '/operations/documents/123/': 'events',
-            '/staff/directory/123/': 'settings',
-            '/workdays/compensation/': 'settings',
-            '/participants/staff/qualification-approvals/': 'participants',
+            '/settings/staff-directory/123/': 'settings',
+            '/settings/pay/': 'settings',
+            '/participants/qualification-approvals/': 'participants',
         }
         for path, expected in paths.items():
             with self.subTest(path=path):

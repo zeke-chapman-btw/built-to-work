@@ -144,16 +144,16 @@ class NavigationAndHeading9GTests(TestCase):
 
     def test_affected_roots_and_nested_routes_have_exactly_one_expected_workspace(self):
         paths = {
-            '/quizzes/': 'operations', '/quizzes/categories/': 'operations',
-            '/quizzes/question-sets/12/': 'operations', '/quizzes/question-sets/12/edit/': 'operations',
-            '/participants/staff/registration-forms/': 'administration',
-            '/participants/staff/registration-forms/questions/add/': 'administration',
-            '/participants/staff/registration-forms/questions/12/': 'administration',
-            '/participants/staff/registration-forms/preview/': 'administration',
-            '/participants/staff/registration-forms/publish/': 'administration',
-            '/participants/staff/testing/': 'administration',
-            '/participants/staff/directory/': 'participants',
-            '/participants/staff/directory/12/': 'participants',
+            '/operations/quizzes/': 'operations', '/operations/quizzes/categories/': 'operations',
+            '/operations/quizzes/question-sets/12/': 'operations', '/operations/quizzes/question-sets/12/edit/': 'operations',
+            '/participants/registration-forms/': 'administration',
+            '/participants/registration-forms/questions/add/': 'administration',
+            '/participants/registration-forms/questions/12/': 'administration',
+            '/participants/registration-forms/preview/': 'administration',
+            '/participants/registration-forms/publish/': 'administration',
+            '/settings/test-participant/': 'administration',
+            '/participants/directory/': 'participants',
+            '/participants/directory/12/': 'participants',
         }
         for path, expected in paths.items():
             with self.subTest(path=path):
@@ -170,7 +170,7 @@ class NavigationAndHeading9GTests(TestCase):
 
     def test_corrected_route_context_does_not_grant_workspace_visibility(self):
         limited = get_user_model().objects.create_user(username='synthetic-limited-9g', is_staff=True)
-        for path in ['/quizzes/', '/participants/staff/registration-forms/', '/participants/staff/testing/']:
+        for path in ['/operations/quizzes/', '/participants/registration-forms/', '/settings/test-participant/']:
             self.assertEqual([item['id'] for item in visible_workspaces(limited, path)], ['home', 'tasks'])
         self.client.force_login(limited)
         # The existing assessment landing page is staff-accessible without a workspace grant.

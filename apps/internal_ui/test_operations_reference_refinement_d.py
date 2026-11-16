@@ -45,7 +45,7 @@ class OperationsReferenceRefinementTests(TestCase):
         return operations_navigation({'request':request})
 
     def test_direct_tabs_follow_reference_order_and_keep_more_destinations(self):
-        url=reverse('internal:workspace',args=['operations'])
+        url=reverse('internal:workspace',kwargs={'workspace_id':'operations'})
         nav=self.nav(url)
         self.assertEqual([x['label'] for x in nav['primary_tabs']],['Overview','Stations','Quizzes','Games','Forms','Consents','Screens'])
         self.assertTrue(nav['primary_tabs'][0]['active'])
@@ -58,13 +58,13 @@ class OperationsReferenceRefinementTests(TestCase):
         self.assertContains(self.client.get(url+'?resource=games'), reverse('admin:games_gamedefinition_changelist'))
 
     def test_tabs_keep_permission_boundaries_and_active_deep_links(self):
-        nav=self.nav(reverse('internal:workspace',args=['operations']),self.staff)
+        nav=self.nav(reverse('internal:workspace',kwargs={'workspace_id':'operations'}),self.staff)
         self.assertEqual([x['label'] for x in nav['primary_tabs']],['Overview'])
         nav=self.nav(reverse('participants:intake-config-index'))
         self.assertEqual([x['label'] for x in nav['primary_tabs'] if x['active']],['Forms'])
         nav=self.nav(reverse('assessments:question_set_list'))
         self.assertEqual([x['label'] for x in nav['primary_tabs'] if x['active']],['Quizzes'])
-        nav=self.nav(reverse('internal:workspace',args=['operations'])+'?resource=games')
+        nav=self.nav(reverse('internal:workspace',kwargs={'workspace_id':'operations'})+'?resource=games')
         self.assertEqual([x['label'] for x in nav['primary_tabs'] if x['active']],['Games'])
 
     def test_resource_states_reuse_configuration_without_certifying_readiness(self):
@@ -92,12 +92,12 @@ class OperationsReferenceRefinementTests(TestCase):
         for table in ['participants_intakeformassignment','games_eventgameconfiguration','simulators_eventsimulatorconfiguration']:
             self.assertNotIn('FROM "'+table+'"',sql)
         self.login(self.staff)
-        response=self.client.get(reverse('internal:workspace',args=['operations']))
+        response=self.client.get(reverse('internal:workspace',kwargs={'workspace_id':'operations'}))
         self.assertContains(response,self.event.name);self.assertNotContains(response,self.future.name)
         self.assertNotContains(response,self.game.display_name)
 
     def test_landing_is_compact_and_detailed_execution_stays_reachable(self):
-        self.login();response=self.client.get(reverse('internal:workspace',args=['operations']))
+        self.login();response=self.client.get(reverse('internal:workspace',kwargs={'workspace_id':'operations'}))
         self.assertEqual(response.status_code,200)
         self.assertContains(response,'Resource configuration');self.assertContains(response,'ops-resource-event-row')
         self.assertContains(response,'ops-resource-checks');self.assertContains(response,'About these statuses')
@@ -110,7 +110,7 @@ class OperationsReferenceRefinementTests(TestCase):
         self.assertEqual(self.client.get(reverse('operations:health',args=[self.event.pk])).status_code,200)
 
     def test_games_catalogue_is_read_only_and_uses_existing_guard(self):
-        url=reverse('internal:workspace',args=['operations'])+'?resource=games'
+        url=reverse('internal:workspace',kwargs={'workspace_id':'operations'})+'?resource=games'
         self.login();response=self.client.get(url)
         self.assertEqual(response.status_code,200);self.assertContains(response,self.game.display_name)
         self.assertNotContains(response,'duck_hunt');self.assertContains(response,'7')
@@ -131,5 +131,5 @@ class OperationsReferenceRefinementTests(TestCase):
         models=(AuditLog,EventExecution,EventChecklistItem,Task,GameDefinition,EventGameConfiguration,EventSimulatorConfiguration,IntakeFormAssignment)
         before=[list(m.objects.order_by('pk').values()) for m in models]
         for suffix in ['', '?resource=games']:
-            self.assertEqual(self.client.get(reverse('internal:workspace',args=['operations'])+suffix).status_code,200)
+            self.assertEqual(self.client.get(reverse('internal:workspace',kwargs={'workspace_id':'operations'})+suffix).status_code,200)
         self.assertEqual(before,[list(m.objects.order_by('pk').values()) for m in models])

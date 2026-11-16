@@ -87,7 +87,7 @@ def workspace(request,workspace_id):
             return render(request, "internal/operations_games.html", _staff_context(request,
                 page_title="Operations", page_description="Manage event resources, quizzes, games, forms and consents.",
                 games=games, game_admin_url=game_link["url"], resource_filter="games",
-                filter_clear_url=reverse("internal:workspace", args=["operations"]) + "?resource=games", **filters))
+                filter_clear_url=reverse("internal:workspace", kwargs={'workspace_id': "operations"}) + "?resource=games", **filters))
         from .event_presentation import operations_home
         from .reporting import report_destinations
         data=operations_home(request.user)

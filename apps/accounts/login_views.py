@@ -36,7 +36,12 @@ def home(user):
 def safe_next(request,value):
     if value and value.startswith('/') and not value.startswith('//') and url_has_allowed_host_and_scheme(value,{request.get_host()},require_https=request.is_secure()):
         if not value.startswith(('/accounts/login','/accounts/logout','/participants/')):return value
-        if value.startswith('/participants/staff/'):return value
+        # Staff pages live under /participants/ too; the participant sign-in and portal pages do not count.
+        portal=('/participants/portal/','/participants/login/','/participants/logout/','/participants/register/','/participants/intake/',
+                '/participants/profile/','/participants/password-reset/','/participants/verify/','/participants/set-password/',
+                '/participants/request-account/')
+        if not value.startswith(portal) and value!='/participants/':return value
+        if value=='/participants/':return value
     return None
 def page(request,title,form=None,**extra):
     response=render(request,'accounts/access_form.html',dict(page_title=title,form=form,**extra))

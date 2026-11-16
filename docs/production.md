@@ -32,3 +32,10 @@ The owner approves a release; Claude fast-forwards `production` to the tested
   allow the production service before reminders work there.
 - Email is in test mode until Google Workspace sending is configured
   (docs/messaging-setup.md). Password-reset and invitation emails won't arrive until then.
+
+## Page addresses
+
+Staff pages use addresses that match the menu (`/home/`, `/participants/`, `/operations/…`,
+`/settings/…`, `/inbox/`, `/reports/`). The list of moves lives in `config/url_moves.py`;
+every old address forwards to its new one. Kiosk, trailer-device, sign-up, portal,
+webhook and Google sign-in addresses never move.

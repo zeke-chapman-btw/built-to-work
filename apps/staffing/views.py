@@ -127,7 +127,7 @@ def roster_action(request,profile_id,action):
     from . import roster
     if request.method!="POST":raise PermissionDenied
     back=request.POST.get("back") or ""
-    if not back.startswith("/staff/directory/"):back=reverse("staffing:profile",args=[profile_id])
+    if not back.startswith("/settings/staff-directory/"):back=reverse("staffing:profile",args=[profile_id])
     try:
         if action in ("archive","restore"):
             roster.set_archived(actor=request.user,profile_id=profile_id,archived=action=="archive")

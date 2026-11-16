@@ -138,7 +138,7 @@ def inbox(request):
 
 def _back(request):
     value = request.POST.get("next") or ""
-    return value if value.startswith("/messaging/texts/") else reverse("messaging:texts")
+    return value if value.startswith("/inbox/") else reverse("messaging:texts")
 
 
 @login_required(login_url="/admin/login/")
