@@ -1,6 +1,15 @@
-{% if problem %}<p class="cp3-warn" style="margin:0 0 12px">{{ problem }}</p>{% endif %}
-{% if recent %}<div class="txt-thread" aria-label="Recent texts">{% for m in recent %}<div class="txt-bubble {% if m.direction == 'in' %}is-in{% else %}is-out{% endif %}"><p>{{ m.body|linebreaksbr }}</p><small>{% if m.direction == 'in' %}{{ participant.first_name }}{% else %}{{ m.sent_by.get_full_name|default:m.sent_by|default:'Automatic' }}{% endif %} · {{ m.created_at|date:'M j · g:i A' }}{% if m.state == 'failed' %} · <b>Not sent</b>{% endif %}</small></div>{% endfor %}</div>{% endif %}
+{% if problem %}<p class="cp3-warn" style="margin:0 0 14px;border-radius:8px">{{ problem }}</p>{% endif %}
+{% if recent %}<div class="txt-box"><p class="txt-label">Recent texts</p><div class="txt-thread" aria-label="Recent texts">{% for m in recent reversed %}<div class="txt-bubble {% if m.direction == 'in' %}is-in{% else %}is-out{% endif %}{% if m.pk == reply_id %} is-reply{% endif %}"><p>{{ m.body|linebreaksbr }}</p><small>{% if m.direction == 'in' %}{{ participant.first_name }}{% else %}{{ m.sent_by.get_full_name|default:m.sent_by|default:'Automatic' }}{% endif %} · {{ m.created_at|date:'M j · g:i A' }}{% if m.state == 'failed' %} · <b>Not sent</b>{% endif %}{% if m.pk == reply_id %} · replying to this{% endif %}</small></div>{% endfor %}</div></div>{% endif %}
 <input type="hidden" name="next" value="{{ back }}">
 {% include 'internal/ui/form_fields.html' %}
-<p class="cp3-note">Sent from the Built to Work texting number. A copy is added to {{ participant.first_name }}'s activity as “Sent by app”.</p>
-<style>.txt-thread{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow:auto;padding:4px 0 14px}.txt-bubble{max-width:80%;padding:8px 12px;border-radius:14px;font-size:14px}.txt-bubble p{margin:0;white-space:normal}.txt-bubble small{display:block;margin-top:4px;font-size:11px;opacity:.75}.txt-bubble.is-in{align-self:flex-start;background:#f1f2f4;color:#1a1a1a}.txt-bubble.is-out{align-self:flex-end;background:#fdf1f2;color:#1a1a1a}</style>
+<style>
+.txt-box{background:#f7f7f8;border:1px solid #ececef;border-radius:10px;padding:10px 12px;margin:0 0 16px}
+.txt-label{margin:0 0 6px;font-size:12px;font-weight:600;color:#71717a}
+.txt-thread{display:flex;flex-direction:column-reverse;gap:8px;max-height:240px;overflow:auto;padding:3px}
+.txt-bubble{max-width:78%;padding:8px 12px;border-radius:14px;font-size:14px;line-height:1.4}
+.txt-bubble p{margin:0}
+.txt-bubble small{display:block;margin-top:3px;font-size:11px;color:#71717a}
+.txt-bubble.is-in{align-self:flex-start;background:#fff;border:1px solid #e4e4e7;border-bottom-left-radius:4px}
+.txt-bubble.is-out{align-self:flex-end;background:#fdecee;border-bottom-right-radius:4px}
+.txt-bubble.is-reply{box-shadow:0 0 0 2px #d0212f}
+</style>

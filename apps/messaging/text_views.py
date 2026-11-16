@@ -52,9 +52,9 @@ def _inbox_user(request):
 class TextForm(forms.Form):
     operation_id = forms.UUIDField(widget=forms.HiddenInput)
     body = forms.CharField(label="Message", max_length=600, widget=forms.Textarea(attrs={"rows": 5, "maxlength": 600}),
-                           help_text="Texts over 160 characters are sent as more than one text.")
+                           help_text="Over 160 characters is sent as more than one text.")
     replies_to = forms.ChoiceField(label="Send replies to",
-                                   help_text="When they text back, the reply shows up in this person's Inbox.")
+                                   help_text="Their reply will show up in this person's Inbox.")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -81,9 +81,9 @@ def text_participant(request, participant_id):
                "Texting isn't set up yet. An administrator can set it up in Settings → Connections." if not texting.ready() else "")
     recent = list(TextMessage.objects.filter(phone=phone).select_related("sent_by", "replies_to").order_by("-created_at")[:6]) if phone else []
     context = {"form": form, "participant": participant, "problem": problem, "recent": list(reversed(recent)),
-               "page_title": "Text " + participant.first_name, "back": back, "profile_url": profile,
-               "editor_context": f"To {participant.contact_phone}" if phone else "No mobile number on file",
-               "save_label": "Send text", "fields_template": "messaging/text_fields.html", "reply_id": reply_id}
+               "page_title": ("Reply to " if reply_id else "Text ") + participant.first_name, "back": back, "profile_url": profile,
+               "editor_context": f"To ({phone[:3]}) {phone[3:6]}-{phone[6:]}" if phone else "No mobile number on file",
+               "save_label": "Send text", "fields_template": "messaging/text_fields.html", "reply_id": int(reply_id) if (reply_id or "").isdigit() else None}
     if request.method == "POST" and not problem and form.is_valid():
         owner = get_user_model().objects.filter(pk=form.cleaned_data["replies_to"], is_active=True, is_staff=True).first()
         try:
