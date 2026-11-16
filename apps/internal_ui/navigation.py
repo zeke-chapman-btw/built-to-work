@@ -285,8 +285,7 @@ def staff_destinations(user, current_path=""):
         entries.insert(position, dict(id="my-stuff", label="My stuff", icon="me", url=reverse("my:schedule"), active=False))
     inbox = _inbox_entry(user)
     if inbox:
-        after = next((i + 1 for i, entry in enumerate(entries) if entry["id"] == "tasks"), 1)
-        entries.insert(after, inbox)
+        entries.append(inbox)  # shown at the bottom of the menu, by the person's name
     if not report_destinations(user):entries=[entry for entry in entries if entry['id']!='reports']
     active = next((entry["id"] for entry in entries if entry["active"]), None)
     if any(legacy.get(key, {}).get("active") for key in ("administration", "platform-tools")):

@@ -100,3 +100,48 @@ class EventExportImportTests(TestCase):
         self.assertEqual(batch.mapping["trades_wanted"], columns_spec(["TopIndustryWelder", "TopIndustryHeavyEquipmentOperator"]))
         again = self.client.get(url)
         self.assertContains(again, 'value="Event: SAMPLE"')
+
+
+class ConsentImportTests(EventExportImportTests):
+    HEAD = "DateCaptured,FName,LName,Email,ConsentToTerms"
+    ROWS = ["11/14/2026 14:00:45,SYNTHETIC,Charlie,charlie@example.test,Yes",
+            "11/14/2026 14:02:00,SYNTHETIC,Delta,delta@example.test,No"]
+
+    def consent_batch(self):
+        text = self.HEAD + "\n" + "\n".join(self.ROWS) + "\n"
+        return create_batch(uploaded_file=SimpleUploadedFile("consent.csv", text.encode(), content_type="text/csv"),
+                            actor=self.actor)
+
+    def setup_consent(self):
+        import hashlib
+        from apps.participants.intake_lifecycle import create_form, publish, revision
+        from apps.participants.models import ConsentDocumentVersion
+        body = "SYNTHETIC test-only consent"
+        self.document = ConsentDocumentVersion.objects.create(key="btw-intake", version="2026-1", title="Sign-up consent",
+            body=body, content_hash=hashlib.sha256(body.encode()).hexdigest(), is_approved=True)
+        draft = create_form(actor=self.actor, name="SYNTHETIC sign-up")
+        publish(actor=self.actor, version_id=draft.pk, expected_revision=revision(draft))
+
+    def test_guess_and_record_consent_at_spreadsheet_time(self):
+        from apps.participants.models import ConsentAcceptance
+        self.setup_consent()
+        guess = guess_mapping(self.HEAD.split(","))
+        self.assertEqual((guess["consent_agreed"], guess["consent_at"]), ("ConsentToTerms", "DateCaptured"))
+        batch = self.consent_batch()
+        rows = list(preview_batch(batch, guess, actor=self.actor))
+        self.assertEqual([r.status for r in rows], ["ready", "ready"], [r.error for r in rows])
+        self.assertEqual(import_ready(batch, actor=self.actor), 2)
+        acceptance = ConsentAcceptance.objects.get()
+        self.assertEqual(acceptance.participant.last_name, "Charlie")
+        self.assertEqual(acceptance.document, self.document)
+        from django.utils import timezone
+        self.assertEqual(timezone.localtime(acceptance.accepted_at).strftime("%Y-%m-%d %H:%M:%S"), "2026-11-14 14:00:45")
+        self.assertEqual(acceptance.submission.source, "historical_import")
+        self.assertTrue(acceptance.metadata["historical_import"])
+
+    def test_consent_without_stored_document_is_flagged(self):
+        batch = self.consent_batch()
+        rows = list(preview_batch(batch, guess_mapping(self.HEAD.split(",")), actor=self.actor))
+        self.assertEqual(rows[0].status, "error")
+        self.assertIn("no approved sign-up consent", rows[0].error)
+        self.assertEqual(rows[1].status, "ready")

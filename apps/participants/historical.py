@@ -28,7 +28,8 @@ PROFILE_IMPORT_FIELDS = ("participant_type", "found_us", "employment_status", "l
                          "willing_to_travel", "skills", "years_experience", "education", "staff_note")
 IMPORT_FIELDS = ("identity_uuid", "first_name", "last_name", "preferred_name", "email", "phone",
                  "date_of_birth", "address_line_1", "address_line_2", "city", "state", "postal_code", *PROFILE_IMPORT_FIELDS, "event_uuid", "event_name",
-                 "event_date", "group_name", "simulator_score", "score_method", "score_source", "scored_at")
+                 "event_date", "group_name", "simulator_score", "score_method", "score_source", "scored_at",
+                 "consent_agreed", "consent_at")
 # Plain names, grouped the way the participant profile shows them.
 IMPORT_GROUPS = (
     ("Contact", (("first_name", "First name"), ("last_name", "Last name"), ("preferred_name", "Preferred name"),
@@ -45,6 +46,7 @@ IMPORT_GROUPS = (
                                ("event_uuid", "BTW event ID"))),
     ("Past Simulator score (optional)", (("simulator_score", "Simulator score"), ("score_method", "How it was scored"),
                                          ("score_source", "Where the score came from"), ("scored_at", "Scored on"))),
+    ("Consent (optional)", (("consent_agreed", "Agreed to the terms"), ("consent_at", "When they agreed"))),
     ("BTW records", (("identity_uuid", "BTW participant ID"),)),
 )
 IMPORT_LABELS = {key: label for _, fields in IMPORT_GROUPS for key, label in fields}
@@ -63,7 +65,9 @@ _ALIASES = {"address_line_1": ("address", "address1", "street", "streetaddress",
             "willing_to_travel": ("travel", "willtravel", "willingtotravel"), "skills": ("skills", "skillsinterests"),
             "years_experience": ("experience", "yearsofexperience", "yearsexperience", "yearsconstructionexperience"), "education": ("education", "training", "schooling"),
             "staff_note": ("note", "notes", "comments", "staffnote"), "simulator_score": ("score", "simscore"),
-            "event_name": ("eventname", "event"), "event_date": ("eventdate", "datecaptured")}
+            "event_name": ("eventname", "event"), "event_date": ("eventdate", "datecaptured"),
+            "consent_agreed": ("consenttoterms", "consent", "agreedtoterms", "termsaccepted"),
+            "consent_at": ("consentdate", "agreedat", "consentedat")}
 
 # A mapping value is a column name, or one of these:
 FIXED = "__fixed__:"   # the same typed value for every row
@@ -144,6 +148,8 @@ def guess_mapping(headers):
             if header and header not in result.values():
                 result[field] = header
                 break
+    if result.get("consent_agreed") and not result.get("consent_at") and result.get("event_date"):
+        result["consent_at"] = result["event_date"]  # the sign-up time is when they agreed
     return result
 
 
@@ -362,8 +368,62 @@ def _normalize(raw, mapping):
             raise ValidationError("Simulator score requires its original method and source.")
     if data.get("scored_at"):
         data["scored_at"] = _score_timestamp(data["scored_at"]).isoformat()
+    _consent_values(data)
     _profile_values(data)
     return data
+
+
+def current_consent():
+    """The sign-up consent stored in the app (newest approved version)."""
+    from .models import ConsentDocumentVersion
+    return (ConsentDocumentVersion.objects.filter(key="btw-intake", is_approved=True)
+            .order_by("-effective_at", "-version").first())
+
+
+def _consent_values(data):
+    answer = data.pop("consent_agreed", "")
+    when = data.pop("consent_at", "")
+    word = _key(answer)
+    if not word or word in _NO:
+        return
+    if word not in _YES:
+        raise ValidationError(f"Agreed to the terms must be Yes or No, not \"{answer}\".")
+    if not when:
+        raise ValidationError("Agreed to the terms needs the date and time they agreed.")
+    document = current_consent()
+    if document is None:
+        raise ValidationError("There is no approved sign-up consent stored in the app to record this against.")
+    data["consent"] = {"agreed_at": _score_timestamp(when).isoformat(), "document_id": document.pk,
+                       "document_version": document.version, "answer": answer}
+
+
+def _record_consent(participant, data, row, event=None):
+    """Record the sign-up consent they gave at the event, at the time in the spreadsheet."""
+    from .models import ConsentAcceptance, ConsentDocumentVersion, RegistrationFormVersion, RegistrationSubmission
+    consent = data.get("consent")
+    if not consent:
+        return None
+    key = f"historical-consent-{row.batch_id}-{row.row_number}"[:64]
+    existing = RegistrationSubmission.objects.filter(idempotency_key=key).first()
+    if existing:
+        return existing
+    document = ConsentDocumentVersion.objects.get(pk=consent["document_id"])
+    form_version = (RegistrationFormVersion.objects.filter(status=RegistrationFormVersion.Status.PUBLISHED)
+                    .order_by("-created_at").first())
+    if form_version is None:
+        raise ValidationError("No published sign-up form exists to file the consent under.")
+    agreed_at = datetime.fromisoformat(consent["agreed_at"])
+    source = {"historical_import": True, "batch": str(row.batch_id), "file": row.batch.original_filename,
+              "row": row.row_number, "spreadsheet_answer": consent["answer"]}
+    submission = RegistrationSubmission.objects.create(
+        form_version=form_version, participant=participant, event=event, status="submitted", submitted_at=agreed_at,
+        source="historical_import", answers={"consent_to_terms": consent["answer"]}, answer_snapshot=source,
+        intake_metadata=source, idempotency_key=key)
+    acceptance = ConsentAcceptance.objects.create(participant=participant, submission=submission, document=document,
+        metadata=dict(source, document_version=document.version, content_hash=document.content_hash,
+                      channel="past_event_import"))
+    ConsentAcceptance.objects.filter(pk=acceptance.pk).update(accepted_at=agreed_at)
+    return submission
 
 
 def _matches(data):
@@ -448,6 +508,7 @@ def _import_row(row, *, actor, participant=None):
             defaults={"participant": participant, "event_record": event_record,
                       "raw_score": Decimal(data["simulator_score"]), "score_method": data["score_method"],
                       "source": data["score_source"], "scored_at": _score_timestamp(data["scored_at"]) if data.get("scored_at") else None})
+    _record_consent(participant, data, row, event=event_record.event if event_record else None)
     row.participant = participant
     row.status = HistoricalImportRow.Status.IMPORTED
     row.save(update_fields=("participant", "status"))
