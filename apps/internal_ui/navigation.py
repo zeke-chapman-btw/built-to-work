@@ -254,13 +254,22 @@ def _inbox_entry(user):
             replies_ok = bool(can_notes(user))
         except Exception:
             replies_ok = False
-        notices = ReminderNotice.objects.filter(user=user)
-        if not replies_ok and not notices.exists():
+        from django.contrib.auth import get_user_model
+        from django.db.models import Count, IntegerField, OuterRef, Subquery, Value
+        from django.db.models.functions import Coalesce
+        from apps.messaging.models import TextMessage
+
+        def counted(qs):
+            return Coalesce(Subquery(qs.order_by().annotate(g=Value(1)).values("g").annotate(n=Count("pk")).values("n")[:1],
+                                     output_field=IntegerField()), 0)
+        row = get_user_model().objects.filter(pk=user.pk).annotate(
+            any_notice=counted(ReminderNotice.objects.filter(user=OuterRef("pk"))),
+            unread=counted(ReminderNotice.objects.filter(user=OuterRef("pk"), read_at__isnull=True)),
+            replies=counted(TextMessage.objects.filter(direction="in", replies_to=OuterRef("pk"), state="new")),
+        ).values("any_notice", "unread", "replies").first() or {}
+        if not replies_ok and not row.get("any_notice"):
             return None
-        count = notices.filter(read_at__isnull=True).count()
-        if replies_ok:
-            from apps.messaging.text_views import new_reply_count
-            count += new_reply_count(user)
+        count = (row.get("unread") or 0) + ((row.get("replies") or 0) if replies_ok else 0)
     except Exception:
         return None
     url = reverse("messaging:texts") + ("" if replies_ok else "?tab=reminders")
