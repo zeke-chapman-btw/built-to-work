@@ -37,6 +37,7 @@ MOVES = (
     ("messaging/connections/", "settings/connections/", (), False),
     ("messaging/texts/", "inbox/", (), False),
     ("messaging/signature/", "settings/signature/", (), False),
+    ("messaging/templates/", "settings/message-templates/", (), False),
 )
 # The menu's section pages ("Participants", "Operations", …) get their own short address.
 WORKSPACES = {"participants": "participants/", "operations": "operations/", "approvals": "approvals/",

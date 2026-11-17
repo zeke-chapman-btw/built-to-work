@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from apps.accounts.roles import active_staff
+from apps.accounts.roles import active_staff, manager
 from apps.internal_ui.record_editors import editor_response, editor_success, local_return
 from apps.participants.models import Participant
 
@@ -132,13 +132,21 @@ def email_participant(request, participant_id):
     profile = reverse("participants:staff-profile", args=[participant.pk])
     back = profile + "?section=activity"
     connection = GmailConnection.objects.filter(user=request.user).first()
-    form = ParticipantEmailForm(request.POST or None, initial={"operation_id": uuid.uuid4()})
+    from . import templates_views
+    chosen = templates_views.picked(request, "email")
+    initial = {"operation_id": uuid.uuid4()}
+    if chosen:
+        initial.update(subject=templates_views.fill(chosen.subject, participant, request.user),
+                       body=templates_views.fill(chosen.body, participant, request.user))
+    form = ParticipantEmailForm(request.POST or None, initial=initial)
     ready = google.configured() and connection is not None and connection.active and bool(participant.contact_email)
     context = {"form": form, "participant": participant, "connection": connection, "ready": ready,
                "gmail_configured": google.configured(), "back": back, "page_title": "Email " + participant.first_name,
                "editor_context": f"To {participant.contact_email}" if participant.contact_email else "No email address on file",
                "save_label": "Send email", "fields_template": "messaging/email_fields.html",
                "has_signature": bool(signatures.personal(request.user)),
+               "message_templates": templates_views.choices_for(request, "email", request.get_full_path()),
+               "can_manage_templates": manager(request.user),
                "profile_url": profile}
     if request.method == "POST" and ready and form.is_valid():
         try:

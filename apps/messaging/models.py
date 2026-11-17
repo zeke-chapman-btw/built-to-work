@@ -243,3 +243,27 @@ class EmailBounce(models.Model):
 
     class Meta:
         default_permissions = ()
+
+
+class MessageTemplate(models.Model):
+    """Saved wording staff can start an email or text from. {first_name} and similar fill in."""
+    class Channel(models.TextChoices):
+        BOTH = "both", "Email and text"
+        EMAIL = "email", "Email only"
+        TEXT = "text", "Text only"
+
+    name = models.CharField(max_length=80)
+    channel = models.CharField(max_length=8, choices=Channel.choices, default=Channel.BOTH)
+    subject = models.CharField(max_length=200, blank=True)
+    body = models.TextField(max_length=6000)
+    is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        default_permissions = ()
+        ordering = ("name",)
+
+    def __str__(self):
+        return self.name

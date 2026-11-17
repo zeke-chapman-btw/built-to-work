@@ -71,7 +71,13 @@ def text_participant(request, participant_id):
     if not back.startswith("/"):
         back = profile
     reply_id = request.GET.get("reply")
-    form = TextForm(request.POST or None, initial={"operation_id": uuid.uuid4(), "replies_to": str(user.pk)})
+    from apps.accounts.roles import manager
+    from . import templates_views
+    chosen = templates_views.picked(request, "text")
+    initial = {"operation_id": uuid.uuid4(), "replies_to": str(user.pk)}
+    if chosen:
+        initial["body"] = templates_views.fill(chosen.body, participant, user)
+    form = TextForm(request.POST or None, initial=initial)
     if str(user.pk) not in {c[0] for c in form.fields["replies_to"].choices}:
         form.fields["replies_to"].choices = [(str(user.pk), user.get_full_name() or user.get_username())] + \
             form.fields["replies_to"].choices
@@ -83,7 +89,9 @@ def text_participant(request, participant_id):
     context = {"form": form, "participant": participant, "problem": problem, "recent": list(reversed(recent)),
                "page_title": ("Reply to " if reply_id else "Text ") + participant.first_name, "back": back, "profile_url": profile,
                "editor_context": f"To ({phone[:3]}) {phone[3:6]}-{phone[6:]}" if phone else "No mobile number on file",
-               "save_label": "Send text", "fields_template": "messaging/text_fields.html", "reply_id": int(reply_id) if (reply_id or "").isdigit() else None}
+               "save_label": "Send text", "fields_template": "messaging/text_fields.html",
+               "message_templates": templates_views.choices_for(request, "text", request.get_full_path()),
+               "can_manage_templates": manager(user), "reply_id": int(reply_id) if (reply_id or "").isdigit() else None}
     if request.method == "POST" and not problem and form.is_valid():
         owner = get_user_model().objects.filter(pk=form.cleaned_data["replies_to"], is_active=True, is_staff=True).first()
         try:
