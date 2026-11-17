@@ -21,7 +21,7 @@ from .models import (CustomerOrganization as Org, CustomerContact, CustomerLocat
 
 TABS = (("overview", "Overview"), ("company", "Company details"), ("needs", "Open positions"),
         ("campaigns", "Campaigns"), ("matches", "Matches"), ("users", "Users & contacts"),
-        ("crm", "Touchpoints"), ("access", "Plan & access"), ("billing", "Billing"), ("history", "History"))
+        ("crm", "Touchpoints"), ("access", "Plan & access"), ("billing", "Billing"), ("documents", "Documents"), ("history", "History"))
 
 
 def staff_view(view):
@@ -197,6 +197,9 @@ def workspace(request, org_id, tab="overview"):
     elif tab == "billing":
         from apps.billing.views import billing_context
         data.update(billing_context(org))
+    elif tab == "documents":
+        from apps.onboarding.documents import documents_context
+        data.update(documents_context(org))
     elif tab == "crm":
         from apps.crm.presentation import history_context
         data.update(history_context(request, organization=org))

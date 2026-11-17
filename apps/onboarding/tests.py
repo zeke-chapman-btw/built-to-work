@@ -103,8 +103,13 @@ class OnboardingTests(CustomerFixtures, TestCase):
         self.assertEqual((org.billing.account_manager, org.billing.billing_email), (self.admin, "ap@example.test"))
         agreement = org.monthly_agreements.get()
         self.assertEqual((agreement.amount_cents, agreement.status), (150000, "not_set_up"))
-        company_tab = self.client.get(reverse("customers:workspace", args=[org.pk, "company"]))
-        self.assertContains(company_tab, "Signed by SYNTHETIC Main")
+        docs = self.client.get(reverse("customers:workspace", args=[org.pk, "documents"]))
+        self.assertContains(docs, "W-9")
+        self.assertContains(docs, "Signed by SYNTHETIC Main")
+        self.assertNotContains(docs, "Missing")
+        from .models import CustomerDocument
+        agreement_doc = CustomerDocument.objects.get(organization=org, kind="agreement")
+        self.assertContains(self.client.get(reverse("onboarding:document-file", args=[org.pk, agreement_doc.pk])), "DRAFT")
         download = self.client.get(reverse("onboarding:w9", args=[row.pk]))
         self.assertEqual(b"".join(download.streaming_content), b"%PDF-1.4 SYNTHETIC")
         # Creating twice never makes a second customer.
@@ -136,3 +141,42 @@ class OnboardingTests(CustomerFixtures, TestCase):
         other = get_user_model().objects.create_user(username="ob-staff", password="x-test-only", is_staff=True)
         self.client.force_login(other, backend=BACKEND)
         self.assertEqual(self.client.get(reverse("onboarding:list")).status_code, 403)
+
+
+@override_settings(PRIVATE_ONBOARDING_ROOT=TMP)
+class DocumentTests(CustomerFixtures, TestCase):
+    def setUp(self):
+        self.org_a = self.org(name="SYNTHETIC Docs Co")
+        self.client.force_login(self.admin, backend=BACKEND)
+
+    def test_upload_edit_download_remove_and_expiry_reminder(self):
+        from .models import CustomerDocument
+        url = reverse("onboarding:document-new", args=[self.org_a.pk])
+        self.assertContains(self.client.get(reverse("customers:workspace", args=[self.org_a.pk, "documents"])), "Missing")
+        upload = SimpleUploadedFile("coi.pdf", b"%PDF SYNTHETIC COI", content_type="application/pdf")
+        soon = timezone.localdate() + timedelta(days=7)
+        response = self.client.post(url, {"kind": "insurance", "title": "", "expires_on": soon.isoformat(), "upload": upload},
+                                    HTTP_X_BTW_EDITOR="1")
+        self.assertEqual(response.status_code, 200)
+        doc = CustomerDocument.objects.get()
+        self.assertEqual((doc.title, doc.file_name), ("Certificate of insurance", "coi.pdf"))
+        page = self.client.get(reverse("customers:workspace", args=[self.org_a.pk, "documents"]))
+        self.assertContains(page, "Expires soon")
+        got = self.client.get(reverse("onboarding:document-file", args=[self.org_a.pk, doc.pk]))
+        self.assertEqual(b"".join(got.streaming_content), b"%PDF SYNTHETIC COI")
+        self.assertEqual(self.client.post(url, {"kind": "other"}, HTTP_X_BTW_EDITOR="1").status_code, 400)
+        from apps.billing.services import profile_for
+        from apps.reminders import engine
+        from apps.reminders.models import ReminderNotice, ReminderRule, ReminderSetup
+        profile = profile_for(self.org_a)
+        profile.account_manager = self.admin
+        profile.save()
+        setup = ReminderSetup.current()
+        setup.is_on, setup.turned_on_at = True, timezone.now()
+        setup.save()
+        engine.run_rule(ReminderRule.objects.get(key="document_expiring"), now=timezone.now().replace(hour=20))
+        self.assertIn("Certificate of insurance", ReminderNotice.objects.get().title)
+        self.client.post(reverse("onboarding:document-edit", args=[self.org_a.pk, doc.pk]), {"kind": "insurance", "title": "COI", "remove": "1"})
+        doc.refresh_from_db()
+        self.assertIsNotNone(doc.removed_at)
+        self.assertNotContains(self.client.get(reverse("customers:workspace", args=[self.org_a.pk, "documents"])), "COI")

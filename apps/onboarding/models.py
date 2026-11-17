@@ -101,3 +101,35 @@ class CustomerOnboarding(models.Model):
     @property
     def name(self):
         return self.company.get("name") or "New customer"
+
+
+class CustomerDocument(models.Model):
+    """A file kept with a customer: W-9, signed agreement, insurance certificate, contracts…"""
+    class Kind(models.TextChoices):
+        W9 = "w9", "W-9"
+        AGREEMENT = "agreement", "Service agreement"
+        INSURANCE = "insurance", "Certificate of insurance"
+        CONTRACT = "contract", "Contract / SOW"
+        TAX = "tax", "Tax exemption"
+        OTHER = "other", "Other"
+
+    organization = models.ForeignKey("customers.CustomerOrganization", on_delete=models.PROTECT, related_name="documents")
+    kind = models.CharField(max_length=12, choices=Kind.choices, default=Kind.OTHER)
+    title = models.CharField(max_length=200)
+    file = models.FileField(upload_to="documents/", storage=PrivateOnboardingStorage(), blank=True,
+                            validators=[FileExtensionValidator(("pdf", "png", "jpg", "jpeg", "doc", "docx", "xls", "xlsx", "txt"))])
+    file_name = models.CharField(max_length=200, blank=True)
+    onboarding = models.ForeignKey(CustomerOnboarding, null=True, blank=True, on_delete=models.SET_NULL, related_name="documents",
+                                   help_text="Set for the agreement signed in the onboarding form.")
+    expires_on = models.DateField(null=True, blank=True)
+    notes = models.CharField(max_length=300, blank=True)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    removed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("kind", "-uploaded_at")
+        default_permissions = ()
+
+    def __str__(self):
+        return self.title

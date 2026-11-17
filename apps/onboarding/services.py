@@ -104,9 +104,28 @@ def create_customer(onboarding, actor, *, base_url=""):
     onboarding.status = CustomerOnboarding.Status.COMPLETED
     onboarding.completed_by, onboarding.completed_at = actor, timezone.now()
     onboarding.save()
+    file_documents(onboarding, actor)
     if setup.get("send_bank_link") and base_url:
         transaction.on_commit(lambda: send_bank_link(org, base_url))
     return org
+
+
+def file_documents(onboarding, actor=None):
+    """Put the onboarding W-9 and signed agreement into the customer's Documents."""
+    from .models import CustomerDocument
+    org_id = onboarding.organization_id
+    if not org_id:
+        return
+    if onboarding.w9 and not CustomerDocument.objects.filter(organization_id=org_id, kind="w9", file=onboarding.w9.name).exists():
+        CustomerDocument.objects.create(organization_id=org_id, kind="w9", title="W-9", file=onboarding.w9.name,
+                                        file_name=onboarding.w9_name, onboarding=onboarding, uploaded_by=actor,
+                                        notes="From the onboarding form")
+    if onboarding.signed_at and not CustomerDocument.objects.filter(onboarding=onboarding, kind="agreement").exists():
+        CustomerDocument.objects.create(
+            organization_id=org_id, kind="agreement", onboarding=onboarding, uploaded_by=actor,
+            title=f"{onboarding.agreement_title or 'Service agreement'} (v{onboarding.agreement.version if onboarding.agreement else 1})",
+            notes=f"Signed by {onboarding.signed_name}{', ' + onboarding.signed_title if onboarding.signed_title else ''} "
+                  f"on {timezone.localtime(onboarding.signed_at):%b %d, %Y}")
 
 
 def send_bank_link(org, base_url):
