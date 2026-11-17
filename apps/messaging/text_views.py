@@ -64,38 +64,51 @@ class TextForm(forms.Form):
 @login_required(login_url="/admin/login/")
 @require_http_methods(["GET", "POST"])
 def text_participant(request, participant_id):
-    participant = get_object_or_404(Participant, pk=participant_id, archived_at__isnull=True)
-    user = crm_access.internal_context(request.user, participant=participant, write=True)
-    profile = reverse("participants:staff-profile", args=[participant.pk])
-    back = request.GET.get("next") or request.POST.get("next") or profile + "?section=activity"
+    from . import recipients
+    return _text(request, recipients.participant(participant_id, request.user))
+
+
+@login_required(login_url="/admin/login/")
+@require_http_methods(["GET", "POST"])
+def text_contact(request, contact_id):
+    from . import recipients
+    return _text(request, recipients.contact(contact_id, request.user))
+
+
+def _text(request, recipient):
+    user = crm_access.fresh_staff(request.user)
+    profile = recipient.profile_url
+    default_back = profile + ("?section=activity" if recipient.kind == "participant" else "")
+    back = request.GET.get("next") or request.POST.get("next") or default_back
     if not back.startswith("/"):
-        back = profile
+        back = default_back
     reply_id = request.GET.get("reply")
     from apps.accounts.roles import manager
     from . import templates_views
     chosen = templates_views.picked(request, "text")
     initial = {"operation_id": uuid.uuid4(), "replies_to": str(user.pk)}
     if chosen:
-        initial["body"] = templates_views.fill(chosen.body, participant, user)
+        initial["body"] = templates_views.fill(chosen.body, recipient, user)
     form = TextForm(request.POST or None, initial=initial)
     if str(user.pk) not in {c[0] for c in form.fields["replies_to"].choices}:
         form.fields["replies_to"].choices = [(str(user.pk), user.get_full_name() or user.get_username())] + \
             form.fields["replies_to"].choices
-    phone = texting.phone_key(participant.contact_phone)
+    phone = texting.phone_key(recipient.contact_phone)
     problem = ("This person has no mobile number on file." if not phone else
                "This number replied STOP. They need to text START before they can be texted again." if texting.opted_out(phone) else
                "Texting isn't set up yet. An administrator can set it up in Settings → Connections." if not texting.ready() else "")
     recent = list(TextMessage.objects.filter(phone=phone).select_related("sent_by", "replies_to").order_by("-created_at")[:6]) if phone else []
-    context = {"form": form, "participant": participant, "problem": problem, "recent": list(reversed(recent)),
-               "page_title": ("Reply to " if reply_id else "Text ") + participant.first_name, "back": back, "profile_url": profile,
-               "editor_context": f"To ({phone[:3]}) {phone[3:6]}-{phone[6:]}" if phone else "No mobile number on file",
+    context = {"form": form, "recipient": recipient, "problem": problem, "recent": list(reversed(recent)),
+               "page_title": ("Reply to " if reply_id else "Text ") + recipient.first_name, "back": back, "profile_url": profile,
+               "editor_context": (f"To ({phone[:3]}) {phone[3:6]}-{phone[6:]}" + (f" · {recipient.company}" if recipient.company else ""))
+                                 if phone else "No mobile number on file",
                "save_label": "Send text", "fields_template": "messaging/text_fields.html",
                "message_templates": templates_views.choices_for(request, "text", request.get_full_path()),
                "can_manage_templates": manager(user), "reply_id": int(reply_id) if (reply_id or "").isdigit() else None}
     if request.method == "POST" and not problem and form.is_valid():
         owner = get_user_model().objects.filter(pk=form.cleaned_data["replies_to"], is_active=True, is_staff=True).first()
         try:
-            texting.send_to_participant(actor=user, participant=participant, body=form.cleaned_data["body"].strip(),
+            texting.send_to_participant(actor=user, recipient=recipient, body=form.cleaned_data["body"].strip(),
                                         replies_to=owner or user, operation_id=form.cleaned_data["operation_id"])
         except texting.TextError as exc:
             form.add_error(None, str(exc))
@@ -104,7 +117,7 @@ def text_participant(request, participant_id):
                 TextMessage.objects.filter(pk=reply_id, direction="in", phone=phone, state="new").update(
                     state="done", handled_at=timezone.now(), handled_by=user)
             who = "you" if (owner or user) == user else (owner.get_full_name() or owner.get_username())
-            messages.success(request, f"Text sent to {participant.first_name}. Replies will go to {who}.")
+            messages.success(request, f"Text sent to {recipient.first_name}. Replies will go to {who}.")
             return editor_success(request, back)
     elif request.method == "POST" and problem:
         form.is_valid()
@@ -121,7 +134,7 @@ def inbox(request):
     tab = request.GET.get("tab") or "mine"
     tab = tab if tab in dict(TABS) else "mine"
     show_done = request.GET.get("done") == "1"
-    rows = TextMessage.objects.select_related("participant", "replies_to", "sent_by", "handled_by")
+    rows = TextMessage.objects.select_related("participant", "contact__organization", "replies_to", "sent_by", "handled_by")
     base_in = rows.filter(direction=TextMessage.Direction.IN)
     counts = {"mine": base_in.filter(replies_to=user, state="new").count(),
               "unassigned": base_in.filter(replies_to__isnull=True, state="new").count(),

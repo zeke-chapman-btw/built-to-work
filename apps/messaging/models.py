@@ -49,6 +49,7 @@ class SentEmail(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="sent_emails")
     from_address = models.EmailField()
     participant = models.ForeignKey("participants.Participant", null=True, blank=True, on_delete=models.PROTECT, related_name="app_emails")
+    contact = models.ForeignKey("customers.CustomerContact", null=True, blank=True, on_delete=models.PROTECT, related_name="app_emails")
     to_address = models.EmailField()
     subject = models.CharField(max_length=200)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.SENDING)
@@ -179,6 +180,7 @@ class TextMessage(models.Model):
     direction = models.CharField(max_length=3, choices=Direction.choices)
     phone = models.CharField(max_length=16, db_index=True)  # last 10 digits
     participant = models.ForeignKey("participants.Participant", null=True, blank=True, on_delete=models.SET_NULL, related_name="text_messages")
+    contact = models.ForeignKey("customers.CustomerContact", null=True, blank=True, on_delete=models.SET_NULL, related_name="text_messages")
     body = models.TextField(max_length=1600)
     sent_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     replies_to = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+",

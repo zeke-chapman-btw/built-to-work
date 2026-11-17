@@ -123,34 +123,40 @@ class ParticipantEmailForm(forms.Form):
 @require_http_methods(["GET", "POST"])
 def email_participant(request, participant_id):
     _staff(request)
-    from apps.crm import access as crm_access
-    participant = get_object_or_404(Participant, pk=participant_id, archived_at__isnull=True)
-    try:
-        crm_access.internal_context(request.user, participant=participant, write=True)
-    except PermissionDenied:
-        raise
-    profile = reverse("participants:staff-profile", args=[participant.pk])
-    back = profile + "?section=activity"
+    from . import recipients
+    return _email(request, recipients.participant(participant_id, request.user))
+
+
+@login_required(login_url="/admin/login/")
+@require_http_methods(["GET", "POST"])
+def email_contact(request, contact_id):
+    _staff(request)
+    from . import recipients
+    return _email(request, recipients.contact(contact_id, request.user))
+
+
+def _email(request, recipient):
+    back = recipient.profile_url + ("?section=activity" if recipient.kind == "participant" else "")
     connection = GmailConnection.objects.filter(user=request.user).first()
     from . import templates_views
     chosen = templates_views.picked(request, "email")
     initial = {"operation_id": uuid.uuid4()}
     if chosen:
-        initial.update(subject=templates_views.fill(chosen.subject, participant, request.user),
-                       body=templates_views.fill(chosen.body, participant, request.user))
+        initial.update(subject=templates_views.fill(chosen.subject, recipient, request.user),
+                       body=templates_views.fill(chosen.body, recipient, request.user))
     form = ParticipantEmailForm(request.POST or None, initial=initial)
-    ready = google.configured() and connection is not None and connection.active and bool(participant.contact_email)
-    context = {"form": form, "participant": participant, "connection": connection, "ready": ready,
-               "gmail_configured": google.configured(), "back": back, "page_title": "Email " + participant.first_name,
-               "editor_context": f"To {participant.contact_email}" if participant.contact_email else "No email address on file",
+    ready = google.configured() and connection is not None and connection.active and bool(recipient.contact_email)
+    context = {"form": form, "recipient": recipient, "connection": connection, "ready": ready,
+               "gmail_configured": google.configured(), "back": back, "page_title": "Email " + recipient.first_name,
+               "editor_context": f"To {recipient.contact_email}" if recipient.contact_email else "No email address on file",
                "save_label": "Send email", "fields_template": "messaging/email_fields.html",
                "has_signature": bool(signatures.personal(request.user)),
                "message_templates": templates_views.choices_for(request, "email", request.get_full_path()),
                "can_manage_templates": manager(request.user),
-               "profile_url": profile}
+               "profile_url": recipient.profile_url}
     if request.method == "POST" and ready and form.is_valid():
         try:
-            outcome = _send_participant_email(request, connection, participant, form.cleaned_data)
+            outcome = _send_participant_email(request, connection, recipient, form.cleaned_data)
         except ValidationError as exc:
             form.add_error(None, exc.messages[0] if exc.messages else "The email was not sent.")
         else:
@@ -158,16 +164,17 @@ def email_participant(request, participant_id):
             return editor_success(request, back)
     elif request.method == "POST" and not ready:
         form.is_valid()
-        form.add_error(None, "Connect your Gmail before sending." if participant.contact_email else "This person has no email address on file.")
+        form.add_error(None, "Connect your Gmail before sending." if recipient.contact_email else "This person has no email address on file.")
     return editor_response(request, template="messaging/email_page.html", context=context, panel="messaging/email_panel.html")
 
 
-def _send_participant_email(request, connection, participant, data):
+def _send_participant_email(request, connection, recipient, data):
     sender_name = request.user.get_full_name() or request.user.get_username()
     try:
         with transaction.atomic():
             row = SentEmail.objects.create(operation_id=data["operation_id"], sender=request.user,
-                from_address=connection.google_email, participant=participant, to_address=participant.contact_email,
+                from_address=connection.google_email, participant=recipient.participant, contact=recipient.contact,
+                to_address=recipient.contact_email,
                 subject=data["subject"])
     except IntegrityError:
         existing = SentEmail.objects.filter(operation_id=data["operation_id"], sender=request.user).first()
@@ -175,7 +182,7 @@ def _send_participant_email(request, connection, participant, data):
             return "That email was already sent."
         raise ValidationError("This email is already being sent. Check the person's activity before trying again.")
     from .signatures import build, personal
-    message = build(data["subject"], data["body"], f"{sender_name} <{connection.google_email}>", [participant.contact_email],
+    message = build(data["subject"], data["body"], f"{sender_name} <{connection.google_email}>", [recipient.contact_email],
                     signature_html=personal(request.user))
     try:
         sent_info = {}
@@ -196,7 +203,7 @@ def _send_participant_email(request, connection, participant, data):
     row.save(update_fields=["status", "provider_reference", "sent_at", "thread_id"])
     from apps.crm.services import record_app_message
     try:
-        interaction = record_app_message(actor=request.user, participant_id=participant.pk, activity_type="email",
+        interaction = record_app_message(actor=request.user, **recipient.links, activity_type="email",
             summary=data["subject"], notes=data["body"], provider="gmail", reference=f"gmail:{reference}",
             operation_id=row.operation_id)
         row.interaction = interaction

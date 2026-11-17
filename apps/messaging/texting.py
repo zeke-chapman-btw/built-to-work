@@ -56,9 +56,11 @@ def ready():
     return sms_providers.provider_name() == "eztexting" and sms_providers.is_configured()
 
 
-def send_to_participant(*, actor, participant, body, replies_to, operation_id):
+def send_to_participant(*, actor, participant=None, body, replies_to, operation_id, recipient=None):
     """Send one text now and record who replies should go to."""
-    key = phone_key(participant.contact_phone)
+    contact = recipient.contact if recipient else None
+    participant = recipient.participant if recipient else participant
+    key = phone_key(recipient.contact_phone if recipient else participant.contact_phone)
     if not key:
         raise TextError("This person has no mobile number on file.")
     if opted_out(key):
@@ -68,7 +70,7 @@ def send_to_participant(*, actor, participant, body, replies_to, operation_id):
     try:
         with transaction.atomic():
             row = TextMessage.objects.create(direction=TextMessage.Direction.OUT, phone=key, participant=participant,
-                                             body=body, sent_by=actor, replies_to=replies_to or actor,
+                                             contact=contact, body=body, sent_by=actor, replies_to=replies_to or actor,
                                              state=TextMessage.State.SENT, operation_id=operation_id)
     except IntegrityError:
         return TextMessage.objects.get(operation_id=operation_id)  # A double click: already sent.
@@ -86,11 +88,13 @@ def send_to_participant(*, actor, participant, body, replies_to, operation_id):
 
 def _log(row, actor, *, direction, summary):
     """Add the text to the person's touchpoints. History trouble never undoes a send."""
-    if not (row.participant_id and actor):
+    if not ((row.participant_id or row.contact_id) and actor):
         return
     from apps.crm.services import record_app_message
+    links = ({"participant_id": row.participant_id} if row.participant_id else
+             {"organization_id": row.contact.organization_id, "contact_id": row.contact_id})
     try:
-        interaction = record_app_message(actor=actor, participant_id=row.participant_id, activity_type="sms",
+        interaction = record_app_message(actor=actor, **links, activity_type="sms",
             summary=summary or "Text message", notes=row.body, provider="eztexting",
             reference=row.provider_reference or f"text-{row.pk}", operation_id=_operation(row), direction=direction)
     except Exception:
@@ -122,6 +126,18 @@ def _participant_for(phone):
     return matches[0] if len(matches) == 1 else None
 
 
+def _contact_for(phone):
+    """A customer contact we texted from this number recently, or the only contact with it."""
+    recent = (TextMessage.objects.filter(phone=phone, direction=TextMessage.Direction.OUT, contact__isnull=False)
+              .select_related("contact").order_by("-created_at").first())
+    if recent:
+        return recent.contact
+    from apps.customers.models import CustomerContact
+    matches = [c for c in CustomerContact.objects.filter(is_active=True, phone__isnull=False).exclude(phone="")[:2000]
+               if phone_key(c.phone) == phone]
+    return matches[0] if len(matches) == 1 else None
+
+
 def receive(payload):
     """Handle one incoming text from EZ Texting. Returns the TextMessage (or None)."""
     data = payload.get("data") if isinstance(payload.get("data"), dict) else payload
@@ -135,7 +151,9 @@ def receive(payload):
     elif word in START_WORDS and TextOptOut.objects.filter(phone=phone).exists():
         TextOptOut.objects.filter(phone=phone).delete()
     owner = route(phone)
-    row = TextMessage.objects.create(direction=TextMessage.Direction.IN, phone=phone, participant=_participant_for(phone),
+    person = _participant_for(phone)
+    row = TextMessage.objects.create(direction=TextMessage.Direction.IN, phone=phone, participant=person,
+                                     contact=None if person else _contact_for(phone),
                                      body=body or "(empty message)", replies_to=owner, state=TextMessage.State.NEW,
                                      provider_reference=str(data.get("id") or "")[:160])
     _log(row, owner, direction="inbound", summary=("Text reply: " + body)[:120])
@@ -150,7 +168,8 @@ def _nudge(row):
         return
     from django.core.mail import send_mail
     from django.urls import reverse
-    who = f"{row.participant.first_name} {row.participant.last_name}" if row.participant else f"(…{row.phone[-4:]})"
+    who = (f"{row.participant.first_name} {row.participant.last_name}" if row.participant else
+           f"{row.contact} ({row.contact.organization})" if row.contact else f"(…{row.phone[-4:]})")
     base = getattr(settings, "PARTICIPANT_PORTAL_BASE_URL", "") or ""
     link = (base.rstrip("/") + reverse("messaging:texts")) if base else ""
     config = store.email_settings()

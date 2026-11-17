@@ -192,3 +192,32 @@ class AutomaticTextStopTests(TextingTests):
             with self.assertRaisesMessage(ValueError, "replied STOP"):
                 _provider_send("sms", "(706) 555-0142", subject="x", body="Your ticket", idempotency_key="k-stop")
         sent.assert_not_called()
+
+
+class ContactMessageTests(TextingTests):
+    def setUp(self):
+        super().setUp()
+        from apps.customers.models import CustomerContact, CustomerOrganization
+        self.org = CustomerOrganization.objects.create(name="SYNTHETIC Builders")
+        self.contact = CustomerContact.objects.create(organization=self.org, first_name="SYNTHETIC", last_name="Boss",
+                                                      phone="(706) 555-0177", email="boss@example.test")
+
+    def test_text_a_customer_contact_and_reply_comes_back_to_them(self):
+        with patch("apps.events.sms_providers.send_sms", return_value="eztexting:55"):
+            response = self.client.post(reverse("messaging:text-contact", args=[self.contact.pk]), {
+                "operation_id": str(uuid.uuid4()), "body": "Can you take two welders?", "replies_to": str(self.admin.pk)})
+        self.assertEqual(response.status_code, 302)
+        row = TextMessage.objects.get()
+        self.assertEqual((row.contact, row.participant), (self.contact, None))
+        self.assertEqual(row.interaction.contact, self.contact)
+        texting.receive({"fromNumber": "17065550177", "message": "Yes, Monday works"})
+        reply = TextMessage.objects.get(direction="in")
+        self.assertEqual((reply.contact, reply.replies_to), (self.contact, self.admin))
+        page = self.client.get(reverse("messaging:texts"))
+        self.assertContains(page, "SYNTHETIC Builders")
+        self.assertContains(page, reverse("messaging:text-contact", args=[self.contact.pk]))
+
+    def test_customer_page_has_email_and_text_buttons(self):
+        page = self.client.get(reverse("customers:workspace", args=[self.org.pk, "overview"]))
+        self.assertContains(page, reverse("messaging:email-contact", args=[self.contact.pk]))
+        self.assertContains(page, reverse("messaging:text-contact", args=[self.contact.pk]))
