@@ -45,9 +45,12 @@ def parse(raw):
     existing = list(StaffProfile.objects.all())
     by_email = {p.email.lower(): p for p in existing if p.email}
     by_phone = {_digits(p.phone): p for p in existing if _digits(p.phone)}
-    rows, seen = [], set()
-    for raw_row in reader:
-        r = {(k or "").strip().lower(): (v or "").strip() for k, v in raw_row.items()}
+    raw_rows = [{(k or "").strip().lower(): (v or "").strip() for k, v in row.items()} for row in reader]
+    # Active people first, newest first, so a current record wins over an older copy of the same person.
+    raw_rows.sort(key=lambda r: r.get("updated_date", ""), reverse=True)
+    raw_rows.sort(key=lambda r: r.get("active", "true").lower() == "false")
+    rows, seen_emails, seen_phones = [], set(), set()
+    for r in raw_rows:
         name = r.get("name", "")
         parts = name.split()
         first, last = (parts[0], " ".join(parts[1:])) if parts else ("", "")
@@ -57,18 +60,23 @@ def parse(raw):
                "state": r.get("mailing_state", "")[:100], "zip_code": r.get("mailing_zip", "")[:24],
                "shirt_size": _size(r.get("shirt_size")), "is_active": r.get("active", "true").lower() != "false",
                "base44_role": r.get("role", ""), "action": "add", "why": ""}
-        key = email or _digits(row["phone"]) or name.lower()
-        match = by_email.get(email) if email else None
-        match = match or by_phone.get(_digits(row["phone"])) if _digits(row["phone"]) else match
+        phone = _digits(row["phone"])
+        match = (by_email.get(email) if email else None) or (by_phone.get(phone) if phone else None)
         if r.get("is_sample", "").lower() == "true":
             row["action"], row["why"] = "skip", "Marked as sample in base44"
         elif not first:
             row["action"], row["why"] = "skip", "No name"
-        elif key in seen:
-            row["action"], row["why"] = "skip", "Listed twice in the file"
+        elif first.lower() == "test":
+            row["action"], row["why"] = "skip", "Test record"
+        elif (email and email in seen_emails) or (phone and phone in seen_phones):
+            row["action"], row["why"] = "skip", "Same person listed again (older or inactive copy)"
         elif match:
             row["action"], row["why"] = "skip", f"Already here as {match.first_name} {match.last_name}"
-        seen.add(key)
+        if row["action"] == "add":
+            if email:
+                seen_emails.add(email)
+            if phone:
+                seen_phones.add(phone)
         rows.append(row)
     return rows
 
