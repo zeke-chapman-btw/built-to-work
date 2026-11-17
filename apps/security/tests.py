@@ -29,9 +29,10 @@ class TwoStepTests(TestCase):
 
     def enroll(self):
         self.client.force_login(self.user, backend=BACKEND)
-        self.client.get(reverse("security:setup"))
+        self.assertContains(self.client.get(reverse("security:setup")), "Text me a code")
+        self.client.get(reverse("security:setup") + "?method=app")
         secret = services.secret_of(TwoStepDevice.objects.get(user=self.user))
-        response = self.client.post(reverse("security:setup"), {"code": totp.code_at(secret, totp.current_step())})
+        response = self.client.post(reverse("security:setup"), {"method": "app", "code": totp.code_at(secret, totp.current_step())})
         self.assertContains(response, "recovery codes")
         return secret, [line.strip() for line in response.content.decode().split("<pre")[1].split(">", 1)[1].split("</pre>")[0].split()]
 
@@ -99,6 +100,53 @@ class ErrorAlertTests(TestCase):
         self.assertIn("SYNTHETIC boom", mail.outbox[0].subject)
 
 
+class SentCodeTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(username="sc-admin", password="x-test-only", email="sc@example.test")
+
+    def code_from_mail(self, index=-1):
+        import re
+        return re.search(r"code is (\d{6})", mail.outbox[index].body).group(1)
+
+    def test_email_code_setup_and_sign_in(self):
+        self.client.force_login(self.user, backend=BACKEND)
+        page = self.client.get(reverse("security:setup") + "?method=email")
+        self.assertContains(page, "sc…@example.test")
+        self.assertEqual(mail.outbox[-1].to, ["sc@example.test"])
+        done = self.client.post(reverse("security:setup"), {"method": "email", "code": self.code_from_mail()})
+        self.assertContains(done, "recovery codes")
+        self.assertEqual(TwoStepDevice.objects.get(user=self.user).method, "email")
+        self.client.logout()
+        self.client.force_login(self.user, backend=BACKEND)
+        before = len(mail.outbox)
+        self.client.get(reverse("security:verify") + "?next=/settings/")
+        self.client.get(reverse("security:verify") + "?next=/settings/")  # a refresh doesn't send another
+        self.assertEqual(len(mail.outbox), before + 1)
+        code = self.code_from_mail()
+        self.assertContains(self.client.post(reverse("security:verify"), {"code": "000000", "next": "/settings/"}), "That code")
+        ok = self.client.post(reverse("security:verify"), {"code": code, "next": "/settings/"})
+        self.assertRedirects(ok, "/settings/", fetch_redirect_response=False)
+        self.client.logout()
+        self.client.force_login(self.user, backend=BACKEND)
+        self.client.get(reverse("security:verify"))
+        self.assertContains(self.client.post(reverse("security:verify"), {"code": code}), "That code")
+
+    def test_text_code_uses_staff_phone(self):
+        from apps.messaging import store
+        from apps.staffing.models import StaffProfile
+        StaffProfile.objects.create(first_name="SC", last_name="Admin", phone="(706) 555-0123", user=self.user)
+        store.save(key="eztexting", values={"username": "btw"}, actor=self.user, new_secret="pw-test-only")
+        self.client.force_login(self.user, backend=BACKEND)
+        with patch("apps.events.sms_providers.send_sms", return_value="ez:1") as sent:
+            page = self.client.get(reverse("security:setup") + "?method=text")
+        self.assertContains(page, "ending in 0123")
+        number, body = sent.call_args.args
+        self.assertEqual(number, "7065550123")
+        import re
+        code = re.search(r"code is (\d{6})", body).group(1)
+        self.assertContains(self.client.post(reverse("security:setup"), {"method": "text", "code": code}), "recovery codes")
+
+
 class HelpTests(TestCase):
     def test_help_page_and_menu_link(self):
         user = get_user_model().objects.create_superuser(username="hp-admin", password="x-test-only")
@@ -126,3 +174,36 @@ class HelpTests(TestCase):
             self.assertIn(made, ReminderRole.objects.get(key="recruiting_lead").holders.all())
         else:
             self.fail(str(response.context["form"].errors))
+
+
+from apps.customers.test_portal import PortalFixtures
+
+
+class CustomerTwoStepTests(PortalFixtures, TestCase):
+    def test_customer_can_turn_it_on_and_is_asked_next_time(self):
+        org, member, user = self.lead()
+        self.customer_login(user)
+        account = self.client.get(reverse("customer_portal:workspace", args=["account"]))
+        self.assertContains(account, reverse("security:setup"))
+        self.client.get(reverse("security:setup") + "?method=email")
+        import re
+        code = re.search(r"code is (\d{6})", mail.outbox[-1].body).group(1)
+        self.assertContains(self.client.post(reverse("security:setup"), {"method": "email", "code": code}), "recovery codes")
+        self.client.logout()
+        self.customer_login(user)
+        gate = self.client.get(reverse("customer_portal:home"))
+        self.assertEqual(gate.status_code, 302)
+        self.assertIn(reverse("security:verify"), gate["Location"])
+        code = re.search(r"code is (\d{6})", self.client.get(gate["Location"]) and mail.outbox[-1].body).group(1)
+        ok = self.client.post(reverse("security:verify"), {"code": code, "next": reverse("customer_portal:home")})
+        self.assertRedirects(ok, reverse("customer_portal:home"), fetch_redirect_response=False)
+        self.assertEqual(self.client.get(reverse("customer_portal:home")).status_code, 200)
+
+    def test_required_for_customers(self):
+        row = SecuritySettings.current()
+        row.require_two_step_customers = True
+        row.save()
+        org, member, user = self.lead()
+        self.customer_login(user)
+        gate = self.client.get(reverse("customer_portal:home"))
+        self.assertIn(reverse("security:setup"), gate["Location"])

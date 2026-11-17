@@ -5,7 +5,8 @@ from django.shortcuts import redirect
 from django.urls import reverse
 
 OPEN = ("/accounts/two-step/", "/accounts/logout/", "/static/", "/media/", "/health/", "/favicon", "/pay/", "/onboard/",
-        "/billing/stripe/webhook/", "/messaging/eztexting/", "/messaging/gmail/callback/", "/privacy/", "/terms/")
+        "/billing/stripe/webhook/", "/messaging/eztexting/", "/messaging/gmail/callback/", "/privacy/", "/terms/",
+        "/customer/auth/")
 
 
 class TwoStepMiddleware:
@@ -13,9 +14,9 @@ class TwoStepMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        from . import services
         user = getattr(request, "user", None)
-        if user is not None and user.is_authenticated and user.is_staff and not request.path.startswith(OPEN):
-            from . import services
+        if services.covered(request) and not request.path.startswith(OPEN) and not getattr(request, "customer_preview", False):
             state = request.session.get(services.SESSION_KEY, "")
             if state != f"ok:{user.pk}":
                 if not state.endswith(f":{user.pk}"):

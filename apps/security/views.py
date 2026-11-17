@@ -19,12 +19,14 @@ PLACEHOLDER = ("DRAFT — REPLACE BEFORE GOING LIVE.\n\nThis page is a placehold
 
 
 def _staff(request):
-    if not (request.user.is_authenticated and request.user.is_staff):
+    if not services.covered(request):
         raise PermissionDenied
 
 
-def _safe(value):
-    return value if value and value.startswith("/") and not value.startswith("//") else reverse("internal:home")
+def _safe(value, user=None):
+    if value and value.startswith("/") and not value.startswith("//"):
+        return value
+    return reverse("customer_portal:home") if user is not None and services.is_customer(user) else reverse("internal:home")
 
 
 class CodeForm(forms.Form):
@@ -32,17 +34,32 @@ class CodeForm(forms.Form):
         "autocomplete": "one-time-code", "inputmode": "numeric", "autofocus": True}))
 
 
+def _recently_sent(user, seconds=60):
+    from datetime import timedelta
+    from django.utils import timezone
+    from .models import SentCode
+    return SentCode.objects.filter(user=user, used_at__isnull=True,
+                                   created_at__gte=timezone.now() - timedelta(seconds=seconds)).exists()
+
+
 @never_cache
 @login_required(login_url="/accounts/login/")
 @require_http_methods(["GET", "POST"])
 def verify(request):
     _staff(request)
-    target = _safe(request.GET.get("next") or request.POST.get("next"))
-    if not services.device(request.user):
+    target = _safe(request.GET.get("next") or request.POST.get("next"), request.user)
+    row = services.device(request.user)
+    if not row:
         services.mark(request, "ok")
         return redirect(target)
-    form = CodeForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
+    resend = bool(request.POST.get("resend"))
+    form = CodeForm(request.POST if request.method == "POST" and not resend else None)
+    problem = ""
+    if row.method != "app" and (resend or (request.method == "GET" and not _recently_sent(request.user))):
+        problem = services.send_code(request.user, row.method)
+        if not problem and resend:
+            messages.success(request, "A new code is on its way.")
+    if request.method == "POST" and not resend and form.is_valid():
         from django.db import transaction
         from apps.accounts.staff_services import rate_limit
         with transaction.atomic():
@@ -54,8 +71,10 @@ def verify(request):
             services.mark(request, "ok")
             return redirect(target)
         else:
-            form.add_error("code", "That code didn't work. Use the newest code in your app, or a recovery code.")
-    return render(request, "security/verify.html", {"form": form, "next": target, "page_title": "Two-step sign-in"})
+            form.add_error("code", "That code didn't work. Use the newest code, or one of your recovery codes.")
+    return render(request, "security/verify.html", {"form": form, "next": target, "page_title": "Two-step sign-in",
+                                                    "method": row.method, "where": services.masked(row.method, request.user),
+                                                    "problem": problem})
 
 
 @never_cache
@@ -65,21 +84,40 @@ def setup(request):
     _staff(request)
     if services.device(request.user):
         messages.info(request, "Two-step sign-in is already on.")
-        return redirect(reverse("internal:settings"))
-    row = TwoStepDevice.objects.filter(user=request.user, confirmed_at__isnull=True).first()
-    secret = services.secret_of(row) if row and request.method == "POST" else services.start(request.user)
-    form = CodeForm(request.POST or None)
-    codes = None
-    if request.method == "POST" and form.is_valid():
-        codes = services.confirm(request.user, form.cleaned_data["code"])
+        return redirect(services.home_url(request.user))
+    user = request.user
+    required = request.GET.get("required") == "1" or request.POST.get("required") == "1"
+    method = request.GET.get("method") or request.POST.get("method") or ""
+    if method not in ("app", "text", "email") or not services.can_use(method, user):
+        options = [{"key": key, "label": label, "where": services.masked(key, user), "ok": services.can_use(key, user)}
+                   for key, label in (("text", "Text me a code"), ("email", "Email me a code"),
+                                      ("app", "Use an authenticator app"))]
+        return render(request, "security/setup_choose.html", {"page_title": "Two-step sign-in", "options": options,
+                                                              "required": required, "home_url": services.home_url(user)})
+    row = TwoStepDevice.objects.filter(user=user, confirmed_at__isnull=True, method=method).first()
+    resend = bool(request.POST.get("resend"))
+    form = CodeForm(request.POST if request.method == "POST" and not resend else None)
+    codes, problem, secret = None, "", ""
+    if method == "app":
+        secret = services.secret_of(row) if row and request.method == "POST" else services.start(user, "app")
+    elif request.method == "GET" or resend:
+        if not row:
+            services.start(user, method)
+        problem = services.send_code(user, method)
+    if request.method == "POST" and not resend and form.is_valid():
+        codes = services.confirm(user, form.cleaned_data["code"])
         if codes:
             services.mark(request, "ok")
         else:
-            form.add_error("code", "That code didn't match. Check the time on your phone and try the newest code.")
-    account = request.user.email or request.user.get_username()
-    return render(request, "security/setup.html", {
-        "page_title": "Two-step sign-in", "form": form, "secret": " ".join(secret[i:i + 4] for i in range(0, len(secret), 4)),
-        "qr": totp.qr_data_uri(totp.uri(secret, account)), "codes": codes, "required": request.GET.get("required") == "1"})
+            form.add_error("code", "That code didn't match. Try the newest code" +
+                           (" in your app." if method == "app" else ", or send a new one."))
+    context = {"page_title": "Two-step sign-in", "form": form, "codes": codes, "required": required, "method": method,
+               "where": services.masked(method, user), "problem": problem, "home_url": services.home_url(user)}
+    if method == "app" and not codes:
+        account = user.email or user.get_username()
+        context.update(secret=" ".join(secret[i:i + 4] for i in range(0, len(secret), 4)),
+                       qr=totp.qr_data_uri(totp.uri(secret, account)))
+    return render(request, "security/setup.html", context)
 
 
 @login_required(login_url="/accounts/login/")
@@ -92,7 +130,7 @@ def turn_off(request):
         services.turn_off(request.user)
         services.mark(request, "ok")
         messages.success(request, "Two-step sign-in is off.")
-    return redirect(reverse("internal:settings"))
+    return redirect(services.home_url(request.user))
 
 
 @login_required(login_url="/accounts/login/")
@@ -102,7 +140,8 @@ def new_codes(request):
     if not services.device(request.user):
         raise Http404
     codes = services.new_recovery_codes(request.user)
-    return render(request, "security/codes.html", {"page_title": "Recovery codes", "codes": codes})
+    return render(request, "security/codes.html", {"page_title": "Recovery codes", "codes": codes,
+                                                   "home_url": services.home_url(request.user)})
 
 
 # ---------------------------------------------------------------- Settings → Security
@@ -119,7 +158,7 @@ def settings_page(request):
     row = SecuritySettings.current()
     if request.method == "POST":
         field = request.POST.get("field")
-        if field in ("require_two_step_managers", "error_alerts"):
+        if field in ("require_two_step_managers", "require_two_step_staff", "require_two_step_customers", "error_alerts"):
             setattr(row, field, request.POST.get("value") == "1")
             row.updated_by = request.user
             row.save()

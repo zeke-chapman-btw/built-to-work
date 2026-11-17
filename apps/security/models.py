@@ -5,6 +5,8 @@ from django.db import models
 
 class SecuritySettings(models.Model):
     require_two_step_managers = models.BooleanField(default=False)
+    require_two_step_staff = models.BooleanField(default=False)
+    require_two_step_customers = models.BooleanField(default=False)
     error_alerts = models.BooleanField(default=True)
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     updated_at = models.DateTimeField(auto_now=True)
@@ -22,8 +24,14 @@ class SecuritySettings(models.Model):
 
 
 class TwoStepDevice(models.Model):
+    class Method(models.TextChoices):
+        APP = "app", "Authenticator app"
+        TEXT = "text", "Text message"
+        EMAIL = "email", "Email"
+
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="two_step")
-    secret_encrypted = models.TextField()
+    method = models.CharField(max_length=8, choices=Method.choices, default=Method.APP)
+    secret_encrypted = models.TextField(blank=True)
     confirmed_at = models.DateTimeField(null=True, blank=True)
     last_step = models.BigIntegerField(default=0, help_text="Stops the same code being used twice.")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -64,4 +72,19 @@ class ErrorAlert(models.Model):
 
     class Meta:
         ordering = ("-last_at",)
+        default_permissions = ()
+
+
+class SentCode(models.Model):
+    """A one-time code sent by text or email (only its hash is kept)."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_codes")
+    code_hash = models.CharField(max_length=128)
+    channel = models.CharField(max_length=8)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
         default_permissions = ()
