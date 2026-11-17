@@ -125,20 +125,22 @@ def _text(request, recipient):
     return editor_response(request, template="messaging/text_page.html", context=context, panel="messaging/text_panel.html")
 
 
-TABS = (("mine", "Mine"), ("unassigned", "Unassigned"), ("all", "All replies"), ("sent", "Sent"))
+TABS = (("mine", "Mine"), ("unassigned", "Unassigned"), ("all", "All replies"), ("sent", "Sent"), ("reminders", "Reminders"))
 
 
 @login_required(login_url="/admin/login/")
 def inbox(request):
-    user = _inbox_user(request)
     tab = request.GET.get("tab") or "mine"
     tab = tab if tab in dict(TABS) else "mine"
+    if tab == "reminders":
+        return _reminders_tab(request)
+    user = _inbox_user(request)
     show_done = request.GET.get("done") == "1"
     rows = TextMessage.objects.select_related("participant", "contact__organization", "replies_to", "sent_by", "handled_by")
     base_in = rows.filter(direction=TextMessage.Direction.IN)
     counts = {"mine": base_in.filter(replies_to=user, state="new").count(),
               "unassigned": base_in.filter(replies_to__isnull=True, state="new").count(),
-              "all": base_in.filter(state="new").count(), "sent": None}
+              "all": base_in.filter(state="new").count(), "sent": None, "reminders": _unread(user)}
     if tab == "sent":
         rows = rows.filter(direction=TextMessage.Direction.OUT)
     else:
@@ -155,6 +157,39 @@ def inbox(request):
         "page": page, "show_done": show_done, "staff": staff_choices(include_blank=True), "me": user,
         "ready": texting.ready(), "forwarding": texting.reply_settings()[1].get("forwarding"),
     })
+
+
+def _unread(user):
+    from apps.reminders.models import ReminderNotice
+    return ReminderNotice.objects.filter(user=user, read_at__isnull=True).count()
+
+
+def _reminders_tab(request):
+    """In-app reminders for this person (the Bell channel until the new bell lands)."""
+    from apps.reminders.models import ReminderNotice
+    user = crm_access.fresh_staff(request.user)
+    if not (user.is_active and user.is_staff):
+        raise PermissionDenied
+    from apps.participants.workspace_access import can_notes
+    try:
+        replies_ok = bool(can_notes(user))
+    except Exception:
+        replies_ok = False
+    show_done = request.GET.get("done") == "1"
+    rows = ReminderNotice.objects.filter(user=user)
+    if not show_done:
+        rows = rows.filter(read_at__isnull=True)
+    page = Paginator(rows.select_related("rule"), 40).get_page(request.GET.get("page"))
+    tabs = []
+    if replies_ok:
+        base_in = TextMessage.objects.filter(direction=TextMessage.Direction.IN, state="new")
+        counts = {"mine": base_in.filter(replies_to=user).count(), "unassigned": base_in.filter(replies_to__isnull=True).count(),
+                  "all": base_in.count(), "sent": None}
+        tabs = [(k, label, counts[k]) for k, label in TABS if k != "reminders"]
+    tabs.append(("reminders", "Reminders", _unread(user)))
+    return render(request, "messaging/texts.html", {
+        "page_title": "Inbox", "tab": "reminders", "tabs": tabs, "page": page, "show_done": show_done,
+        "notices": True, "ready": texting.ready() if replies_ok else False, "forwarding": True, "can_text": replies_ok})
 
 
 def _back(request):

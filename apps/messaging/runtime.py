@@ -56,6 +56,20 @@ def run_bounces(every_seconds=600):
     return check_inbox()
 
 
+_last_reminders = [None]
+
+
+def run_reminders(every_seconds=300):
+    """Every 5 minutes, send reminders that are due (Settings → Reminders)."""
+    import time
+    from apps.reminders.engine import run_pass as reminders_pass
+    now = time.monotonic()
+    if _last_reminders[0] is not None and now - _last_reminders[0] < every_seconds:
+        return None
+    _last_reminders[0] = now
+    return reminders_pass()
+
+
 def run_mailchimp():
     from .mailchimp import sync_pending
     return sync_pending()
@@ -77,6 +91,10 @@ def _work():
             run_bounces()
         except Exception:
             log.exception("BOUNCE_CHECK_ERROR")
+        try:
+            run_reminders()
+        except Exception:
+            log.exception("REMINDERS_PASS_FAILED")
         try:
             outcome = run_pass()
             if outcome["sent"] or outcome["checked"]:

@@ -244,18 +244,27 @@ def _destination_allowed(user, item):
 
 
 def _inbox_entry(user):
-    """Inbox (text replies) for staff who can see participant messages, with a count of new ones for them."""
+    """Inbox (text replies and in-app reminders), with a count of new ones for this person."""
     if not getattr(user, "is_authenticated", False):
         return None
     try:
         from apps.participants.workspace_access import can_notes
-        if not can_notes(user):
+        from apps.reminders.models import ReminderNotice
+        try:
+            replies_ok = bool(can_notes(user))
+        except Exception:
+            replies_ok = False
+        notices = ReminderNotice.objects.filter(user=user)
+        if not replies_ok and not notices.exists():
             return None
-        from apps.messaging.text_views import new_reply_count
-        count = new_reply_count(user)
+        count = notices.filter(read_at__isnull=True).count()
+        if replies_ok:
+            from apps.messaging.text_views import new_reply_count
+            count += new_reply_count(user)
     except Exception:
         return None
-    return dict(id="inbox", label="Inbox", icon="message", url=reverse("messaging:texts"), active=False, count=count)
+    url = reverse("messaging:texts") + ("" if replies_ok else "?tab=reminders")
+    return dict(id="inbox", label="Inbox", icon="message", url=url, active=False, count=count)
 
 
 def staff_destinations(user, current_path=""):
