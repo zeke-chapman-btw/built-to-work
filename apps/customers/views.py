@@ -433,6 +433,9 @@ def need_action(request, org_id, record_id, action):
             raise PermissionDenied("Only Admins and Managers can approve positions.")
         revision = obj.working_revision
         initial.update(people=(revision.worker_quantity if revision else None) or 1)
+        earlier = [c for c in obj.charges.exclude(status__in=["canceled", "failed", "no_charge"])]
+        if earlier:
+            initial.update(already_charged=", ".join(f"${c.amount:,.0f} ({c.breakdown})" for c in earlier), fee_kind="none")
     def save(d):
         common = dict(actor=request.user, org_id=org.pk, need_id=obj.pk, expected_org_revision=d["org_revision"], expected_need_revision=d["record_revision"], why=d["reason"])
         if action == "approve":

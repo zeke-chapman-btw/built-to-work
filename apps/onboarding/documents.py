@@ -42,8 +42,8 @@ class DocumentForm(forms.ModelForm):
 
     class Meta:
         model = CustomerDocument
-        fields = ("kind", "title", "expires_on", "notes")
-        labels = {"kind": "Type", "title": "Name", "expires_on": "Expires (optional)", "notes": "Notes"}
+        fields = ("kind", "title", "expires_on", "notes", "shared")
+        labels = {"kind": "Type", "title": "Name", "expires_on": "Expires (optional)", "notes": "Notes", "shared": "Customer can see this in their portal"}
         help_texts = {"title": "Leave blank to use the type, like “W-9”.", "expires_on": "For things like insurance certificates. The account manager is reminded before it expires."}
         widgets = {"expires_on": forms.DateInput(attrs={"type": "date"})}
 
