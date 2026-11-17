@@ -111,7 +111,15 @@ def can_use(method, user):
         from apps.messaging import texting
         return bool(texting.phone_key(phone_for(user))) and texting.ready()
     if method == "email":
-        return bool(email_for(user))
+        return bool(email_for(user)) and email_ready()
+    return True
+
+
+def email_ready():
+    """False on a copy of the app whose noreply@ sign-in hasn't been saved yet (mail would go nowhere)."""
+    from apps.messaging import store
+    if getattr(settings, "EMAIL_BACKEND", "") == "apps.messaging.backends.ConnectionsEmailBackend":
+        return bool(store.email_settings().get("source"))
     return True
 
 
@@ -135,6 +143,8 @@ def send_code(user, method):
             from apps.messaging import store
             if not email_for(user):
                 return "There's no email on your account. Use a recovery code or ask an administrator."
+            if not email_ready():
+                return "Email isn't set up on this app yet (Settings → Connections). Use a recovery code or ask an administrator."
             send_mail("Your Built to Work sign-in code", body, store.email_settings().get("from_address") or None,
                       [email_for(user)], fail_silently=False, connection=store.smtp_connection())
         else:

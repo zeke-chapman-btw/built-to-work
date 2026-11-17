@@ -275,3 +275,13 @@ class StaffImportTests(TestCase):
         self.assertEqual((beta.is_active, beta.shirt_size, beta.user), (False, "2XL", None))
         self.assertIn("driver", beta.internal_notes)
         self.assertFalse(StaffProfile.objects.filter(email="s@example.test").exists())
+
+
+class EmailNotReadyTests(TestCase):
+    @override_settings(EMAIL_BACKEND="apps.messaging.backends.ConnectionsEmailBackend")
+    def test_email_option_off_until_noreply_is_saved(self):
+        user = get_user_model().objects.create_superuser(username="nr-admin", password="x-test-only", email="nr@example.test")
+        self.client.force_login(user, backend=BACKEND)
+        page = self.client.get(reverse("security:setup"))
+        self.assertContains(page, "Email isn")
+        self.assertFalse(services.can_use("email", user))
