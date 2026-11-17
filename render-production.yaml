@@ -49,6 +49,8 @@ services:
         value: /var/data/consent_documents
       - key: PRIVATE_HISTORICAL_ROOT
         value: /var/data/historical_imports
+      - key: PRIVATE_ONBOARDING_ROOT
+        value: /var/data/customer_onboarding
       # Site email uses the sign-in saved in Settings → Connections; until one
       # exists, nothing leaves (messages are kept in memory like test mode).
       - key: EMAIL_BACKEND
