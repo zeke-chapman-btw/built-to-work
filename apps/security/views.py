@@ -171,7 +171,8 @@ def settings_page(request):
     pages = [{"slug": slug, "title": title, "row": LegalPage.objects.filter(slug=slug).first()} for slug, title in LEGAL.items()]
     return render(request, "security/settings.html", {
         "page_title": "Settings", "row": row, "errors": ErrorAlert.objects.all()[:15], "pages": pages,
-        "managers": [{"user": u, "on": u.pk in on} for u in staff]})
+        "managers": [{"user": u, "on": u.pk in on} for u in staff],
+        "render_service": __import__("os").environ.get("RENDER_SERVICE_NAME") or "btw-preview"})
 
 
 class LegalForm(forms.Form):

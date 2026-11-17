@@ -56,7 +56,7 @@ def eligible_accounts(actor):
 class StaffMemberForm(ProfileForm):
     existing_profile = forms.CharField(required=False, widget=forms.Select,
         label='Already on the staff list?', help_text='Pick them to give an existing person a sign-in. Their saved details stay as they are.')
-    login_mode = forms.ChoiceField(choices=[('none', 'No sign-in'), ('new', 'Create a sign-in'), ('existing', 'Use an existing sign-in')], initial='none', label='Sign-in',
+    login_mode = forms.ChoiceField(choices=[('none', 'No sign-in'), ('new', 'Create a sign-in'), ('existing', 'Use an existing sign-in')], initial='new', label='Sign-in',
         widget=forms.RadioSelect(attrs={'class': 'btw-chip-choices'}))
     existing_account = forms.CharField(required=False, widget=forms.Select(attrs={'data-show-when': 'login_mode=existing'}), label='Existing sign-in',
         help_text='Their username, roles and pay settings stay the same.')
@@ -68,7 +68,7 @@ class StaffMemberForm(ProfileForm):
     my_pay_access = forms.ChoiceField(choices=[('no', 'No'), ('yes', 'Yes')], initial='no', label='Can see their own pay',
         widget=forms.RadioSelect(attrs={'class': 'btw-chip-choices'}),
         help_text='Only their own pay stubs and totals under My stuff.')
-    send_invitation = forms.BooleanField(required=False, label='Email them a link to set their password',
+    send_invitation = forms.BooleanField(required=False, initial=True, label='Email them a link to set their password',
         widget=forms.CheckboxInput(attrs={'data-show-when': 'login_mode=new'}))
     reminder_roles = forms.MultipleChoiceField(required=False, label='Reminder roles they cover',
         widget=forms.CheckboxSelectMultiple(attrs={'data-show-when': 'login_mode=new'}),
