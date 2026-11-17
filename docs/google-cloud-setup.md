@@ -28,7 +28,7 @@ Two separate pieces. Both are free and take about 15 minutes each.
    - `GOOGLE_OAUTH_ALLOWED_DOMAIN` = `built2work.com`
 
 The app only asks for permission to **send** email. It can't read anyone's inbox.
-Each person can disconnect at any time (My stuff → Your email), and an admin can
+Each person can disconnect at any time (Settings → Account → Email), and an admin can
 remove the app's access for everyone at myaccount.google.com/permissions or in the
 Admin Console (Security → API controls → App access control).
 

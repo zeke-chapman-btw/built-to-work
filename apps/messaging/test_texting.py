@@ -156,7 +156,8 @@ class TextingTests(TestCase):
         self.assertContains(self.client.get(reverse("messaging:connections")), "Turn on replies")
         self.send()
         texting.receive({"fromNumber": "17065550142", "message": "Yo"})
-        self.assertContains(self.client.get(reverse("my:schedule")), "1 person has texted you back")
+        self.assertContains(self.client.get(reverse("internal:home")), 'aria-label="1 new"')
+        self.assertNotContains(self.client.get(reverse("my:schedule")), "texted you back")
 
 
 class NewTextTests(TextingTests):

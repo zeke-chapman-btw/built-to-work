@@ -1,6 +1,6 @@
 {% if not gmail_configured %}<p class="cp3-warn" style="margin:0 0 12px">Sending from your own Gmail isn't set up on this site yet. An administrator needs to finish the Google setup.</p>
-{% elif not connection %}<p class="cp3-warn" style="margin:0 0 12px">Connect your Gmail first, so this email comes from your own address. <a href="{% url 'my:schedule' %}#gmail">Connect in My stuff</a></p>
-{% elif not connection.active %}<p class="cp3-warn" style="margin:0 0 12px">Your Gmail connection needs to be set up again. <a href="{% url 'my:schedule' %}#gmail">Reconnect in My stuff</a></p>
+{% elif not connection %}<p class="cp3-warn" style="margin:0 0 12px">Connect your Gmail first, so this email comes from your own address. <a href="{% url 'internal:settings' %}#email">Connect in Settings → Account</a></p>
+{% elif not connection.active %}<p class="cp3-warn" style="margin:0 0 12px">Your Gmail connection needs to be set up again. <a href="{% url 'internal:settings' %}#email">Reconnect in Settings → Account</a></p>
 {% endif %}
 <dl class="cp3-dl" style="padding:0 0 12px"><dt>From</dt><dd>{% if connection.active %}{{ connection.google_email }}{% else %}<span class="cp3-dash">—</span>{% endif %}</dd><dt>To</dt><dd>{% if participant.contact_email %}{{ participant.first_name }} {{ participant.last_name }} · {{ participant.contact_email }}{% else %}<span class="cp3-dash">—</span>{% endif %}</dd></dl>
 {% include 'internal/ui/form_fields.html' %}

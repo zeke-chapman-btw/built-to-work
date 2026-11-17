@@ -71,4 +71,5 @@ def account_email_card(context):
     from apps.messaging.models import GmailConnection
     request = context["request"]
     return {"configured": google.configured(), "connection": GmailConnection.objects.filter(user=request.user).first(),
-            "signature": signatures.personal(request.user)}
+            "signature": signatures.personal(request.user), "replies_on": _replies_on(),
+            "next": reverse("internal:settings") + "#email", "csrf_token": context.get("csrf_token")}

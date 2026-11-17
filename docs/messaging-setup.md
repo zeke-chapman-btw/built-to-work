@@ -90,4 +90,4 @@ Nothing on Preview sends automatically yet, because no background sender runs.
   also list the `gmail.readonly` permission. Staff then reconnect Gmail once.
 - Every 10 minutes the app opens only the Gmail conversations it started (last 60 days)
   and copies new replies into the person's activity as "Email reply". Replies stay in Gmail.
-- Each staff member can turn it off for their own Gmail in My stuff → Your email.
+- Each staff member can turn it off for their own Gmail in Settings → Account → Email.
