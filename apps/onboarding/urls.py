@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import documents, views
 
 app_name = "onboarding"
 urlpatterns = [
@@ -11,6 +11,9 @@ urlpatterns = [
     path("customers/onboarding/<uuid:pk>/create/", views.create, name="create"),
     path("customers/onboarding/<uuid:pk>/w9/", views.w9, name="w9"),
     path("customers/onboarding/<uuid:pk>/<slug:step>/", views.staff_step, name="step"),
+    path("customers/<uuid:org_id>/documents/new/", documents.edit, name="document-new"),
+    path("customers/<uuid:org_id>/documents/<int:pk>/", documents.edit, name="document-edit"),
+    path("customers/<uuid:org_id>/documents/<int:pk>/file/", documents.download, name="document-file"),
     path("settings/customer-onboarding/", views.settings_page, name="settings"),
     path("settings/customer-onboarding/questions/new/", views.question_edit, name="question-new"),
     path("settings/customer-onboarding/questions/<int:pk>/", views.question_edit, name="question-edit"),

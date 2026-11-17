@@ -343,6 +343,22 @@ def onboarding_submitted(today, now):
                    related={"owner": _people(user_target(row.created_by))})
 
 
+def documents_expiring(today, now):
+    from apps.onboarding.models import CustomerDocument
+    rows = (CustomerDocument.objects.filter(removed_at__isnull=True, expires_on__isnull=False,
+                                            expires_on__gte=today - timedelta(days=1), expires_on__lte=today + timedelta(days=90))
+            .select_related("organization__billing__account_manager"))
+    for row in rows:
+        org = row.organization
+        profile = getattr(org, "billing", None)
+        ends = f"{row.expires_on:%B} {row.expires_on.day}, {row.expires_on.year}"
+        yield Item(ref=f"document:{row.pk}:{row.expires_on.isoformat()}", anchor=row.expires_on,
+                   line=f"{org.name}: {row.title} expires {ends}",
+                   link=reverse("customers:workspace", args=[org.pk, "documents"]),
+                   fields={"company": org.name, "document": row.title, "end_date": ends},
+                   related={"account_manager": _people(user_target(profile.account_manager if profile else None))})
+
+
 # --------------------------------------------------------------- Billing
 
 def agreement_ending(today, now):
@@ -430,6 +446,9 @@ SOURCES = {s.key: s for s in (
            "it's submitted", {}, {"company": "the customer", "position": "position title"}),
     Source("onboarding_submitted", "Customers", "Customer onboarding forms ready to review", onboarding_submitted,
            ("new", "after"), "when they submitted it", {"owner": "Staff member who started it"}, {"company": "the customer"}),
+    Source("documents_expiring", "Customers", "Customer documents expiring", documents_expiring, ("before",),
+           "the document's expiration date", {"account_manager": "BTW account manager"},
+           {"company": "the customer", "document": "document name", "end_date": "expiration date"}),
     Source("agreement_ending", "Billing", "Monthly agreements ending", agreement_ending, ("before",),
            "the agreement's end date", {"customer_contact": "The customer's main (billing) contact",
                                         "account_manager": "BTW account manager"},
