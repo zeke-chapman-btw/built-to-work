@@ -72,12 +72,33 @@ def connections(request):
         "replies": _replies_summary(rows.get("replies")),
         "email_replies": _email_replies_summary(),
         "company_signature": _company_signature(),
+        "statement_notices": _statement_summary(),
     })
 
 
 def _bounce_count():
     from .models import EmailBounce
     return EmailBounce.objects.filter(cleared_at__isnull=True).count()
+
+
+def _statement_summary():
+    from .models import ConnectionSetting, StatementNotice
+    row = ConnectionSetting.objects.filter(key="statement_notices").first()
+    return {"on": bool(row and row.values.get("enabled")),
+            "sent": StatementNotice.objects.filter(status="sent").count(),
+            "last": StatementNotice.objects.order_by("-created_at").first()}
+
+
+@login_required(login_url="/admin/login/")
+@require_POST
+def statement_notices_toggle(request):
+    _admin(request)
+    from .statements import set_enabled
+    on = request.POST.get("on") == "1"
+    set_enabled(actor=request.user, on=on)
+    messages.success(request, "Staff will get an email when a new earnings statement is ready." if on
+                     else "Pay statement emails turned off.")
+    return redirect(_home() + "#statements")
 
 
 def _company_signature():

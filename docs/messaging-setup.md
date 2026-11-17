@@ -91,3 +91,17 @@ Nothing on Preview sends automatically yet, because no background sender runs.
 - Every 10 minutes the app opens only the Gmail conversations it started (last 60 days)
   and copies new replies into the person's activity as "Email reply". Replies stay in Gmail.
 - Each staff member can turn it off for their own Gmail in Settings → Account → Email.
+
+## Build 19 additions (Nov 16)
+
+- **Home → Quick actions → + Email/Text**: Email someone / Text someone (search, then the usual pop-up).
+- **STOP for automatic texts**: ticket and alert texts skip numbers that replied STOP (the delivery shows why).
+- **Bounced email**: every 10 minutes the app reads "couldn't deliver" notices in noreply@ (IMAP with the same
+  app password; IMAP must be allowed for that account), flags the address on the person's profile and pauses
+  automatic email to it until staff click "Address is fixed, send again". Connections shows how many are paused.
+- **Message templates**: Settings → Messages (managers). Fill-ins {first_name}, {last_name}, {my_name}.
+  Pick one in the Email or Text pop-up.
+- **Customer contacts**: Email and Text buttons on each contact on the customer page; replies route like
+  participant replies and show the company in the Inbox; history is recorded on the customer.
+- **Pay statement emails** (off by default): Settings → Connections. When payroll is approved, staff with My pay
+  on get a link-only email (no amounts). Needs Automatic messages on.

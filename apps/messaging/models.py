@@ -99,6 +99,7 @@ class ConnectionSetting(models.Model):
         REPLIES = "replies", "Text replies"
         GMAIL_REPLIES = "gmail_replies", "Email replies"
         SIGNATURE = "signature", "Company email signature"
+        STATEMENT_NOTICES = "statement_notices", "Pay statement emails"
 
     key = models.CharField(max_length=20, choices=Key.choices, unique=True)
     values = models.JSONField(default=dict, blank=True)
@@ -269,3 +270,20 @@ class MessageTemplate(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class StatementNotice(models.Model):
+    """An email telling a staff member their earnings statement is ready (a link only, never the amounts)."""
+    class Status(models.TextChoices):
+        SENT = "sent", "Sent"
+        FAILED = "failed", "Not sent"
+        SKIPPED = "skipped", "Not sent (no email or My pay off)"
+
+    statement = models.OneToOneField("reporting.ContractorStatement", on_delete=models.CASCADE, related_name="notice")
+    address = models.CharField(max_length=254, blank=True)
+    status = models.CharField(max_length=8, choices=Status.choices)
+    detail = models.CharField(max_length=240, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        default_permissions = ()

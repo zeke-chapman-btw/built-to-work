@@ -26,3 +26,19 @@ def career_saved(sender, instance, raw=False, **kwargs):
 def registration_saved(sender, instance, raw=False, **kwargs):
     if not raw:
         _mark(instance.participant_id)
+
+
+@receiver(post_save, sender="reporting.PayrollApproval", dispatch_uid="messaging-statement-notices")
+def payroll_approved(sender, instance, created=False, raw=False, **kwargs):
+    if raw or not created:
+        return
+    from django.db import transaction
+
+    def send():
+        from .statements import notify
+        try:
+            notify(instance.pk)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception("STATEMENT_NOTICES_FAILED")
+    transaction.on_commit(send)

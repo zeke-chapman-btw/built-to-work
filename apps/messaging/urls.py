@@ -30,6 +30,7 @@ urlpatterns = [
     path("templates/new/", templates_views.template_edit, name="template-new"),
     path("templates/<int:pk>/", templates_views.template_edit, name="template-edit"),
     path("connections/signature/", signature_views.company_signature, name="connections-signature"),
+    path("connections/statements/", connections.statement_notices_toggle, name="connections-statements"),
     path("gmail/replies/", views.gmail_replies_toggle, name="gmail-replies"),
     path("connections/email-replies/", connections.email_replies_toggle, name="connections-email-replies"),
     path("texts/<int:pk>/handled/", text_views.text_handled, name="text-handled"),
