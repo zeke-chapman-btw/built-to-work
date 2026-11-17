@@ -4,4 +4,4 @@
 {% endif %}
 <dl class="cp3-dl" style="padding:0 0 12px"><dt>From</dt><dd>{% if connection.active %}{{ connection.google_email }}{% else %}<span class="cp3-dash">—</span>{% endif %}</dd><dt>To</dt><dd>{% if participant.contact_email %}{{ participant.first_name }} {{ participant.last_name }} · {{ participant.contact_email }}{% else %}<span class="cp3-dash">—</span>{% endif %}</dd></dl>
 {% include 'internal/ui/form_fields.html' %}
-<p class="cp3-note">Sent from your Gmail, so it shows in your Sent folder and replies come to your inbox. A copy is added to {{ participant.first_name }}'s activity as “Sent by app”.</p>
+<p class="cp3-note">{% if has_signature %}Your signature is added at the bottom. {% else %}No signature yet — <a href="{% url 'messaging:signature' %}">add yours in Settings</a>. {% endif %}Sent from your Gmail, so it shows in your Sent folder and replies come to your inbox. A copy is added to {{ participant.first_name }}'s activity as “Sent by app”.</p>

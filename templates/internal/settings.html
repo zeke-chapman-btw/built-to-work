@@ -1,4 +1,4 @@
-{% extends 'shared/workspace_landing.html' %}
+{% extends 'shared/workspace_landing.html' %}{% load messaging_ui %}
 {% block workspace_class %}ux-settings-page{% endblock %}
 {% block workspace_content %}
 {% if settings_section == 'account' %}
@@ -17,6 +17,7 @@
   </div>
 </section>
 {% if task_updates.reminders_enabled %}<section class="ux-surface"><div class="ux-card-body"><a href="{% url 'operations:reminder-preferences' %}">Reminders →</a></div></section>{% endif %}
+{% account_email_card %}
 <section class="ux-surface" aria-labelledby="signin-heading">
   <header class="ux-card-heading"><h2 id="signin-heading">Sign-in</h2></header>
   <div class="ux-card-body"><dl class="ls-facts"><div><dt>Username</dt><dd>{{ request.user.get_username }}</dd></div><div><dt>Email</dt><dd>{{ request.user.email|default:'Not recorded' }}</dd></div></dl>

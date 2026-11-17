@@ -71,7 +71,13 @@ def connections(request):
         "mailchimp": _mailchimp_summary(rows.get("mailchimp")),
         "replies": _replies_summary(rows.get("replies")),
         "email_replies": _email_replies_summary(),
+        "company_signature": _company_signature(),
     })
+
+
+def _company_signature():
+    from .signatures import company
+    return company()
 
 
 def _email_replies_summary():

@@ -1,0 +1,10 @@
+<section class="ux-surface" id="email" aria-labelledby="email-heading">
+  <header class="ux-card-heading"><h2 id="email-heading">Email</h2></header>
+  <div class="ux-card-body">
+    <dl class="ls-facts"><div><dt>Your Gmail</dt><dd>{% if connection.active %}{{ connection.google_email }} <span class="cp3-chip g" style="margin-left:6px">Connected</span>{% elif configured %}Not connected · <a href="{% url 'my:schedule' %}#gmail">Connect in My stuff</a>{% else %}<span class="cp3-dash">—</span>{% endif %}</dd></div></dl>
+    <p style="margin:14px 0 6px;font-weight:600">Signature</p>
+    {% if signature %}<div style="border:1px solid #ececef;border-radius:10px;background:#fafafa;padding:12px 14px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45;max-height:220px;overflow:auto">{{ signature|safe }}</div>
+    {% else %}<p class="ux-note" style="margin:0">No signature yet. Emails you send to participants from the app go out without one.</p>{% endif %}
+    <p style="margin:12px 0 0"><a class="button secondary" href="{% url 'messaging:signature' %}">{% if signature %}Edit signature{% else %}Add your signature{% endif %}</a></p>
+  </div>
+</section>

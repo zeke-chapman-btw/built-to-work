@@ -97,6 +97,7 @@ class ConnectionSetting(models.Model):
         SENDING = "sending", "Automatic messages"
         REPLIES = "replies", "Text replies"
         GMAIL_REPLIES = "gmail_replies", "Email replies"
+        SIGNATURE = "signature", "Company email signature"
 
     key = models.CharField(max_length=20, choices=Key.choices, unique=True)
     values = models.JSONField(default=dict, blank=True)
@@ -220,3 +221,13 @@ class EmailReply(models.Model):
     class Meta:
         default_permissions = ()
         ordering = ("-received_at",)
+
+
+class EmailSignature(models.Model):
+    """A staff member's own signature, added to emails they send from the app."""
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="email_signature")
+    html = models.TextField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        default_permissions = ()

@@ -116,8 +116,10 @@ def _provider_send(channel, destination, *, subject, body, idempotency_key, atta
             raise ConnectionError("Email delivery is not configured")
         # A configured sign-in (Settings → Connections or Render) sends for real even
         # when the site's own email backend is in test mode, as on the Preview.
-        message = EmailMessage(subject, body, sender, [destination], headers={"Message-ID": f"<{idempotency_key}@btw.local>"},
-                               reply_to=config["reply_to"] or None, connection=smtp_connection())
+        from apps.messaging.signatures import build, company
+        message = build(subject, body, sender, [destination], signature_html=company(),
+                        headers={"Message-ID": f"<{idempotency_key}@btw.local>"},
+                        reply_to=config["reply_to"] or None, connection=smtp_connection())
         if attachment is not None:
             message.attach("built-to-work-ticket.png", attachment, "image/png")
         if message.send(fail_silently=False) != 1:

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import connections, marketing_views, text_views, views
+from . import connections, marketing_views, signature_views, text_views, views
 
 app_name = "messaging"
 urlpatterns = [
@@ -22,6 +22,8 @@ urlpatterns = [
     path("participants/<int:participant_id>/text/", text_views.text_participant, name="text-participant"),
     path("texts/", text_views.inbox, name="texts"),
     path("texts/new/", text_views.new_text, name="new-text"),
+    path("signature/", signature_views.my_signature, name="signature"),
+    path("connections/signature/", signature_views.company_signature, name="connections-signature"),
     path("gmail/replies/", views.gmail_replies_toggle, name="gmail-replies"),
     path("connections/email-replies/", connections.email_replies_toggle, name="connections-email-replies"),
     path("texts/<int:pk>/handled/", text_views.text_handled, name="text-handled"),

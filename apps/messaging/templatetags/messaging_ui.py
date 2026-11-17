@@ -62,3 +62,13 @@ def text_replies_card(context):
     except Exception:
         allowed = False
     return {"show": allowed, "count": new_reply_count(user) if allowed else 0}
+
+
+@register.inclusion_tag("messaging/account_email_card.html", takes_context=True)
+def account_email_card(context):
+    """Settings → Account: your Gmail connection and your email signature."""
+    from apps.messaging import google, signatures
+    from apps.messaging.models import GmailConnection
+    request = context["request"]
+    return {"configured": google.configured(), "connection": GmailConnection.objects.filter(user=request.user).first(),
+            "signature": signatures.personal(request.user)}

@@ -6,7 +6,7 @@ from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMessage  # noqa: F401
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -17,7 +17,7 @@ from apps.accounts.roles import active_staff
 from apps.internal_ui.record_editors import editor_response, editor_success, local_return
 from apps.participants.models import Participant
 
-from . import google
+from . import google, signatures
 from .models import GmailConnection, SentEmail
 
 SESSION_STATE = "btw_gmail_oauth_state"
@@ -135,6 +135,7 @@ def email_participant(request, participant_id):
                "gmail_configured": google.configured(), "back": back, "page_title": "Email " + participant.first_name,
                "editor_context": f"To {participant.contact_email}" if participant.contact_email else "No email address on file",
                "save_label": "Send email", "fields_template": "messaging/email_fields.html",
+               "has_signature": bool(signatures.personal(request.user)),
                "profile_url": profile}
     if request.method == "POST" and ready and form.is_valid():
         try:
@@ -162,7 +163,9 @@ def _send_participant_email(request, connection, participant, data):
         if existing and existing.status == SentEmail.Status.SENT:
             return "That email was already sent."
         raise ValidationError("This email is already being sent. Check the person's activity before trying again.")
-    message = EmailMessage(data["subject"], data["body"], f"{sender_name} <{connection.google_email}>", [participant.contact_email])
+    from .signatures import build, personal
+    message = build(data["subject"], data["body"], f"{sender_name} <{connection.google_email}>", [participant.contact_email],
+                    signature_html=personal(request.user))
     try:
         sent_info = {}
         reference = google.send(connection, message, result=sent_info)
