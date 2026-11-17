@@ -332,6 +332,17 @@ def messages_failing(today, now):
                    fields={"count": str(total), "details": ", ".join(parts)}, related={})
 
 
+# ------------------------------------------------------------- Customers
+
+def onboarding_submitted(today, now):
+    from apps.onboarding.models import CustomerOnboarding
+    for row in CustomerOnboarding.objects.filter(status="submitted").select_related("created_by")[:200]:
+        yield Item(ref=f"onboarding:{row.pk}", anchor=_local(row.submitted_at or row.updated_at).date(),
+                   created=row.submitted_at or row.updated_at, line=f"{row.name} finished their onboarding form",
+                   link=reverse("onboarding:step", args=[row.pk, "review"]), fields={"company": row.name},
+                   related={"owner": _people(user_target(row.created_by))})
+
+
 # --------------------------------------------------------------- Billing
 
 def agreement_ending(today, now):
@@ -417,6 +428,8 @@ SOURCES = {s.key: s for s in (
            "the customer asks", {"recruiter": "Recruiter on the position"}, {"name": "the candidate", "company": "the customer"}),
     Source("new_position", "Recruiting", "Positions submitted by customers", new_position, ("new", "after"),
            "it's submitted", {}, {"company": "the customer", "position": "position title"}),
+    Source("onboarding_submitted", "Customers", "Customer onboarding forms ready to review", onboarding_submitted,
+           ("new", "after"), "when they submitted it", {"owner": "Staff member who started it"}, {"company": "the customer"}),
     Source("agreement_ending", "Billing", "Monthly agreements ending", agreement_ending, ("before",),
            "the agreement's end date", {"customer_contact": "The customer's main (billing) contact",
                                         "account_manager": "BTW account manager"},

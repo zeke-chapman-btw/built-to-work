@@ -17,7 +17,7 @@ from apps.internal_ui.record_editors import editor_response, editor_success
 from . import engine, sources
 from .models import ReminderNotice, ReminderRole, ReminderRule, ReminderSetup
 
-AREAS = ("Tasks", "Events", "Participants", "Recruiting", "Billing", "Payroll", "Admin", "Other")
+AREAS = ("Tasks", "Events", "Participants", "Recruiting", "Customers", "Billing", "Payroll", "Admin", "Other")
 BUILT_IN = {
     "tasks": ("Runs from Tasks. Each person can change theirs in My stuff → Reminders.", "operations:reminder-preferences"),
     "events": ("Being finished by the Tasks build (18B). Its people and timing are set in Task reminder settings.",

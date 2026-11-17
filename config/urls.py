@@ -43,6 +43,7 @@ urlpatterns = [
     _app("apps.messaging.urls", "messaging/"),
     _app("apps.reminders.urls", "settings/reminders/"),
     _app("apps.billing.urls", ""),
+    _app("apps.onboarding.urls", ""),
     _app("apps.staffing.my_urls", "my/"),
     path("", home, name="home"),
     path("health/", health, name="health"),

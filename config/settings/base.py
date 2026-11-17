@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "apps.messaging.apps.MessagingConfig",
     "apps.reminders.apps.RemindersConfig",
     "apps.billing.apps.BillingConfig",
+    "apps.onboarding.apps.OnboardingConfig",
 ]
 
 MIDDLEWARE = [
@@ -176,6 +177,7 @@ BTW_SMS_PROVIDER_TOKEN = os.environ.get("BTW_SMS_PROVIDER_TOKEN", "")
 BTW_CENTRAL_SYNC_URL = os.environ.get("BTW_CENTRAL_SYNC_URL", "")
 
 PRIVATE_HISTORICAL_ROOT = Path(os.environ.get("PRIVATE_HISTORICAL_ROOT", BASE_DIR / "private_historical_imports"))
+PRIVATE_ONBOARDING_ROOT = Path(os.environ.get("PRIVATE_ONBOARDING_ROOT", BASE_DIR / "private_customer_onboarding"))
 
 # Opt-in trailer-local operations. Disabled on existing deployments by default.
 TRAILER_CONTROL_ENABLED = os.environ.get("TRAILER_CONTROL_ENABLED", "false").lower() == "true"
