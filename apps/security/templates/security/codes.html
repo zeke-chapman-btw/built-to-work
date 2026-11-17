@@ -1,0 +1,2 @@
+{% extends 'accounts/access_base.html' %}{% block access_content %}<p>Your old recovery codes no longer work. Save these somewhere safe; each works once.</p><pre style="font-size:16px;line-height:1.7;background:#f4f4f5;padding:12px 16px;border-radius:8px">{% for c in codes %}{{ c }}
+{% endfor %}</pre><p><a class="button" href="{% url 'internal:settings' %}">Done</a></p>{% endblock %}

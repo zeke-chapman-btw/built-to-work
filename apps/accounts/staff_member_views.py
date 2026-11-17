@@ -36,6 +36,11 @@ def add(request):
             form.add_error(None, exc if isinstance(exc, ValidationError) else 'The staff identity changed or already exists. Reload and choose the existing record.')
         else:
             if profile:
+                keys = request.POST.getlist('reminder_roles')
+                if keys and profile.user_id:
+                    from apps.reminders.models import ReminderRole
+                    for role in ReminderRole.objects.filter(key__in=keys):
+                        role.holders.add(profile.user)
                 if invitation:
                     deliver_invitation(request, invitation)
                 messages.success(request, 'Staff member saved.' + (' Sign-in invitation sent.' if invitation else ''))

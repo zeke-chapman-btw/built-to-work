@@ -308,6 +308,7 @@ def staff_destinations(user, current_path=""):
     inbox = _inbox_entry(user)
     if inbox:
         entries.append(dict(inbox, bottom=True))  # shown at the bottom of the menu, by the person's name
+    entries.append(dict(id="help", label="Help", icon="help", url=reverse("security:help"), active=False, bottom=True))
     if not report_destinations(user):entries=[entry for entry in entries if entry['id']!='reports']
     active = next((entry["id"] for entry in entries if entry["active"]), None)
     if any(legacy.get(key, {}).get("active") for key in ("administration", "platform-tools")):
@@ -320,6 +321,7 @@ def staff_destinations(user, current_path=""):
     if current_path.startswith("/sops/") and not current_path.startswith("/sops/library/"):active="sops"
     if current_path.startswith("/sops/library/"):active="settings"
     if current_path.startswith("/inbox/"):active="inbox"
+    if current_path.startswith("/help/"):active="help"
     for entry in entries:
         entry["active"] = entry["id"] == active
     return entries

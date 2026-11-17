@@ -46,7 +46,7 @@ class HomeDashboardPolishTests(TestCase):
         self.assertEqual(len(self.markup.with_class('nav-planned')), 0)
         for link in links:
             self.assertTrue(any(child['tag'] == 'svg' and child['attrs'].get('aria-hidden') == 'true' for child in link['children']))
-        self.assertEqual([n['attrs']['href'] for n in links], [n['url'] for n in self.response.context['primary_navigation'] if n['id'] != 'inbox'])
+        self.assertEqual([n['attrs']['href'] for n in links], [n['url'] for n in self.response.context['primary_navigation'] if not n.get('bottom')])
         self.assertNotContains(self.response, 'nav-icon')
         gear = self.markup.with_class('settings-gear')
         self.assertEqual(len(gear), 1)
