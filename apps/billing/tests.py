@@ -306,3 +306,23 @@ class DeliveryTests(BillingFlowTests):
         self.org_a.refresh_from_db()
         screen = self.client.get(reverse("customers:need-action", args=[self.org_a.pk, need.pk, "approve"]))
         self.assertContains(screen, "already charged")
+
+
+class BusinessOverviewTests(BillingFlowTests):
+    def test_business_page_shows_money_customers_funnel_and_events(self):
+        need = self.reviewed_need()
+        connect_stripe()
+        with patch.object(stripe_api, "call", FakeStripe(intent_status="succeeded")):
+            self.ready_bank(FakeStripe(intent_status="succeeded"))
+            self.approve(need, fee_kind="general", people=2)
+        page = self.client.get(reverse("billing:business") + "?range=all")
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "Position fees collected")
+        self.assertContains(page, "$2,000")
+        self.assertContains(page, "SYNTHETIC Alpha company")
+        self.assertContains(page, "Participant path")
+        self.assertContains(self.client.get(reverse("internal:reports")), reverse("billing:business"))
+        from django.contrib.auth import get_user_model
+        other = get_user_model().objects.create_user(username="bz-staff", password="x-test-only", is_staff=True)
+        self.client.force_login(other, backend=BACKEND)
+        self.assertEqual(self.client.get(reverse("billing:business")).status_code, 403)

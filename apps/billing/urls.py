@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import portal, views
+from . import business, portal, views
 
 _portal = portal.wrapped()
 
@@ -12,6 +12,7 @@ urlpatterns = [
     path("customers/<uuid:org_id>/billing/agreements/<int:renew_id>/renew/", views.agreement_new, name="agreement-renew"),
     path("customers/<uuid:org_id>/billing/agreements/<int:pk>/cancel/", views.agreement_cancel, name="agreement-cancel"),
     path("customers/<uuid:org_id>/billing/charges/<int:pk>/retry/", views.charge_retry, name="charge-retry"),
+    path("internal/reports/business/", business.overview, name="business"),  # served at /reports/business/
     path("settings/billing/", views.stripe_settings, name="settings"),
     path("billing/stripe/webhook/", views.webhook, name="webhook"),
     path("customer/billing/bank/", _portal["bank"], name="portal-bank"),

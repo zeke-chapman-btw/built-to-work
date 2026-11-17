@@ -43,7 +43,11 @@ def page(request,template,**context):
 
 def tabs_for(actor,selected):
     allowed=allowed_tabs(actor)
-    return [{"key":key,"label":label,"url":reverse("internal:reports")+"?tab="+key,"active":key==selected} for key,label in TAB_LABELS if key in allowed]
+    tabs=[{"key":key,"label":label,"url":reverse("internal:reports")+"?tab="+key,"active":key==selected} for key,label in TAB_LABELS if key in allowed]
+    from apps.accounts.roles import manager
+    if manager(actor):
+        tabs.insert(1,{"key":"business","label":"Business","url":reverse("billing:business"),"active":selected=="business"})
+    return tabs
 
 
 def export_links(request):
