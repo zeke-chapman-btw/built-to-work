@@ -163,3 +163,17 @@ def mailchimp_webhook(request, secret):
         return HttpResponse("ok")  # Mailchimp checks the address before saving the webhook.
     mailchimp.handle_webhook(request.POST)
     return HttpResponse("ok")
+
+
+@login_required(login_url="/admin/login/")
+@require_POST
+def bounce_clear(request, participant_id):
+    """Staff say a bounced address is fixed (or worth trying again)."""
+    from apps.crm import access as crm_access
+    from apps.participants.models import Participant
+    from .bounces import clear
+    participant = get_object_or_404(Participant, pk=participant_id)
+    user = crm_access.internal_context(request.user, participant=participant, write=True)
+    clear(participant.contact_email, user)
+    messages.success(request, "Automatic emails to this address will be sent again.")
+    return redirect(reverse("participants:staff-profile", args=[participant.pk]))

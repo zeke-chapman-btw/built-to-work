@@ -73,3 +73,12 @@ def account_email_card(context):
     return {"configured": google.configured(), "connection": GmailConnection.objects.filter(user=request.user).first(),
             "signature": signatures.personal(request.user), "replies_on": _replies_on(),
             "next": reverse("internal:settings") + "#email", "csrf_token": context.get("csrf_token")}
+
+
+@register.inclusion_tag("messaging/bounce_chip.html", takes_context=True)
+def email_bounce_chip(context, participant, can_edit=False):
+    from apps.messaging.models import EmailBounce
+    row = None
+    if participant.contact_email:
+        row = EmailBounce.objects.filter(address=participant.contact_email.strip().lower(), cleared_at__isnull=True).first()
+    return {"bounce": row, "participant": participant, "can_edit": can_edit, "csrf_token": context.get("csrf_token")}

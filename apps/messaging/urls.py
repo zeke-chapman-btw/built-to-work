@@ -5,6 +5,7 @@ from . import connections, marketing_views, signature_views, text_views, views
 app_name = "messaging"
 urlpatterns = [
     path("participants/<int:participant_id>/marketing/", marketing_views.edit_consent, name="marketing-edit"),
+    path("participants/<int:participant_id>/bounce-clear/", marketing_views.bounce_clear, name="bounce-clear"),
     path("connections/mailchimp/", marketing_views.mailchimp_setup, name="mailchimp-setup"),
     path("connections/mailchimp/sync/", marketing_views.mailchimp_sync_now, name="mailchimp-sync"),
     path("connections/mailchimp/disconnect/", marketing_views.mailchimp_disconnect, name="mailchimp-disconnect"),

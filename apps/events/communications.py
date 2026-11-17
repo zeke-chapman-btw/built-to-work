@@ -116,6 +116,9 @@ def _provider_send(channel, destination, *, subject, body, idempotency_key, atta
             raise ConnectionError("Email delivery is not configured")
         # A configured sign-in (Settings → Connections or Render) sends for real even
         # when the site's own email backend is in test mode, as on the Preview.
+        from apps.messaging.bounces import bounced
+        if bounced(destination):
+            raise ValueError("This email address bounced before; fix it on the person's profile to send again")
         from apps.messaging.signatures import build, company
         message = build(subject, body, sender, [destination], signature_html=company(),
                         headers={"Message-ID": f"<{idempotency_key}@btw.local>"},
@@ -125,6 +128,9 @@ def _provider_send(channel, destination, *, subject, body, idempotency_key, atta
         if message.send(fail_silently=False) != 1:
             raise ConnectionError("Email provider did not accept the message")
         return idempotency_key
+    from apps.messaging.texting import opted_out
+    if opted_out(destination):
+        raise ValueError("This number replied STOP, so texts to it are paused until they reply START")
     from .sms_providers import send_sms
     return send_sms(destination, body, idempotency_key=idempotency_key)
 

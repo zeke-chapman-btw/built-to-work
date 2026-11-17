@@ -231,3 +231,15 @@ class EmailSignature(models.Model):
 
     class Meta:
         default_permissions = ()
+
+
+class EmailBounce(models.Model):
+    """An address that automatic email could not be delivered to. Sending to it pauses until staff fix it."""
+    address = models.EmailField(unique=True)
+    reason = models.CharField(max_length=240, blank=True)
+    bounced_at = models.DateTimeField()
+    cleared_at = models.DateTimeField(null=True, blank=True)
+    cleared_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+
+    class Meta:
+        default_permissions = ()

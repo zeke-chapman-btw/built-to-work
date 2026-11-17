@@ -62,7 +62,7 @@ def connections(request):
         "page_title": "Settings",
         "text": {"row": rows.get("eztexting"), "username": ez_user, "source": ez_source,
                  "status": _status(rows.get("eztexting"), bool(ez_user))},
-        "email": {"row": rows.get("email"), "config": email,
+        "email": {"row": rows.get("email"), "config": email, "bounces": _bounce_count(),
                   "status": _status(rows.get("email"), bool(email["source"]) and bool(email["from_address"]))},
         "sending": {"row": rows.get("sending"), "since": since, "queue": _queue()},
         "gmail": {"configured": google.configured(),
@@ -73,6 +73,11 @@ def connections(request):
         "email_replies": _email_replies_summary(),
         "company_signature": _company_signature(),
     })
+
+
+def _bounce_count():
+    from .models import EmailBounce
+    return EmailBounce.objects.filter(cleared_at__isnull=True).count()
 
 
 def _company_signature():

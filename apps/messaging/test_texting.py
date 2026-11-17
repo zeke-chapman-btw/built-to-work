@@ -182,3 +182,13 @@ class HomeMessageMenuTests(TextingTests):
         found = self.client.get(reverse("messaging:new-text") + "?mode=email&q=Texter", HTTP_X_BTW_EDITOR="1")
         self.assertContains(found, reverse("messaging:email-participant", args=[self.person.pk]))
         self.assertContains(found, "texter@example.test")
+
+
+class AutomaticTextStopTests(TextingTests):
+    def test_automatic_texts_skip_numbers_that_replied_stop(self):
+        from apps.events.communications import _provider_send
+        texting.receive({"fromNumber": "17065550142", "message": "STOP"})
+        with patch("apps.events.sms_providers.send_sms") as sent:
+            with self.assertRaisesMessage(ValueError, "replied STOP"):
+                _provider_send("sms", "(706) 555-0142", subject="x", body="Your ticket", idempotency_key="k-stop")
+        sent.assert_not_called()

@@ -42,6 +42,20 @@ def run_pass(limit=100):
     return {"sent": handled, "checked": checked, "enabled": True}
 
 
+_last_bounce_check = [None]
+
+
+def run_bounces(every_seconds=600):
+    """Every 10 minutes, look for "couldn't deliver" notices in noreply@."""
+    import time
+    from .bounces import check_inbox
+    now = time.monotonic()
+    if _last_bounce_check[0] is not None and now - _last_bounce_check[0] < every_seconds:
+        return 0
+    _last_bounce_check[0] = now
+    return check_inbox()
+
+
 def run_mailchimp():
     from .mailchimp import sync_pending
     return sync_pending()
@@ -59,6 +73,10 @@ def _work():
             check_recent()
         except Exception:
             log.exception("GMAIL_REPLIES_FAILED")
+        try:
+            run_bounces()
+        except Exception:
+            log.exception("BOUNCE_CHECK_ERROR")
         try:
             outcome = run_pass()
             if outcome["sent"] or outcome["checked"]:
