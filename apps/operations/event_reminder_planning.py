@@ -126,6 +126,9 @@ def proposals(job, user, now):
         from .event_reminder_snooze import snoozed
         if snoozed(source, user, now):
             continue
+        from .reminder_coexistence import settings_job_bell_sent
+        if settings_job_bell_sent(source.ref, user, now):
+            continue
         result.append({'task': None, 'kind': 'source', 'source_ref': source.ref,
                        'dedupe_key': source.coverage(), 'fingerprint': source.version})
     return result

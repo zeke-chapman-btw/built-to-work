@@ -242,6 +242,14 @@ def _claim(rule, item, occ, target, channel):
 
 
 def _send(rule, target, channel, batch):
+    if channel == 'bell' and rule.source == 'new_position':
+        from apps.operations.reminder_coexistence import send_job_bell
+        return send_job_bell(rule, target, batch,
+            lambda remaining: _send_claimed(rule, target, channel, remaining))
+    return _send_claimed(rule, target, channel, batch)
+
+
+def _send_claimed(rule, target, channel, batch):
     """batch: list of (item, occurrence). Claims each, then sends what was claimed."""
     claimed = [(item, row) for item, occ in batch if (row := _claim(rule, item, occ, target, channel))]
     if not claimed:
