@@ -212,3 +212,12 @@ a.hv2-stat:hover{border-color:#bbb}
 .hv2-find{grid-column:1/-1;display:flex;gap:8px;margin:0}
 .hv2-find input{flex:1;min-width:0;min-height:38px;padding:6px 12px;border:1px solid var(--line);border-radius:6px;font-size:14px}
 .hv2-find .hv2-action{flex:none;padding:8px 16px;cursor:pointer}
+/* + Email/Text quick action menu */
+.hv2-menu{position:relative}
+.hv2-menu>summary{list-style:none;cursor:pointer}
+.hv2-menu>summary::-webkit-details-marker{display:none}
+.hv2-menu[open]>summary{background:#fdf3f4;border-color:#ac1929}
+.hv2-menu-list{position:absolute;z-index:20;top:calc(100% + 4px);left:0;right:0;display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden}
+.hv2-menu-list a{padding:10px 12px;font-size:14px;color:#1a1a1a;text-decoration:none}
+.hv2-menu-list a+a{border-top:1px solid #f1f2f4}
+.hv2-menu-list a:hover{background:#fdf3f4;color:#ac1929}

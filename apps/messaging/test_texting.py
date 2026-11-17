@@ -170,3 +170,15 @@ class NewTextTests(TextingTests):
         self.assertContains(page, "(706) 555-0142")
         self.assertNotContains(self.client.get(reverse("messaging:new-text") + "?q=Nophone"), "Nophone</strong>")
         self.assertContains(self.client.get(reverse("messaging:new-text") + "?q=0142"), "Texter")
+
+
+class HomeMessageMenuTests(TextingTests):
+    def test_home_quick_action_menu_offers_email_and_text(self):
+        page = self.client.get(reverse("internal:home"))
+        self.assertContains(page, "+ Email/Text")
+        self.assertContains(page, reverse("messaging:new-text") + "?mode=email")
+        self.person.contact_email = "texter@example.test"
+        self.person.save()
+        found = self.client.get(reverse("messaging:new-text") + "?mode=email&q=Texter", HTTP_X_BTW_EDITOR="1")
+        self.assertContains(found, reverse("messaging:email-participant", args=[self.person.pk]))
+        self.assertContains(found, "texter@example.test")

@@ -200,6 +200,7 @@ def new_text(request):
     """Pick who to text (search by name, phone or email), then write the text."""
     from django.db.models import Q
     _inbox_user(request)
+    email = request.GET.get("mode") == "email"
     query = (request.GET.get("q") or "").strip()[:80]
     people = []
     if len(query) >= 2:
@@ -212,13 +213,20 @@ def new_text(request):
             match = (Q(first_name__icontains=first) & Q(last_name__icontains=last)) | Q(contact_email__icontains=query)
         if len(digits) >= 4:
             match |= Q(contact_phone__contains=digits)
-        people = list(Participant.objects.filter(match, archived_at__isnull=True, kind=Participant.Kind.PERSON)
-                      .exclude(contact_phone="").order_by("last_name", "first_name")[:15])
+        found = Participant.objects.filter(match, archived_at__isnull=True, kind=Participant.Kind.PERSON)
+        found = found.exclude(contact_email="") if email else found.exclude(contact_phone="")
+        people = list(found.order_by("last_name", "first_name")[:15])
     back = reverse("messaging:texts") + "?tab=sent"
-    rows = [{"person": p, "phone": texting.phone_key(p.contact_phone), "blocked": texting.opted_out(p.contact_phone),
-             "url": reverse("messaging:text-participant", args=[p.pk]) + "?next=" + back} for p in people]
-    context = {"page_title": "New text", "editor_context": "Find the person you want to text.", "query": query,
-               "rows": rows, "ready": texting.ready()}
+    if email:
+        rows = [{"person": p, "email": p.contact_email, "blocked": False,
+                 "url": reverse("messaging:email-participant", args=[p.pk])} for p in people]
+    else:
+        rows = [{"person": p, "phone": texting.phone_key(p.contact_phone), "blocked": texting.opted_out(p.contact_phone),
+                 "url": reverse("messaging:text-participant", args=[p.pk]) + "?next=" + back} for p in people]
+    from . import google
+    context = {"page_title": "New email" if email else "New text",
+               "editor_context": f"Find the person you want to {'email' if email else 'text'}.", "query": query,
+               "rows": rows, "ready": google.configured() if email else texting.ready(), "email": email}
     fragment = request.headers.get("X-BTW-Editor") == "1"
     response = render(request, "messaging/new_text_panel.html" if fragment else "messaging/new_text_page.html", context)
     response["Cache-Control"] = "no-store"
