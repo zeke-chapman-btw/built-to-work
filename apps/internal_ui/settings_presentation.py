@@ -51,6 +51,7 @@ def _sections(user):
         sections.append({'key': 'reminders', 'label': 'Reminders', 'url': reverse('reminders:list'), 'groups': []})
     if user.is_superuser:
         sections.append({'key': 'connections', 'label': 'Connections', 'url': reverse('messaging:connections'), 'groups': []})
+        sections.append({'key': 'billing', 'label': 'Billing', 'url': reverse('billing:settings'), 'groups': []})
     if advanced:
         sections.append({'key': 'advanced', 'label': 'Advanced', 'groups': advanced})
     return sections
@@ -79,6 +80,8 @@ def settings_context(request):
         selected = 'connections'
     elif path.startswith(reverse('messaging:templates')):
         selected = 'messages'
+    elif path.startswith(reverse('billing:settings')):
+        selected = 'billing'
     elif path.startswith(reverse('reminders:list')):
         selected = 'reminders'
     elif path.startswith('/settings/expense-categories/'):
@@ -93,7 +96,7 @@ def settings_context(request):
     available = {section['key']: section for section in sections}
     # Root query strings choose presentation only. Protected tools use their
     # existing routes and independently recheck their existing authorization.
-    if selected not in available or (path == home and selected in {'portal', 'compensation', 'staff-pay', 'sops', 'connections', 'messages', 'reminders'}):
+    if selected not in available or (path == home and selected in {'portal', 'compensation', 'staff-pay', 'sops', 'connections', 'messages', 'reminders', 'billing'}):
         selected = 'account'
     tabs = []
     for section in sections:

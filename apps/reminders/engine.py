@@ -200,7 +200,7 @@ def deliver_email(rule, target, title, body, link):
     if bounces.bounced(target.email):
         raise ValueError("Email address bounced")
     config = store.email_settings()
-    url = absolute(link)
+    url = absolute(link) if target.user else ""  # customers and participants never get staff-only links
     send_mail(title, body + (f"\n\nOpen: {url}" if url else ""), config.get("from_address") or None, [target.email],
               fail_silently=False, connection=store.smtp_connection())
 
@@ -284,7 +284,8 @@ def run_rule(rule, now=None, setup=None, roles=None, cache=None):
             continue
         for target in targets_for(rule, item, roles, cache):
             for channel in channels:
-                if channel == "text" and not texts_ok:
+                if (channel == "text" and not texts_ok) or (channel == "bell" and not target.user) \
+                        or (channel == "email" and not target.email) or (channel == "text" and not target.phone):
                     continue
                 plan.setdefault((target, channel), []).append((item, occ))
     return sum(_send(rule, target, channel, batch) for (target, channel), batch in plan.items())

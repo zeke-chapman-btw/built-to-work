@@ -1,0 +1,15 @@
+{% extends 'shared/workspace_landing.html' %}{% load static %}{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=rui-1112">{% endblock %}{% block workspace_class %}ux-settings-page{% endblock %}{% block workspace_content %}<div class="cp3" style="max-width:900px">
+<p class="ls-intro">Stripe charges customers by bank transfer for position fees and monthly agreements. Use test keys first: nothing real is charged in test mode.</p>
+<section class="cp3-card"><header class="cp3-head"><h2>Stripe connection</h2>{% if has_key %}<form method="post" style="margin:0">{% csrf_token %}<button class="button secondary" name="test" value="1">Test</button></form>{% endif %}</header>
+<div class="cp3-locked"><span>Secret key</span><span>{% if has_key %}<span class="cp3-chip g">Saved</span> {{ mode }}{% else %}<span class="cp3-chip">Not saved</span>{% endif %}</span></div>
+<div class="cp3-locked"><span>Webhook signing secret</span><span>{% if has_webhook %}<span class="cp3-chip g">Saved</span>{% else %}<span class="cp3-chip y">Not saved</span> Payments won't update to Paid/Failed without it.{% endif %}</span></div>
+<div class="cp3-locked"><span>Last test</span><span>{% if row.last_test_at %}{% if row.last_test_ok %}<span class="cp3-chip g">Worked</span>{% else %}<span class="cp3-chip r">Failed</span>{% endif %} {{ row.last_test_detail }} · {{ row.last_test_at|date:'M j, g:i A' }}{% else %}—{% endif %}</span></div>
+<form method="post" class="btw-ui" style="padding:12px 20px 18px">{% csrf_token %}{% include 'internal/ui/form_fields.html' %}<button class="button button-primary">Save</button></form></section>
+<section class="cp3-card"><header class="cp3-head"><h2>Webhook (one-time setup in Stripe)</h2></header><div style="padding:12px 20px 18px;font-size:14px;line-height:1.55">
+<p style="margin-top:0">In Stripe → Developers → Webhooks → <b>Add endpoint</b>:</p>
+<p><b>Endpoint URL:</b> <code>{{ webhook_url }}</code></p><p><b>Events:</b> <code style="white-space:normal">{{ events }}</code></p>
+<p style="margin-bottom:0">Then copy the endpoint's <b>Signing secret</b> (whsec_…) into the box above. Do this once in test mode and again in live mode.</p></div></section>
+<section class="cp3-card"><header class="cp3-head"><h2>Position fees</h2></header>
+<div class="cp3-locked"><span>Skilled position</span><span>${{ prices.FIRST }} for 3 candidates · ${{ prices.SECOND }} for the next 3 · ${{ prices.AFTER }} for every 3 after that</span></div>
+<div class="cp3-locked"><span>General labor</span><span>${{ prices.GENERAL }} per person needed</span></div></section>
+</div>{% endblock %}

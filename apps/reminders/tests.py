@@ -41,9 +41,9 @@ def fake_source(items, modes=("new",), related=None):
 
 class SeedTests(Base):
     def test_spreadsheet_rows_and_roles_are_seeded(self):
-        self.assertEqual(ReminderRule.objects.count(), 25)
+        self.assertEqual(ReminderRule.objects.count(), 27)
         self.assertEqual(ReminderRule.objects.exclude(built_in="").count(), 11)
-        self.assertEqual(set(ReminderRole.objects.values_list("waiting_for", flat=True)), {"Zeke Chapman", "Jason Collins"})
+        self.assertEqual(set(ReminderRole.objects.values_list("waiting_for", flat=True)), {"Zeke Chapman", "Jason Collins", ""})
         for rule in ReminderRule.objects.filter(built_in=""):
             self.assertIn(rule.source, sources.SOURCES, rule.key)
             self.assertIn(rule.mode, sources.SOURCES[rule.source].modes, rule.key)

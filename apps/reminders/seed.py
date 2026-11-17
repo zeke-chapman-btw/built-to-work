@@ -6,6 +6,7 @@ ROLES = (
     ("recruiting_lead", "Recruiting lead", "Customer positions, candidates and customer responses.", "Jason Collins"),
     ("payroll_approver", "Payroll approver", "Workdays, mileage and approving payroll.", "Zeke Chapman"),
     ("system_alerts", "System alerts", "Texting and email problems.", "Zeke Chapman"),
+    ("billing", "Billing", "Payments that didn't go through.", ""),
 )
 
 T = datetime.time
@@ -62,6 +63,13 @@ RULES = (
      (True, True, False), {"roles": ["payroll_approver"]}, "admins", "Payroll ready to approve: {period}", "{line}. Approve it in the app."),
     ("pay_statement", "Payroll", "Your pay statement is ready", "Link-only email when payroll is approved.", "statements", "", "new", "", False, 0, T(8),
      (False, True, False), {}, "none", "", ""),
+    ("agreement_ending", "Billing", "Monthly agreement ending", "Customer and account manager, before the end date. Nothing renews until an Admin or Manager renews it.",
+     "", "agreement_ending", "before", "30, 7", False, 0, T(9), (True, True, False), {"related": ["customer_contact", "account_manager"]}, "admins",
+     "Your Built to Work agreement ends {end_date}",
+     "Hello,\n\nYour monthly Built to Work agreement for {company} ({amount} a month) ends on {end_date}. It does not renew on its own. {manager} will be in touch about renewing.\n\nThank you,\nBuilt to Work"),
+    ("billing_problem", "Billing", "Payment not collected", "A position fee or monthly payment failed or is waiting on a bank account.",
+     "", "billing_problem", "new", "", False, 2, T(9), (True, True, False), {"related": ["account_manager"], "roles": ["billing"]}, "admins",
+     "Payment not collected: {company}", "{line}. Check the customer's Billing tab."),
     ("connection_failing", "Admin", "Texting or email sign-in stopped working", "As soon as it fails.", "", "connection_failing", "new", "", False, 0, T(8),
      (True, True, True), {"roles": ["system_alerts"]}, "admins", "Action needed: {connection} isn't working", "{line}. Fix it in Settings → Connections."),
     ("messages_failing", "Admin", "Messages failing to send", "Daily summary at 5 PM when anything failed.", "", "messages_failing", "after", "0", False, 0, T(17),

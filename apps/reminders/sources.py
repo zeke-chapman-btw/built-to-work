@@ -332,6 +332,52 @@ def messages_failing(today, now):
                    fields={"count": str(total), "details": ", ".join(parts)}, related={})
 
 
+# --------------------------------------------------------------- Billing
+
+def agreement_ending(today, now):
+    from apps.billing.models import MonthlyAgreement
+    rows = (MonthlyAgreement.objects.filter(status__in=["active", "scheduled", "waiting"], ends_on__gte=today,
+                                            ends_on__lte=today + timedelta(days=120), renewals__isnull=True)
+            .select_related("organization__primary_contact", "organization__billing__account_manager"))
+    for row in rows:
+        org = row.organization
+        profile = getattr(org, "billing", None)
+        manager = profile.account_manager if profile else None
+        email = profile.contact_email() if profile else (org.primary_contact.email if org.primary_contact_id else "")
+        contact_name = str(org.primary_contact) if org.primary_contact_id else org.name
+        contact = Target(f"c:{org.pk}", contact_name, email=email) if email else None
+        ends = f"{row.ends_on:%B} {row.ends_on.day}, {row.ends_on.year}"
+        yield Item(ref=f"agreement:{row.pk}", anchor=row.ends_on,
+                   line=f"{org.name}'s monthly agreement (${row.amount:,.2f}) ends {ends}",
+                   link=reverse("customers:workspace", args=[org.pk, "billing"]),
+                   fields={"company": org.name, "end_date": ends, "amount": f"${row.amount:,.2f}",
+                           "manager": (manager.get_full_name() or manager.get_username()) if manager else "your Built to Work account manager"},
+                   related={"customer_contact": _people(contact), "account_manager": _people(user_target(manager))})
+
+
+def billing_problems(today, now):
+    from apps.billing.models import MonthlyAgreement, PositionCharge
+    charges = (PositionCharge.objects.filter(status__in=["failed", "waiting", "not_set_up"], created_at__gte=now - timedelta(days=90))
+               .select_related("organization__billing__account_manager"))
+    for row in charges[:300]:
+        org = row.organization
+        profile = getattr(org, "billing", None)
+        why = {"failed": "the bank payment failed", "waiting": "they haven't connected a bank account",
+               "not_set_up": "Stripe isn't connected"}[row.status]
+        yield Item(ref=f"charge:{row.pk}:{row.status}", anchor=_local(row.updated_at).date(), created=row.updated_at,
+                   line=f"{org.name}: ${row.amount:,.2f} for {row.title} not collected — {why}",
+                   link=reverse("customers:workspace", args=[org.pk, "billing"]), fields={"company": org.name, "why": why},
+                   related={"account_manager": _people(user_target(profile.account_manager if profile else None))})
+    for row in (MonthlyAgreement.objects.filter(last_payment_status="failed", last_payment_at__gte=now - timedelta(days=60))
+                .select_related("organization__billing__account_manager")):
+        org = row.organization
+        profile = getattr(org, "billing", None)
+        yield Item(ref=f"agreement-payment:{row.pk}:{row.last_payment_at.isoformat()}", anchor=_local(row.last_payment_at).date(),
+                   created=row.last_payment_at, line=f"{org.name}: monthly payment of ${row.amount:,.2f} failed",
+                   link=reverse("customers:workspace", args=[org.pk, "billing"]), fields={"company": org.name, "why": "the monthly payment failed"},
+                   related={"account_manager": _people(user_target(profile.account_manager if profile else None))})
+
+
 @dataclass(frozen=True)
 class Source:
     key: str
@@ -371,6 +417,12 @@ SOURCES = {s.key: s for s in (
            "the customer asks", {"recruiter": "Recruiter on the position"}, {"name": "the candidate", "company": "the customer"}),
     Source("new_position", "Recruiting", "Positions submitted by customers", new_position, ("new", "after"),
            "it's submitted", {}, {"company": "the customer", "position": "position title"}),
+    Source("agreement_ending", "Billing", "Monthly agreements ending", agreement_ending, ("before",),
+           "the agreement's end date", {"customer_contact": "The customer's main (billing) contact",
+                                        "account_manager": "BTW account manager"},
+           {"company": "the customer", "end_date": "the end date", "amount": "monthly amount", "manager": "account manager's name"}),
+    Source("billing_problem", "Billing", "Payments not collected", billing_problems, ("new", "after"),
+           "when it happened", {"account_manager": "BTW account manager"}, {"company": "the customer", "why": "what went wrong"}),
     Source("missing_workdays", "Payroll", "Workdays not entered this pay week", missing_workdays, ("before",),
            "the end of the pay week (Sunday)", {"staff": "Staff with missing entries"},
            {"first_name": "their first name", "name": "staff member", "dates": "the missing days"}),

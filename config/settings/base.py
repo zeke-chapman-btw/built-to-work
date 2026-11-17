@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "apps.sops.apps.SopsConfig",
     "apps.messaging.apps.MessagingConfig",
     "apps.reminders.apps.RemindersConfig",
+    "apps.billing.apps.BillingConfig",
 ]
 
 MIDDLEWARE = [

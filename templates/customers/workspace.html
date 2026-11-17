@@ -79,6 +79,8 @@
 {% elif active_tab == 'access' %}
 <div class="cx-tiles" role="group" aria-label="Seats"><div class="cx-tile"><span>Lead seats</span><strong>{{ seats.lead }}{% if plan.lead_limit != None %} of {{ plan.lead_limit }}{% endif %}</strong>{% if plan.lead_limit != None and seats.lead > plan.lead_limit %}<small class="cx-warn">Over limit</small>{% elif plan.lead_limit == None %}<small>Limit not set</small>{% endif %}</div><div class="cx-tile"><span>Member seats</span><strong>{{ seats.member }}{% if plan.member_limit != None %} of {{ plan.member_limit }}{% endif %}</strong>{% if plan.member_limit != None and seats.member > plan.member_limit %}<small class="cx-warn">Over limit</small>{% elif plan.member_limit == None %}<small>Limit not set</small>{% endif %}</div></div>
 <section class="cp3-card"><header class="cp3-head"><h2>What this customer can do</h2>{% if organization.status != 'archived' %}<a data-record-editor href="{% customer_url 'customers:plan' organization.pk %}">Edit</a>{% endif %}</header>{% for label,value in capabilities %}<div class="cp3-locked"><span>{{ label|capfirst }}</span><span class="cp3-chip{% if value == 'On' or value == 'Yes' %} g{% endif %}">{{ value }}</span></div>{% endfor %}</section><details class="cp3-card cx-history"><summary class="cp3-head"><h2>Change history</h2></summary>{% include 'customers/history.html' %}</details>
+{% elif active_tab == 'billing' %}
+{% include 'billing/tab.html' %}
 {% elif active_tab == 'history' %}
 <section class="cp3-card cx-list"><header class="cp3-head"><h2>History</h2>{% include 'customers/card_search.html' with search_label='Search history' %}</header>{% include 'customers/history.html' with recent=rows %}</section>{% include 'customers/pagination.html' %}
 {% endif %}{% endblock %}
