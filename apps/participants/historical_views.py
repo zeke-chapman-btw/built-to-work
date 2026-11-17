@@ -101,8 +101,38 @@ def historical_batch(request, batch_id):
             return people_saved(request,"participants:historical-batch", batch_id=batch.pk)
         except ValidationError as exc:
             error = "; ".join(exc.messages)
-    return render(request, "participants/historical_batch.html", {"batch": batch,
-        "rows": batch.rows.select_related("participant").all(), "error": error})
+    from .historical import IMPORT_LABELS
+    everything = batch.rows.select_related("participant").order_by("row_number")
+    counts = {"all": everything.count()}
+    for key in ("ready", "review", "error", "imported", "skipped"):
+        counts[key] = everything.filter(status=key).count()
+    show = request.GET.get("show", "")
+    filters = [{"key": "", "label": "All", "count": counts["all"], "chip": ""},
+               {"key": "ready", "label": "Ready", "count": counts["ready"], "chip": "g"},
+               {"key": "review", "label": "Needs a look", "count": counts["review"], "chip": "y"},
+               {"key": "error", "label": "Problem", "count": counts["error"], "chip": "r"},
+               {"key": "imported", "label": "Imported", "count": counts["imported"], "chip": "g"},
+               {"key": "skipped", "label": "Skipped", "count": counts["skipped"], "chip": ""}]
+    filters = [f for f in filters if f["count"] or not f["key"] or f["key"] == show]
+    for f in filters:
+        f["on"] = f["key"] == show
+    rows = list(everything.filter(status=show) if show in counts else everything)
+    for row in rows:
+        data = dict(row.normalized_data or {})
+        if not data.get("first_name"):  # rows with a problem weren't read; show what the file says
+            raw = {k: v for k, v in (row.raw_data or {}).items() if not k.startswith("__")}
+            mapping = batch.mapping or {}
+            for field in ("first_name", "last_name", "email", "phone", "city", "state"):
+                column = mapping.get(field)
+                if column in raw:
+                    data[field] = raw[column]
+            if not data.get("first_name") and raw.get(mapping.get("full_name", "")):
+                data["first_name"] = raw[mapping["full_name"]]
+        row.shown = data
+        row.details = [(IMPORT_LABELS.get(k, k.replace("_", " ").capitalize()), v) for k, v in (row.normalized_data or {}).items()
+                       if v and k not in ("first_name", "last_name")]
+    return render(request, "participants/historical_batch.html", {"batch": batch, "rows": rows, "counts": counts,
+        "filters": filters, "error": error})
 
 
 @login_required

@@ -1,5 +1,5 @@
 {% extends "participants/intake_internal_base.html" %}{% block people_content %}
-<p><a href="{{ review_queue_url }}">← Participant Review Queue</a></p>
+<p><a class="ux-back" href="{{ review_queue_url }}">← Participant Review Queue</a></p>
 {% if error %}<p class="alert" role="alert">{{ error }}</p>{% endif %}
 <section class="card"><h2 class="p3-record-title">{{ review.source_participant }}</h2><p>Status: {{ review.get_status_display }} · {{ review.source_submission.event|default:"General intake" }}</p><p>Review indicators: {{ conflict_labels|join:"; "|default:"Identity decision retained" }}</p>
 <p>Original submission, consent and history references are retained.</p>
