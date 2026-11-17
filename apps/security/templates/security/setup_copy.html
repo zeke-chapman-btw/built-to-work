@@ -1,0 +1,15 @@
+{% extends 'shared/workspace_landing.html' %}{% load static %}{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=rui-1112">{% endblock %}{% block workspace_class %}ux-settings-page{% endblock %}{% block workspace_content %}<style>.sc-g{padding:10px 20px;border-top:1px solid #f1f2f4}.sc-g:first-of-type{border-top:0}.sc-g h3{font-size:14px;margin:0 0 6px}.sc-g label{display:flex;gap:8px;align-items:center;font-size:14px;margin:4px 0}.sc-g small{color:#71717a}.sc-actions{padding:14px 20px;border-top:1px solid #f1f2f4;display:flex;gap:12px;align-items:center;flex-wrap:wrap}</style>
+<div class="cp3" style="max-width:900px"><a class="ux-back" href="{% url 'security:settings' %}">← Security</a>
+<p class="ls-intro" style="margin-top:10px">This copy of the app: <b>{{ site }}</b>. Step 1: on the preview, download the setup. Step 2: on production, load the file. People, events, customers, results, pay and messages are never copied, and staff accounts aren't either.</p>
+{% if problem %}<p class="cp3-warn" style="border-radius:10px">{{ problem }}</p>{% endif %}
+{% if result %}<section class="cp3-card"><header class="cp3-head"><h2>Setup loaded</h2><span class="cp3-chip g">Done</span></header><p style="padding:12px 20px;margin:0;font-size:14px">{{ result.groups|join:', ' }}.<br>{{ result.created }} added, {{ result.updated }} updated, {{ result.files }} file{{ result.files|pluralize }}. Check each area, then set who holds each reminder role in Settings → Reminders.</p></section>{% endif %}
+<section class="cp3-card"><header class="cp3-head"><h2>1. Download setup from here</h2></header>
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="export">
+{% for g in catalog %}{% if g.choices %}<div class="sc-g"><h3>{{ g.label }}</h3>{% for c in g.choices %}<label><input type="checkbox" name="item" value="{{ c.id }}"{% if not c.sample %} checked{% endif %}> {{ c.label }}{% if c.sample %} <small>(sample — left out)</small>{% endif %}</label>{% endfor %}</div>{% endif %}{% endfor %}
+<div class="sc-actions"><button class="button button-primary">Download setup file</button><small style="color:#71717a">Anything named SAMPLE is left unticked.</small></div></form></section>
+<section class="cp3-card"><header class="cp3-head"><h2>2. Load a setup file into this copy</h2></header>
+<form method="post" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="action" value="import">
+<div class="sc-g"><label style="display:block"><span style="display:block;font-weight:600;margin-bottom:4px">Setup file</span><input type="file" name="file" accept=".json,application/json"></label>
+<label><input type="checkbox" name="confirm" value="1"> I understand matching setup here is replaced with the file's version (people and records are never touched).</label></div>
+<div class="sc-actions"><button class="button secondary">Load setup</button></div></form></section>
+</div>{% endblock %}

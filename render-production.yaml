@@ -41,6 +41,8 @@ services:
         value: btw-production.onrender.com,app.builttoworkusa.com
       - key: CSRF_TRUSTED_ORIGINS
         value: https://btw-production.onrender.com,https://app.builttoworkusa.com
+      - key: PARTICIPANT_PORTAL_BASE_URL
+        value: https://app.builttoworkusa.com
       - key: BTW_PREVIEW_GATE_ENABLED
         value: "false"
       - key: PRIVATE_DOCUMENT_ROOT

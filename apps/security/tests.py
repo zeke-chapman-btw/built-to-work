@@ -207,3 +207,71 @@ class CustomerTwoStepTests(PortalFixtures, TestCase):
         self.customer_login(user)
         gate = self.client.get(reverse("customer_portal:home"))
         self.assertIn(reverse("security:setup"), gate["Location"])
+
+
+class SetupCopyTests(TestCase):
+    def test_export_then_import_into_a_fresh_copy(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from apps.event_reports.models import ExpenseCategory
+        from apps.workdays.models import CompensationRate, StaffRole
+        from apps.reminders.models import ReminderRule
+        from . import setup_transfer as transfer
+        admin = get_user_model().objects.create_superuser(username="sc-copy", password="x-test-only")
+        self.client.force_login(admin, backend=BACKEND)
+        role = StaffRole.objects.create(name="SYNTHETIC Driver real")
+        from datetime import date
+        CompensationRate.objects.create(kind="role", role=role, amount=150, effective_from=date(2030, 1, 1), reason="r", created_by=admin)
+        ExpenseCategory.objects.get_or_create(name="SYNTHETIC Fuel")
+        rule = ReminderRule.objects.get(key="missing_info")
+        rule.days = "9"
+        rule.save()
+        page = self.client.get(reverse("security:setup-copy"))
+        self.assertContains(page, "Download setup file")
+        items = [c["id"] for g in transfer.catalog() for c in g["choices"] if g["key"] in ("pay", "expenses", "reminders")]
+        response = self.client.post(reverse("security:setup-copy"), {"action": "export", "item": items})
+        raw = b"".join([response.content])
+        self.assertIn(b"SYNTHETIC Driver real", raw)
+        # Pretend this is a fresh copy: remove what we exported, change the seeded rule back.
+        CompensationRate.objects.all().delete()
+        StaffRole.objects.filter(name="SYNTHETIC Driver real").delete()
+        ReminderRule.objects.filter(key="missing_info").update(days="3")
+        upload = SimpleUploadedFile("setup.json", raw, content_type="application/json")
+        done = self.client.post(reverse("security:setup-copy"), {"action": "import", "file": upload, "confirm": "1"})
+        self.assertContains(done, "Setup loaded")
+        self.assertTrue(StaffRole.objects.filter(name="SYNTHETIC Driver real").exists())
+        self.assertEqual(CompensationRate.objects.get(role__name="SYNTHETIC Driver real").created_by, None)
+        self.assertEqual(ReminderRule.objects.get(key="missing_info").days, "9")
+        bad = self.client.post(reverse("security:setup-copy"), {"action": "import", "confirm": "1",
+                               "file": SimpleUploadedFile("x.json", b"{}", content_type="application/json")})
+        self.assertContains(bad, "isn")
+
+
+class StaffImportTests(TestCase):
+    CSV = ('"name","email","phone","mailing_street","mailing_city","mailing_state","mailing_zip","shirt_size","role","active","user_id","id","created_date","updated_date","created_by_id","is_sample"\n'
+           '"SYNTHETIC Alpha One","alpha@example.test","7065550101","1 Test St","Athens","Georgia","30601","L","staff","true","x","y","","","","false"\n'
+           '"SYNTHETIC Beta","beta@example.test","7065550102","","","","","XXL","driver","false","x","y","","","","false"\n'
+           '"SYNTHETIC Sample","s@example.test","","","","","","","staff","true","x","y","","","","true"\n'
+           '"SYNTHETIC Already","already@example.test","","","","","","","staff","true","x","y","","","","false"\n')
+
+    def test_check_then_add(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from apps.accounts.roles import role_configuration
+        from apps.staffing.models import StaffProfile
+        role_configuration(apply=True)
+        admin = get_user_model().objects.create_superuser(username="si-admin", password="x-test-only")
+        self.client.force_login(admin, backend=BACKEND)
+        StaffProfile.objects.create(first_name="Already", last_name="Here", email="ALREADY@example.test")
+        self.client.post(reverse("accounts:staff-import"), {"action": "check",
+                         "file": SimpleUploadedFile("Staff_export.csv", self.CSV.encode(), content_type="text/csv")})
+        page = self.client.get(reverse("accounts:staff-import"))
+        self.assertContains(page, "2 to add")
+        self.assertContains(page, "Marked as sample")
+        self.assertContains(page, "Already here as Already Here")
+        self.client.post(reverse("accounts:staff-import"), {"action": "save"})
+        alpha = StaffProfile.objects.get(email="alpha@example.test")
+        self.assertEqual((alpha.first_name, alpha.last_name, alpha.phone, alpha.shirt_size, alpha.state),
+                         ("SYNTHETIC", "Alpha One", "(706) 555-0101", "L", "Georgia"))
+        beta = StaffProfile.objects.get(email="beta@example.test")
+        self.assertEqual((beta.is_active, beta.shirt_size, beta.user), (False, "2XL", None))
+        self.assertIn("driver", beta.internal_notes)
+        self.assertFalse(StaffProfile.objects.filter(email="s@example.test").exists())

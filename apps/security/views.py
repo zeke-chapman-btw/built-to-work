@@ -206,3 +206,53 @@ def legal(request, slug):
     body = row.body if row else PLACEHOLDER.format(title=LEGAL[slug])
     return render(request, "security/legal.html", {"title": LEGAL[slug], "paragraphs": [p.strip() for p in body.split("\n\n") if p.strip()],
                                                    "updated": row.updated_at if row else None})
+
+
+# ---------------------------------------------------------------- Settings → Security → Copy setup
+
+@login_required(login_url="/admin/login/")
+@require_http_methods(["GET", "POST"])
+def setup_copy(request):
+    _admin(request)
+    from django.http import HttpResponse
+    from django.utils import timezone
+    from . import setup_transfer as transfer
+    result = problem = None
+    if request.method == "POST" and request.POST.get("action") == "export":
+        chosen = request.POST.getlist("item")
+        if not chosen:
+            messages.error(request, "Tick at least one thing to copy.")
+            return redirect("security:setup-copy")
+        response = HttpResponse(transfer.export(chosen), content_type="application/json")
+        response["Content-Disposition"] = f'attachment; filename="btw-setup-{timezone.localdate():%Y-%m-%d}.json"'
+        return response
+    if request.method == "POST" and request.POST.get("action") == "import":
+        upload = request.FILES.get("file")
+        if not upload:
+            problem = "Choose the setup file you downloaded."
+        elif upload.size > 60 * 1024 * 1024:
+            problem = "That file is too big."
+        elif not request.POST.get("confirm"):
+            problem = "Tick the box to confirm."
+        else:
+            try:
+                bundle = transfer.read(upload.read())
+                behind = transfer.differences(bundle)
+                if behind:
+                    problem = ("The two copies of the app are on different versions (" + ", ".join(behind) +
+                               "). Publish the same release to both, then try again.")
+                else:
+                    created, updated = transfer.apply(bundle, request.user)
+                    result = dict(transfer.summary(bundle), created=created, updated=updated)
+                    from apps.core.audit import record_audit
+                    record_audit(actor=request.user, action="setup.copied_in", instance=request.user, source="setup_copy",
+                                 new_data={"groups": result["groups"], "created": created, "updated": updated},
+                                 reason="Setup copied in from another copy of the app.")
+            except ValueError as exc:
+                problem = str(exc)
+            except Exception as exc:
+                problem = f"Nothing was changed. The copy stopped on a problem: {str(exc)[:200]}"
+    from django.conf import settings as django_settings
+    return render(request, "security/setup_copy.html", {
+        "page_title": "Settings", "catalog": transfer.catalog(), "result": result, "problem": problem,
+        "site": getattr(django_settings, "PARTICIPANT_PORTAL_BASE_URL", "") or request.get_host()})
