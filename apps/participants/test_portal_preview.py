@@ -65,7 +65,7 @@ class PortalPreviewTests(TestCase):
         self.assertEqual(self.client.session['_auth_user_id'],str(self.admin.pk))
         self.assertNotIn(SESSION_KEY,self.client.session)
         self.admin.refresh_from_db();self.assertEqual(self.admin.password,original)
-        self.assertEqual(self.client.get('/internal/').status_code,200)
+        self.assertEqual(self.client.get('/home/').status_code,200)
         self.assertTrue(AuditLog.objects.filter(action='portal.preview_entered',actor=self.admin).exists())
         self.assertTrue(AuditLog.objects.filter(action='portal.preview_exited',actor=self.admin).exists())
 

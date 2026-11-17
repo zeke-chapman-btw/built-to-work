@@ -62,14 +62,100 @@ def connections(request):
         "page_title": "Settings",
         "text": {"row": rows.get("eztexting"), "username": ez_user, "source": ez_source,
                  "status": _status(rows.get("eztexting"), bool(ez_user))},
-        "email": {"row": rows.get("email"), "config": email,
+        "email": {"row": rows.get("email"), "config": email, "bounces": _bounce_count(),
                   "status": _status(rows.get("email"), bool(email["source"]) and bool(email["from_address"]))},
         "sending": {"row": rows.get("sending"), "since": since, "queue": _queue()},
         "gmail": {"configured": google.configured(),
                   "people": GmailConnection.objects.select_related("user").order_by("user__first_name", "user__username")},
         "history": history,
         "mailchimp": _mailchimp_summary(rows.get("mailchimp")),
+        "replies": _replies_summary(rows.get("replies")),
+        "email_replies": _email_replies_summary(),
+        "company_signature": _company_signature(),
+        "statement_notices": _statement_summary(),
     })
+
+
+def _bounce_count():
+    from .models import EmailBounce
+    return EmailBounce.objects.filter(cleared_at__isnull=True).count()
+
+
+def _statement_summary():
+    from .models import ConnectionSetting, StatementNotice
+    row = ConnectionSetting.objects.filter(key="statement_notices").first()
+    return {"on": bool(row and row.values.get("enabled")),
+            "sent": StatementNotice.objects.filter(status="sent").count(),
+            "last": StatementNotice.objects.order_by("-created_at").first()}
+
+
+@login_required(login_url="/admin/login/")
+@require_POST
+def statement_notices_toggle(request):
+    _admin(request)
+    from .statements import set_enabled
+    on = request.POST.get("on") == "1"
+    set_enabled(actor=request.user, on=on)
+    messages.success(request, "Staff will get an email when a new earnings statement is ready." if on
+                     else "Pay statement emails turned off.")
+    return redirect(_home() + "#statements")
+
+
+def _company_signature():
+    from .signatures import company
+    return company()
+
+
+def _email_replies_summary():
+    from .email_replies import site_enabled
+    from .models import GmailConnection
+    connected = list(GmailConnection.objects.exclude(refresh_token_encrypted=""))
+    return {"enabled": site_enabled(), "connected": len(connected),
+            "reading": sum(1 for c in connected if c.can_read and c.track_replies and not c.needs_reconnect)}
+
+
+@login_required(login_url="/admin/login/")
+@require_POST
+def email_replies_toggle(request):
+    _admin(request)
+    from .email_replies import set_enabled
+    on = request.POST.get("on") == "1"
+    set_enabled(actor=request.user, enabled=on)
+    messages.success(request, "Email replies turned on. Staff reconnect their Gmail once to start." if on
+                     else "Email replies turned off. No Gmail mailboxes will be checked.")
+    return redirect(_home() + "#email-replies")
+
+
+def _replies_summary(row):
+    from . import texting
+    from .text_views import staff_choices
+    values = row.values if row else {}
+    owner = texting.default_owner()
+    return {"row": row, "forwarding": bool(values.get("forwarding")), "owner": owner,
+            "owner_id": str(owner.pk) if owner else "", "staff": staff_choices(include_blank=True)}
+
+
+@login_required(login_url="/admin/login/")
+@require_POST
+def replies_setup(request):
+    """Turn on reply forwarding from EZ Texting, and/or choose who gets unmatched replies."""
+    _admin(request)
+    from django.contrib.auth import get_user_model
+    from . import texting
+    if "owner" in request.POST:
+        owner_id = request.POST.get("owner") or ""
+        owner = get_user_model().objects.filter(pk=owner_id, is_active=True, is_staff=True).first() if owner_id else None
+        texting.set_owner(actor=request.user, owner=owner)
+        messages.success(request, "Saved who gets replies that don't belong to anyone.")
+    if request.POST.get("forward") == "on":
+        try:
+            texting.turn_on_replies(actor=request.user, callback_url=lambda token: request.build_absolute_uri(
+                reverse("messaging:eztexting-webhook", args=[token])))
+        except texting.TextError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, "Replies are on. Texts people send back will now show up in the Inbox.")
+    return redirect(_home() + "#replies")
 
 
 def _mailchimp_summary(row):

@@ -141,7 +141,7 @@ class PortalFoundationTests(TestCase):
         response = self.client.get(participants_workspace)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Directory sections')
-        self.assertContains(response, reverse('internal:workspace',args=['approvals']))
+        self.assertContains(response, reverse('internal:workspace',kwargs={'workspace_id':'approvals'}))
         self.assertEqual(self.client.get(reverse('participants:staff-qualification-approvals')).status_code,200)
     def test_dashboard_has_one_primary_heading(self):
         self.client.force_login(self.staff_user("dashboard-heading-staff"))
@@ -168,7 +168,7 @@ class PortalFoundationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content.decode().count("<h1"), 1)
         self.assertContains(response, 'aria-current="page"')
-        self.assertNotContains(response, 'href="/internal/" class="nav-item active"')
+        self.assertNotContains(response, 'href="/home/" class="nav-item active"')
 
 
 @override_settings(AUTHENTICATION_BACKENDS=["django.contrib.auth.backends.ModelBackend"])

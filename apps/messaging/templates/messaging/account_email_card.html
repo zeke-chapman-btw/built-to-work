@@ -1,0 +1,17 @@
+<section class="ux-surface" id="email" aria-labelledby="email-heading">
+  <header class="ux-card-heading"><h2 id="email-heading">Email</h2></header>
+  <div class="ux-card-body">
+    <p style="margin:0 0 4px;font-weight:600">Your Gmail {% if connection.active %}<span class="cp3-chip g" style="margin-left:6px">Connected</span>{% elif connection %}<span class="cp3-chip y" style="margin-left:6px">Needs reconnecting</span>{% endif %}</p>
+    {% if not configured %}<p class="ux-note" style="margin:0">Sending from your own Gmail isn't set up on this site yet.</p>
+    {% else %}
+    <p class="ux-note" style="margin:0 0 10px">{% if connection.active %}{{ connection.google_email }} · emails you send to participants from the app come from this address and show in your Gmail Sent folder.{% elif connection %}{{ connection.last_error|default:'Google stopped accepting this connection.' }} Connect again to keep sending.{% else %}Connect once so emails you send to participants from the app come from your own address.{% endif %}</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">{% if not connection.active %}<form method="post" action="{% url 'messaging:gmail-connect' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}"><button class="button ux-primary" type="submit">{% if connection %}Reconnect{% else %}Connect Google account{% endif %}</button></form>{% endif %}{% if connection %}<form method="post" action="{% url 'messaging:gmail-disconnect' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}"><button class="button secondary" type="submit">Disconnect</button></form>{% endif %}</div>
+    {% if connection.active and replies_on %}<p style="margin:14px 0 4px;font-weight:600">Replies</p><p class="ux-note" style="margin:0 0 8px">{% if not connection.can_read %}Reconnect once to let replies to your app emails be copied to the person's activity. The app only opens conversations it started.{% elif connection.track_replies %}Replies to emails you send from the app are copied to the person's activity. They stay in your Gmail too.{% else %}Replies stay in your Gmail only.{% endif %}</p>
+    {% if not connection.can_read %}<form method="post" action="{% url 'messaging:gmail-connect' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}"><button class="button secondary" type="submit">Reconnect</button></form>{% else %}<form method="post" action="{% url 'messaging:gmail-replies' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">{% if connection.track_replies %}<button class="button secondary" name="on" value="0">Turn off</button>{% else %}<button class="button secondary" name="on" value="1">Turn on</button>{% endif %}</form>{% endif %}{% endif %}
+    {% endif %}
+    <p style="margin:18px 0 6px;font-weight:600">Signature</p>
+    {% if signature %}<div style="border:1px solid #ececef;border-radius:10px;background:#fafafa;padding:12px 14px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45;max-height:220px;overflow:auto">{{ signature|safe }}</div>
+    {% else %}<p class="ux-note" style="margin:0">No signature yet. Emails you send to participants from the app go out without one.</p>{% endif %}
+    <p style="margin:12px 0 0"><a class="button secondary" href="{% url 'messaging:signature' %}">{% if signature %}Edit signature{% else %}Add your signature{% endif %}</a></p>
+  </div>
+</section>

@@ -45,7 +45,7 @@ class StaffPreviewMiddleware:
             session[BLOCKED_KEY] = True
             back = request.META.get("HTTP_REFERER", "")
             parts = urlsplit(back)
-            safe = parts.path if (not parts.netloc or parts.netloc == request.get_host()) and parts.path.startswith("/") and not parts.path.startswith("/admin/") else "/internal/"
+            safe = parts.path if (not parts.netloc or parts.netloc == request.get_host()) and parts.path.startswith("/") and not parts.path.startswith("/admin/") else "/home/"
             return HttpResponseRedirect(safe + ("?" + parts.query if parts.query and safe == parts.path else ""))
         from apps.accounts.roles import roles_for, ROLE_GROUPS
         names = {v: k for k, v in ROLE_GROUPS.items()}

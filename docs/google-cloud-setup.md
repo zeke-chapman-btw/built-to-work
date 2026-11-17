@@ -11,6 +11,8 @@ Two separate pieces. Both are free and take about 15 minutes each.
    - User type: **Internal** (only built2work.com accounts can use it; no Google review needed).
    - App name: `Built to Work`. Support email: an admin address. Save.
    - **Data access / Scopes** → add `.../auth/gmail.send`, `openid` and `email`. Save.
+     Optional (only if "Email replies" will be used): also add `.../auth/gmail.readonly`.
+     It can be added later; staff then click Reconnect once.
 5. **APIs & Services → Credentials → Create credentials → OAuth client ID**:
    - Application type: **Web application**. Name: `Built to Work web`.
    - **Authorized redirect URIs** — add all four:
@@ -26,7 +28,7 @@ Two separate pieces. Both are free and take about 15 minutes each.
    - `GOOGLE_OAUTH_ALLOWED_DOMAIN` = `built2work.com`
 
 The app only asks for permission to **send** email. It can't read anyone's inbox.
-Each person can disconnect at any time (My stuff → Your email), and an admin can
+Each person can disconnect at any time (Settings → Account → Email), and an admin can
 remove the app's access for everyone at myaccount.google.com/permissions or in the
 Admin Console (Security → API controls → App access control).
 

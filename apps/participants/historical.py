@@ -2,6 +2,8 @@
 import csv
 import hashlib
 import io
+import json
+import re
 import uuid
 import zipfile
 from datetime import date, datetime
@@ -22,18 +24,20 @@ MAX_FILE_BYTES = 5 * 1024 * 1024
 MAX_XLSX_EXPANDED = 30 * 1024 * 1024
 MAX_ROWS = 10000
 MAX_COLUMNS = 100
-PROFILE_IMPORT_FIELDS = ("participant_type", "found_us", "looking_for_work", "work_desired", "trades_wanted",
+PROFILE_IMPORT_FIELDS = ("participant_type", "found_us", "employment_status", "looking_for_work", "work_desired", "trades_wanted",
                          "willing_to_travel", "skills", "years_experience", "education", "staff_note")
 IMPORT_FIELDS = ("identity_uuid", "first_name", "last_name", "preferred_name", "email", "phone",
-                 "date_of_birth", "city", "state", "postal_code", *PROFILE_IMPORT_FIELDS, "event_uuid", "event_name",
-                 "event_date", "group_name", "simulator_score", "score_method", "score_source", "scored_at")
+                 "date_of_birth", "address_line_1", "address_line_2", "city", "state", "postal_code", *PROFILE_IMPORT_FIELDS, "event_uuid", "event_name",
+                 "event_date", "group_name", "simulator_score", "score_method", "score_source", "scored_at",
+                 "consent_agreed", "consent_at")
 # Plain names, grouped the way the participant profile shows them.
 IMPORT_GROUPS = (
     ("Contact", (("first_name", "First name"), ("last_name", "Last name"), ("preferred_name", "Preferred name"),
-                 ("email", "Email"), ("phone", "Phone"), ("city", "City"), ("state", "State"), ("postal_code", "ZIP code"),
+                 ("email", "Email"), ("phone", "Phone"), ("address_line_1", "Street address"),
+                 ("address_line_2", "Address line 2"), ("city", "City"), ("state", "State"), ("postal_code", "ZIP code"),
                  ("date_of_birth", "Date of birth"))),
     ("Details", (("participant_type", "Participant type"), ("found_us", "How they found us"))),
-    ("Work preferences", (("looking_for_work", "Looking for work"), ("work_desired", "Work desired"),
+    ("Work preferences", (("employment_status", "Current job status"), ("looking_for_work", "Looking for work"), ("work_desired", "Work desired"),
                           ("trades_wanted", "Trades they want to work in"), ("willing_to_travel", "Willing to travel"))),
     ("Qualifications", (("skills", "Skills they have"), ("years_experience", "Years of work experience"),
                         ("education", "School and training"))),
@@ -42,21 +46,90 @@ IMPORT_GROUPS = (
                                ("event_uuid", "BTW event ID"))),
     ("Past Simulator score (optional)", (("simulator_score", "Simulator score"), ("score_method", "How it was scored"),
                                          ("score_source", "Where the score came from"), ("scored_at", "Scored on"))),
+    ("Consent (optional)", (("consent_agreed", "Agreed to the terms"), ("consent_at", "When they agreed"))),
     ("BTW records", (("identity_uuid", "BTW participant ID"),)),
 )
 IMPORT_LABELS = {key: label for _, fields in IMPORT_GROUPS for key, label in fields}
 # Extra column names people commonly use, matched without case, spaces or punctuation.
-_ALIASES = {"first_name": ("first", "firstname", "givenname", "fname"), "last_name": ("last", "lastname", "surname", "familyname", "lname"),
+_ALIASES = {"address_line_1": ("address", "address1", "street", "streetaddress", "addressline1"),
+            "address_line_2": ("address2", "addressline2", "apt", "unit", "suite"),
+            "employment_status": ("jobstatus", "employmentstatus", "currentjobstatus", "workstatus"),
+            "first_name": ("first", "firstname", "givenname", "fname"), "last_name": ("last", "lastname", "surname", "familyname", "lname"),
             "preferred_name": ("nickname", "goesby"), "email": ("emailaddress", "contactemail", "e-mail"),
             "phone": ("phonenumber", "mobile", "cell", "cellphone", "contactphone"), "postal_code": ("zip", "zipcode", "postcode", "postalcode"),
             "date_of_birth": ("dob", "birthdate", "birthday"), "participant_type": ("type", "participanttype", "persontype", "role"),
             "found_us": ("source", "leadsource", "howtheyfoundus", "howdidyouhearaboutus", "referral", "foundus"),
-            "looking_for_work": ("seekingwork", "lookingforwork", "jobseeking", "employmentinterest"),
+            "looking_for_work": ("seekingwork", "lookingforwork", "jobseeking", "employmentinterest", "interestedinjobopportunities"),
             "work_desired": ("worktype", "workdesired", "employmenttype", "fullorparttime"),
             "trades_wanted": ("trade", "trades", "tradeinterest", "tradeinterests", "careerinterests", "interests"),
             "willing_to_travel": ("travel", "willtravel", "willingtotravel"), "skills": ("skills", "skillsinterests"),
-            "years_experience": ("experience", "yearsofexperience", "yearsexperience"), "education": ("education", "training", "schooling"),
-            "staff_note": ("note", "notes", "comments", "staffnote"), "simulator_score": ("score", "simscore")}
+            "years_experience": ("experience", "yearsofexperience", "yearsexperience", "yearsconstructionexperience"), "education": ("education", "training", "schooling"),
+            "staff_note": ("note", "notes", "comments", "staffnote"), "simulator_score": ("score", "simscore"),
+            "event_name": ("eventname", "event"), "event_date": ("eventdate", "datecaptured"),
+            "consent_agreed": ("consenttoterms", "consent", "agreedtoterms", "termsaccepted"),
+            "consent_at": ("consentdate", "agreedat", "consentedat")}
+
+# A mapping value is a column name, or one of these:
+FIXED = "__fixed__:"   # the same typed value for every row
+COLUMNS = "__cols__:"  # several columns combined (Yes/No columns become a list of their names)
+
+
+def fixed_spec(value):
+    return FIXED + value
+
+
+def columns_spec(columns):
+    return COLUMNS + json.dumps(list(columns))
+
+
+def spec_columns(spec):
+    """The spreadsheet columns a mapping value reads."""
+    if not spec or spec.startswith(FIXED):
+        return []
+    if spec.startswith(COLUMNS):
+        try:
+            value = json.loads(spec[len(COLUMNS):])
+        except ValueError:
+            return []
+        return [str(item) for item in value] if isinstance(value, list) else []
+    return [spec]
+
+
+def _column_label(header, prefix=""):
+    text = header[len(prefix):] if prefix and header.startswith(prefix) and len(header) > len(prefix) else header
+    text = re.sub(r"(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|(?<=[A-Za-z])(?=\d{2,})", " ", text.replace("_", " "))
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _combined(raw, columns, *, lines=False):
+    prefix = ""
+    if len(columns) > 1:
+        prefix = columns[0]
+        for column in columns[1:]:
+            while prefix and not column.startswith(prefix):
+                prefix = prefix[:-1]
+        # Cut back to the start of a word so "TopIndustryCarpenter"/"TopIndustryConcrete" share "TopIndustry".
+        shortest = min(len(column) for column in columns)
+        prefix = prefix[:max(shortest - 1, 0)]
+        first = columns[0]
+        while prefix and not (first[len(prefix)].isupper() or first[len(prefix)].isdigit() or first[len(prefix) - 1] in "_ "):
+            prefix = prefix[:-1]
+    parts = []
+    for column in columns:
+        value = _cell(raw.get(column, ""))
+        if not value or _key(value) in _NO or _key(value) in ("none", "na", "nan"):
+            continue
+        label = _column_label(column, prefix)
+        parts.append(label if _key(value) in _YES else f"{label}: {value}")
+    return ("\n" if lines else ", ").join(parts)
+
+
+def _read_spec(raw, field, spec):
+    if spec.startswith(FIXED):
+        return spec[len(FIXED):].strip()
+    if spec.startswith(COLUMNS):
+        return _combined(raw, spec_columns(spec), lines=field in ("staff_note", "education", "skills"))
+    return _cell(raw.get(spec, ""))
 
 
 def _key(text):
@@ -75,6 +148,8 @@ def guess_mapping(headers):
             if header and header not in result.values():
                 result[field] = header
                 break
+    if result.get("consent_agreed") and not result.get("consent_at") and result.get("event_date"):
+        result["consent_at"] = result["event_date"]  # the sign-up time is when they agreed
     return result
 
 
@@ -91,12 +166,40 @@ def _choice(value, choices, label):
     raise ValidationError(f"{label} \"{value}\" is not one of the choices.")
 
 
+def _job_status_type(word):
+    """Answers like "Unemployed and looking for work" become a participant type."""
+    if "student" in word:
+        return "student"
+    if "unemployed" in word or "lookingforwork" in word:
+        return "job_seeker"
+    if "employed" in word or "working" in word:
+        return "employee"
+    if "teacher" in word or "instructor" in word:
+        return "teacher_instructor"
+    if "retired" in word:
+        return "other"
+    return ""
+
+
+def _years(value):
+    """A number of years, or a range like "1-3 years", "Less than 1 year", "8+ years" (lowest value kept)."""
+    text = value.strip().lower()
+    if re.match(r"^(less than|under|<)\s*1\b", text):
+        return Decimal("0")
+    match = re.match(r"^(\d+(?:\.\d+)?)", text.replace("years", "").replace("year", "").strip())
+    if match and not re.match(r"^\d+(\.\d+)?$", text):
+        return Decimal(match.group(1))
+    return Decimal(value)
+
+
 def _profile_values(data):
     from .identifier_definitions import PrimaryIdentifier
     from .models import ParticipantCareerProfile
     if data.get("participant_type"):
         aliases = {"jobseeker": "job_seeker", "teacher": "teacher_instructor", "instructor": "teacher_instructor"}
-        data["participant_type"] = aliases.get(_key(data["participant_type"])) or _choice(data["participant_type"], PrimaryIdentifier.choices, "Participant type")
+        word = _key(data["participant_type"])
+        data["participant_type"] = (aliases.get(word) or _job_status_type(word)
+                                    or _choice(data["participant_type"], PrimaryIdentifier.choices, "Participant type"))
     if data.get("looking_for_work"):
         word = _key(data["looking_for_work"])
         data["looking_for_work"] = "seeking" if word in _YES else "not_seeking" if word in _NO else "open" if word in _MAYBE else _choice(
@@ -112,13 +215,13 @@ def _profile_values(data):
         data["willing_to_travel"] = "yes" if word in _YES else "no"
     if data.get("years_experience"):
         try:
-            years = Decimal(data["years_experience"])
+            years = _years(data["years_experience"])
             if not years.is_finite() or years < 0 or years > 80:
                 raise InvalidOperation
             data["years_experience"] = str(years.quantize(Decimal("0.1")))
         except InvalidOperation as exc:
             raise ValidationError("Years of work experience must be a number from 0 to 80.") from exc
-    for field, limit in (("found_us", 240), ("trades_wanted", 4000), ("skills", 4000), ("education", 4000), ("staff_note", 4000)):
+    for field, limit in (("employment_status", 100), ("address_line_1", 200), ("address_line_2", 200), ("found_us", 240), ("trades_wanted", 4000), ("skills", 4000), ("education", 4000), ("staff_note", 4000)):
         if len(data.get(field, "")) > limit:
             raise ValidationError(f"{IMPORT_LABELS[field]} is too long.")
 EXPORT_FIELDS = ("identity_uuid", "first_name", "last_name", "preferred_name", "email", "phone",
@@ -192,27 +295,45 @@ def create_batch(*, uploaded_file, actor):
     return batch
 
 
+_US_DATE = re.compile(r"^(\d{1,2})[/-](\d{1,2})[/-](\d{2}|\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AaPp][Mm])?)?$")
+
+
+def _us_datetime(value):
+    match = _US_DATE.match((value or "").strip())
+    if not match:
+        return None
+    month, day, year, hour, minute, second, ampm = match.groups()
+    year = int(year) + (2000 if len(year) == 2 and int(year) < 50 else 1900 if len(year) == 2 else 0)
+    hour = int(hour or 0)
+    if ampm:
+        hour = hour % 12 + (12 if ampm.lower() == "pm" else 0)
+    return datetime(year, int(month), int(day), hour, int(minute or 0), int(second or 0))
+
+
 def _date(value, field):
     if not value:
         return None
+    us = _us_datetime(value)
+    if us:
+        return us.date()
     try:
         return date.fromisoformat(value[:10])
     except (ValueError, TypeError) as exc:
-        raise ValidationError(f"{field} must be an ISO date (YYYY-MM-DD).") from exc
+        raise ValidationError(f"{IMPORT_LABELS.get(field, field)} must be a date like 3/14/2005 or 2005-03-14.") from exc
 
 
 def _score_timestamp(value):
     try:
-        parsed = datetime.fromisoformat(value)
+        parsed = _us_datetime(value) or datetime.fromisoformat(value)
         return timezone.make_aware(parsed) if timezone.is_naive(parsed) else parsed
     except (ValueError, TypeError) as exc:
-        raise ValidationError("scored_at must be an ISO date and time.") from exc
+        raise ValidationError("Scored on must be a date and time like 11/14/2026 14:00 or 2026-11-14 14:00.") from exc
 
 
 def _normalize(raw, mapping):
     if raw.get("__row_error__"):
         raise ValidationError(raw["__row_error__"])
-    data = {field: _cell(raw.get(column, "")) for field, column in mapping.items() if column}
+    data = {field: _read_spec(raw, field, spec) for field, spec in mapping.items() if spec}
     if not data.get("first_name") or not data.get("last_name"):
         raise ValidationError("First and last names are required.")
     for field, value in data.items():
@@ -247,8 +368,62 @@ def _normalize(raw, mapping):
             raise ValidationError("Simulator score requires its original method and source.")
     if data.get("scored_at"):
         data["scored_at"] = _score_timestamp(data["scored_at"]).isoformat()
+    _consent_values(data)
     _profile_values(data)
     return data
+
+
+def current_consent():
+    """The sign-up consent stored in the app (newest approved version)."""
+    from .models import ConsentDocumentVersion
+    return (ConsentDocumentVersion.objects.filter(key="btw-intake", is_approved=True)
+            .order_by("-effective_at", "-version").first())
+
+
+def _consent_values(data):
+    answer = data.pop("consent_agreed", "")
+    when = data.pop("consent_at", "")
+    word = _key(answer)
+    if not word or word in _NO:
+        return
+    if word not in _YES:
+        raise ValidationError(f"Agreed to the terms must be Yes or No, not \"{answer}\".")
+    if not when:
+        raise ValidationError("Agreed to the terms needs the date and time they agreed.")
+    document = current_consent()
+    if document is None:
+        raise ValidationError("There is no approved sign-up consent stored in the app to record this against.")
+    data["consent"] = {"agreed_at": _score_timestamp(when).isoformat(), "document_id": document.pk,
+                       "document_version": document.version, "answer": answer}
+
+
+def _record_consent(participant, data, row, event=None):
+    """Record the sign-up consent they gave at the event, at the time in the spreadsheet."""
+    from .models import ConsentAcceptance, ConsentDocumentVersion, RegistrationFormVersion, RegistrationSubmission
+    consent = data.get("consent")
+    if not consent:
+        return None
+    key = f"historical-consent-{row.batch_id}-{row.row_number}"[:64]
+    existing = RegistrationSubmission.objects.filter(idempotency_key=key).first()
+    if existing:
+        return existing
+    document = ConsentDocumentVersion.objects.get(pk=consent["document_id"])
+    form_version = (RegistrationFormVersion.objects.filter(status=RegistrationFormVersion.Status.PUBLISHED)
+                    .order_by("-created_at").first())
+    if form_version is None:
+        raise ValidationError("No published sign-up form exists to file the consent under.")
+    agreed_at = datetime.fromisoformat(consent["agreed_at"])
+    source = {"historical_import": True, "batch": str(row.batch_id), "file": row.batch.original_filename,
+              "row": row.row_number, "spreadsheet_answer": consent["answer"]}
+    submission = RegistrationSubmission.objects.create(
+        form_version=form_version, participant=participant, event=event, status="submitted", submitted_at=agreed_at,
+        source="historical_import", answers={"consent_to_terms": consent["answer"]}, answer_snapshot=source,
+        intake_metadata=source, idempotency_key=key)
+    acceptance = ConsentAcceptance.objects.create(participant=participant, submission=submission, document=document,
+        metadata=dict(source, document_version=document.version, content_hash=document.content_hash,
+                      channel="past_event_import"))
+    ConsentAcceptance.objects.filter(pk=acceptance.pk).update(accepted_at=agreed_at)
+    return submission
 
 
 def _matches(data):
@@ -274,7 +449,7 @@ def preview_batch(batch, mapping, *, actor):
     if set(mapping) - set(IMPORT_FIELDS) or not mapping.get("first_name") or not mapping.get("last_name"):
         raise ValidationError("Map first name and last name to spreadsheet columns.")
     headers, source_rows = _read_rows(batch)
-    if any(column not in headers for column in mapping.values() if column):
+    if any(column not in headers for spec in mapping.values() for column in spec_columns(spec)):
         raise ValidationError("A mapped column is missing from this spreadsheet.")
     seen = set()
     with transaction.atomic():
@@ -311,6 +486,7 @@ def _import_row(row, *, actor, participant=None):
         fields = {"first_name": data["first_name"], "last_name": data["last_name"],
                   "preferred_name": data.get("preferred_name", ""), "contact_email": data.get("email", ""),
                   "contact_phone": data.get("phone", ""), "city": data.get("city", ""),
+                  "address_line_1": data.get("address_line_1", ""), "address_line_2": data.get("address_line_2", ""),
                   "state": data.get("state", ""), "postal_code": data.get("postal_code", "")}
         if data.get("date_of_birth"):
             fields["date_of_birth"] = _date(data["date_of_birth"], "date_of_birth")
@@ -332,6 +508,7 @@ def _import_row(row, *, actor, participant=None):
             defaults={"participant": participant, "event_record": event_record,
                       "raw_score": Decimal(data["simulator_score"]), "score_method": data["score_method"],
                       "source": data["score_source"], "scored_at": _score_timestamp(data["scored_at"]) if data.get("scored_at") else None})
+    _record_consent(participant, data, row, event=event_record.event if event_record else None)
     row.participant = participant
     row.status = HistoricalImportRow.Status.IMPORTED
     row.save(update_fields=("participant", "status"))
@@ -344,7 +521,10 @@ def _import_profile(participant, data, *, actor, row):
     """Fill profile answers from the sheet. Existing answers on a matched person are never overwritten."""
     from .models import ParticipantCareerProfile, ParticipantNote
     from .workspace_models import ParticipantAcquisition
-    career_values = {"employment_interest": data.get("looking_for_work", ""), "preferred_work_type": data.get("work_desired", ""),
+    if participant is not None and data.get("address_line_1") and not participant.address_line_1:
+        Participant.objects.filter(pk=participant.pk, address_line_1="").update(
+            address_line_1=data["address_line_1"], address_line_2=data.get("address_line_2", ""))
+    career_values = {"employment_status": data.get("employment_status", ""), "employment_interest": data.get("looking_for_work", ""), "preferred_work_type": data.get("work_desired", ""),
                      "career_interests": data.get("trades_wanted", ""), "skills_interests": data.get("skills", ""),
                      "education_training": data.get("education", "")}
     career_values = {key: value for key, value in career_values.items() if value}

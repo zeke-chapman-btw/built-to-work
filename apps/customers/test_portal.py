@@ -195,7 +195,7 @@ class AuthenticationTests(PortalFixtures, TestCase):
 
     def test_customer_login_rejects_unsafe_return_and_routes_to_portal(self):
         org, member, user = self.lead()
-        for destination in ('https://evil.example/', '//evil.example/', '/admin/', '/internal/', '/customer/auth/logout/'):
+        for destination in ('https://evil.example/', '//evil.example/', '/admin/', '/home/', '/customer/auth/logout/'):
             self.client.logout()
             response = self.client.post(reverse('accounts:login'), {'account_type':'customer', 'email':member.identity.email, 'password':PASSWORD, 'next':destination})
             self.assertRedirects(response, reverse('customer_portal:home'), fetch_redirect_response=False)
@@ -249,7 +249,7 @@ class AuthenticationTests(PortalFixtures, TestCase):
 
     def test_cross_realm_routes_are_denied(self):
         org, member, user = self.lead(); self.customer_login(user)
-        for url in ('/internal/', '/internal/customers/', '/participants/profile/', '/admin/'):
+        for url in ('/home/', '/customers/', '/participants/profile/', '/admin/'):
             self.assertIn(self.client.get(url).status_code, (302,403,404))
         self.client.force_login(self.admin, backend='django.contrib.auth.backends.ModelBackend')
         self.assertEqual(self.client.get(reverse('customer_portal:home')).status_code, 403)

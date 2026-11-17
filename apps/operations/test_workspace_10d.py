@@ -80,12 +80,12 @@ class ManagementUI10DTests(TestCase):
         self.assertEqual(r.status_code,400);self.trailer.refresh_from_db();self.assertEqual(self.trailer.display_name,"SYNTHETIC updated")
     def test_platform_tools_hidden_without_permissions(self):
         self.client.force_login(self.reader,backend="django.contrib.auth.backends.ModelBackend")
-        self.assertEqual(self.client.get(reverse("internal:workspace",args=["platform-tools"])).status_code,403)
-        self.assertNotContains(self.client.get("/internal/"),"PLATFORM TOOLS")
+        self.assertEqual(self.client.get(reverse("internal:workspace",kwargs={'workspace_id':"platform-tools"})).status_code,403)
+        self.assertNotContains(self.client.get("/home/"),"PLATFORM TOOLS")
     def test_monitor_only_permission_does_not_expose_match_or_backup_controls(self):
         self.reader.user_permissions.add(Permission.objects.get(codename="view_syncoutboxitem"))
         self.client.force_login(self.reader,backend="django.contrib.auth.backends.ModelBackend")
-        r=self.client.get(reverse("internal:workspace",args=["platform-tools"]))
+        r=self.client.get(reverse("internal:workspace",kwargs={'workspace_id':"platform-tools"}))
         self.assertContains(r,"System status");self.assertNotContains(r,reverse("events:match-review-list"));self.assertNotContains(r,"/admin/events/backuprecord/")
     def test_existing_event_get_never_backfills_checklist(self):
         self.assertFalse(EventExecution.objects.filter(event=self.event).exists())

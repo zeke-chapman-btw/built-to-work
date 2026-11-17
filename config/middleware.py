@@ -12,7 +12,7 @@ class PreviewAccessMiddleware:
 
     health_path = "/health/"
     # Service callbacks that can't send the preview password; each checks its own secret.
-    callback_prefixes = ("/messaging/mailchimp/webhook/",)
+    callback_prefixes = ("/messaging/mailchimp/webhook/", "/messaging/eztexting/webhook/")
 
     def __init__(self, get_response):
         self.get_response = get_response

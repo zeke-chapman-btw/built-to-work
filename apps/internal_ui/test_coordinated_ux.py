@@ -31,7 +31,7 @@ class CoordinatedSettingsTests(TestCase):
             self.assertNotContains(response,text)
 
     def test_existing_admin_directory_and_settings_keep_authorized_destinations(self):
-        self.login();response=self.client.get(reverse('internal:workspace',args=['administration']))
+        self.login();response=self.client.get(reverse('internal:workspace',kwargs={'workspace_id':'administration'}))
         self.assertEqual(response.status_code,200)
         for item in visible_workspace_links(self.admin,'administration'):
             self.assertContains(response,'href="'+item['url']+'"')

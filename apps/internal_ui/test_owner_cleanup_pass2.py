@@ -263,7 +263,7 @@ class HomeAndNotificationsTests(FixtureMixin,TestCase):
     def setUp(self):self.make_fixtures();self.client.force_login(self.admin,backend="django.contrib.auth.backends.ModelBackend")
 
     def test_home_order_quick_actions_and_honest_metric_scopes(self):
-        response=self.client.get('/internal/')
+        response=self.client.get('/home/')
         self.assertEqual(response.status_code,200)
         html=response.content.decode()
         self.assertLess(html.index('id="hv2-attention-title"'),html.index('id="hv2-actions-title"'))

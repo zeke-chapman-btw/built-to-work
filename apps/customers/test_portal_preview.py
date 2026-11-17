@@ -59,7 +59,7 @@ class CustomerPortalPreviewTests(TestCase):
         self.assertNotIn(preview.SESSION_KEY,self.client.session)
         self.assertEqual(self.client.session['_auth_user_id'],str(self.admin.pk))
         self.admin.refresh_from_db();self.assertEqual(self.admin.password,original)
-        self.assertEqual(self.client.get('/internal/').status_code,200)
+        self.assertEqual(self.client.get('/home/').status_code,200)
 
     def test_fixture_is_reused_and_never_sends_mail(self):
         first=self.enter();counts=(CustomerIdentity.objects.count(),CustomerOrganization.objects.count(),WorkforceNeed.objects.count(),Campaign.objects.count())

@@ -200,7 +200,7 @@ class Operations9DTests(TestCase):
         self.event.status='draft';self.event.save();self.login(self.employee)
         for section in ['tasks','notes','documents']:self.assertEqual(self.client.get(self.event_url(section)).status_code,403)
     def test_staff_navigation_exposes_my_tasks_and_event_operations(self):
-        self.login(self.employee);self.assertContains(self.client.get('/operations/tasks/'),'Tasks');self.assertContains(self.client.get('/internal/'),'Personal settings')
+        self.login(self.employee);self.assertContains(self.client.get('/operations/tasks/'),'Tasks');self.assertContains(self.client.get('/home/'),'Personal settings')
     def test_manager_event_detail_and_staffing_links(self):
         r=self.client.get(reverse('events:event_detail',args=[self.event.pk]));self.assertContains(r,self.event_url('tasks'));self.assertContains(r,self.event_url('notes'));self.assertContains(r,self.event_url('documents'))
     def test_operations_event_pagination(self):

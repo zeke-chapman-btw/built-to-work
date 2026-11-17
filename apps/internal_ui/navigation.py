@@ -119,12 +119,12 @@ WORKSPACE_LINKS = {'events': ({'label': 'My staff schedule',
                                      'participants.change_testparticipant')})}
 
 ACTIVE_PREFIXES = {
-    "platform-tools":("/events/operations/",),
+    "platform-tools":("/settings/system/",),
     "tasks":("/operations/tasks/","/operations/my-tasks/"),
     "events":("/events/","/staff/"),
     "participants":("/participants/",),
-    "operations":("/internal/trailer-control/","/internal/reports/","/reports/","/workdays/events/","/workdays/records/","/workdays/trips/","/workdays/mine/","/workdays/reports/","/operations/","/staff/directory/","/staff/requests/","/events/operations/","/events/offline-preparations/","/stations/","/assessments/","/quizzes/"),
-    "administration":("/reports/categories/","/workdays/compensation/","/admin/","/participants/staff/registration-forms/","/participants/staff/testing/"),
+    "operations":("/operations/trailer-control/","/reports/","/workdays/events/","/workdays/records/","/workdays/trips/","/workdays/mine/","/workdays/reports/","/operations/","/settings/staff-directory/","/staff/requests/","/settings/system/","/events/offline-preparations/","/operations/stations/","/assessments/","/operations/quizzes/"),
+    "administration":("/settings/expense-categories/","/settings/pay/","/admin/","/participants/registration-forms/","/settings/test-participant/"),
 }
 
 def _can_see(user, permissions):
@@ -166,35 +166,35 @@ def visible_legacy_workspaces(user,current_path=""):
             entry['url']=reverse('staffing:general-schedule')
         entry["active"]=current_path==entry["url"] or any(current_path.startswith(prefix) for prefix in ACTIVE_PREFIXES.get(item["id"],()))
         if item['id'] in ('customers','campaigns'):
-            entry['active']=current_path.startswith('/internal/'+item['id']+'/') or current_path==reverse('internal:workspace',kwargs={'workspace_id':item['id']})
+            entry['active']=current_path.startswith('/customers/' if item['id']=='customers' else '/internal/'+item['id']+'/') or current_path==reverse('internal:workspace',kwargs={'workspace_id':item['id']})
             if item['id']=='campaigns' and current_path.startswith('/recruiting/'):entry['active']=True
         if item["id"]=="operations" and current_path.startswith(("/operations/tasks/","/operations/my-tasks/")):
             entry["active"]=False
-        if item["id"]=="operations" and current_path.startswith("/reports/categories/"):
+        if item["id"]=="operations" and current_path.startswith("/settings/expense-categories/"):
             entry["active"]=False
         if item["id"]=="operations" and current_path=="/workdays/":
             entry["active"]=False
-        if item["id"]=="events" and current_path.startswith(("/staff/directory/","/staff/requests/","/events/operations/","/events/offline-preparations/")):
+        if item["id"]=="events" and current_path.startswith(("/settings/staff-directory/","/staff/requests/","/settings/system/","/events/offline-preparations/")):
             entry["active"]=False
-        if item["id"]=="participants" and current_path.startswith(("/participants/staff/registration-forms/","/participants/staff/testing/")):
+        if item["id"]=="participants" and current_path.startswith(("/participants/registration-forms/","/settings/test-participant/")):
             entry["active"]=False
-        if item["id"]=="operations" and current_path.startswith(("/operations/events/","/operations/notes/","/operations/documents/","/operations/records/","/staff/requests/","/staff/directory/","/workdays/events/","/workdays/records/","/workdays/trips/")):
+        if item["id"]=="operations" and current_path.startswith(("/operations/events/","/operations/notes/","/operations/documents/","/operations/records/","/staff/requests/","/settings/staff-directory/","/workdays/events/","/workdays/records/","/workdays/trips/")):
             entry["active"]=False
         if item["id"]=="events" and current_path.startswith(("/operations/events/","/operations/notes/","/operations/documents/","/operations/records/","/staff/requests/")):
             entry["active"]=True
-        if item["id"]=="events" and current_path.startswith("/staff/directory/"):
+        if item["id"]=="events" and current_path.startswith("/settings/staff-directory/"):
             entry["active"]=False
-        if item["id"]=="administration" and (current_path.startswith("/staff/directory/") or current_path=="/workdays/"):
+        if item["id"]=="administration" and (current_path.startswith("/settings/staff-directory/") or current_path=="/workdays/"):
             entry["active"]=True
         if current_path.startswith("/workdays/mine/"):
             entry["active"]=False
-        if current_path.startswith(("/reports/events/","/workdays/events/")) and item["id"] in ("events","operations"):
+        if current_path.startswith(("/events/reports/","/workdays/events/")) and item["id"] in ("events","operations"):
             entry["active"]=item["id"]=="events"
-        if current_path.startswith("/events/operations/") and item["id"] in ("operations","platform-tools"):
+        if current_path.startswith("/settings/system/") and item["id"] in ("operations","platform-tools"):
             entry["active"]=item["id"]=="platform-tools"
         if current_path.startswith("/operations/execution/events/") and item["id"] in ("events","operations"):
             entry["active"]=item["id"]=="events"
-        if current_path.startswith(("/participants/staff/intake-forms/","/participants/staff/intake-trailer/","/participants/staff/consents/")):
+        if current_path.startswith(("/operations/forms/","/participants/staff/intake-trailer/","/operations/consents/")):
             entry["active"]=item["id"]=="operations"
         visible.append(entry)
         if current_path.startswith("/operations/setup/events/") and item["id"] in ("events","operations"):
@@ -205,7 +205,7 @@ def visible_settings_link(user,current_path=""):
     if not getattr(user,"is_active",False) or not getattr(user,"is_staff",False):
         return None
     item=_resolved({"label":"SETTINGS","icon":"settings","url_name":"internal:settings"})
-    item["active"]=current_path.startswith("/internal/settings/") or current_path.startswith("/workdays/mine/")
+    item["active"]=current_path.startswith("/settings/") or current_path.startswith("/workdays/mine/")
     return item
 
 def visible_workspace_links(user,workspace_id):
@@ -243,6 +243,39 @@ def _destination_allowed(user, item):
     return True
 
 
+def _inbox_entry(user):
+    """Inbox (text replies and in-app reminders), with a count of new ones for this person."""
+    if not getattr(user, "is_authenticated", False):
+        return None
+    try:
+        from apps.participants.workspace_access import can_notes
+        from apps.reminders.models import ReminderNotice
+        try:
+            replies_ok = bool(can_notes(user))
+        except Exception:
+            replies_ok = False
+        from django.contrib.auth import get_user_model
+        from django.db.models import Count, IntegerField, OuterRef, Subquery, Value
+        from django.db.models.functions import Coalesce
+        from apps.messaging.models import TextMessage
+
+        def counted(qs):
+            return Coalesce(Subquery(qs.order_by().annotate(g=Value(1)).values("g").annotate(n=Count("pk")).values("n")[:1],
+                                     output_field=IntegerField()), 0)
+        row = get_user_model().objects.filter(pk=user.pk).annotate(
+            any_notice=counted(ReminderNotice.objects.filter(user=OuterRef("pk"))),
+            unread=counted(ReminderNotice.objects.filter(user=OuterRef("pk"), read_at__isnull=True)),
+            replies=counted(TextMessage.objects.filter(direction="in", replies_to=OuterRef("pk"), state="new")),
+        ).values("any_notice", "unread", "replies").first() or {}
+        if not replies_ok and not row.get("any_notice"):
+            return None
+        count = (row.get("unread") or 0) + ((row.get("replies") or 0) if replies_ok else 0)
+    except Exception:
+        return None
+    url = reverse("messaging:texts") + ("" if replies_ok else "?tab=reminders")
+    return dict(id="inbox", label="Inbox", icon="message", url=url, active=False, count=count)
+
+
 def staff_destinations(user, current_path=""):
     """Owner-approved staff navigation; existing endpoint policies still guard tools."""
     legacy = {entry["id"]: entry for entry in visible_legacy_workspaces(user, current_path)}
@@ -266,19 +299,27 @@ def staff_destinations(user, current_path=""):
     position = len(entries) - 2  # before Reports & Analytics and Settings
     if has_profile or can_manage_sops(user):
         entries.insert(position, dict(id="sops", label="SOPs", icon="sop", url=reverse("sops:index"), active=False))
-    if has_profile:
+    from apps.accounts.roles import manager
+    bottom_mine = has_profile and manager(user)  # admins and managers: personal pages sit by their name
+    if has_profile and not bottom_mine:
         entries.insert(position, dict(id="my-stuff", label="My stuff", icon="me", url=reverse("my:schedule"), active=False))
+    if bottom_mine:
+        entries.append(dict(id="my-stuff", label="My stuff", icon="me", url=reverse("my:schedule"), active=False, bottom=True))
+    inbox = _inbox_entry(user)
+    if inbox:
+        entries.append(dict(inbox, bottom=True))  # shown at the bottom of the menu, by the person's name
     if not report_destinations(user):entries=[entry for entry in entries if entry['id']!='reports']
     active = next((entry["id"] for entry in entries if entry["active"]), None)
     if any(legacy.get(key, {}).get("active") for key in ("administration", "platform-tools")):
         active = "settings"
-    if current_path.startswith(("/internal/reports/", "/reports/", "/workdays/reports/")):
-        active = "events" if current_path.startswith("/reports/events/") else "settings" if current_path.startswith("/reports/categories/") else "reports"
-    if current_path.startswith(("/internal/settings/", "/operations/tasks/reminders/", "/workdays/mine/", "/internal/quick-actions/", "/accounts/staff/", "/workdays/compensation/")):
+    if current_path.startswith(("/reports/", "/reports/", "/workdays/reports/")):
+        active = "events" if current_path.startswith("/events/reports/") else "settings" if current_path.startswith("/settings/expense-categories/") else "reports"
+    if current_path.startswith(("/settings/", "/operations/tasks/reminders/", "/workdays/mine/", "/home/quick-actions/", "/settings/staff/", "/settings/pay/")):
         active = "settings"
-    if current_path.startswith(("/internal/reports/my-pay/", "/my/", "/workdays/mine/")):active="my-stuff"
+    if current_path.startswith(("/reports/my-pay/", "/my/", "/workdays/mine/")):active="my-stuff"
     if current_path.startswith("/sops/") and not current_path.startswith("/sops/library/"):active="sops"
     if current_path.startswith("/sops/library/"):active="settings"
+    if current_path.startswith("/inbox/"):active="inbox"
     for entry in entries:
         entry["active"] = entry["id"] == active
     return entries
@@ -308,6 +349,6 @@ visible_workspaces = visible_legacy_workspaces
 def legacy_workspace_context(user, current_path=""):
     entry = next((entry for entry in visible_legacy_workspaces(user, current_path)
                   if entry["active"] and entry["id"] in ("administration", "platform-tools")), None)
-    if current_path.startswith(("/accounts/staff/", "/workdays/compensation/", "/reports/categories/", "/internal/workspaces/administration/")):
+    if current_path.startswith(("/settings/staff/", "/settings/pay/", "/settings/expense-categories/", "/settings/admin/")):
         return dict(id="settings", label="Settings", url=reverse("internal:settings"))
     return entry

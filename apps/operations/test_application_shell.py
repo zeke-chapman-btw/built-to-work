@@ -70,11 +70,11 @@ class CustomerSharedShellTests(PortalFixtures,TestCase):
                     {'account_type':'customer','email':member.identity.email,'password':PASSWORD}).status_code,302)
                 response=self.client.get(reverse('customer_portal:home'));links=chrome(self,response)
                 self.assertEqual(len(links),5)
-                self.assertFalse(any(x['url'].startswith(('/internal/','/operations/','/participants/')) for x in links))
+                self.assertFalse(any(x['url'].startswith(('/home/','/operations/','/participants/')) for x in links))
                 self.assertEqual(self.client.get(reverse('customer_portal:need-create')).status_code,200 if needs else 403)
                 self.assertEqual(self.client.get(reverse('customer_portal:campaign-create')).status_code,200 if campaigns else 403)
                 self.assertEqual(self.client.get(reverse('customer_portal:invite')).status_code,403)
-                self.assertEqual(self.client.get('/internal/').status_code,403)
+                self.assertEqual(self.client.get('/home/').status_code,403)
                 self.assertEqual(self.client.get(reverse('participants:profile')).status_code,403)
 
     def test_organization_switch_remains_guarded_and_context_is_not_a_role_switcher(self):
@@ -142,8 +142,8 @@ class ParticipantSharedShellTests(TestCase):
 
     def test_no_staff_customer_links_and_cross_role_denial(self):
         response=self.client.get(reverse('participants:profile'));links=chrome(self,response)
-        self.assertFalse(any(x['url'].startswith(('/internal/','/customer/','/operations/')) for x in links))
-        self.assertEqual(self.client.get('/internal/').status_code,403)
+        self.assertFalse(any(x['url'].startswith(('/home/','/customer/','/operations/')) for x in links))
+        self.assertEqual(self.client.get('/home/').status_code,403)
         self.assertEqual(self.client.get(reverse('customer_portal:home')).status_code,403)
 
     def test_sidebar_signout_uses_existing_post_csrf_flow(self):
@@ -171,7 +171,7 @@ class StaffSharedShellTests(PortalFixtures,TestCase):
 
     def test_existing_staff_navigation_and_task_dialog_remain_staff_only(self):
         self.client.force_login(self.admin,backend='django.contrib.auth.backends.ModelBackend')
-        response=self.client.get('/internal/');links=chrome(self,response)
+        response=self.client.get('/home/');links=chrome(self,response)
         self.assertEqual([x['url'] for x in links],[x['url'] for x in response.context['primary_navigation']])
         self.assertContains(response,'data-notification-bell')
         self.assertContains(response,'id="task-create-dialog"',count=1)

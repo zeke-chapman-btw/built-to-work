@@ -141,7 +141,7 @@ class ParticipantExplorerTests(TestCase):
 
     def test_return_guard_rejects_external_or_unknown_parameters(self):
         for origin in ['https://example.invalid/','//example.invalid/',self.url+'?unexpected=1']:
-            request=RequestFactory().get('/participants/staff/directory/1/',{'from':origin})
+            request=RequestFactory().get('/participants/directory/1/',{'from':origin})
             self.assertEqual(directory_origin(request),reverse('participants:staff-directory'))
 
     def test_saved_views_are_owner_private_and_rechecked(self):

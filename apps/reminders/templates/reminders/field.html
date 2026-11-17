@@ -1,0 +1,1 @@
+{% if field.is_hidden %}{{ field }}{% else %}<div class="btw-field{% if field.errors %} btw-field-invalid{% endif %}">{% if field.widget_type == 'checkbox' %}<label>{{ field }} {{ field.label }}</label>{% else %}{{ field.label_tag }}{{ field }}{% endif %}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</div>{% endif %}

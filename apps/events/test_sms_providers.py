@@ -29,7 +29,8 @@ EZ = dict(EZTEXTING_USERNAME="btw-app", EZTEXTING_PASSWORD="test-only", BTW_SMS_
 class EzTextingTests(SimpleTestCase):
     @override_settings(**EZ)
     def test_sends_with_basic_sign_in_and_eleven_digit_number(self):
-        with patch("apps.events.sms_providers.request.urlopen", return_value=_Response()) as urlopen:
+        with patch("apps.events.sms_providers.request.urlopen", return_value=_Response()) as urlopen, \
+                patch("apps.messaging.texting.opted_out", return_value=False):
             reference = _provider_send("sms", "(555) 123-4567", subject="x", body="Hello", idempotency_key="k1")
         self.assertEqual(reference, "eztexting:987")
         req = urlopen.call_args.args[0]

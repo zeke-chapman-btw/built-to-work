@@ -1,7 +1,8 @@
 """Google sign-in and Gmail sending for "Connect your Gmail".
 
 Uses Google's documented OAuth 2.0 web-server flow with the narrow ``gmail.send``
-scope: the app can send as the person, but cannot read their mailbox.
+scope. Only when an administrator turns on "Email replies" does the app also ask
+for ``gmail.readonly``, and then it only opens the conversations it started.
 """
 from __future__ import annotations
 
@@ -20,7 +21,9 @@ AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 REVOKE_URL = "https://oauth2.googleapis.com/revoke"
 SEND_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
+THREAD_URL = "https://gmail.googleapis.com/gmail/v1/users/me/threads/"
 SCOPES = "openid email https://www.googleapis.com/auth/gmail.send"
+READ_SCOPE = "https://www.googleapis.com/auth/gmail.readonly"
 
 
 class GmailError(Exception):
@@ -48,9 +51,9 @@ def new_state():
     return secrets.token_urlsafe(32)
 
 
-def authorization_url(*, redirect_uri, state, login_hint=""):
+def authorization_url(*, redirect_uri, state, login_hint="", read=False):
     params = {"client_id": settings.GOOGLE_OAUTH_CLIENT_ID, "redirect_uri": redirect_uri, "response_type": "code",
-              "scope": SCOPES, "access_type": "offline", "prompt": "consent", "include_granted_scopes": "true",
+              "scope": SCOPES + (" " + READ_SCOPE if read else ""), "access_type": "offline", "prompt": "consent", "include_granted_scopes": "true",
               "state": state}
     if login_hint:
         params["login_hint"] = login_hint
@@ -70,7 +73,10 @@ def _post_form(url, fields):
             body = json.loads(exc.read() or b"{}")
         except ValueError:
             body = {}
-        raise GmailError(body.get("error", f"HTTP {exc.code}"), reconnect=body.get("error") == "invalid_grant") from None
+        detail = body.get("error", f"HTTP {exc.code}")
+        if body.get("error_description"):
+            detail += f" ({body['error_description'][:120]})"
+        raise GmailError(detail, reconnect=body.get("error") == "invalid_grant") from None
     except (error.URLError, socket.timeout, TimeoutError):
         raise GmailError("Google could not be reached") from None
 
@@ -118,7 +124,7 @@ def access_token(connection):
     return token
 
 
-def send(connection, message):
+def send(connection, message, *, result=None):
     """Send a ``django.core.mail.EmailMessage`` as the connected person; return Gmail's id."""
     if not configured():
         raise GmailError("Gmail connection is not set up on this site")
@@ -140,12 +146,32 @@ def send(connection, message):
     except (error.URLError, socket.timeout, TimeoutError):
         raise GmailError("Gmail did not confirm the send", uncertain=True) from None
     reference = data.get("id", "")
+    if result is not None:
+        result["thread_id"] = data.get("threadId", "")
     if not reference:
         raise GmailError("Gmail did not confirm the send", uncertain=True)
     connection.last_sent_at = timezone.now()
     connection.last_error = ""
     connection.save(update_fields=["last_sent_at", "last_error"])
     return reference
+
+
+def thread(connection, thread_id, *, token=None):
+    """One Gmail conversation the app started (needs read access)."""
+    token = token or access_token(connection)
+    req = request.Request(THREAD_URL + parse.quote(thread_id, safe="") + "?format=full",
+                          headers={"Authorization": f"Bearer {token}"})
+    try:
+        with request.urlopen(req, timeout=20) as response:
+            return json.loads(response.read() or b"{}")
+    except error.HTTPError as exc:
+        if exc.code == 404:
+            return {}
+        if exc.code in (401, 403):
+            raise GmailError("Google refused to share replies; connect your Gmail again", reconnect=True) from None
+        raise GmailError(f"Gmail error {exc.code}") from None
+    except (error.URLError, socket.timeout, TimeoutError):
+        raise GmailError("Gmail could not be reached") from None
 
 
 def revoke(connection):

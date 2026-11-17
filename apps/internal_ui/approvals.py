@@ -39,7 +39,7 @@ def url(request, **changes):
             params.pop(key, None)
         else:
             params[key] = str(value)
-    return reverse('internal:workspace', args=['approvals']) + ('?' + urlencode(params) if params else '')
+    return reverse('internal:workspace', kwargs={'workspace_id': 'approvals'}) + ('?' + urlencode(params) if params else '')
 
 
 def _row(title, context, status, *, date=None, date_label='', actor=None, actor_label='Recorded by', secondary_date=None, secondary_date_label='', link='', action='Review', detail='', tone='neutral'):

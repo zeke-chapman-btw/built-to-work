@@ -51,10 +51,22 @@ while the site's own email stays in test mode (Build 18A reminders keep running)
 Texting has no such interlock: adding the EZ Texting settings on Preview is enough.
 Nothing on Preview sends automatically yet, because no background sender runs.
 
-## Still to build
+## Texting people one-to-one, and where replies go
 
-- "Connect your Gmail" so staff can send one-off emails from their own address.
-- Delivery results and replies from EZ Texting (its Forwarding API → the app).
+- Staff with participant-history access see a **Text** button on a participant's profile.
+  The pop-up shows the recent thread and a **Send replies to** choice (the sender by default).
+- Each sent text is saved (who sent it, who replies go to) and added to the person's
+  activity as "Sent by app". A double click sends once.
+- **Settings → Connections → Text replies → Turn on replies** asks EZ Texting to forward
+  incoming texts to `/messaging/eztexting/webhook/<token>/`. Each forward is signed
+  (`X-Signature-256`, HMAC-SHA256); the signing secret is stored encrypted.
+- A reply goes to whoever the last app text to that number (within 30 days) said replies
+  should go to. Anything else (replies to automatic texts, unknown numbers) goes to the
+  person picked in **Everything else goes to**, or stays Unassigned.
+- Replies show in **Text replies** (`/inbox/`: Mine / Unassigned / All / Sent),
+  with Reply, Mark handled and a reassign menu, plus a count card in My stuff. The owner
+  also gets a short email once site email is set up.
+- STOP (and similar words) blocks app texts to that number until they text START.
 
 ## Marketing email and Mailchimp
 
@@ -71,3 +83,25 @@ Nothing on Preview sends automatically yet, because no background sender runs.
   - archives anyone turned Off, unsubscribed or bounced (never emailed, not billed);
   - registers a Mailchimp webhook so unsubscribes and bounces in Mailchimp turn the person Off here.
 - Campaigns are written and sent in Mailchimp. Existing participants start Off.
+
+## Email replies (optional, off by default)
+
+- **Settings → Connections → Email replies** turns it on. The Google Cloud project must
+  also list the `gmail.readonly` permission. Staff then reconnect Gmail once.
+- Every 10 minutes the app opens only the Gmail conversations it started (last 60 days)
+  and copies new replies into the person's activity as "Email reply". Replies stay in Gmail.
+- Each staff member can turn it off for their own Gmail in Settings → Account → Email.
+
+## Build 19 additions (Nov 16)
+
+- **Home → Quick actions → + Email/Text**: Email someone / Text someone (search, then the usual pop-up).
+- **STOP for automatic texts**: ticket and alert texts skip numbers that replied STOP (the delivery shows why).
+- **Bounced email**: every 10 minutes the app reads "couldn't deliver" notices in noreply@ (IMAP with the same
+  app password; IMAP must be allowed for that account), flags the address on the person's profile and pauses
+  automatic email to it until staff click "Address is fixed, send again". Connections shows how many are paused.
+- **Message templates**: Settings → Messages (managers). Fill-ins {first_name}, {last_name}, {my_name}.
+  Pick one in the Email or Text pop-up.
+- **Customer contacts**: Email and Text buttons on each contact on the customer page; replies route like
+  participant replies and show the company in the Inbox; history is recorded on the customer.
+- **Pay statement emails** (off by default): Settings → Connections. When payroll is approved, staff with My pay
+  on get a link-only email (no amounts). Needs Automatic messages on.

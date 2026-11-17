@@ -85,7 +85,7 @@ class Staffing9CTests(TestCase):
         r=self.client.get('/staff/',{'view':'profile'}); self.assertContains(r,'SYNTHETIC PRIVATE ADDRESS'); self.assertNotContains(r,'PRIVATE MANAGER NOTE'); self.assertNotContains(r,'OTHER PRIVATE STAFF NOTE')
     def test_general_staff_cannot_create_edit_link_or_list_private_profiles(self):
         self.staff_login()
-        for url in ['/staff/directory/','/staff/directory/add/',reverse('staffing:profile-edit',args=[self.person.pk]),reverse('staffing:account-link',args=[self.person.pk])]:
+        for url in ['/settings/staff-directory/','/settings/staff-directory/add/',reverse('staffing:profile-edit',args=[self.person.pk]),reverse('staffing:account-link',args=[self.person.pk])]:
             self.assertEqual(self.client.post(url,{}).status_code,403,url)
     def test_profile_stale_edit_is_rejected(self):
         data=self.profile_data(); self.person.phone='changed'; self.person.save()
@@ -93,8 +93,8 @@ class Staffing9CTests(TestCase):
         self.person.refresh_from_db(); self.assertEqual(self.person.phone,'changed')
     def test_staff_directory_search_inactive_and_pagination(self):
         self.other_person.is_active=False; self.other_person.save()
-        r=self.client.get('/staff/directory/',{'q':'Other','status':'inactive'}); self.assertContains(r,'SYNTHETIC Other'); self.assertNotContains(r,'SYNTHETIC Employee')
-        directory = self.client.get('/staff/directory/')
+        r=self.client.get('/settings/staff-directory/',{'q':'Other','status':'inactive'}); self.assertContains(r,'SYNTHETIC Other'); self.assertNotContains(r,'SYNTHETIC Employee')
+        directory = self.client.get('/settings/staff-directory/')
         self.assertContains(directory, '+ Add staff')
         self.assertContains(directory, reverse('staffing:profile-add'))
         self.assertNotContains(directory, reverse('accounts:staff-create'))
@@ -140,7 +140,7 @@ class Staffing9CTests(TestCase):
         self.assertNotContains(self.client.get('/staff/'),self.event.name)
     def test_general_staff_has_no_participant_or_management_event_access(self):
         self.staff_login(); self.assertEqual(self.client.get(reverse('events:event_detail',args=[self.event.pk])).status_code,403)
-        self.assertEqual(self.client.get('/participants/staff/directory/').status_code,403)
+        self.assertEqual(self.client.get('/participants/directory/').status_code,403)
     def test_deadline_closes_new_requests_at_exact_deadline(self):
         self.plan.signup_deadline=timezone.now()-timedelta(seconds=1); self.plan.save()
         with self.assertRaises(ValidationError): self.request()
@@ -243,15 +243,15 @@ class Staffing9CTests(TestCase):
         c=Client(enforce_csrf_checks=True); c.force_login(self.manager,backend='django.contrib.auth.backends.ModelBackend'); self.assertEqual(c.post(reverse('staffing:plan-edit',args=[self.event.pk]),self.plan_data()).status_code,403)
     def test_manager_pages_and_all_forms_render(self):
         r=self.request(); a=self.assignment(person=self.other_person)
-        urls=['/staff/directory/',reverse('staffing:profile',args=[self.person.pk]),reverse('staffing:profile-edit',args=[self.person.pk]),reverse('staffing:account-link',args=[self.person.pk]),reverse('staffing:event',args=[self.event.pk]),reverse('staffing:plan-edit',args=[self.event.pk]),reverse('staffing:assignment-add',args=[self.event.pk]),reverse('staffing:assignment-edit',args=[self.event.pk,a.pk]),reverse('staffing:request-decision',args=[r.pk,'approve']),reverse('staffing:assignment-remove',args=[a.pk]),'/staff/requests/']
+        urls=['/settings/staff-directory/',reverse('staffing:profile',args=[self.person.pk]),reverse('staffing:profile-edit',args=[self.person.pk]),reverse('staffing:account-link',args=[self.person.pk]),reverse('staffing:event',args=[self.event.pk]),reverse('staffing:plan-edit',args=[self.event.pk]),reverse('staffing:assignment-add',args=[self.event.pk]),reverse('staffing:assignment-edit',args=[self.event.pk,a.pk]),reverse('staffing:request-decision',args=[r.pk,'approve']),reverse('staffing:assignment-remove',args=[a.pk]),'/staff/requests/']
         for url in urls: self.assertEqual(self.client.get(url).status_code,200,url)
     def test_staff_mobile_schedule_and_event_forms_render(self):
         self.staff_login()
         for view in ['available','requests','assignments','profile']: self.assertEqual(self.client.get('/staff/',{'view':view}).status_code,200)
         self.assertContains(self.client.get(reverse('staffing:staff-event',args=[self.event.pk])),'csrfmiddlewaretoken')
     def test_navigation_discovery_preserves_six_item_shell_and_gear(self):
-        self.staff_login(); r=self.client.get('/internal/'); self.assertContains(r,'Events'); self.assertContains(r,'Personal settings'); self.assertContains(self.client.get('/internal/workspaces/events/'),'My staff schedule')
-        self.client.force_login(self.admin,backend='django.contrib.auth.backends.ModelBackend'); self.assertContains(self.client.get('/internal/workspaces/administration/'),'Staff directory'); self.assertContains(self.client.get('/internal/workspaces/events/'),'Staff availability requests')
+        self.staff_login(); r=self.client.get('/home/'); self.assertContains(r,'Events'); self.assertContains(r,'Personal settings'); self.assertContains(self.client.get('/internal/workspaces/events/'),'My staff schedule')
+        self.client.force_login(self.admin,backend='django.contrib.auth.backends.ModelBackend'); self.assertContains(self.client.get('/settings/admin/'),'Staff directory'); self.assertContains(self.client.get('/internal/workspaces/events/'),'Staff availability requests')
     def test_staff_data_not_added_to_offline_registration_contract(self):
         from apps.events.downsync import EVENT_FIELDS
         for field in ['signup_deadline','staff_assignments','staff_availability','staff_profiles']: self.assertNotIn(field,EVENT_FIELDS)

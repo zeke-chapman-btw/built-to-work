@@ -29,7 +29,7 @@
   <header class="btw-panel-heading"><h2>Contact</h2>{% if can_edit_profile and not participant.archived_at %}<a data-profile-manager data-record-editor href="{% url 'participants:profile-card-edit' participant.pk 'identity' %}?return_to={{ request.get_full_path|urlencode }}" aria-label="Edit contact details">Edit</a>{% endif %}</header>
   <dl class="pv-facts">
     <dt>Phone</dt><dd>{% if participant.contact_phone %}<a href="tel:{{ participant.contact_phone|people_phone_link }}">{{ participant.contact_phone|people_phone }}</a>{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
-    <dt>Email</dt><dd>{% if participant.contact_email %}<a class="pv-wrap" href="mailto:{{ participant.contact_email }}">{{ participant.contact_email }}</a>{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
+    <dt>Email</dt><dd>{% if participant.contact_email %}<a class="pv-wrap" href="mailto:{{ participant.contact_email }}">{{ participant.contact_email }}</a>{% email_bounce_chip participant can_edit_profile %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
     <dt>Location</dt><dd>{% if participant.city or participant.state %}{{ participant.city }}{% if participant.city and participant.state %}, {% endif %}{{ participant.state }}{% if participant.postal_code %} {{ participant.postal_code }}{% endif %}{% else %}<span class="pv-unset" aria-label="Not recorded">—</span>{% endif %}</dd>
     {% marketing_email_row participant can_edit_profile %}
   </dl>
@@ -97,7 +97,7 @@
 <section id="profile-touchpoints" tabindex="-1" class="card p3-reading-section" aria-labelledby="profile-touchpoints-title">
   <header class="btw-panel-heading"><h2 id="profile-touchpoints-title">Touchpoints{% if profile_touchpoint_total %} <span class="pv-count">{{ profile_touchpoint_total }}</span>{% endif %}</h2><span class="pv-heading-actions">{% if crm_can_add %}<a data-record-editor href="{{ crm_new_url }}">+ Log touchpoint</a>{% endif %}{% if profile_touchpoint_total %}<a href="{% people_section_url 'relationship' %}#btw-interactions">All touchpoints</a>{% endif %}</span></header>
   {% timezone profile_timezone %}
-  {% for item in profile_touchpoints %}<article class="pv-touchpoint"><span class="pv-touchpoint-icon">{% ui_icon item.icon %}</span><div><p class="pv-touchpoint-title"><a href="{{ item.url }}">{{ item.type }}</a>{% if item.sent_by_app %} <span class="cp3-chip b">Sent by app</span>{% endif %}<span class="pv-meta"><time datetime="{{ item.occurred_at|date:'c' }}">{{ item.occurred_at|date:'M j, Y' }}</time> · {% if item.organization %}{{ item.organization }}{% else %}{{ item.author }}{% endif %}</span></p>{% if item.summary %}<p>{{ item.summary|truncatechars:160 }}</p>{% endif %}</div></article>
+  {% for item in profile_touchpoints %}<article class="pv-touchpoint"><span class="pv-touchpoint-icon">{% ui_icon item.icon %}</span><div><p class="pv-touchpoint-title"><a href="{{ item.url }}">{{ item.type }}</a>{% if item.sent_by_app %} <span class="cp3-chip b">{{ item.app_label|default:"Sent by app" }}</span>{% endif %}<span class="pv-meta"><time datetime="{{ item.occurred_at|date:'c' }}">{{ item.occurred_at|date:'M j, Y' }}</time> · {% if item.organization %}{{ item.organization }}{% else %}{{ item.author }}{% endif %}</span></p>{% if item.summary %}<p>{{ item.summary|truncatechars:160 }}</p>{% endif %}</div></article>
   {% empty %}<p class="p3-empty">No touchpoints yet.</p>{% endfor %}
   {% endtimezone %}
 </section>

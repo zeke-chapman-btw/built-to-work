@@ -41,7 +41,7 @@ def operations_navigation(context):
         link['active'] = request.path.startswith(link['url'])
     selected = next((link['label'] for link in links if link['active']), 'Operations')
     from django.urls import reverse
-    home = reverse('internal:workspace', args=['operations'])
+    home = reverse('internal:workspace', kwargs={'workspace_id': 'operations'})
     games = request.path == home and request.GET.get('resource') == 'games'
     primary = [dict(label='Overview', url=home, active=request.path == home and not games)]
     definitions = (('Station Management', 'Stations'), ('Quizzes & Tests', 'Quizzes'),

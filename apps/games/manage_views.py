@@ -28,7 +28,7 @@ def edit(request, game_id):
     game = get_object_or_404(GameDefinition, pk=game_id)
     before = {"display_name": game.display_name, "active": game.active}
     form = GameForm(request.POST or None, instance=game)
-    back = reverse("internal:workspace", args=["operations"]) + "?resource=games"
+    back = reverse("internal:workspace", kwargs={'workspace_id': "operations"}) + "?resource=games"
     if request.method == "POST" and form.is_valid():
         saved = form.save()
         record_audit(actor=request.user, action="games.definition.updated", instance=saved,

@@ -177,7 +177,7 @@ def safe_destination(request, value, realm, user):
     from .roles import manager
     if path.startswith('/customer/') or path.startswith('/admin/') or '/portal/' in path:
         return None
-    if path.startswith(('/accounts/staff/', '/workdays/compensation/', '/reports/categories/')) and not manager(user):
+    if path.startswith(('/settings/staff/', '/settings/pay/', '/settings/expense-categories/')) and not manager(user):
         return None
     return safe_next(request, value)
 

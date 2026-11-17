@@ -66,6 +66,6 @@ class TrailerNavigationTests(TestCase):
         response=self.client.get(reverse('trailer_control:index'))
         self.assertEqual(response.status_code,200)
         self.assertContains(response,reverse('operations:trailers'))
-        self.assertContains(response,reverse('internal:workspace',args=['operations']))
-        self.assertContains(self.client.get(reverse('internal:workspace',args=['operations'])),reverse('trailer_control:index'))
+        self.assertContains(response,reverse('internal:workspace',kwargs={'workspace_id':'operations'}))
+        self.assertContains(self.client.get(reverse('internal:workspace',kwargs={'workspace_id':'operations'})),reverse('trailer_control:index'))
         self.assertEqual(self.counts(),before)

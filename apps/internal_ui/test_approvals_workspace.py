@@ -17,7 +17,7 @@ from apps.participants.verification_models import ParticipantVerificationRecord
 from apps.participants.verification_services import qualification_snapshot
 from apps.customers.models import WorkforceNeed, WorkforceNeedRevision
 
-URL = '/internal/workspaces/approvals/'
+URL = '/approvals/'
 BACKEND = 'django.contrib.auth.backends.ModelBackend'
 
 

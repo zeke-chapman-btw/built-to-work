@@ -1,0 +1,29 @@
+{% extends 'shared/workspace_landing.html' %}{% load static %}
+{% block workspace_class %}ux-settings-page{% endblock %}
+{% block workspace_content %}<link rel="stylesheet" href="{% static 'shared/portal_pages.css' %}?v=pp3-5">
+<style>
+.sig-wrap{display:grid;gap:16px;max-width:860px}
+.sig-edit{min-height:180px;padding:14px 16px;border:1.5px solid #d4d4d8;border-radius:10px;background:#fff;overflow:auto;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5}
+.sig-edit:focus{outline:none;border-color:#d0212f;box-shadow:0 0 0 3px #d0212f22}
+.sig-edit:empty::before{content:attr(data-placeholder);color:#a1a1aa}
+.sig-edit img{max-width:100%}
+.sig-mock{border:1px solid #ececef;border-radius:10px;background:#fafafa;padding:16px 18px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#222}
+.sig-mock .sig-line{color:#a1a1aa;margin:12px 0 8px}
+.sig-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center}
+</style>
+<div class="sig-wrap cp3">
+<a class="ux-back" href="{{ back }}">← Back</a>
+<section class="cp3-card"><header class="cp3-head"><h2>{{ page_title }}</h2></header>
+<div style="padding:16px 20px">
+<p class="cp3-intro" style="padding:0;margin:0 0 12px">{{ intro }}</p>
+<form method="post" data-sig-form>{% csrf_token %}
+<div class="sig-edit" contenteditable="true" data-sig-edit data-placeholder="Click here and paste your signature (Ctrl+V)" aria-label="Signature">{{ current|safe }}</div>
+<input type="hidden" name="signature_html" data-sig-value>
+<noscript><p class="cp3-warn">Pasting a formatted signature needs JavaScript turned on.</p></noscript>
+<p class="pv-meta" style="margin:8px 0 14px">Logos and links from Gmail are kept when the picture is stored online (Gmail signatures usually are). Pictures pasted from your computer can't be kept; add them in Gmail first and copy from there.</p>
+<div class="sig-actions"><span>{% if current %}<button class="button secondary" type="submit" name="clear" value="1">Remove signature</button>{% endif %}</span><span style="display:flex;gap:8px"><a class="button secondary" href="{{ back }}">Cancel</a><button class="button button-primary" type="submit">Save signature</button></span></div>
+</form></div></section>
+<section class="cp3-card"><header class="cp3-head"><h2>How emails will look</h2></header><div style="padding:16px 20px"><div class="sig-mock"><p style="margin:0">Hi Jordan,</p><p>Thanks for coming out to the event. …</p><div class="sig-line">—</div><div data-sig-preview>{{ current|safe }}</div></div></div></section>
+</div>
+<script>(function(){var ed=document.querySelector('[data-sig-edit]'),val=document.querySelector('[data-sig-value]'),pv=document.querySelector('[data-sig-preview]'),f=document.querySelector('[data-sig-form]');if(!ed)return;function sync(){val.value=ed.innerHTML.trim()==='<br>'?'':ed.innerHTML;pv.innerHTML=ed.innerHTML}ed.addEventListener('input',sync);ed.addEventListener('paste',function(){setTimeout(function(){ed.querySelectorAll('img[src^="data:"],img[src^="blob:"],img[src^="file:"]').forEach(function(i){i.remove()});sync()},0)});f.addEventListener('submit',sync);sync()})();</script>
+{% endblock %}

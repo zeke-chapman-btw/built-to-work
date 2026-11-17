@@ -70,7 +70,7 @@ class PeopleWorkflowTests(TestCase):
         data['contact_email']='new.test@example.invalid';response=self.client.post(url,data);self.assertRedirects(response,origin,fetch_redirect_response=False)
 
     def test_main_participants_entry_opens_the_directory_and_keeps_search_context(self):
-        origin=reverse('internal:workspace',args=['participants'])+'?q=Jordan&state=GA'
+        origin=reverse('internal:workspace',kwargs={'workspace_id':'participants'})+'?q=Jordan&state=GA'
         response=self.client.get(origin);self.assertEqual(response.status_code,200);self.assertEqual(response.context['active_participant_tab'],'directory');self.assertEqual(response.context['filter_form']['q'].value(),'Jordan')
         profile=self.client.get(reverse('participants:staff-profile',args=[self.person.pk]),{'from':origin});self.assertEqual(profile.context['directory_origin'],origin)
 

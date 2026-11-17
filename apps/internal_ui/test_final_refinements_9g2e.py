@@ -38,7 +38,7 @@ class FinalRefinementTests(TestCase):
             self.staff.__dict__.pop(name, None)
 
     def context(self, user=None, **extra):
-        request = RequestFactory().get('/internal/')
+        request = RequestFactory().get('/home/')
         request.user = user if user is not None else self.staff
         return {'request': request, **extra}
 
@@ -103,7 +103,7 @@ class FinalRefinementTests(TestCase):
         self.grant(*REPORT_PERMS)
         self.assertEqual({r['url'] for r in report_destinations(self.staff)},
             {reverse('event_reports:index'), reverse('workdays:reports')})
-        self.assertEqual(reverse('event_reports:index'), '/reports/')
+        self.assertEqual(reverse('event_reports:index'), '/events/reports/')
         self.assertEqual(self.client.get(reverse('event_reports:index')).status_code, 200)
         self.assertEqual([i['id'] for i in visible_workspaces(self.staff, reverse('internal:reports')) if i['active']], ['operations'])
 

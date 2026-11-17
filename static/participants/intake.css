@@ -115,3 +115,12 @@
 .intake-page .intake-step-heading h1{text-transform:uppercase;letter-spacing:.01em}
 .ps-page a.ps-button{color:#fff;text-decoration:none;font-weight:400}
 .intake-welcome-page .intake-welcome .button{text-transform:uppercase}
+
+/* consent text structure (headings, bold, bullets) */
+.consent-copy h3{font-size:1.08em;font-weight:700;margin:1.3em 0 .4em;line-height:1.3}
+.consent-copy h4{font-size:1em;font-weight:600;font-style:italic;margin:1.1em 0 .3em}
+.consent-copy h3:first-child,.consent-copy h4:first-child{margin-top:0}
+.consent-copy ul{margin:.3em 0 .9em;padding-left:1.4em}
+.consent-copy ul ul{margin:.2em 0 .2em;list-style:circle}
+.consent-copy li{margin:.2em 0}
+.consent-copy strong{font-weight:700}

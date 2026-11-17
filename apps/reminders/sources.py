@@ -1,0 +1,457 @@
+"""What reminders can watch. Each source lists the open items for today.
+
+A new kind of reminder only needs code when its data isn't one of these. Each
+source says which dates it can fire on (``modes``), which related people it
+knows (``related``) and which fill-ins its wording can use (``fields``).
+"""
+from __future__ import annotations
+
+import hashlib
+from dataclasses import dataclass, field
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
+
+from django.contrib.auth import get_user_model
+from django.db.models import Q
+from django.urls import reverse
+from django.utils import timezone
+
+EASTERN = ZoneInfo("America/New_York")
+
+
+@dataclass(frozen=True)
+class Target:
+    key: str
+    name: str
+    user: object = None
+    email: str = ""
+    phone: str = ""
+    participant: object = None
+
+    @property
+    def first_name(self):
+        return (self.name or "").split(" ")[0]
+
+
+@dataclass
+class Item:
+    ref: str
+    line: str
+    link: str = ""
+    anchor: date | None = None
+    created: datetime | None = None
+    fields: dict = field(default_factory=dict)
+    related: dict = field(default_factory=dict)
+    fingerprint: str = ""
+
+
+def user_target(user):
+    if not user or not user.is_active:
+        return None
+    try:
+        profile = user.staff_profile
+    except Exception:
+        profile = None
+    return Target(f"u:{user.pk}", user.get_full_name() or user.get_username(), user=user,
+                  email=(profile.email if profile and profile.email else user.email) or "",
+                  phone=(profile.phone if profile else "") or "")
+
+
+def staff_target(profile):
+    if not profile or not profile.is_active:
+        return None
+    user = profile.user if profile.user_id and profile.user.is_active else None
+    return Target(f"u:{user.pk}" if user else f"s:{profile.pk}", f"{profile.first_name} {profile.last_name}".strip(),
+                  user=user, email=profile.email or (user.email if user else ""), phone=profile.phone or "")
+
+
+def participant_target(person):
+    if not person:
+        return None
+    name = f"{person.preferred_name or person.first_name} {person.last_name}".strip()
+    return Target(f"p:{person.pk}", name, email=person.contact_email or "", phone=person.contact_phone or "",
+                  participant=person)
+
+
+def _people(*values):
+    return [v for v in values if v]
+
+
+def _event_place(event):
+    parts = [event.location_name, event.city]
+    return ", ".join(p for p in parts if p) or "the event site"
+
+
+def _fp(*values):
+    return hashlib.sha256("|".join(str(v) for v in values).encode()).hexdigest()[:32]
+
+
+def _local(value):
+    return timezone.localtime(value, EASTERN) if value else None
+
+
+def _when(value):
+    value = _local(value)
+    return f"{value:%a %b} {value.day} at {value:%I:%M %p}".replace(" 0", " ") if value else ""
+
+
+# ---------------------------------------------------------------- Events
+
+def _upcoming_events(today, days_ahead=21):
+    from apps.events.models import Event
+    start = datetime.combine(today - timedelta(days=1), datetime.min.time(), EASTERN)
+    end = datetime.combine(today + timedelta(days=days_ahead), datetime.min.time(), EASTERN)
+    return Event.objects.filter(status="upcoming").filter(
+        Q(start_at__gte=start, start_at__lt=end) | Q(setup_date__gte=today, setup_date__lte=today + timedelta(days=days_ahead)))
+
+
+def staff_working_soon(today, now):
+    from apps.staffing.models import StaffAssignment
+    rows = (StaffAssignment.objects.filter(status="confirmed", event__in=_upcoming_events(today))
+            .select_related("event", "staff", "staff__user").prefetch_related("days"))
+    for row in rows:
+        event = row.event
+        days = list(row.days.all())
+        first = days[0] if days else None
+        first_day = first.date if first else event.first_day
+        arrival = (first.arrival_at or first.starts_at) if first else None
+        when = _when(arrival) if arrival else f"{first_day:%a %b} {first_day.day}"
+        target = staff_target(row.staff)
+        yield Item(ref=f"assignment:{row.pk}", anchor=first_day,
+                   line=f"{event.name} · {when}", link=reverse("events:event_detail", args=[event.pk]),
+                   fields={"first_name": row.staff.first_name, "event": event.name, "when": when,
+                           "place": _event_place(event)},
+                   related={"staff": _people(target)})
+
+
+def event_changed(today, now):
+    from apps.staffing.models import StaffAssignment
+    events = _upcoming_events(today, days_ahead=90)
+    staff = {}
+    for row in StaffAssignment.objects.filter(status="confirmed", event__in=events).select_related("staff", "staff__user"):
+        staff.setdefault(row.event_id, []).append(staff_target(row.staff))
+    for event in events.filter(pk__in=list(staff)):
+        when = _when(event.start_at)
+        yield Item(ref=f"event:{event.pk}", anchor=event.first_day,
+                   line=f"{event.name} · now {when} at {_event_place(event)}",
+                   link=reverse("events:event_detail", args=[event.pk]),
+                   fingerprint=_fp(event.start_at, event.end_at, event.setup_date, event.staff_arrival_time,
+                                   event.location_name, event.address_line_1, event.city),
+                   fields={"event": event.name, "when": when, "place": _event_place(event)},
+                   related={"staff": _people(*staff[event.pk])})
+
+
+# ---------------------------------------------------------- Participants
+
+def participant_event_day_before(today, now):
+    from apps.events.models import EventRegistration
+    rows = (EventRegistration.objects.filter(status="active", ticket_sms_opt_in=True, event__in=_upcoming_events(today))
+            .select_related("event", "participant"))
+    for row in rows:
+        event, person = row.event, row.participant
+        when = _when(event.start_at)
+        yield Item(ref=f"registration:{row.pk}", anchor=event.local_start_at.date(),
+                   line=f"{person.first_name} {person.last_name} · {event.name}",
+                   link=reverse("participants:staff-profile", args=[person.pk]),
+                   fields={"first_name": person.preferred_name or person.first_name, "event": event.name,
+                           "when": when, "place": _event_place(event)},
+                   related={"participant": _people(participant_target(person))})
+
+
+def follow_ups(today, now):
+    from apps.crm.models import Interaction
+    rows = (Interaction.objects.filter(follow_up_on__gte=today - timedelta(days=30), follow_up_on__lte=today + timedelta(days=30))
+            .select_related("participant", "organization", "responsible_staff", "responsible_staff__user", "created_by"))
+    for row in rows[:500]:
+        who = (f"{row.participant.first_name} {row.participant.last_name}" if row.participant_id else
+               str(row.organization) if row.organization_id else "a contact")
+        link = (reverse("participants:staff-profile", args=[row.participant_id]) + "?section=activity" if row.participant_id else
+                reverse("customers:workspace", args=[row.organization_id, "overview"]) if row.organization_id else "")
+        owner = staff_target(row.responsible_staff) if row.responsible_staff_id else None
+        yield Item(ref=f"interaction:{row.pk}", anchor=row.follow_up_on, line=f"Follow up with {who}: {row.summary}",
+                   link=link, fields={"name": who, "summary": row.summary},
+                   related={"owner": _people(owner or user_target(row.created_by))})
+
+
+def unhandled_text_replies(today, now):
+    from apps.messaging.models import TextMessage
+    rows = (TextMessage.objects.filter(direction="in", state="new", created_at__gte=now - timedelta(days=60))
+            .select_related("participant", "contact", "replies_to"))
+    for row in rows[:500]:
+        who = (f"{row.participant.first_name} {row.participant.last_name}" if row.participant_id else
+               str(row.contact) if row.contact_id else f"(…{row.phone[-4:]})")
+        yield Item(ref=f"text:{row.pk}", anchor=_local(row.created_at).date(), created=row.created_at,
+                   line=f"Text from {who}: {row.body[:80]}", link=reverse("messaging:texts"),
+                   fields={"name": who}, related={"owner": _people(user_target(row.replies_to))})
+
+
+def missing_info(today, now):
+    from apps.recruiting.models import ProfileUpdateRequest
+    rows = (ProfileUpdateRequest.objects.filter(fulfilled_by__isnull=True, created_at__gte=now - timedelta(days=120))
+            .select_related("participant", "requested_by"))
+    for row in rows[:500]:
+        person = row.participant
+        yield Item(ref=f"update-request:{row.pk}", anchor=_local(row.created_at).date(), created=row.created_at,
+                   line=f"{person.first_name} {person.last_name} hasn't sent what you asked for",
+                   link=reverse("participants:staff-profile", args=[person.pk]),
+                   fields={"name": f"{person.first_name} {person.last_name}"},
+                   related={"owner": _people(user_target(row.requested_by))})
+
+
+def new_interest(today, now):
+    from apps.recruiting.models import CandidateInterest
+    rows = (CandidateInterest.objects.filter(active=True, status="received", created_at__gte=now - timedelta(days=60))
+            .select_related("participant", "opportunity__owner", "opportunity__need"))
+    for row in rows[:500]:
+        person = row.participant
+        yield Item(ref=f"interest:{row.pk}", anchor=_local(row.created_at).date(), created=row.created_at,
+                   line=f"{person.first_name} {person.last_name} is interested in a position",
+                   link=reverse("recruiting:position", args=[row.opportunity_id]),
+                   fields={"name": f"{person.first_name} {person.last_name}"},
+                   related={"recruiter": _people(user_target(row.opportunity.owner))})
+
+
+# ------------------------------------------------------------ Recruiting
+
+def customer_not_responded(today, now):
+    from apps.recruiting.models import CandidateDisclosure
+    rows = (CandidateDisclosure.objects.filter(revoked_at__isnull=True, feedback__isnull=True,
+                                               released_at__gte=now - timedelta(days=60))
+            .select_related("participant", "organization", "candidate__opportunity__owner"))
+    for row in rows[:500]:
+        person = row.participant
+        yield Item(ref=f"disclosure:{row.pk}", anchor=_local(row.released_at).date(), created=row.released_at,
+                   line=f"{row.organization} hasn't responded about {person.first_name} {person.last_name}",
+                   link=reverse("recruiting:candidate-detail", args=[row.candidate_id]),
+                   fields={"name": f"{person.first_name} {person.last_name}", "company": str(row.organization)},
+                   related={"recruiter": _people(user_target(row.candidate.opportunity.owner))})
+
+
+def employer_feedback(today, now):
+    from apps.crm.models import Interaction
+    from apps.recruiting.models import EmployerCandidateFeedback
+    labels = {"interview": "asked for an interview with", "feedback": "sent feedback about",
+              "interested": "is interested in", "report_hired": "reported hiring"}
+    rows = (EmployerCandidateFeedback.objects.filter(kind__in=list(labels), confirmed_at__isnull=True,
+                                                     created_at__gte=now - timedelta(days=30))
+            .select_related("disclosure__participant", "disclosure__organization", "disclosure__candidate__opportunity__owner"))
+    for row in rows[:300]:
+        person = row.disclosure.participant
+        # Handled once someone logs a note or call for this person after the request.
+        if Interaction.objects.filter(participant=person, created_at__gt=row.created_at).exists():
+            continue
+        yield Item(ref=f"feedback:{row.pk}", anchor=_local(row.created_at).date(), created=row.created_at,
+                   line=f"{row.disclosure.organization} {labels[row.kind]} {person.first_name} {person.last_name}",
+                   link=reverse("recruiting:candidate-detail", args=[row.disclosure.candidate_id]),
+                   fields={"name": f"{person.first_name} {person.last_name}", "company": str(row.disclosure.organization)},
+                   related={"recruiter": _people(user_target(row.disclosure.candidate.opportunity.owner))})
+
+
+def new_position(today, now):
+    from apps.customers.models import WorkforceNeedRevision
+    rows = (WorkforceNeedRevision.objects.filter(state="submitted", submitted_at__gte=now - timedelta(days=60))
+            .select_related("organization", "submitted_by"))
+    for row in rows[:300]:
+        title = row.title or "a position"
+        yield Item(ref=f"need-revision:{row.pk}", anchor=_local(row.submitted_at).date(), created=row.submitted_at,
+                   line=f"{row.organization} submitted {title}",
+                   link=reverse("customers:need", args=[row.organization_id, row.need_id]),
+                   fields={"company": str(row.organization), "position": title}, related={})
+
+
+# --------------------------------------------------------------- Payroll
+
+def _period_start(today):
+    return today - timedelta(days=today.weekday())
+
+
+def missing_workdays(today, now):
+    from apps.staffing.models import AssignmentDay
+    from apps.workdays.models import Workday
+    start = _period_start(today)
+    cutoff = start + timedelta(days=6)
+    days = (AssignmentDay.objects.filter(assignment__status="confirmed", date__gte=start, date__lte=min(today, cutoff))
+            .select_related("assignment__staff", "assignment__staff__user", "assignment__event"))
+    entered = set(Workday.objects.filter(work_date__gte=start, work_date__lte=cutoff, is_active=True)
+                  .values_list("event_id", "staff_id", "work_date"))
+    missing = {}
+    for day in days:
+        a = day.assignment
+        if (a.event_id, a.staff_id, day.date) not in entered:
+            missing.setdefault(a.staff, []).append(day.date)
+    for staff, dates in missing.items():
+        listed = ", ".join(f"{d:%a} {d.month}/{d.day}" for d in sorted(set(dates)))
+        yield Item(ref=f"missing:{staff.pk}:{start.isoformat()}", anchor=cutoff,
+                   line=f"{staff.first_name} {staff.last_name}: no workday entered for {listed}",
+                   link=reverse("workdays:index"),
+                   fields={"first_name": staff.first_name, "name": f"{staff.first_name} {staff.last_name}", "dates": listed},
+                   related={"staff": _people(staff_target(staff))})
+
+
+def payroll_ready(today, now):
+    from apps.reporting.models import PayrollPeriod
+    for row in PayrollPeriod.objects.filter(state="compiled", starts_on__gte=today - timedelta(days=90)):
+        label = f"{row.starts_on:%b} {row.starts_on.day} – {row.ends_on:%b} {row.ends_on.day}"
+        yield Item(ref=f"payroll:{row.starts_on.isoformat()}:{row.revision}", anchor=_local(row.updated_at).date(),
+                   created=row.updated_at, line=f"Payroll for {label} is ready to approve",
+                   link=reverse("reporting:payroll", args=[row.starts_on.isoformat()]), fields={"period": label}, related={})
+
+
+# ----------------------------------------------------------------- Admin
+
+def connection_failing(today, now):
+    from apps.messaging.models import ConnectionSetting, GmailConnection
+    for row in ConnectionSetting.objects.filter(key__in=("eztexting", "email"), last_test_ok=False):
+        yield Item(ref=f"connection:{row.key}:{row.last_test_at.isoformat() if row.last_test_at else ''}",
+                   anchor=_local(row.last_test_at or row.updated_at).date(), created=row.last_test_at or row.updated_at,
+                   line=f"{row.get_key_display()} isn't working: {row.last_test_detail or 'the last test failed'}",
+                   link=reverse("messaging:connections"), fields={"connection": row.get_key_display()}, related={})
+    for row in GmailConnection.objects.filter(needs_reconnect=True).select_related("user"):
+        yield Item(ref=f"gmail:{row.pk}", anchor=today, created=now,
+                   line=f"{row.user.get_full_name() or row.user}'s Gmail needs reconnecting",
+                   link=reverse("internal:settings"), fields={"connection": "Gmail"},
+                   related={"owner": _people(user_target(row.user))})
+
+
+def messages_failing(today, now):
+    from apps.events.models import OperationalNotificationDelivery, TicketDelivery
+    from apps.messaging.models import EmailBounce, TextMessage
+    since = now - timedelta(days=1)
+    counts = {
+        "tickets": TicketDelivery.objects.filter(status="failed", last_attempt_at__gte=since).count(),
+        "alerts": OperationalNotificationDelivery.objects.filter(status="failed", created_at__gte=since).count(),
+        "texts": TextMessage.objects.filter(direction="out", state="failed", created_at__gte=since).count(),
+        "bounces": EmailBounce.objects.filter(bounced_at__gte=since, cleared_at__isnull=True).count(),
+    }
+    total = sum(counts.values())
+    if total:
+        parts = [f"{n} {label}" for label, n in (("ticket messages", counts["tickets"]), ("alerts", counts["alerts"]),
+                                                  ("texts", counts["texts"]), ("bounced emails", counts["bounces"])) if n]
+        yield Item(ref=f"failures:{today.isoformat()}", anchor=today, created=now,
+                   line="Didn't go out in the last day: " + ", ".join(parts), link=reverse("messaging:connections"),
+                   fields={"count": str(total), "details": ", ".join(parts)}, related={})
+
+
+# ------------------------------------------------------------- Customers
+
+def onboarding_submitted(today, now):
+    from apps.onboarding.models import CustomerOnboarding
+    for row in CustomerOnboarding.objects.filter(status="submitted").select_related("created_by")[:200]:
+        yield Item(ref=f"onboarding:{row.pk}", anchor=_local(row.submitted_at or row.updated_at).date(),
+                   created=row.submitted_at or row.updated_at, line=f"{row.name} finished their onboarding form",
+                   link=reverse("onboarding:step", args=[row.pk, "review"]), fields={"company": row.name},
+                   related={"owner": _people(user_target(row.created_by))})
+
+
+# --------------------------------------------------------------- Billing
+
+def agreement_ending(today, now):
+    from apps.billing.models import MonthlyAgreement
+    rows = (MonthlyAgreement.objects.filter(status__in=["active", "scheduled", "waiting"], ends_on__gte=today,
+                                            ends_on__lte=today + timedelta(days=120), renewals__isnull=True)
+            .select_related("organization__primary_contact", "organization__billing__account_manager"))
+    for row in rows:
+        org = row.organization
+        profile = getattr(org, "billing", None)
+        manager = profile.account_manager if profile else None
+        email = profile.contact_email() if profile else (org.primary_contact.email if org.primary_contact_id else "")
+        contact_name = str(org.primary_contact) if org.primary_contact_id else org.name
+        contact = Target(f"c:{org.pk}", contact_name, email=email) if email else None
+        ends = f"{row.ends_on:%B} {row.ends_on.day}, {row.ends_on.year}"
+        yield Item(ref=f"agreement:{row.pk}", anchor=row.ends_on,
+                   line=f"{org.name}'s monthly agreement (${row.amount:,.2f}) ends {ends}",
+                   link=reverse("customers:workspace", args=[org.pk, "billing"]),
+                   fields={"company": org.name, "end_date": ends, "amount": f"${row.amount:,.2f}",
+                           "manager": (manager.get_full_name() or manager.get_username()) if manager else "your Built to Work account manager"},
+                   related={"customer_contact": _people(contact), "account_manager": _people(user_target(manager))})
+
+
+def billing_problems(today, now):
+    from apps.billing.models import MonthlyAgreement, PositionCharge
+    charges = (PositionCharge.objects.filter(status__in=["failed", "waiting", "not_set_up"], created_at__gte=now - timedelta(days=90))
+               .select_related("organization__billing__account_manager"))
+    for row in charges[:300]:
+        org = row.organization
+        profile = getattr(org, "billing", None)
+        why = {"failed": "the bank payment failed", "waiting": "they haven't connected a bank account",
+               "not_set_up": "Stripe isn't connected"}[row.status]
+        yield Item(ref=f"charge:{row.pk}:{row.status}", anchor=_local(row.updated_at).date(), created=row.updated_at,
+                   line=f"{org.name}: ${row.amount:,.2f} for {row.title} not collected — {why}",
+                   link=reverse("customers:workspace", args=[org.pk, "billing"]), fields={"company": org.name, "why": why},
+                   related={"account_manager": _people(user_target(profile.account_manager if profile else None))})
+    for row in (MonthlyAgreement.objects.filter(last_payment_status="failed", last_payment_at__gte=now - timedelta(days=60))
+                .select_related("organization__billing__account_manager")):
+        org = row.organization
+        profile = getattr(org, "billing", None)
+        yield Item(ref=f"agreement-payment:{row.pk}:{row.last_payment_at.isoformat()}", anchor=_local(row.last_payment_at).date(),
+                   created=row.last_payment_at, line=f"{org.name}: monthly payment of ${row.amount:,.2f} failed",
+                   link=reverse("customers:workspace", args=[org.pk, "billing"]), fields={"company": org.name, "why": "the monthly payment failed"},
+                   related={"account_manager": _people(user_target(profile.account_manager if profile else None))})
+
+
+@dataclass(frozen=True)
+class Source:
+    key: str
+    area: str
+    label: str
+    finder: object
+    modes: tuple
+    anchor_label: str
+    related: dict
+    fields: dict
+
+
+COMMON = {"line": "a one-line summary of the item"}
+
+SOURCES = {s.key: s for s in (
+    Source("staff_working_soon", "Events", "Staff working an event", staff_working_soon, ("before",),
+           "their first day on the event", {"staff": "Each staff member on the event"},
+           {"first_name": "their first name", "event": "event name", "when": "arrival day and time", "place": "location"}),
+    Source("event_changed", "Events", "Event date, time or place", event_changed, ("changed",),
+           "the event", {"staff": "Each staff member on the event"},
+           {"event": "event name", "when": "new start day and time", "place": "location"}),
+    Source("participant_event", "Participants", "Participants signed up for an event (texts allowed)",
+           participant_event_day_before, ("before",), "the event day", {"participant": "The participant"},
+           {"first_name": "their first name", "event": "event name", "when": "start day and time", "place": "location"}),
+    Source("follow_up", "Participants", "Follow-up dates on touchpoints", follow_ups, ("before", "after"),
+           "the follow-up date", {"owner": "Person who set the follow-up"}, {"name": "who to follow up with", "summary": "the note"}),
+    Source("text_reply", "Participants", "Text replies still marked New", unhandled_text_replies, ("after", "new"),
+           "the reply", {"owner": "Person the reply went to"}, {"name": "who texted"}),
+    Source("missing_info", "Participants", "Requests for missing info", missing_info, ("after", "new"),
+           "asking", {"owner": "Staff member who asked"}, {"name": "the participant"}),
+    Source("new_interest", "Participants", "New interest in a position", new_interest, ("new", "after"),
+           "they show interest", {"recruiter": "Recruiter for the position"}, {"name": "the participant"}),
+    Source("customer_no_response", "Recruiting", "Candidates sent to a customer, no response yet", customer_not_responded,
+           ("after",), "the candidate is sent", {"recruiter": "Recruiter on the position"},
+           {"name": "the candidate", "company": "the customer"}),
+    Source("employer_feedback", "Recruiting", "Interview requests and customer feedback", employer_feedback, ("new", "after"),
+           "the customer asks", {"recruiter": "Recruiter on the position"}, {"name": "the candidate", "company": "the customer"}),
+    Source("new_position", "Recruiting", "Positions submitted by customers", new_position, ("new", "after"),
+           "it's submitted", {}, {"company": "the customer", "position": "position title"}),
+    Source("onboarding_submitted", "Customers", "Customer onboarding forms ready to review", onboarding_submitted,
+           ("new", "after"), "when they submitted it", {"owner": "Staff member who started it"}, {"company": "the customer"}),
+    Source("agreement_ending", "Billing", "Monthly agreements ending", agreement_ending, ("before",),
+           "the agreement's end date", {"customer_contact": "The customer's main (billing) contact",
+                                        "account_manager": "BTW account manager"},
+           {"company": "the customer", "end_date": "the end date", "amount": "monthly amount", "manager": "account manager's name"}),
+    Source("billing_problem", "Billing", "Payments not collected", billing_problems, ("new", "after"),
+           "when it happened", {"account_manager": "BTW account manager"}, {"company": "the customer", "why": "what went wrong"}),
+    Source("missing_workdays", "Payroll", "Workdays not entered this pay week", missing_workdays, ("before",),
+           "the end of the pay week (Sunday)", {"staff": "Staff with missing entries"},
+           {"first_name": "their first name", "name": "staff member", "dates": "the missing days"}),
+    Source("payroll_ready", "Payroll", "Payroll ready to approve", payroll_ready, ("new", "after"),
+           "it's ready", {}, {"period": "the pay week"}),
+    Source("connection_failing", "Admin", "Texting, email or Gmail sign-in failing", connection_failing, ("new", "after"),
+           "it fails", {"owner": "The person whose Gmail it is"}, {"connection": "which connection"}),
+    Source("messages_failing", "Admin", "Messages that didn't go out", messages_failing, ("after", "new"),
+           "each day", {}, {"count": "how many", "details": "what failed"}),
+)}
+
+
+def choices():
+    return [(s.key, f"{s.area} · {s.label}") for s in SOURCES.values()]
+
+
+def admins():
+    return [t for t in (user_target(u) for u in get_user_model().objects.filter(is_active=True, is_superuser=True)
+                        .select_related("staff_profile").order_by("first_name")) if t]

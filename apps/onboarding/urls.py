@@ -1,0 +1,20 @@
+from django.urls import path
+
+from . import views
+
+app_name = "onboarding"
+urlpatterns = [
+    path("customers/onboarding/", views.onboarding_list, name="list"),
+    path("customers/onboarding/start/", views.start, name="start"),
+    path("customers/onboarding/<uuid:pk>/send/", views.send, name="send"),
+    path("customers/onboarding/<uuid:pk>/cancel/", views.cancel, name="cancel"),
+    path("customers/onboarding/<uuid:pk>/create/", views.create, name="create"),
+    path("customers/onboarding/<uuid:pk>/w9/", views.w9, name="w9"),
+    path("customers/onboarding/<uuid:pk>/<slug:step>/", views.staff_step, name="step"),
+    path("settings/customer-onboarding/", views.settings_page, name="settings"),
+    path("settings/customer-onboarding/questions/new/", views.question_edit, name="question-new"),
+    path("settings/customer-onboarding/questions/<int:pk>/", views.question_edit, name="question-edit"),
+    path("settings/customer-onboarding/agreement/", views.agreement_edit, name="agreement"),
+    path("onboard/<str:token>/", views.public, name="public"),
+    path("onboard/<str:token>/<slug:step>/", views.public, name="public-step"),
+]

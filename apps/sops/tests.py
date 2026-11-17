@@ -117,7 +117,7 @@ class MyStuffAndStaffViewTests(TestCase):
         self.assertContains(response, "SYNTHETIC Inn")
         # Saving anything is blocked and the admin is told why.
         before = self.profile.updated_at
-        response = self.client.post(reverse("internal:settings"), {"first_name": "Changed"}, HTTP_REFERER="/internal/settings/")
+        response = self.client.post(reverse("internal:settings"), {"first_name": "Changed"}, HTTP_REFERER="/settings/")
         self.assertEqual(response.status_code, 302)
         self.assertContains(self.client.get(reverse("internal:settings")), "wasn't saved")
         self.profile.refresh_from_db()

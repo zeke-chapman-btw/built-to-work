@@ -20,7 +20,7 @@ class StaffLoginTests(TestCase):
     def test_branded_login_and_missing_route_fixed(self):
         r=self.client.get('/accounts/login/');self.assertEqual(r.status_code,200);self.assertContains(r,'built-to-work-linear.svg');self.assertContains(r,'Email or username');self.assertNotContains(r,'name="account_type"')
     def test_default_internal_redirect_resolves(self):
-        r=self.client.get('/internal/',follow=True);self.assertEqual(r.status_code,200)
+        r=self.client.get('/home/',follow=True);self.assertEqual(r.status_code,200)
     def test_worker_landing(self):
         self.assertRedirects(self.login(),reverse('staffing:general-schedule'),fetch_redirect_response=False)
     def test_administrator_compatible(self):
@@ -60,7 +60,7 @@ class StaffLoginTests(TestCase):
         self.login();other=Client();other.force_login(self.worker,backend='django.contrib.auth.backends.ModelBackend')
         r=self.client.post(reverse('accounts:password-change'),{'old_password':'Synthetic-test-password-123','new_password1':'Changed-Synthetic-Password-456','new_password2':'Changed-Synthetic-Password-456'})
         self.assertEqual(r.status_code,302);self.assertIn('_auth_user_id',self.client.session)
-        self.assertEqual(other.get('/internal/').status_code,302)
+        self.assertEqual(other.get('/home/').status_code,302)
     def test_login_throttle(self):
         for i in range(11):self.client.post(reverse('accounts:login'),{'username':self.worker.username,'password':'WRONG-SYNTHETIC'})
         self.client.post(reverse('accounts:logout'))

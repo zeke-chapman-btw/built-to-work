@@ -8,7 +8,7 @@ class GameAdministrationBridgeTests(TestCase):
     def test_workspace_and_native_game_pages_explain_the_transition(self):
         user = get_user_model().objects.create_superuser('synthetic-game-maintenance', 'games@example.test', 'synthetic-password')
         self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
-        response = self.client.get(reverse('internal:workspace', args=['operations']), {'resource': 'games'})
+        response = self.client.get(reverse('internal:workspace',kwargs={'workspace_id':'operations'}), {'resource': 'games'})
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Open game administration')
         self.assertContains(response, 'Opens restricted administration')

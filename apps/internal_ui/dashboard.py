@@ -13,7 +13,8 @@ QUICK_ACTIONS = (
     {"id": "add-position", "label": "+ Position", "route": "crm:start-for", "args": ("position",), "permissions": (), "check": "manager", "default": True, "create": True, "editor": True},
     {"id": "add-note", "label": "+ Note", "route": "crm:start-for", "args": ("note",), "permissions": (), "check": "note", "default": True, "create": True, "editor": True},
     {"id": "participant-directory", "label": "Participants", "route": "participants:staff-directory", "permissions": ("participants.view_participant",), "default": False},
-    {"id": "events", "label": "Events", "route": "events:event_list", "permissions": ("events.view_event",), "default": True},
+    {"id": "message", "label": "+ Email/Text", "route": "messaging:new-text", "permissions": ("participants.view_participant",), "check": "note", "default": True, "create": True, "menu": True},
+    {"id": "events", "label": "Events", "route": "events:event_list", "permissions": ("events.view_event",), "default": False},
     {"id": "qualifications", "label": "Qualifications", "route": "participants:staff-qualifications", "permissions": ("participants.view_participantqualification",), "default": False},
     {"id": "documents", "label": "Documents", "route": "participants:staff-document-directory", "permissions": ("participants.view_participantdocument",), "default": False},
     {"id": "operations", "label": "Platform monitoring", "route": "events:operations-dashboard", "permissions": ("events.view_syncoutboxitem",), "default": False},
@@ -56,6 +57,9 @@ def available_quick_actions(user):
             else:
                 action["label"] = "+ Participant (admin)"
         action["url"] = reverse(action["route"], args=action.get("args", ()))
+        if action.get("menu"):
+            action["items"] = [{"label": "Email someone", "url": action["url"] + "?mode=email"},
+                               {"label": "Text someone", "url": action["url"]}]
         actions.append(action)
     return actions
 

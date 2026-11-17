@@ -12,7 +12,12 @@ def gmail_card(context):
     request = context["request"]
     return {"request": request, "configured": google.configured(), "next": reverse("my:schedule"),
             "connection": GmailConnection.objects.filter(user=request.user).first(),
-            "csrf_token": context.get("csrf_token")}
+            "replies_on": _replies_on(), "csrf_token": context.get("csrf_token")}
+
+
+def _replies_on():
+    from apps.messaging.email_replies import site_enabled
+    return site_enabled()
 
 
 @register.inclusion_tag("messaging/ticket_messages.html")
@@ -45,3 +50,35 @@ def marketing_email_row(context, participant, can_edit=False):
     request = context.get("request")
     return {"row": row, "tone": tone, "participant": participant, "can_edit": can_edit and not participant.archived_at,
             "return_to": request.get_full_path() if request else ""}
+
+
+@register.inclusion_tag("messaging/text_card.html", takes_context=True)
+def text_replies_card(context):
+    from apps.messaging.text_views import new_reply_count
+    from apps.participants.workspace_access import can_notes
+    user = context["request"].user
+    try:
+        allowed = bool(can_notes(user))
+    except Exception:
+        allowed = False
+    return {"show": allowed, "count": new_reply_count(user) if allowed else 0}
+
+
+@register.inclusion_tag("messaging/account_email_card.html", takes_context=True)
+def account_email_card(context):
+    """Settings → Account: your Gmail connection and your email signature."""
+    from apps.messaging import google, signatures
+    from apps.messaging.models import GmailConnection
+    request = context["request"]
+    return {"configured": google.configured(), "connection": GmailConnection.objects.filter(user=request.user).first(),
+            "signature": signatures.personal(request.user), "replies_on": _replies_on(),
+            "next": reverse("internal:settings") + "#email", "csrf_token": context.get("csrf_token")}
+
+
+@register.inclusion_tag("messaging/bounce_chip.html", takes_context=True)
+def email_bounce_chip(context, participant, can_edit=False):
+    from apps.messaging.models import EmailBounce
+    row = None
+    if participant.contact_email:
+        row = EmailBounce.objects.filter(address=participant.contact_email.strip().lower(), cleared_at__isnull=True).first()
+    return {"bounce": row, "participant": participant, "can_edit": can_edit, "csrf_token": context.get("csrf_token")}

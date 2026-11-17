@@ -18,12 +18,18 @@ class GmailConnection(models.Model):
     last_sent_at = models.DateTimeField(null=True, blank=True)
     needs_reconnect = models.BooleanField(default=False)
     last_error = models.CharField(max_length=240, blank=True)
+    # Only used when an administrator turns on "Email replies" and the person granted read access.
+    track_replies = models.BooleanField(default=True)
 
     class Meta:
         default_permissions = ()
 
     def __str__(self):
         return f"{self.user} · {self.google_email}"
+
+    @property
+    def can_read(self):
+        return "gmail.readonly" in (self.scopes or "")
 
     @property
     def active(self):
@@ -43,6 +49,7 @@ class SentEmail(models.Model):
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="sent_emails")
     from_address = models.EmailField()
     participant = models.ForeignKey("participants.Participant", null=True, blank=True, on_delete=models.PROTECT, related_name="app_emails")
+    contact = models.ForeignKey("customers.CustomerContact", null=True, blank=True, on_delete=models.PROTECT, related_name="app_emails")
     to_address = models.EmailField()
     subject = models.CharField(max_length=200)
     status = models.CharField(max_length=12, choices=Status.choices, default=Status.SENDING)
@@ -51,6 +58,8 @@ class SentEmail(models.Model):
     interaction = models.ForeignKey("crm.Interaction", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
     created_at = models.DateTimeField(auto_now_add=True)
     sent_at = models.DateTimeField(null=True, blank=True)
+    thread_id = models.CharField(max_length=80, blank=True)
+    replies_checked_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         default_permissions = ()
@@ -87,6 +96,10 @@ class ConnectionSetting(models.Model):
         EZTEXTING = "eztexting", "Texting (EZ Texting)"
         EMAIL = "email", "Automatic email"
         SENDING = "sending", "Automatic messages"
+        REPLIES = "replies", "Text replies"
+        GMAIL_REPLIES = "gmail_replies", "Email replies"
+        SIGNATURE = "signature", "Company email signature"
+        STATEMENT_NOTICES = "statement_notices", "Pay statement emails"
 
     key = models.CharField(max_length=20, choices=Key.choices, unique=True)
     values = models.JSONField(default=dict, blank=True)
@@ -146,3 +159,131 @@ class MarketingConsent(models.Model):
 
     def __str__(self):
         return f"{self.participant} · {self.get_status_display()}"
+
+
+class TextMessage(models.Model):
+    """A one-to-one text: sent by staff from the app, or a reply that came in.
+
+    Replies are routed to whoever the latest staff text said replies should go to,
+    otherwise to the default reply owner chosen in Settings → Connections.
+    """
+
+    class Direction(models.TextChoices):
+        OUT = "out", "Sent"
+        IN = "in", "Received"
+
+    class State(models.TextChoices):
+        SENT = "sent", "Sent"
+        FAILED = "failed", "Not sent"
+        NEW = "new", "New"
+        DONE = "done", "Handled"
+
+    direction = models.CharField(max_length=3, choices=Direction.choices)
+    phone = models.CharField(max_length=16, db_index=True)  # last 10 digits
+    participant = models.ForeignKey("participants.Participant", null=True, blank=True, on_delete=models.SET_NULL, related_name="text_messages")
+    contact = models.ForeignKey("customers.CustomerContact", null=True, blank=True, on_delete=models.SET_NULL, related_name="text_messages")
+    body = models.TextField(max_length=1600)
+    sent_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    replies_to = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+",
+                                   help_text="Outgoing: who replies should go to. Incoming: who it was routed to.")
+    state = models.CharField(max_length=8, choices=State.choices)
+    provider_reference = models.CharField(max_length=160, blank=True)
+    error = models.CharField(max_length=240, blank=True)
+    operation_id = models.UUIDField(null=True, blank=True, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    handled_at = models.DateTimeField(null=True, blank=True)
+    handled_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    interaction = models.ForeignKey("crm.Interaction", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+
+    class Meta:
+        default_permissions = ()
+        ordering = ("-created_at",)
+
+
+class TextOptOut(models.Model):
+    """A number that replied STOP. Texts to it are blocked until it replies START."""
+    phone = models.CharField(max_length=16, unique=True)
+    opted_out_at = models.DateTimeField(auto_now_add=True)
+    note = models.CharField(max_length=120, blank=True)
+
+    class Meta:
+        default_permissions = ()
+
+
+class EmailReply(models.Model):
+    """A reply that arrived in a staff member's Gmail to an email they sent from the app."""
+    sent_email = models.ForeignKey(SentEmail, on_delete=models.CASCADE, related_name="replies")
+    gmail_message_id = models.CharField(max_length=80, unique=True)
+    from_address = models.CharField(max_length=254, blank=True)
+    subject = models.CharField(max_length=200, blank=True)
+    body = models.TextField(blank=True)
+    received_at = models.DateTimeField()
+    interaction = models.ForeignKey("crm.Interaction", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        default_permissions = ()
+        ordering = ("-received_at",)
+
+
+class EmailSignature(models.Model):
+    """A staff member's own signature, added to emails they send from the app."""
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="email_signature")
+    html = models.TextField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        default_permissions = ()
+
+
+class EmailBounce(models.Model):
+    """An address that automatic email could not be delivered to. Sending to it pauses until staff fix it."""
+    address = models.EmailField(unique=True)
+    reason = models.CharField(max_length=240, blank=True)
+    bounced_at = models.DateTimeField()
+    cleared_at = models.DateTimeField(null=True, blank=True)
+    cleared_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+
+    class Meta:
+        default_permissions = ()
+
+
+class MessageTemplate(models.Model):
+    """Saved wording staff can start an email or text from. {first_name} and similar fill in."""
+    class Channel(models.TextChoices):
+        BOTH = "both", "Email and text"
+        EMAIL = "email", "Email only"
+        TEXT = "text", "Text only"
+
+    name = models.CharField(max_length=80)
+    channel = models.CharField(max_length=8, choices=Channel.choices, default=Channel.BOTH)
+    subject = models.CharField(max_length=200, blank=True)
+    body = models.TextField(max_length=6000)
+    is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        default_permissions = ()
+        ordering = ("name",)
+
+    def __str__(self):
+        return self.name
+
+
+class StatementNotice(models.Model):
+    """An email telling a staff member their earnings statement is ready (a link only, never the amounts)."""
+    class Status(models.TextChoices):
+        SENT = "sent", "Sent"
+        FAILED = "failed", "Not sent"
+        SKIPPED = "skipped", "Not sent (no email or My pay off)"
+
+    statement = models.OneToOneField("reporting.ContractorStatement", on_delete=models.CASCADE, related_name="notice")
+    address = models.CharField(max_length=254, blank=True)
+    status = models.CharField(max_length=8, choices=Status.choices)
+    detail = models.CharField(max_length=240, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        default_permissions = ()

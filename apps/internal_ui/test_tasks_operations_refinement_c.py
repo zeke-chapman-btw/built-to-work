@@ -97,7 +97,7 @@ class TasksOperationsRefinementCTests(TestCase):
 
     def test_operations_canonical_resources_and_history_stay_reachable(self):
         self.login()
-        pages=[reverse('internal:workspace',args=['operations']),reverse('stations:list'),reverse('stations:detail',args=[self.station.pk]),reverse('operations:trailers'),reverse('operations:templates'),reverse('operations:template-detail',args=[self.draft.pk]),reverse('participants:intake-config-index'),reverse('participants:intake-config-detail',args=[self.form_version.form_id]),reverse('participants:consent-index'),reverse('participants:consent-history',args=[self.consent.pk])]
+        pages=[reverse('internal:workspace',kwargs={'workspace_id':'operations'}),reverse('stations:list'),reverse('stations:detail',args=[self.station.pk]),reverse('operations:trailers'),reverse('operations:templates'),reverse('operations:template-detail',args=[self.draft.pk]),reverse('participants:intake-config-index'),reverse('participants:intake-config-detail',args=[self.form_version.form_id]),reverse('participants:consent-index'),reverse('participants:consent-history',args=[self.consent.pk])]
         before=(Task.objects.count(),Station.objects.count(),TrailerInstance.objects.count(),ConsentDocumentVersion.objects.count())
         for url in pages:
             with self.subTest(url=url):
@@ -123,7 +123,7 @@ class TasksOperationsRefinementCTests(TestCase):
 
     def test_home_participant_and_event_surfaces_do_not_opt_in(self):
         self.login()
-        for url in (reverse('internal:home'),reverse('participants:staff-directory'),reverse('internal:workspace',args=['participants']),reverse('events:event_detail',args=[self.event.pk]),reverse('operations:health',args=[self.event.pk])):
+        for url in (reverse('internal:home'),reverse('participants:staff-directory'),reverse('internal:workspace',kwargs={'workspace_id':'participants'}),reverse('events:event_detail',args=[self.event.pk]),reverse('operations:health',args=[self.event.pk])):
             with self.subTest(url=url):
                 r=self.client.get(url); self.assertEqual(r.status_code,200)
                 self.assertNotContains(r,'has-operations-refinement'); self.assertNotContains(r,'has-tasks-refinement')

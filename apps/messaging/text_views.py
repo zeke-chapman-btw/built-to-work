@@ -1,0 +1,291 @@
+"""Text a participant, and the Text replies inbox."""
+import json
+import uuid
+
+from django import forms
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods, require_POST
+
+from apps.crm import access as crm_access
+from apps.internal_ui.record_editors import editor_response, editor_success
+from apps.participants.models import Participant
+
+from . import texting
+from .models import TextMessage
+
+
+def staff_choices(include_blank=False):
+    from django.db.models import Q
+    from apps.participants.workspace_access import can_notes
+    users = (get_user_model().objects.filter(is_active=True, is_staff=True)
+             .filter(Q(staff_profile__isnull=True) | Q(staff_profile__is_active=True))
+             .order_by("first_name", "last_name", "username"))
+    choices = [(str(u.pk), u.get_full_name() or u.get_username()) for u in users if _can_receive(u, can_notes)]
+    return ([("", "No one (leave unassigned)")] if include_blank else []) + choices
+
+
+def _can_receive(user, can_notes):
+    try:
+        return bool(can_notes(user))
+    except PermissionDenied:
+        return False
+
+
+def _inbox_user(request):
+    from apps.participants.workspace_access import can_notes, require_people
+    user = crm_access.fresh_staff(request.user)
+    require_people(user)
+    if not can_notes(user):
+        raise PermissionDenied("Your role does not include participant messages.")
+    return user
+
+
+class TextForm(forms.Form):
+    operation_id = forms.UUIDField(widget=forms.HiddenInput)
+    body = forms.CharField(label="Message", max_length=600, widget=forms.Textarea(attrs={"rows": 5, "maxlength": 600}),
+                           help_text="Over 160 characters is sent as more than one text.")
+    replies_to = forms.ChoiceField(label="Send replies to",
+                                   help_text="Their reply will show up in this person's Inbox.")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["replies_to"].choices = staff_choices()
+
+
+@login_required(login_url="/admin/login/")
+@require_http_methods(["GET", "POST"])
+def text_participant(request, participant_id):
+    from . import recipients
+    return _text(request, recipients.participant(participant_id, request.user))
+
+
+@login_required(login_url="/admin/login/")
+@require_http_methods(["GET", "POST"])
+def text_contact(request, contact_id):
+    from . import recipients
+    return _text(request, recipients.contact(contact_id, request.user))
+
+
+def _text(request, recipient):
+    user = crm_access.fresh_staff(request.user)
+    profile = recipient.profile_url
+    default_back = profile + ("?section=activity" if recipient.kind == "participant" else "")
+    back = request.GET.get("next") or request.POST.get("next") or default_back
+    if not back.startswith("/"):
+        back = default_back
+    reply_id = request.GET.get("reply")
+    from apps.accounts.roles import manager
+    from . import templates_views
+    chosen = templates_views.picked(request, "text")
+    initial = {"operation_id": uuid.uuid4(), "replies_to": str(user.pk)}
+    if chosen:
+        initial["body"] = templates_views.fill(chosen.body, recipient, user)
+    form = TextForm(request.POST or None, initial=initial)
+    if str(user.pk) not in {c[0] for c in form.fields["replies_to"].choices}:
+        form.fields["replies_to"].choices = [(str(user.pk), user.get_full_name() or user.get_username())] + \
+            form.fields["replies_to"].choices
+    phone = texting.phone_key(recipient.contact_phone)
+    problem = ("This person has no mobile number on file." if not phone else
+               "This number replied STOP. They need to text START before they can be texted again." if texting.opted_out(phone) else
+               "Texting isn't set up yet. An administrator can set it up in Settings → Connections." if not texting.ready() else "")
+    recent = list(TextMessage.objects.filter(phone=phone).select_related("sent_by", "replies_to").order_by("-created_at")[:6]) if phone else []
+    context = {"form": form, "recipient": recipient, "problem": problem, "recent": list(reversed(recent)),
+               "page_title": ("Reply to " if reply_id else "Text ") + recipient.first_name, "back": back, "profile_url": profile,
+               "editor_context": (f"To ({phone[:3]}) {phone[3:6]}-{phone[6:]}" + (f" · {recipient.company}" if recipient.company else ""))
+                                 if phone else "No mobile number on file",
+               "save_label": "Send text", "fields_template": "messaging/text_fields.html",
+               "message_templates": templates_views.choices_for(request, "text", request.get_full_path()),
+               "can_manage_templates": manager(user), "reply_id": int(reply_id) if (reply_id or "").isdigit() else None}
+    if request.method == "POST" and not problem and form.is_valid():
+        owner = get_user_model().objects.filter(pk=form.cleaned_data["replies_to"], is_active=True, is_staff=True).first()
+        try:
+            texting.send_to_participant(actor=user, recipient=recipient, body=form.cleaned_data["body"].strip(),
+                                        replies_to=owner or user, operation_id=form.cleaned_data["operation_id"])
+        except texting.TextError as exc:
+            form.add_error(None, str(exc))
+        else:
+            if reply_id:
+                TextMessage.objects.filter(pk=reply_id, direction="in", phone=phone, state="new").update(
+                    state="done", handled_at=timezone.now(), handled_by=user)
+            who = "you" if (owner or user) == user else (owner.get_full_name() or owner.get_username())
+            messages.success(request, f"Text sent to {recipient.first_name}. Replies will go to {who}.")
+            return editor_success(request, back)
+    elif request.method == "POST" and problem:
+        form.is_valid()
+        form.add_error(None, problem)
+    return editor_response(request, template="messaging/text_page.html", context=context, panel="messaging/text_panel.html")
+
+
+TABS = (("mine", "Mine"), ("unassigned", "Unassigned"), ("all", "All replies"), ("sent", "Sent"), ("reminders", "Reminders"))
+
+
+@login_required(login_url="/admin/login/")
+def inbox(request):
+    tab = request.GET.get("tab") or "mine"
+    tab = tab if tab in dict(TABS) else "mine"
+    if tab == "reminders":
+        return _reminders_tab(request)
+    user = _inbox_user(request)
+    show_done = request.GET.get("done") == "1"
+    rows = TextMessage.objects.select_related("participant", "contact__organization", "replies_to", "sent_by", "handled_by")
+    base_in = rows.filter(direction=TextMessage.Direction.IN)
+    counts = {"mine": base_in.filter(replies_to=user, state="new").count(),
+              "unassigned": base_in.filter(replies_to__isnull=True, state="new").count(),
+              "all": base_in.filter(state="new").count(), "sent": None, "reminders": _unread(user)}
+    if tab == "sent":
+        rows = rows.filter(direction=TextMessage.Direction.OUT)
+    else:
+        rows = base_in
+        if tab == "mine":
+            rows = rows.filter(replies_to=user)
+        elif tab == "unassigned":
+            rows = rows.filter(replies_to__isnull=True)
+        if not show_done:
+            rows = rows.filter(state="new")
+    page = Paginator(rows.order_by("-created_at"), 40).get_page(request.GET.get("page"))
+    return render(request, "messaging/texts.html", {
+        "page_title": "Inbox", "tab": tab, "tabs": [(k, label, counts[k]) for k, label in TABS],
+        "page": page, "show_done": show_done, "staff": staff_choices(include_blank=True), "me": user,
+        "ready": texting.ready(), "forwarding": texting.reply_settings()[1].get("forwarding"),
+    })
+
+
+def _unread(user):
+    from apps.reminders.models import ReminderNotice
+    return ReminderNotice.objects.filter(user=user, read_at__isnull=True).count()
+
+
+def _reminders_tab(request):
+    """In-app reminders for this person (the Bell channel until the new bell lands)."""
+    from apps.reminders.models import ReminderNotice
+    user = crm_access.fresh_staff(request.user)
+    if not (user.is_active and user.is_staff):
+        raise PermissionDenied
+    from apps.participants.workspace_access import can_notes
+    try:
+        replies_ok = bool(can_notes(user))
+    except Exception:
+        replies_ok = False
+    show_done = request.GET.get("done") == "1"
+    rows = ReminderNotice.objects.filter(user=user)
+    if not show_done:
+        rows = rows.filter(read_at__isnull=True)
+    page = Paginator(rows.select_related("rule"), 40).get_page(request.GET.get("page"))
+    tabs = []
+    if replies_ok:
+        base_in = TextMessage.objects.filter(direction=TextMessage.Direction.IN, state="new")
+        counts = {"mine": base_in.filter(replies_to=user).count(), "unassigned": base_in.filter(replies_to__isnull=True).count(),
+                  "all": base_in.count(), "sent": None}
+        tabs = [(k, label, counts[k]) for k, label in TABS if k != "reminders"]
+    tabs.append(("reminders", "Reminders", _unread(user)))
+    return render(request, "messaging/texts.html", {
+        "page_title": "Inbox", "tab": "reminders", "tabs": tabs, "page": page, "show_done": show_done,
+        "notices": True, "ready": texting.ready() if replies_ok else False, "forwarding": True, "can_text": replies_ok})
+
+
+def _back(request):
+    value = request.POST.get("next") or ""
+    return value if value.startswith("/inbox/") else reverse("messaging:texts")
+
+
+@login_required(login_url="/admin/login/")
+@require_POST
+def text_handled(request, pk):
+    user = _inbox_user(request)
+    row = get_object_or_404(TextMessage, pk=pk, direction=TextMessage.Direction.IN)
+    if request.POST.get("undo"):
+        row.state, row.handled_at, row.handled_by = TextMessage.State.NEW, None, None
+    else:
+        row.state, row.handled_at, row.handled_by = TextMessage.State.DONE, timezone.now(), user
+    row.save(update_fields=["state", "handled_at", "handled_by"])
+    return redirect(_back(request))
+
+
+@login_required(login_url="/admin/login/")
+@require_POST
+def text_reassign(request, pk):
+    _inbox_user(request)
+    row = get_object_or_404(TextMessage, pk=pk, direction=TextMessage.Direction.IN)
+    owner_id = request.POST.get("owner") or ""
+    owner = get_user_model().objects.filter(pk=owner_id, is_active=True, is_staff=True).first() if owner_id else None
+    row.replies_to = owner
+    row.save(update_fields=["replies_to"])
+    if owner:
+        texting._nudge(row)
+    messages.success(request, f"Reply moved to {owner.get_full_name() or owner.get_username()}." if owner else "Reply left unassigned.")
+    return redirect(_back(request))
+
+
+@csrf_exempt
+@require_POST
+def eztexting_webhook(request, token):
+    _row, values = texting.reply_settings()
+    if not values.get("path_token") or token != values["path_token"]:
+        return HttpResponseForbidden()
+    secret_value = texting.webhook_secret()
+    if secret_value and not texting.verify_signature(request.body, request.headers.get("X-Signature-256", ""), secret_value):
+        return HttpResponseForbidden()
+    try:
+        payload = json.loads(request.body or b"{}")
+    except ValueError:
+        return HttpResponseBadRequest()
+    if not isinstance(payload, dict):
+        return HttpResponseBadRequest()
+    kind = payload.get("type") or "inbound_text.received"
+    if kind == "inbound_text.received":
+        texting.receive(payload)
+    return HttpResponse("ok")
+
+
+def new_reply_count(user):
+    return TextMessage.objects.filter(direction=TextMessage.Direction.IN, replies_to=user, state="new").count()
+
+
+@login_required(login_url="/admin/login/")
+@require_http_methods(["GET"])
+def new_text(request):
+    """Pick who to text (search by name, phone or email), then write the text."""
+    from django.db.models import Q
+    _inbox_user(request)
+    email = request.GET.get("mode") == "email"
+    query = (request.GET.get("q") or "").strip()[:80]
+    people = []
+    if len(query) >= 2:
+        digits = "".join(ch for ch in query if ch.isdigit())
+        match = Q(contact_email__icontains=query)
+        for word in query.split()[:3]:
+            match |= Q(first_name__icontains=word) | Q(last_name__icontains=word) | Q(preferred_name__icontains=word)
+        if len(query.split()) >= 2:
+            first, last = query.split()[0], query.split()[-1]
+            match = (Q(first_name__icontains=first) & Q(last_name__icontains=last)) | Q(contact_email__icontains=query)
+        if len(digits) >= 4:
+            match |= Q(contact_phone__contains=digits)
+        found = Participant.objects.filter(match, archived_at__isnull=True, kind=Participant.Kind.PERSON)
+        found = found.exclude(contact_email="") if email else found.exclude(contact_phone="")
+        people = list(found.order_by("last_name", "first_name")[:15])
+    back = reverse("messaging:texts") + "?tab=sent"
+    if email:
+        rows = [{"person": p, "email": p.contact_email, "blocked": False,
+                 "url": reverse("messaging:email-participant", args=[p.pk])} for p in people]
+    else:
+        rows = [{"person": p, "phone": texting.phone_key(p.contact_phone), "blocked": texting.opted_out(p.contact_phone),
+                 "url": reverse("messaging:text-participant", args=[p.pk]) + "?next=" + back} for p in people]
+    from . import google
+    context = {"page_title": "New email" if email else "New text",
+               "editor_context": f"Find the person you want to {'email' if email else 'text'}.", "query": query,
+               "rows": rows, "ready": google.configured() if email else texting.ready(), "email": email}
+    fragment = request.headers.get("X-BTW-Editor") == "1"
+    response = render(request, "messaging/new_text_panel.html" if fragment else "messaging/new_text_page.html", context)
+    response["Cache-Control"] = "no-store"
+    if fragment:
+        response["X-BTW-Editor"] = "1"
+    return response

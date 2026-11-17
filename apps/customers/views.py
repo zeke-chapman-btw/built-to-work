@@ -21,7 +21,7 @@ from .models import (CustomerOrganization as Org, CustomerContact, CustomerLocat
 
 TABS = (("overview", "Overview"), ("company", "Company details"), ("needs", "Open positions"),
         ("campaigns", "Campaigns"), ("matches", "Matches"), ("users", "Users & contacts"),
-        ("crm", "Touchpoints"), ("access", "Plan & access"), ("history", "History"))
+        ("crm", "Touchpoints"), ("access", "Plan & access"), ("billing", "Billing"), ("history", "History"))
 
 
 def staff_view(view):
@@ -34,7 +34,7 @@ def staff_view(view):
 
 
 def local_return(request, value, fallback):
-    if (value and value.startswith(("/internal/customers/", "/internal/campaigns/"))
+    if (value and value.startswith(("/customers/", "/internal/campaigns/"))
             and url_has_allowed_host_and_scheme(value, allowed_hosts=set(), require_https=request.is_secure())):
         return value
     return fallback
@@ -194,6 +194,9 @@ def workspace(request, org_id, tab="overview"):
             overview_notes=org.staff_notes.filter(archived_at__isnull=True).select_related("author")[:4],
             overview_note_total=org.staff_notes.filter(archived_at__isnull=True).count(),
         )
+    elif tab == "billing":
+        from apps.billing.views import billing_context
+        data.update(billing_context(org))
     elif tab == "crm":
         from apps.crm.presentation import history_context
         data.update(history_context(request, organization=org))
@@ -421,8 +424,24 @@ def need_action(request, org_id, record_id, action):
         raise Http404
     initial = initials(request, org, obj)
     initial.update(working_id=obj.working_revision_id, internal_reference=obj.internal_reference, internal_note=obj.internal_note, campaign=obj.campaign_id)
+    if action == "approve":
+        from apps.accounts.roles import manager
+        if not manager(request.user):
+            raise PermissionDenied("Only Admins and Managers can approve positions.")
+        revision = obj.working_revision
+        initial.update(people=(revision.worker_quantity if revision else None) or 1)
     def save(d):
         common = dict(actor=request.user, org_id=org.pk, need_id=obj.pk, expected_org_revision=d["org_revision"], expected_need_revision=d["record_revision"], why=d["reason"])
+        if action == "approve":
+            from django.db import transaction
+            from apps.billing.services import record_position_charge
+            with transaction.atomic():
+                need = s.revision_action(**common, revision_id=d["working_id"], action=action)
+                kind = d["fee_kind"]
+                record_position_charge(org=org, need=need, revision=need.effective_revision, kind=kind,
+                                       quantity=d["candidates"] if kind == "skilled" else d["people"] if kind == "general" else 0,
+                                       actor=request.user)
+            return need
         if action in revision_actions:
             return s.revision_action(**common, revision_id=d["working_id"], action=action)
         if action == "administration":
@@ -431,7 +450,12 @@ def need_action(request, org_id, record_id, action):
             return s.assign_campaign(**common, campaign_id=d["campaign"])
         return s.need_status(**common, action=action)
     review = {"label": "Current working revision " + str(obj.working_revision.number), "sections": revision_sections(obj.working_revision), "url": reverse("customers:need", args=[org.pk, obj.pk])} if action in revision_actions and obj.working_revision else None
-    return form_screen(request, org=org, tab="needs", title=action.replace("_", " ").capitalize()+" position", form_class=f.NeedAdministrationForm if action == "administration" else f.AssociationForm if action == "campaign" else f.ActionForm, initial=initial, save=save, review=review, success=lambda unused: reverse("customers:need", args=[org.pk, obj.pk]))
+    return form_screen(request, org=org, tab="needs", title=action.replace("_", " ").capitalize()+" position", form_class=f.NeedAdministrationForm if action == "administration" else f.AssociationForm if action == "campaign" else _approve_form() if action == "approve" else f.ActionForm, initial=initial, save=save, review=review, success=lambda unused: reverse("customers:need", args=[org.pk, obj.pk]))
+
+
+def _approve_form():
+    from apps.billing.forms import ApproveForm
+    return ApproveForm
 
 
 @staff_view

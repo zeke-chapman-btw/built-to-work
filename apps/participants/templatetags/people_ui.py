@@ -63,7 +63,7 @@ def people_navigation(context):
         if label=='Verification approvals':
             from apps.participants.verification_services import can_view_qualification_approvals
             if not can_view_qualification_approvals(user):continue
-        row=dict(item,label=labels.get(item['label'],item['label']),active=request.path.startswith(item['url']) or (item['label']=='Directory' and request.path==reverse('internal:workspace',args=['participants'])))
+        row=dict(item,label=labels.get(item['label'],item['label']),active=request.path.startswith(item['url']) or (item['label']=='Directory' and request.path==reverse('internal:workspace', kwargs={'workspace_id': 'participants'})))
         (primary if item['label'] in {'Directory','Participant Review Queue','Qualifications','Documents','Verification approvals'} else more).append(row)
     if request.user.has_perm('participants.view_participant'):
         more.insert(0,dict(label='Saved views',url=reverse('participants:saved-views'),active=request.path.startswith(reverse('participants:saved-views'))))

@@ -180,7 +180,7 @@ def _activity(policy, subject, audience, cursor, back):
             'relative': timesince(row.occurred_at, now).split(',')[0] + ' ago' if row.occurred_at <= now else 'Future timestamp',
             'author': author, 'audience': 'Employer' if employer else 'BTW Staff',
             'company': str(row.owner_organization) if employer else '',
-            'source': 'Manually recorded' if row.source == 'manual' else 'Sent by app',
+            'source': 'Manually recorded' if row.source == 'manual' else ('Received in app' if row.direction == 'inbound' else 'Sent by app'),
             'contexts': contexts, 'url': with_origin(reverse('crm:detail', args=[row.pk]), back)})
     empty = ('No more activity in this view.' if cursor else
              'No matches for this audience.' if audience != 'all' and base.exists() else

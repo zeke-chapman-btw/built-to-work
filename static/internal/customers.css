@@ -262,3 +262,4 @@ body.internal-app.has-customer-page #main-content .cx-crm #relationship-followup
 body.internal-app.has-customer-page #main-content .cx-crm :is(.crm-card,.crm-contacts-card) :is(p,.ops-list-empty){margin:0;padding:10px 20px 14px;color:#5b6470;font-size:14px}
 body.internal-app.has-customer-page #main-content .cx-crm .ops-list-row{padding:12px 20px}
 @media (max-width:1000px){.cx-crm-cols{grid-template-columns:1fr}body.internal-app.has-customer-page #main-content .cx-crm .crm-relationship-summary{grid-template-columns:1fr 1fr}}
+.cx-person .cx-msg{display:flex;gap:6px;margin-top:6px}.cx-person .cx-msg .button{min-height:30px;padding:4px 10px;font-size:12px}

@@ -19,6 +19,14 @@ PARTICIPANT_SECTIONS = {'portal-home':'home','portal-interest':'jobs','portal-ti
     'portal-profile-edit':'profile','portal-entry-add':'profile','portal-entry-edit':'profile',
     'portal-entry-archive':'profile','portal-document-add':'profile','portal-document-archive':'profile'}
 
+def short_name(user):
+    """'Zeke C.' from first and last name; the username when no name is saved."""
+    first, last = (user.first_name or '').strip(), (user.last_name or '').strip()
+    if first:
+        return f"{first} {last[0].upper()}." if last else first
+    return user.get_username()
+
+
 @register.simple_tag(takes_context=True)
 def application_shell(context):
     request = context.get('request')
@@ -53,7 +61,7 @@ def application_shell(context):
         shell.update(home_url=reverse('internal:home'), utility='Internal workspace',
                      footer='Built to Work · Internal workspace', page_title=context.get('page_title') or 'Dashboard')
         if authenticated and user.is_staff:
-            shell.update(items=context.get('primary_navigation') or [], account_label=user.get_username(),
+            shell.update(items=context.get('primary_navigation') or [], account_label=short_name(user),
                 account_url=reverse('internal:settings'), account_link_label='Personal settings',
                 account_active=bool((context.get('settings_link') or {}).get('active')),
                 logout_url=reverse('accounts:logout'))
