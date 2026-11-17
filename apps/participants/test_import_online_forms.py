@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from apps.participants.historical import _read_rows, create_batch, guess_mapping, preview_batch
+from apps.participants.historical import _read_rows, create_batch, guess_mapping, import_ready, preview_batch
 
 CSV = (
     "Entry ID,Name,Email,Phone,Address,City,State,Current Job Status,"
@@ -60,8 +60,31 @@ class OnlineFormImportTests(TestCase):
         self.assertEqual(response.status_code, 200, response.get("Location"))
         page = response.content.decode()
         self.assertIn("Mary Ann Smith", page)
-        self.assertIn("Import 2 ready rows", page)
+        self.assertIn("of the 2 ready rows", page)
         self.assertIn("Needs a look", page)
         review = self.client.get(reverse("participants:historical-batch", args=[self.batch.pk]) + "?show=review").content.decode()
         self.assertIn("Joseph Brown", review)
         self.assertNotIn("Mary Ann Smith", review)
+
+    def test_type_is_chosen_per_upload_and_a_few_can_go_in_first(self):
+        headers, _rows = _read_rows(self.batch)
+        self.client.force_login(self.actor, backend="django.contrib.auth.backends.ModelBackend")
+        url = reverse("participants:historical-map", args=[self.batch.pk])
+        page = self.client.get(url).content.decode()
+        self.assertIn("Participant type for this upload", page)
+        post = {"map_full_name": "Name", "map_email": "Email", "map_phone": "Phone", "type_choice": "job_seeker"}
+        self.assertEqual(self.client.post(url, post).status_code, 302)
+        self.batch.refresh_from_db()
+        rows = {r.row_number: r for r in self.batch.rows.all()}
+        self.assertEqual({r.normalized_data.get("participant_type") for r in rows.values() if r.status == "ready"}, {"job_seeker"})
+        self.client.post(url, dict(post, type_choice=""))
+        self.assertFalse(any(r.normalized_data.get("participant_type") for r in self.batch.rows.all()))  # left blank: no guess
+        self.client.post(url, post)
+        self.assertEqual(import_ready(self.batch, actor=self.actor, limit=1), 1)
+        self.batch.refresh_from_db()
+        self.assertEqual(self.batch.status, "previewed")  # the rest wait for later
+        self.assertEqual(self.batch.rows.get(row_number=2).participant.primary_identifier, "job_seeker")
+        self.assertEqual(self.batch.rows.get(row_number=3).status, "ready")
+        self.assertEqual(import_ready(self.batch, actor=self.actor), 1)
+        self.batch.refresh_from_db()
+        self.assertEqual(self.batch.status, "imported")

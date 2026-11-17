@@ -175,7 +175,7 @@ def _choice(value, choices, label):
 
 def _job_status_type(word):
     """Answers like "Unemployed and looking for work" become a participant type."""
-    if "student" in word:
+    if "student" in word or word in ("highschool", "college", "tradeschool", "university") or "school" in word:
         return "student"
     if "unemployed" in word or "lookingforwork" in word:
         return "job_seeker"
@@ -183,7 +183,7 @@ def _job_status_type(word):
         return "employee"
     if "teacher" in word or "instructor" in word:
         return "teacher_instructor"
-    if "retired" in word:
+    if "retired" in word or word == "other":
         return "other"
     return ""
 
@@ -573,11 +573,13 @@ def _import_profile(participant, data, *, actor, row):
         ParticipantNote.objects.create(participant=participant, content=data["staff_note"], author=actor)
 
 
-def import_ready(batch, *, actor):
+def import_ready(batch, *, actor, limit=None):
+    """Import ready rows in file order. With a limit, only that many; the rest stay ready for later."""
     if batch.status != HistoricalImportBatch.Status.PREVIEWED:
         raise ValidationError("Preview and map the batch before import.")
     imported = 0
-    for row in batch.rows.filter(status=HistoricalImportRow.Status.READY):
+    ready = batch.rows.filter(status=HistoricalImportRow.Status.READY).order_by("row_number")
+    for row in (ready[:limit] if limit else ready):
         try:
             with transaction.atomic():
                 if _matches(row.normalized_data):
@@ -591,9 +593,10 @@ def import_ready(batch, *, actor):
             row.status = HistoricalImportRow.Status.ERROR
             row.error = str(exc)[:1000]
             row.save(update_fields=("status", "error"))
-    batch.status = HistoricalImportBatch.Status.IMPORTED
-    batch.completed_at = timezone.now()
-    batch.save(update_fields=("status", "completed_at"))
+    if not batch.rows.filter(status=HistoricalImportRow.Status.READY).exists():
+        batch.status = HistoricalImportBatch.Status.IMPORTED
+        batch.completed_at = timezone.now()
+        batch.save(update_fields=("status", "completed_at"))
     audit_action(actor=actor, action="historical.import.complete", instance=batch,
                  new_data={"imported": imported, "review": batch.rows.filter(status="review").count(),
                            "errors": batch.rows.filter(status="error").count()})
