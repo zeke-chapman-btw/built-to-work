@@ -9,6 +9,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from . import engine, sources
+from apps.operations.models import TaskNotification
 from .models import ReminderNotice, ReminderRole, ReminderRule, ReminderSend, ReminderSetup
 
 ET = ZoneInfo("America/New_York")
@@ -124,8 +125,9 @@ class SendingTests(Base):
             self.turn_on(now - timedelta(hours=1))
             engine.run_pass(now)
             engine.run_pass(now + timedelta(minutes=5))
-        notice = ReminderNotice.objects.get()
-        self.assertEqual((notice.user, notice.title), (self.staff, "Check on Pat"))
+        notice = TaskNotification.objects.get(kind="reminder")  # shows in the bell
+        self.assertEqual(notice.recipient, self.staff)
+        self.assertTrue(notice.message.startswith("Check on Pat"))
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, ["sam@example.test"])
 
@@ -137,9 +139,9 @@ class SendingTests(Base):
         self.turn_on(now - timedelta(hours=1))
         with patch.dict(sources.SOURCES, {"fake": fake_source(items)}):
             engine.run_pass(now)
-        notice = ReminderNotice.objects.get()
-        self.assertEqual(notice.title, "Fake reminder (3)")
-        self.assertIn("• Item 2", notice.body)
+        notice = TaskNotification.objects.get(kind="reminder")
+        self.assertTrue(notice.message.startswith("Fake reminder (3)"))
+        self.assertIn("• Item 2", notice.message)
 
     def test_texts_wait_for_daytime_and_skip_stop(self):
         from apps.messaging import store, texting
@@ -173,11 +175,11 @@ class SendingTests(Base):
         with patch.dict(sources.SOURCES, {"fake": fake_source([first], modes=("changed",))}):
             engine.run_pass(noon)
             engine.run_pass(noon)
-        self.assertFalse(ReminderNotice.objects.exists())
+        self.assertFalse(TaskNotification.objects.filter(kind="reminder").exists())
         with patch.dict(sources.SOURCES, {"fake": fake_source([moved], modes=("changed",))}):
             engine.run_pass(noon)
             engine.run_pass(noon)
-        self.assertEqual(ReminderNotice.objects.count(), 1)
+        self.assertEqual(TaskNotification.objects.filter(kind="reminder").count(), 1)
 
 
 class EventSourceTests(Base):
@@ -206,7 +208,7 @@ class PageTests(Base):
         page = self.client.get(reverse("reminders:list"))
         self.assertContains(page, "Reminders are paused")
         self.assertContains(page, "Jason Collins")
-        self.assertContains(page, "Runs elsewhere")
+        self.assertContains(page, "Own switch")
         rule = ReminderRule.objects.get(key="missing_info")
         panel = self.client.get(reverse("reminders:edit", args=[rule.pk]), HTTP_X_BTW_EDITOR="1")
         self.assertContains(panel, "Staff member who asked")
@@ -284,3 +286,39 @@ class GapSourceTests(Base):
         row.withdrawn_at = now
         row.save()
         self.assertEqual(list(sources.missing_info(now.date(), now)), [])
+
+
+class BellAndSummaryTests(SendingTests):
+    def test_reminder_shows_in_bell_and_in_the_next_morning_summary(self):
+        from django.test import override_settings
+        from apps.operations.notifications import shell_context
+        from apps.operations.models import TaskReminderJob
+        from apps.operations.reminder_rendering import decorate
+        now = timezone.now()
+        item = sources.Item(ref="1", line="Check on Pat", created=now, related={"owner": [sources.user_target(self.staff)]})
+        self.make_rule()
+        self.turn_on(now - timedelta(hours=1))
+        with patch.dict(sources.SOURCES, {"fake": fake_source([item])}):
+            engine.run_pass(now)
+        notice = TaskNotification.objects.get(kind="reminder", recipient=self.staff)
+        for flag in (False, True):
+            with self.subTest(task_reminders=flag), override_settings(BTW_TASK_REMINDERS_ENABLED=flag):
+                bell = shell_context(self.staff)["task_updates"]
+                self.assertEqual(bell["unread"], 1)
+                self.assertEqual(bell["recent"][0].display_title, notice.message)
+        job = TaskReminderJob.objects.create(key="summary-test", kind="summary", recipient=self.staff,
+                                             local_date=now.date(), scheduled_for=now + timedelta(hours=1),
+                                             available_at=now + timedelta(hours=1))
+        summary = TaskNotification.objects.create(recipient=self.staff, kind="summary", message="Morning summary", reminder_job=job)
+        with override_settings(BTW_TASK_REMINDERS_ENABLED=True):
+            decorated, = decorate(self.staff, [summary])
+        self.assertEqual([s["title"] for s in decorated.summary_sections], ["Other reminders"])
+        self.assertEqual(decorated.summary_sections[0]["rows"][0]["title"], notice.message)
+
+    def test_one_switch_pauses_task_event_and_approval_reminders(self):
+        from django.test import override_settings
+        from apps.operations.reminders import run_tick
+        with override_settings(BTW_TASK_REMINDERS_ENABLED=True, BTW_REMINDERS_MASTER_SWITCH=True):
+            self.assertTrue(run_tick(worker_id="test")["paused"])
+            self.turn_on(timezone.now())
+            self.assertNotIn("paused", run_tick(worker_id="test"))

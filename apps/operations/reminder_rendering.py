@@ -164,6 +164,7 @@ def visible_queryset(user):
             continue
         if required or optional(task, task.status == 'completed'):
             ids.append(notice.pk)
+    ids += list(base.filter(kind='reminder', task__isnull=True, reminder_job__isnull=True).values_list('pk', flat=True))
     return base.filter(pk__in=ids).order_by('-created_at', '-pk')
 
 
@@ -179,6 +180,10 @@ def decorate(user, notices):
             pass
     for notice in notices:
         notice.summary_sections = []
+        if notice.kind == 'reminder' and not notice.task_id:  # from Settings → Reminders
+            notice.display_title = notice.message
+            notice.destination = notice.link or reverse('operations:updates')
+            continue
         if not notice.reminder_job_id:
             notice.display_title = notice.task.title
             notice.destination = reverse('operations:task', args=[notice.task_id])
@@ -205,7 +210,15 @@ def decorate(user, notices):
                 label = (label + ' · ' if item.kind == 'advance' else '') + 'Work ' + date_format(work, fmt)
             rows[item.task_id] = dict(title=item.task.title, label=label,
                 destination=reverse('operations:task', args=[item.task_id]), section=SECTIONS[item.kind])
-        for section in ('Today', 'Coming up', 'Staffing', 'Event preparation', 'Event closeout', 'Approvals', 'Since your last summary'):
+        if job.kind == 'summary':
+            # Reminders from Settings → Reminders that arrived in the day before this summary.
+            from datetime import timedelta
+            for other in (TaskNotification.objects.filter(recipient_id=notice.recipient_id, kind='reminder', task__isnull=True,
+                                                          created_at__gt=job.scheduled_for - timedelta(hours=24),
+                                                          created_at__lte=job.scheduled_for).order_by('-created_at')[:25]):
+                rows['reminder:' + str(other.pk)] = dict(title=other.message, label='Reminder',
+                    destination=other.link or reverse('operations:updates'), section='Other reminders')
+        for section in ('Today', 'Coming up', 'Staffing', 'Event preparation', 'Event closeout', 'Approvals', 'Other reminders', 'Since your last summary'):
             values = [row for row in rows.values() if row['section'] == section]
             if values:
                 notice.summary_sections.append({'title': section, 'rows': values,

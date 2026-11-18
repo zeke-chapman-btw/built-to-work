@@ -1,4 +1,5 @@
 """Claim, validate and deliver task reminders through the existing in-app inbox."""
+from django.conf import settings
 import logging
 import uuid
 from datetime import timedelta
@@ -242,9 +243,19 @@ def retry_job(claimed, error, now, worker_id):
                                 'lease_until', 'attempt_history', 'updated_at'])
 
 
+def switched_on():
+    """Settings → Reminders → Turn on reminders. One switch for every reminder in the app."""
+    if not getattr(settings, 'BTW_REMINDERS_MASTER_SWITCH', False):
+        return True
+    from apps.reminders.models import ReminderSetup
+    return ReminderSetup.current().is_on
+
+
 def run_tick(*, now=None, worker_id='manual', max_jobs=100, plan_limit=200, automatic=False):
     if not enabled():
         return {'enabled': False, 'processed': 0}
+    if not switched_on():
+        return {'enabled': True, 'paused': True, 'processed': 0}
     now = now or timezone.now()
     state, _ = TaskReminderSchedulerState.objects.get_or_create(key='task-reminders')
     heartbeat = dict(last_tick_at=now, worker_id=worker_id)

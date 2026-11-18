@@ -1,3 +1,4 @@
+from django.db.models import Q
 """In-app task notifications sourced from new audit events; no background delivery."""
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -15,7 +16,8 @@ def visible_notifications(user):
     if enabled():
         from .reminder_rendering import visible_queryset
         return visible_queryset(user)
-    return TaskNotification.objects.filter(recipient=user, task__in=tasks_for(user)).select_related('task').order_by('-created_at','-pk')
+    return TaskNotification.objects.filter(Q(task__in=tasks_for(user)) | Q(kind='reminder', task__isnull=True),
+                                           recipient=user).select_related('task').order_by('-created_at','-pk')
 
 
 def notification_event(entry):

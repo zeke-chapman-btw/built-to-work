@@ -67,6 +67,7 @@ class TaskNotification(UUIDModel):
         ADVANCE='advance','Coming up'
         DUE='due','Due'
         SUMMARY='summary','Morning summary'
+        REMINDER='reminder','Reminder'
     recipient=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='task_notifications')
     task=models.ForeignKey(Task,on_delete=models.CASCADE,related_name='notifications',null=True,blank=True)
     source_event=models.ForeignKey('core.AuditLog',on_delete=models.CASCADE,related_name='task_notifications',null=True,blank=True)
@@ -74,6 +75,7 @@ class TaskNotification(UUIDModel):
     snoozed_until=models.DateTimeField(null=True,blank=True)
     kind=models.CharField(max_length=16,choices=Kind.choices)
     message=models.CharField(max_length=240)
+    link=models.CharField(max_length=300,blank=True,default='')  # Settings → Reminders notices open this page
     created_at=models.DateTimeField(auto_now_add=True)
     read_at=models.DateTimeField(null=True,blank=True)
     class Meta:

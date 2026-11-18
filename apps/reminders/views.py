@@ -19,9 +19,8 @@ from .models import ReminderNotice, ReminderRole, ReminderRule, ReminderSetup
 
 AREAS = ("Tasks", "Events", "Participants", "Recruiting", "Customers", "Billing", "Payroll", "Admin", "Other")
 BUILT_IN = {
-    "tasks": ("Runs from Tasks. Each person can change theirs in My stuff → Reminders.", "operations:reminder-preferences"),
-    "events": ("Being finished by the Tasks build (18B). Its people and timing are set in Task reminder settings.",
-               "operations:reminder-company"),
+    "tasks": ("Each person can change theirs in My stuff → Reminders.", "operations:reminder-preferences"),
+    "events": ("Company-wide timing; open an event to change it for that event.", "operations:reminder-company"),
     "tickets": ("Sent automatically when someone signs up for an event, once Automatic messages are on.", "messaging:connections"),
     "statements": ("Turned on or off in Settings → Connections → Pay statement emails.", "messaging:connections"),
 }

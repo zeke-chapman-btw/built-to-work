@@ -189,7 +189,10 @@ def absolute(link):
 def deliver_bell(rule, target, title, body, link):
     if not target.user:
         raise ValueError("No app account")
-    ReminderNotice.objects.create(user=target.user, rule=rule, title=title[:200], body=body, link=link[:300])
+    from apps.operations.models import TaskNotification
+    message = title if not body or body.strip() == title.strip() else f"{title} — {body}"
+    TaskNotification.objects.create(recipient=target.user, kind=TaskNotification.Kind.REMINDER,
+                                    message=" ".join(message.split())[:240], link=(link or "")[:300])
 
 
 def deliver_email(rule, target, title, body, link):

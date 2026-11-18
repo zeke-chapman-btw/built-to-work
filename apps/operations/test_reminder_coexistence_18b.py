@@ -54,7 +54,7 @@ class JobReminderCoexistenceFixture(Fixtures):
 
     def reminder_count(self):
         return (TaskNotification.objects.filter(recipient=self.admin, kind='summary').count() +
-                ReminderNotice.objects.filter(user=self.admin, rule=self.rule).count())
+                TaskNotification.objects.filter(recipient=self.admin, kind='reminder').count())
 
 
 @override_settings(BTW_TASK_REMINDERS_ENABLED=True, BTW_EVENT_APPROVAL_REMINDERS_ENABLED=True)
@@ -75,7 +75,7 @@ class JobReminderCoexistence18BTests(JobReminderCoexistenceFixture, TestCase):
         self.rule_tick(hour=6)
         self.summary_tick()
         self.summary_tick(day=20)
-        self.assertEqual(ReminderNotice.objects.filter(user=self.admin).count(), 1)
+        self.assertEqual(TaskNotification.objects.filter(recipient=self.admin, kind='reminder').count(), 1)
         self.assertEqual(TaskNotification.objects.filter(recipient=self.admin, kind='summary').count(), 1)
         notice = TaskNotification.objects.get(recipient=self.admin, kind='summary')
         self.assertEqual(notice.reminder_job.local_date, clock(20).date())
@@ -101,14 +101,14 @@ class JobReminderCoexistence18BTests(JobReminderCoexistenceFixture, TestCase):
         self.summary_tick()
         self.assertEqual(delivery.call_count, 1)
         self.assertEqual(TaskNotification.objects.filter(recipient=self.admin, kind='summary').count(), 1)
-        self.assertFalse(ReminderNotice.objects.exists())
+        self.assertFalse(TaskNotification.objects.filter(kind='reminder').exists())
 
     def test_another_recipients_notice_does_not_cover_the_designated_reviewer(self):
         self.rule.recipients = {'people': [str(self.manager.pk)]}
         self.rule.save()
         self.rule_tick(hour=6)
         self.summary_tick()
-        self.assertEqual(ReminderNotice.objects.filter(user=self.manager).count(), 1)
+        self.assertEqual(TaskNotification.objects.filter(recipient=self.manager, kind='reminder').count(), 1)
         self.assertEqual(TaskNotification.objects.filter(recipient=self.admin, kind='summary').count(), 1)
 
     def test_identical_titles_do_not_hide_another_submitted_revision(self):
@@ -128,12 +128,12 @@ class JobReminderCoexistence18BTests(JobReminderCoexistenceFixture, TestCase):
             self.rule_tick(hour=6)
         self.summary_tick()
         self.assertEqual(TaskNotification.objects.filter(recipient=self.admin, kind='summary').count(), 1)
-        self.assertFalse(ReminderNotice.objects.exists())
+        self.assertFalse(TaskNotification.objects.filter(kind='reminder').exists())
 
     def test_settings_sender_keeps_working_when_18b_is_disabled(self):
         with override_settings(BTW_EVENT_APPROVAL_REMINDERS_ENABLED=False):
             self.rule_tick()
-        self.assertEqual(ReminderNotice.objects.filter(user=self.admin).count(), 1)
+        self.assertEqual(TaskNotification.objects.filter(recipient=self.admin, kind='reminder').count(), 1)
 
 
 @skipUnless(connection.vendor == 'postgresql', 'PostgreSQL source-lock verification')

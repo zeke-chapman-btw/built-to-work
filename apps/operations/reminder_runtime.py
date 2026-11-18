@@ -17,9 +17,10 @@ def permitted():
     preview = (os.environ.get('RENDER_SERVICE_ID') == PREVIEW_SERVICE and
                settings.BTW_PREVIEW_GATE_ENABLED and
                settings.EMAIL_BACKEND == 'django.core.mail.backends.locmem.EmailBackend')
+    production = os.environ.get('RENDER_SERVICE_ID') == getattr(settings, 'BTW_PRODUCTION_SERVICE', None)
     local = (settings.DEBUG and not os.environ.get('RENDER_SERVICE_ID') and
              os.environ.get('BTW_TASK_REMINDERS_LOCAL_WORKER') == 'true')
-    return bool(settings.BTW_TASK_REMINDERS_ENABLED and (preview or local))
+    return bool(settings.BTW_TASK_REMINDERS_ENABLED and (preview or production or local))
 
 
 def _work(interval, worker_id):

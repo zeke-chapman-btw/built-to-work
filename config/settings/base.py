@@ -14,7 +14,12 @@ BTW_TASK_REMINDERS_ENABLED = (
     and os.environ.get('BTW_PREVIEW_GATE_ENABLED', '').lower() == 'true'
     and os.environ.get('EMAIL_BACKEND') == 'django.core.mail.backends.locmem.EmailBackend'
 )
+# Production can run the same reminders. Nothing is delivered on any copy of the app until an
+# administrator presses "Turn on reminders" in Settings → Reminders (BTW_REMINDERS_MASTER_SWITCH).
+BTW_PRODUCTION_SERVICE = 'srv-dbuaufff3r2c73diht3g'
+BTW_TASK_REMINDERS_ENABLED = BTW_TASK_REMINDERS_ENABLED or os.environ.get('RENDER_SERVICE_ID') == BTW_PRODUCTION_SERVICE
 BTW_EVENT_APPROVAL_REMINDERS_ENABLED = BTW_TASK_REMINDERS_ENABLED
+BTW_REMINDERS_MASTER_SWITCH = True
 ALLOWED_HOSTS = [
     host.strip() for host in os.environ.get("ALLOWED_HOSTS", "").split(",") if host.strip()
 ]

@@ -229,7 +229,8 @@ class BillingFlowTests(CustomerFixtures, TestCase):
         rule = ReminderRule.objects.get(key="agreement_ending")
         late = timezone.now().replace(hour=20)
         engine.run_rule(rule, now=late)
-        self.assertEqual(ReminderNotice.objects.get().user, self.admin)
+        from apps.operations.models import TaskNotification
+        self.assertEqual(TaskNotification.objects.get(kind='reminder').recipient, self.admin)
         to = sorted(m.to[0] for m in mail.outbox)
         self.assertIn("payer@example.test", to)
         customer_mail = [m for m in mail.outbox if m.to == ["payer@example.test"]][0]
