@@ -63,7 +63,8 @@ def application_shell(context):
         if authenticated and user.is_staff:
             shell.update(items=context.get('primary_navigation') or [], account_label=short_name(user),
                 account_url=reverse('internal:settings'), account_link_label='Settings',
-                account_active=request.path.startswith('/settings/') or bool((context.get('settings_link') or {}).get('active')),
+                account_active=any(item.get('gear') and item.get('active') for item in (context.get('primary_navigation') or []))
+                or bool((context.get('settings_link') or {}).get('active')),
                 logout_url=reverse('accounts:logout'))
             from apps.internal_ui.settings_presentation import settings_context
             presentation = context.get('settings_presentation') or settings_context(request)

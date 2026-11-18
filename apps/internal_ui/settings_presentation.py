@@ -90,12 +90,21 @@ def settings_context(request):
     # Root query strings choose presentation only. Protected tools use their
     # existing routes and independently recheck their existing authorization.
     if selected not in available or (path == home and selected in {'portal', 'compensation', 'staff-pay', 'connections', 'messages', 'reminders', 'billing', 'security'}):
-        selected = sections[0]['key'] if sections else 'account'
-    if not sections:
-        return {'tabs': [], 'selected': 'account', 'groups': []}
+        selected = 'overview'  # the gear's landing page: every section, plus where personal settings went
     tabs = []
     for section in sections:
         url = section.get('url') or (home + '?tab=' + section['key'])
         tabs.append({'key': section['key'], 'label': section['label'], 'url': url,
                      'active': section['key'] == selected})
+    if selected == 'overview':
+        about = {'staff': 'Staff list, sign-ins and roles.', 'portal': 'See the customer and participant portals as they do.',
+                 'compensation': 'Pay rates, per diem and mileage.', 'messages': 'Saved message templates.',
+                 'reminders': 'Who gets reminded about what, and when.', 'connections': 'Texting, email and Gmail.',
+                 'billing': 'Stripe and bank payments.', 'security': 'Two-step sign-in, error alerts, privacy and terms.',
+                 'advanced': 'Everything else, and each area\'s setup.'}
+        links = [{'label': t['label'], 'description': about.get(t['key'], ''), 'url': t['url']} for t in tabs]
+        groups = ([{'label': 'Settings', 'links': links}] if links else []) + [{'label': 'Your own account', 'links': [
+            {'label': 'My stuff → My account', 'description': 'Your name and contact details, email signature, password and two-step sign-in.',
+             'url': reverse('my:account')}]}]
+        return {'tabs': tabs, 'selected': 'overview', 'groups': groups}
     return {'tabs': tabs, 'selected': selected, 'groups': available[selected]['groups']}

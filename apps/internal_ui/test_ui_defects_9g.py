@@ -40,7 +40,7 @@ class StaffLogout9GTests(TestCase):
         sidebar = html.split('<aside class="sidebar"', 1)[1].split('</aside>', 1)[0]
         header = html.split('<header class="topbar">', 1)[1].split('</header>', 1)[0]
         self.assertIn('class="sign-out-form"', sidebar)
-        self.assertIn('Personal settings', sidebar)
+        self.assertIn('Settings', sidebar)
         self.assertNotIn('class="sign-out-form"', header)
         self.assertNotIn('topbar-brand', header)
         self.assertIn('built-to-work-linear.svg', sidebar)

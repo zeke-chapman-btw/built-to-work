@@ -59,6 +59,8 @@ class ProfileUpdateRequest(UUIDModel, TimestampedModel):
     message = models.CharField(max_length=500)
     task = models.ForeignKey('operations.Task', null=True, blank=True, on_delete=models.PROTECT, related_name='+')
     fulfilled_by = models.ForeignKey(ProfileConfirmation, null=True, blank=True, on_delete=models.PROTECT, related_name='+')
+    withdrawn_at = models.DateTimeField(null=True, blank=True)
+    withdrawn_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name='+')
 
 
 class CandidateList(UUIDModel, TimestampedModel, ArchivableModel):

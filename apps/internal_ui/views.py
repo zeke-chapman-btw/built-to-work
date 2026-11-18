@@ -105,12 +105,8 @@ def workspace(request,workspace_id):
 def settings(request):
     _require_staff(request)
     from .settings_presentation import settings_context
-    from apps.accounts.personal_profile import PersonalProfileForm, save_personal_profile
-    from apps.reporting.access import staff
-    from apps.staffing.models import StaffProfile
-    user = staff(request.user)
     presentation = settings_context(request)
-    if not presentation or presentation['selected'] in ('account', None):
+    if not presentation:
         return redirect('my:account')  # personal settings live in My stuff → My account
     if presentation['selected'] == 'staff':
         return redirect('staffing:directory')

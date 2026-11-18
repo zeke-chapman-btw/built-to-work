@@ -117,6 +117,8 @@ def candidate_foundation(request, participant_id):
                     expected_fingerprint=request.POST.get('fingerprint'), why=request.POST.get('reason') or 'No reason given')
             elif action == 'request_update':
                 service.request_update(actor=request.user, participant_id=item.pk, message=request.POST.get('reason'))
+            elif action == 'withdraw_update':
+                service.withdraw_update(actor=request.user, participant_id=item.pk, request_id=request.POST.get('request_id'))
             elif action == 'add_list':
                 service.change_list_member(actor=request.user, list_id=request.POST.get('list_id'), participant_id=item.pk)
             elif action=='source_campaign':
@@ -155,7 +157,11 @@ def candidate_foundation(request, participant_id):
         status='Released' if source.released_at else 'Not exclusive' if not source.exclusive else 'Expired' if end and timezone.now()>=end else 'Active; completion/duration setup needed' if not end else 'Active'
         sources.append({'id':str(source.pk),'label':source.campaign.name if source.campaign_id in visible else 'Restricted Campaign sourcing',
             'status':status,'end':end if source.campaign_id in visible else None,'created_at':source.created_at,'released':source.released_at})
+    from .models import ProfileUpdateRequest
+    open_requests = ProfileUpdateRequest.objects.filter(participant_id__in=identity_members(item.pk), fulfilled_by__isnull=True,
+                                                        withdrawn_at__isnull=True).select_related('requested_by').order_by('-created_at')
     return page(request, 'recruiting/candidate.html', participant=item, recruiting_profile=row, readiness=service.readiness(item),
+        open_requests=open_requests,
         freshness=service.freshness(item), fingerprint=service.profile_fingerprint(item), form=form,
         candidate_lists=service.visible_lists(request.user).filter(owner=request.user, archived_at__isnull=True),
         possible_duplicates=duplicates[:20], available_opportunities=opportunities_for(request.user).filter(need__status='active',archived_at__isnull=True), page_title='Recruiting · ' + str(item), administrator=request.recruiting_actor.is_superuser,

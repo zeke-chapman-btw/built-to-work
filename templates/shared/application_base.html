@@ -13,7 +13,7 @@
 <aside class="sidebar" id="internal-sidebar" aria-label="Main navigation">
   <a class="sidebar-brand" href="{{ shell.home_url }}" aria-label="Built to Work home"><img class="brand-logo" src="{% static 'internal/images/built-to-work-linear.svg' %}" alt="Built to Work"></a>
   <nav class="workspace-nav" aria-label="Workspaces">
-    {% for item in shell.items %}{% if not item.bottom %}<a class="nav-item{% if item.active %} active{% endif %}" href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>
+    {% for item in shell.items %}{% if not item.bottom and not item.gear %}<a class="nav-item{% if item.active %} active{% endif %}" href="{{ item.url }}"{% if item.active %} aria-current="page"{% endif %}>
       {% ui_icon item.icon %}<span class="nav-label">{{ item.label }}</span>{% if item.count %}<span class="nav-count" aria-label="{{ item.count }} new">{% if item.count > 99 %}99+{% else %}{{ item.count }}{% endif %}</span>{% endif %}{% if item.planned %}<span class="nav-planned">Planned</span>{% endif %}
     </a>{% endif %}{% endfor %}
   </nav>

@@ -5,9 +5,8 @@ CATALOG_ROUTES = {'stages', 'stage-edit', 'classifications', 'classification-edi
 
 
 def from_settings(request):
-    match = getattr(request, 'resolver_match', None)
-    return bool(match and match.app_name == 'recruiting' and match.url_name in CATALOG_ROUTES
-                and request.GET.get('from') == 'settings' and request.user.is_superuser)
+    """Recruiting setup now lives in Recruiting → Setup; old ?from=settings links open there too."""
+    return False
 
 
 def catalog_url(request, name, *args):

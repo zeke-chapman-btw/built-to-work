@@ -98,9 +98,8 @@ class RecruitingSettingsOriginTests(CustomerFixtures, TestCase):
         before = Classification.objects.count()
         response = self.client.get(reverse('recruiting:stages'), {'from': 'settings'})
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'data-settings-tab="recruiting" aria-current="page"')
-        self.assertNotContains(response, 'aria-label="Recruiting"')
-        self.assertContains(response, '?from=settings')
+        self.assertContains(response, 'aria-label="Recruiting setup"')  # Recruiting → Setup, inside the Recruiting area
+        self.assertContains(response, 'aria-label="Recruiting"')
         self.assertEqual(Classification.objects.count(), before)
 
     def test_direct_operational_origin_remains_and_arbitrary_return_is_ignored(self):
@@ -118,7 +117,7 @@ class RecruitingSettingsOriginTests(CustomerFixtures, TestCase):
         response = self.client.post(reverse('recruiting:stage-edit', args=[stage.pk])+'?from=settings',
             {'key': 'forged-new-key', 'label': 'Fixture contacting label', 'position': stage.position,
              'is_active': 'on', 'expected_revision': stage.revision, 'reason': 'Isolated settings-origin verification.'})
-        self.assertRedirects(response, reverse('recruiting:stages')+'?from=settings')
+        self.assertRedirects(response, reverse('recruiting:stages'))
         stage.refresh_from_db()
         self.assertEqual(stage.pk, 'contacting')
         self.assertEqual(stage.semantic, semantic)
@@ -130,7 +129,7 @@ class RecruitingSettingsOriginTests(CustomerFixtures, TestCase):
         response = self.client.post(reverse('recruiting:classifications')+'?from=settings',
             {'kind': kind, 'key': 'owner3_fixture', 'label': 'Isolated fixture choice', 'position': 0,
              'is_active': 'on', 'expected_revision': 'new', 'reason': 'Isolated configuration verification.'})
-        self.assertRedirects(response, reverse('recruiting:classifications')+'?from=settings')
+        self.assertRedirects(response, reverse('recruiting:classifications'))
         self.assertEqual(Classification.objects.get(key='owner3_fixture').label, 'Isolated fixture choice')
 
     def test_manager_cannot_gain_configuration_access_via_origin_query(self):

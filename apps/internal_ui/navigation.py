@@ -291,11 +291,13 @@ def staff_destinations(user, current_path=""):
     from .reporting import report_destinations
     entries.extend([
         dict(id="reports", label="Reports & Analytics", icon="reports", url=reverse("internal:reports"), active=False),
-    ])  # Settings opens from the gear by the person's name
+        # Settings isn't listed in the menu: it opens from the gear by the person's name (gear=True).
+        dict(id="settings", label="Settings", icon="settings", url=reverse("internal:settings"), active=False, gear=True),
+    ])
     from apps.staffing.models import StaffProfile
     from apps.sops.access import can_manage as can_manage_sops
     has_profile = getattr(user, "is_authenticated", False) and StaffProfile.objects.filter(user=user, is_active=True).exists()
-    position = len(entries) - 1  # before Reports & Analytics
+    position = len(entries) - 2  # before Reports & Analytics (and the gear's Settings entry)
     if has_profile or can_manage_sops(user):
         entries.insert(position, dict(id="sops", label="SOPs", icon="sop", url=reverse("sops:index"), active=False))
     from apps.accounts.roles import manager

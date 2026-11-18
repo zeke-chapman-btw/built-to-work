@@ -39,7 +39,7 @@ class TwoStepTests(TestCase):
     def test_enroll_then_sign_in_needs_code_and_recovery_code_works_once(self):
         secret, codes = self.enroll()
         self.assertEqual(len(codes), 10)
-        self.assertEqual(self.client.get(reverse("internal:settings")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("my:account")).status_code, 200)
         self.client.logout()
         self.client.force_login(self.user, backend=BACKEND)
         gate = self.client.get(reverse("internal:settings"))
