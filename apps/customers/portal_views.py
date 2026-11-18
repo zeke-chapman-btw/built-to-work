@@ -17,8 +17,8 @@ from .models import WorkforceNeed as Need, WorkforceNeedRevision as Revision, Ca
 
 TABS = [('overview', 'Dashboard'), ('candidates', 'Candidates'), ('needs', 'Positions'), ('campaigns', 'Campaigns'), ('company', 'Company & team')]
 SECONDARY_TABS = {'recruiting':'Recruiting overview', 'users':'Company & team',
-    'access':'Seats & access', 'history':'Activity', 'account':'Account & security'}
-TAB_GROUPS = {'recruiting':'overview', 'users':'company', 'access':'company', 'history':'company', 'account':'account'}
+    'access':'Seats & access', 'history':'Activity', 'account':'Account & security', 'billing':'Billing & documents'}
+TAB_GROUPS = {'recruiting':'overview', 'users':'company', 'access':'company', 'history':'company', 'account':'account', 'billing':'company'}
 
 
 def customer_view(view):
@@ -51,7 +51,7 @@ def customer_view(view):
     return guarded
 
 LOCAL_NAVIGATION = (
-    ('Company & team', (('company', 'Team & details'), ('history', 'Activity'), ('access', 'Seats & access'))),
+    ('Company & team', (('company', 'Team & details'), ('billing', 'Billing & documents'), ('history', 'Activity'), ('access', 'Seats & access'))),
 )
 LOCAL_ALIASES = {'users': 'company'}
 
@@ -154,6 +154,9 @@ def workspace(request, tab='overview'):
         plan = org.access_plan
         data['allowances'] = [{'label': 'Leads', 'used': s.seat_usage(org)['lead'], 'limit': plan.lead_limit}, {'label': 'Members', 'used': s.seat_usage(org)['member'], 'limit': plan.member_limit}]
         data['need_service'] = plan.workforce_need_creation is True
+    if tab == 'billing' and data['is_lead']:
+        from apps.billing.portal import portal_context
+        data.update(portal_context(org))
     if tab == 'history':
         from . import portal_pages as pages
         from apps.recruiting.employer import list_candidates

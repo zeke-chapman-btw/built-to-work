@@ -34,7 +34,16 @@ def historical_index(request):
         "import_max_mb": MAX_FILE_BYTES // (1024 * 1024), "import_max_rows": MAX_ROWS, "import_max_columns": MAX_COLUMNS})
 
 
+TYPE_CHOICES = (("", "Leave blank"), ("student", "Student"), ("employee", "Employee"), ("teacher_instructor", "Teacher / Instructor"),
+                ("job_seeker", "Job seeker"), ("other", "Other"), ("__column__", "From a column in the file"))
+
+
 def _posted_spec(post, field):
+    if field == "participant_type":  # chosen once for the whole upload, or read from a column
+        kind = post.get("type_choice", "")
+        if kind == "__column__":
+            return post.get("map_participant_type", "")
+        return fixed_spec(kind) if kind in dict(TYPE_CHOICES) and kind else ""
     choice = post.get("map_" + field, "")
     if choice == "__fixed__":
         value = post.get("fixed_" + field, "").strip()[:500]
@@ -83,7 +92,11 @@ def historical_map(request, batch_id):
     groups = [{"title": title, "fields": [_field_choice(name, label, mapping.get(name, "")) for name, label in fields]}
               for title, fields in IMPORT_GROUPS]
     used = {column for spec in mapping.values() for column in spec_columns(spec)}
+    type_spec = mapping.get("participant_type", "")
+    type_now = type_spec[len(FIXED):] if type_spec.startswith(FIXED) else "__column__" if type_spec else ""
     return render(request, "participants/historical_map.html", {"batch": batch, "headers": headers, "examples": examples,
+        "type_choices": [{"value": v, "label": label, "on": v == type_now} for v, label in TYPE_CHOICES],
+        "type_column": type_spec if type_now == "__column__" else "",
         "groups": groups, "row_count": len(rows), "unused": [h for h in headers if h not in used],
         "templates": templates, "error": error, "page_title": "Match your columns"})
 
@@ -97,12 +110,43 @@ def historical_batch(request, batch_id):
     if request.method == "POST":
         _require(request.user, "participants.change_historicalimportbatch")
         try:
-            import_ready(batch, actor=request.user)
+            how_many = request.POST.get("how_many", "").strip()
+            import_ready(batch, actor=request.user, limit=int(how_many) if how_many.isdigit() and int(how_many) > 0 else None)
             return people_saved(request,"participants:historical-batch", batch_id=batch.pk)
         except ValidationError as exc:
             error = "; ".join(exc.messages)
-    return render(request, "participants/historical_batch.html", {"batch": batch,
-        "rows": batch.rows.select_related("participant").all(), "error": error})
+    from .historical import IMPORT_LABELS
+    everything = batch.rows.select_related("participant").order_by("row_number")
+    counts = {"all": everything.count()}
+    for key in ("ready", "review", "error", "imported", "skipped"):
+        counts[key] = everything.filter(status=key).count()
+    show = request.GET.get("show", "")
+    filters = [{"key": "", "label": "All", "count": counts["all"], "chip": ""},
+               {"key": "ready", "label": "Ready", "count": counts["ready"], "chip": "g"},
+               {"key": "review", "label": "Needs a look", "count": counts["review"], "chip": "y"},
+               {"key": "error", "label": "Problem", "count": counts["error"], "chip": "r"},
+               {"key": "imported", "label": "Imported", "count": counts["imported"], "chip": "g"},
+               {"key": "skipped", "label": "Skipped", "count": counts["skipped"], "chip": ""}]
+    filters = [f for f in filters if f["count"] or not f["key"] or f["key"] == show]
+    for f in filters:
+        f["on"] = f["key"] == show
+    rows = list(everything.filter(status=show) if show in counts else everything)
+    for row in rows:
+        data = dict(row.normalized_data or {})
+        if not data.get("first_name"):  # rows with a problem weren't read; show what the file says
+            raw = {k: v for k, v in (row.raw_data or {}).items() if not k.startswith("__")}
+            mapping = batch.mapping or {}
+            for field in ("first_name", "last_name", "email", "phone", "city", "state"):
+                column = mapping.get(field)
+                if column in raw:
+                    data[field] = raw[column]
+            if not data.get("first_name") and raw.get(mapping.get("full_name", "")):
+                data["first_name"] = raw[mapping["full_name"]]
+        row.shown = data
+        row.details = [(IMPORT_LABELS.get(k, k.replace("_", " ").capitalize()), v) for k, v in (row.normalized_data or {}).items()
+                       if v and k not in ("first_name", "last_name")]
+    return render(request, "participants/historical_batch.html", {"batch": batch, "rows": rows, "counts": counts,
+        "filters": filters, "error": error})
 
 
 @login_required

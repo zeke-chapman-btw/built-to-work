@@ -20,8 +20,13 @@
 {% account_email_card %}
 <section class="ux-surface" aria-labelledby="signin-heading">
   <header class="ux-card-heading"><h2 id="signin-heading">Sign-in</h2></header>
-  <div class="ux-card-body"><dl class="ls-facts"><div><dt>Username</dt><dd>{{ request.user.get_username }}</dd></div><div><dt>Email</dt><dd>{{ request.user.email|default:'Not recorded' }}</dd></div></dl>
-  <p><a class="button secondary" href="{{ password_change_url }}">Change password</a></p>
+  <div class="ux-card-body">{% with dev=request.user.two_step %}<style>.ls-ts-links{display:flex;flex-wrap:wrap;gap:4px 16px;margin:2px 0 0;font-size:14px}.ls-ts-links form{display:inline;margin:0}.ls-ts-links button{background:none;border:0;padding:0;font:inherit;color:#52525b;text-decoration:underline;cursor:pointer}.ls-ts-links button:hover{color:#18181b}.ls-ts-links .ls-ts-off{color:#b91c1c}</style>
+  <dl class="ls-facts"><div><dt>Username</dt><dd>{{ request.user.get_username }}</dd></div><div><dt>Email</dt><dd>{{ request.user.email|default:'Not recorded' }}</dd></div>
+  <div><dt>Two-step sign-in</dt><dd>{% if dev.confirmed_at %}<span class="cp3-chip g">On</span> Code {% if dev.method == 'text' %}by text{% elif dev.method == 'email' %}by email{% else %}from an authenticator app{% endif %}
+    <div class="ls-ts-links"><form method="post" action="{% url 'security:codes' %}">{% csrf_token %}<button type="submit">New recovery codes</button></form><form method="post" action="{% url 'security:off' %}">{% csrf_token %}<button type="submit" class="ls-ts-off">Turn off</button></form></div>
+    <small style="display:block;color:#71717a;font-size:13px;margin-top:4px">To change how you get codes, turn it off and set it up again.</small>
+  {% else %}<span class="cp3-chip">Off</span> <small style="color:#71717a">A 6-digit code after your password, so a stolen password alone can't get in.</small>{% endif %}</dd></div></dl>
+  <p class="ux-actions">{% if not dev.confirmed_at %}<a class="button ux-primary" href="{% url 'security:setup' %}">Set up two-step sign-in</a> {% endif %}<a class="button secondary" href="{{ password_change_url }}">Change password</a></p>{% endwith %}
   <p class="ls-links"><a href="{% url 'my:schedule' %}">My schedule</a><a href="{% url 'workdays:mine' %}">Days worked</a>{% if own_pay_available %}<a href="{% url 'reporting:my-pay' %}">My pay</a>{% endif %}</p></div>
 </section>
 </div>

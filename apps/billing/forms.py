@@ -17,6 +17,14 @@ class ApproveForm(ActionForm):
                                     help_text="In sets of 3. 9 candidates = $12,000.")
     people = forms.IntegerField(label="People needed (general labor)", min_value=1, max_value=500, initial=1)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        already = (self.initial or {}).get("already_charged")
+        if already:
+            self.fields["fee_kind"].initial = "none"
+            self.fields["fee_kind"].help_text = (f"This position was already charged {already}. Leave “No charge” for an "
+                                                 "updated version; pick a fee only if they're adding candidates or people.")
+
     def clean(self):
         data = super().clean()
         kind = data.get("fee_kind")

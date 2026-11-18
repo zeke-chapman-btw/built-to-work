@@ -385,3 +385,20 @@ form.ops-filterline{margin:0}
 /* ls-43: personal links (My stuff, Inbox) stacked by the person's name */
 .internal-app .sidebar-bottom .sidebar-inbox{margin:0 0 2px}
 .internal-app .sidebar-bottom .sidebar-user{margin-top:8px}
+
+/* One size for every "← Back" link (staff profile, events, customers, SOPs, reports, positions, editors). */
+body.internal-app :is(.ux-back,.event-back,.sop-back,.ls-back,.customer-back,.pos-back,.pw-back,.crm-previous) {
+  display:inline-flex !important; align-items:center; gap:4px; min-height:36px !important; padding:0 !important;
+  font-size:14px !important; font-weight:500 !important; line-height:20px !important;
+  color:var(--muted,#56616d) !important; text-decoration:none !important;
+}
+body.internal-app :is(.ux-back,.event-back,.sop-back,.ls-back,.customer-back,.pos-back,.pw-back,.crm-previous):hover { color:var(--text,#18181b) !important; text-decoration:underline !important; }
+
+/* Status pills outside Home (staff profile, staff list, schedules) look like the app's other chips. */
+body.internal-app #main-content :not(.hv2) .hv2-pill, body.internal-app #main-content > .hv2-pill {
+  display:inline-flex; align-items:center; vertical-align:middle; padding:2px 10px; border-radius:999px;
+  font-size:12px; font-weight:600; line-height:18px; white-space:nowrap; background:#eceef0; color:#46505b;
+}
+body.internal-app #main-content :not(.hv2) .hv2-pill.is-role { background:#f1eafb; color:#5b3492; }
+body.internal-app #main-content :not(.hv2) .hv2-pill.my-status-approved { background:#e3f4e8; color:#1d6b35; }
+body.internal-app #main-content :not(.hv2) .hv2-pill.my-status-declined { background:#fde8ea; color:#a3192d; }

@@ -152,7 +152,7 @@ body.has-portal-shell .cp3-dl{margin:0 !important;padding:14px 20px !important}
 /* Two-column field groups on the add-staff form */
 .internal-app fieldset.staff-account-form-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 16px;border:0;padding:0;margin:0 0 18px}
 .internal-app fieldset.staff-account-form-group > legend{grid-column:1/-1;font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
-.internal-app fieldset.staff-account-form-group > [data-staff-field="roles"],.internal-app fieldset.staff-account-form-group > [data-staff-field="notes"],.internal-app fieldset.staff-account-form-group > [data-staff-field="admin_notes"],.internal-app fieldset.staff-account-form-group > [data-staff-field="street_address"]{grid-column:1/-1}
+.internal-app fieldset.staff-account-form-group > [data-staff-field="roles"],.internal-app fieldset.staff-account-form-group > [data-staff-field="reminder_roles"],.internal-app fieldset.staff-account-form-group > [data-staff-field="notes"],.internal-app fieldset.staff-account-form-group > [data-staff-field="admin_notes"],.internal-app fieldset.staff-account-form-group > [data-staff-field="street_address"]{grid-column:1/-1}
 @media (max-width:760px){.internal-app fieldset.staff-account-form-group{grid-template-columns:1fr}}
 
 /* consent text structure (headings, bold, bullets) */

@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "apps.reminders.apps.RemindersConfig",
     "apps.billing.apps.BillingConfig",
     "apps.onboarding.apps.OnboardingConfig",
+    "apps.security.apps.SecurityConfig",
 ]
 
 MIDDLEWARE = [
@@ -61,6 +62,7 @@ MIDDLEWARE = [
     "apps.accounts.middleware.StaffAdministrationBoundary",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.security.middleware.TwoStepMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -185,3 +187,20 @@ TRAILER_CONTROL_ENABLED = os.environ.get("TRAILER_CONTROL_ENABLED", "false").low
 TRAILER_CONTROL_IDENTITY = os.environ.get("BTW_TRAILER_IDENTITY", "").strip()
 TRAILER_CONTROL_DATA_ROOT = os.environ.get("TRAILER_CONTROL_DATA_ROOT", "")
 TRAILER_CONTROL_VIDEO_ROOT = os.environ.get("TRAILER_CONTROL_VIDEO_ROOT", "")
+
+
+# Email administrators about app errors (Settings → Security can turn this off).
+BTW_ERROR_ALERTS = os.environ.get("BTW_ERROR_ALERTS", "true").lower() != "false"
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+        "admin_alert": {"level": "ERROR", "class": "apps.security.alerts.AdminAlertHandler"},
+    },
+    "root": {"handlers": ["console"], "level": "WARNING"},
+    "loggers": {
+        "django.request": {"handlers": ["console", "admin_alert"], "level": "ERROR", "propagate": False},
+        "apps": {"handlers": ["console", "admin_alert"], "level": "WARNING", "propagate": False},
+    },
+}

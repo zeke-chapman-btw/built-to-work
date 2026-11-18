@@ -56,7 +56,7 @@ def eligible_accounts(actor):
 class StaffMemberForm(ProfileForm):
     existing_profile = forms.CharField(required=False, widget=forms.Select,
         label='Already on the staff list?', help_text='Pick them to give an existing person a sign-in. Their saved details stay as they are.')
-    login_mode = forms.ChoiceField(choices=[('none', 'No sign-in'), ('new', 'Create a sign-in'), ('existing', 'Use an existing sign-in')], initial='none', label='Sign-in',
+    login_mode = forms.ChoiceField(choices=[('none', 'No sign-in'), ('new', 'Create a sign-in'), ('existing', 'Use an existing sign-in')], initial='new', label='Sign-in',
         widget=forms.RadioSelect(attrs={'class': 'btw-chip-choices'}))
     existing_account = forms.CharField(required=False, widget=forms.Select(attrs={'data-show-when': 'login_mode=existing'}), label='Existing sign-in',
         help_text='Their username, roles and pay settings stay the same.')
@@ -68,8 +68,11 @@ class StaffMemberForm(ProfileForm):
     my_pay_access = forms.ChoiceField(choices=[('no', 'No'), ('yes', 'Yes')], initial='no', label='Can see their own pay',
         widget=forms.RadioSelect(attrs={'class': 'btw-chip-choices'}),
         help_text='Only their own pay stubs and totals under My stuff.')
-    send_invitation = forms.BooleanField(required=False, label='Email them a link to set their password',
+    send_invitation = forms.BooleanField(required=False, initial=True, label='Email them a link to set their password',
         widget=forms.CheckboxInput(attrs={'data-show-when': 'login_mode=new'}))
+    reminder_roles = forms.MultipleChoiceField(required=False, label='Reminder roles they cover',
+        widget=forms.CheckboxSelectMultiple(attrs={'data-show-when': 'login_mode=new'}),
+        help_text='They get the reminders for these jobs (Settings → Reminders). Optional.')
     confirm_identity = forms.BooleanField(label='I checked this person isn’t already on the staff list.')
 
     def __init__(self, *args, actor, **kwargs):
@@ -81,6 +84,13 @@ class StaffMemberForm(ProfileForm):
         self.fields['existing_account'].widget.choices = [('', 'Choose an account')] + [
             (displayed_token(actor, u, self.data.get('existing_account')), f'{u.get_full_name() or u.username} · {u.username}') for u in eligible_accounts(actor)]
         self.fields['roles'].choices = ([('administrator', 'Administrator'), ('manager', 'Manager')] if actor.is_superuser else []) + [('recruiter', 'Recruiter'), ('event_staff', 'Event staff')]
+        try:
+            from apps.reminders.models import ReminderRole
+            self.fields['reminder_roles'].choices = [(r.key, r.name) for r in ReminderRole.objects.all()]
+        except Exception:
+            self.fields['reminder_roles'].choices = []
+        if not self.fields['reminder_roles'].choices:
+            del self.fields['reminder_roles']
         self.fields['existing_profile'].widget.choices[0] = ('', 'No — add a new person')
         if len(self.fields['existing_profile'].widget.choices) == 1:
             self.fields['existing_profile'].widget = forms.HiddenInput()
@@ -114,7 +124,7 @@ class StaffMemberForm(ProfileForm):
             ('person', 'Person', ('existing_profile', 'first_name', 'last_name', 'email', 'phone')),
             ('address', 'Address', ('street_address', 'city', 'state', 'zip_code')),
             ('other', 'Other details', ('shirt_size', 'is_active', 'internal_notes')),
-            ('access', 'Sign-in', ('login_mode', 'existing_account', 'username', 'login_email', 'roles', 'send_invitation')),
+            ('access', 'Sign-in', ('login_mode', 'existing_account', 'username', 'login_email', 'roles', 'reminder_roles', 'send_invitation')),
             ('pay', 'Pay', ('my_pay_access',)),
             ('confirm', 'Check', ('confirm_identity',)),
         ]

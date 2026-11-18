@@ -20,6 +20,7 @@ from apps.accounts.roles import manager
 from apps.internal_ui.record_editors import editor_response, editor_success
 
 from . import pricing, services, stripe_api
+from .delivery import position_progress
 from .models import BillingProfile, MonthlyAgreement, PositionCharge, StripeSettings
 
 
@@ -52,7 +53,7 @@ def billing_context(org):
             "billing_test": stripe_api.configured() and stripe_api.test_mode(),
             "agreements": MonthlyAgreement.objects.filter(organization=org).select_related("approved_by")[:20],
             "charges": PositionCharge.objects.filter(organization=org).select_related("approved_by")[:30],
-            "ending_soon": ending}
+            "ending_soon": ending, "delivery": position_progress(org)}
 
 
 # ----------------------------------------------------------- bank account

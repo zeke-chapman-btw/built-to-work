@@ -26,13 +26,13 @@ MAX_ROWS = 10000
 MAX_COLUMNS = 100
 PROFILE_IMPORT_FIELDS = ("participant_type", "found_us", "employment_status", "looking_for_work", "work_desired", "trades_wanted",
                          "willing_to_travel", "skills", "years_experience", "education", "staff_note")
-IMPORT_FIELDS = ("identity_uuid", "first_name", "last_name", "preferred_name", "email", "phone",
+IMPORT_FIELDS = ("identity_uuid", "full_name", "first_name", "last_name", "preferred_name", "email", "phone",
                  "date_of_birth", "address_line_1", "address_line_2", "city", "state", "postal_code", *PROFILE_IMPORT_FIELDS, "event_uuid", "event_name",
                  "event_date", "group_name", "simulator_score", "score_method", "score_source", "scored_at",
                  "consent_agreed", "consent_at")
 # Plain names, grouped the way the participant profile shows them.
 IMPORT_GROUPS = (
-    ("Contact", (("first_name", "First name"), ("last_name", "Last name"), ("preferred_name", "Preferred name"),
+    ("Contact", (("full_name", "Full name (when first and last are in one column)"), ("first_name", "First name"), ("last_name", "Last name"), ("preferred_name", "Preferred name"),
                  ("email", "Email"), ("phone", "Phone"), ("address_line_1", "Street address"),
                  ("address_line_2", "Address line 2"), ("city", "City"), ("state", "State"), ("postal_code", "ZIP code"),
                  ("date_of_birth", "Date of birth"))),
@@ -51,20 +51,22 @@ IMPORT_GROUPS = (
 )
 IMPORT_LABELS = {key: label for _, fields in IMPORT_GROUPS for key, label in fields}
 # Extra column names people commonly use, matched without case, spaces or punctuation.
-_ALIASES = {"address_line_1": ("address", "address1", "street", "streetaddress", "addressline1"),
+_ALIASES = {"full_name": ("name", "fullname", "participantname", "yourname"),
+            "address_line_1": ("address", "address1", "street", "streetaddress", "addressline1"),
             "address_line_2": ("address2", "addressline2", "apt", "unit", "suite"),
             "employment_status": ("jobstatus", "employmentstatus", "currentjobstatus", "workstatus"),
             "first_name": ("first", "firstname", "givenname", "fname"), "last_name": ("last", "lastname", "surname", "familyname", "lname"),
             "preferred_name": ("nickname", "goesby"), "email": ("emailaddress", "contactemail", "e-mail"),
             "phone": ("phonenumber", "mobile", "cell", "cellphone", "contactphone"), "postal_code": ("zip", "zipcode", "postcode", "postalcode"),
             "date_of_birth": ("dob", "birthdate", "birthday"), "participant_type": ("type", "participanttype", "persontype", "role"),
-            "found_us": ("source", "leadsource", "howtheyfoundus", "howdidyouhearaboutus", "referral", "foundus"),
+            "found_us": ("source", "leadsource", "howtheyfoundus", "howdidyouhearaboutus", "wheredidyouhearaboutus", "referral", "foundus", "referralsource"),
             "looking_for_work": ("seekingwork", "lookingforwork", "jobseeking", "employmentinterest", "interestedinjobopportunities"),
             "work_desired": ("worktype", "workdesired", "employmenttype", "fullorparttime"),
-            "trades_wanted": ("trade", "trades", "tradeinterest", "tradeinterests", "careerinterests", "interests"),
-            "willing_to_travel": ("travel", "willtravel", "willingtotravel"), "skills": ("skills", "skillsinterests"),
+            "trades_wanted": ("trade", "trades", "tradeinterest", "tradeinterests", "careerinterests", "interests", "industry",
+                              "whatindustrydoyouworkinwouldliketoworkin", "whatindustrydoyouworkinorwouldliketoworkin"),
+            "willing_to_travel": ("travel", "willtravel", "willingtotravel", "areyouwillingtotravelforwork", "willingtotravelforwork"), "skills": ("skills", "skillsinterests", "skillsexperience", "skillsandexperience"),
             "years_experience": ("experience", "yearsofexperience", "yearsexperience", "yearsconstructionexperience"), "education": ("education", "training", "schooling"),
-            "staff_note": ("note", "notes", "comments", "staffnote"), "simulator_score": ("score", "simscore"),
+            "staff_note": ("note", "notes", "comments", "staffnote", "workhistory"), "simulator_score": ("score", "simscore"),
             "event_name": ("eventname", "event"), "event_date": ("eventdate", "datecaptured"),
             "consent_agreed": ("consenttoterms", "consent", "agreedtoterms", "termsaccepted"),
             "consent_at": ("consentdate", "agreedat", "consentedat")}
@@ -148,6 +150,11 @@ def guess_mapping(headers):
             if header and header not in result.values():
                 result[field] = header
                 break
+    if result.get("first_name") and result.get("last_name"):
+        result.pop("full_name", None)
+    licences = [h for h in headers if _key(h) in ("licensescertifications", "licenses", "certifications", "licensesandcertifications")]
+    if licences and licences[0] not in result.values():  # add licences/certifications to School and training
+        result["education"] = columns_spec([result["education"], licences[0]]) if result.get("education") else licences[0]
     if result.get("consent_agreed") and not result.get("consent_at") and result.get("event_date"):
         result["consent_at"] = result["event_date"]  # the sign-up time is when they agreed
     return result
@@ -168,7 +175,7 @@ def _choice(value, choices, label):
 
 def _job_status_type(word):
     """Answers like "Unemployed and looking for work" become a participant type."""
-    if "student" in word:
+    if "student" in word or word in ("highschool", "college", "tradeschool", "university") or "school" in word:
         return "student"
     if "unemployed" in word or "lookingforwork" in word:
         return "job_seeker"
@@ -176,7 +183,7 @@ def _job_status_type(word):
         return "employee"
     if "teacher" in word or "instructor" in word:
         return "teacher_instructor"
-    if "retired" in word:
+    if "retired" in word or word == "other":
         return "other"
     return ""
 
@@ -210,6 +217,10 @@ def _profile_values(data):
             data["work_desired"], ParticipantCareerProfile._meta.get_field("preferred_work_type").choices, "Work desired")
     if data.get("willing_to_travel"):
         word = _key(data["willing_to_travel"])
+        if word in _MAYBE:
+            data.pop("willing_to_travel")  # "Maybe" isn't a yes or no, so it's left unrecorded
+    if data.get("willing_to_travel"):
+        word = _key(data["willing_to_travel"])
         if word not in _YES | _NO:
             raise ValidationError("Willing to travel must be Yes or No.")
         data["willing_to_travel"] = "yes" if word in _YES else "no"
@@ -221,6 +232,14 @@ def _profile_values(data):
             data["years_experience"] = str(years.quantize(Decimal("0.1")))
         except InvalidOperation as exc:
             raise ValidationError("Years of work experience must be a number from 0 to 80.") from exc
+    for field in ("staff_note", "skills", "education", "trades_wanted", "found_us"):  # form fillers' "N/A" / "Other" say nothing
+        if _key(data.get(field, "")) in ("na", "none", "nan", "other", "nothing"):
+            data[field] = ""
+    if field_value := data.get("education"):
+        data["education"] = "\n".join(line for line in field_value.split("\n")
+                                      if _key(line.split(":", 1)[-1]) not in ("na", "none", "other"))
+    if len(data.get("staff_note", "")) > 4000:  # long work histories are kept as a note, cut to fit
+        data["staff_note"] = data["staff_note"][:3990].rstrip() + " …"
     for field, limit in (("employment_status", 100), ("address_line_1", 200), ("address_line_2", 200), ("found_us", 240), ("trades_wanted", 4000), ("skills", 4000), ("education", 4000), ("staff_note", 4000)):
         if len(data.get(field, "")) > limit:
             raise ValidationError(f"{IMPORT_LABELS[field]} is too long.")
@@ -334,6 +353,12 @@ def _normalize(raw, mapping):
     if raw.get("__row_error__"):
         raise ValidationError(raw["__row_error__"])
     data = {field: _read_spec(raw, field, spec) for field, spec in mapping.items() if spec}
+    full = " ".join(data.pop("full_name", "").split())
+    if full and not (data.get("first_name") and data.get("last_name")):
+        first, _, last = full.rpartition(" ")  # "Mary Ann Smith" → first "Mary Ann", last "Smith"
+        if first:
+            data["first_name"] = data.get("first_name") or first
+            data["last_name"] = data.get("last_name") or last
     if not data.get("first_name") or not data.get("last_name"):
         raise ValidationError("First and last names are required.")
     for field, value in data.items():
@@ -446,8 +471,8 @@ def _matches(data):
 def preview_batch(batch, mapping, *, actor):
     if batch.status == HistoricalImportBatch.Status.IMPORTED:
         raise ValidationError("An imported batch cannot be remapped.")
-    if set(mapping) - set(IMPORT_FIELDS) or not mapping.get("first_name") or not mapping.get("last_name"):
-        raise ValidationError("Map first name and last name to spreadsheet columns.")
+    if set(mapping) - set(IMPORT_FIELDS) or not ((mapping.get("first_name") and mapping.get("last_name")) or mapping.get("full_name")):
+        raise ValidationError("Map first name and last name (or a full name column) to spreadsheet columns.")
     headers, source_rows = _read_rows(batch)
     if any(column not in headers for spec in mapping.values() for column in spec_columns(spec)):
         raise ValidationError("A mapped column is missing from this spreadsheet.")
@@ -458,14 +483,13 @@ def preview_batch(batch, mapping, *, actor):
             try:
                 data = _normalize(raw, mapping)
                 matches = _matches(data)
-                key = tuple(data.get(field) or "" for field in ("identity_uuid", "email", "phone"))
-                secondary = (data.get("first_name", "").casefold(), data.get("last_name", "").casefold(),
-                             data.get("date_of_birth", "")) if data.get("date_of_birth") else None
-                repeated = (any(key) and key in seen) or (secondary is not None and secondary in seen)
-                if any(key):
-                    seen.add(key)
-                if secondary is not None:
-                    seen.add(secondary)
+                # The same ID, email or phone twice in one file is probably one person (e.g. a form filled in twice).
+                keys = {(field, str(data[field]).casefold()) for field in ("identity_uuid", "email", "phone") if data.get(field)}
+                if data.get("date_of_birth"):
+                    keys.add(("person", data.get("first_name", "").casefold(), data.get("last_name", "").casefold(),
+                              data["date_of_birth"]))
+                repeated = bool(keys & seen)
+                seen |= keys
                 status = HistoricalImportRow.Status.REVIEW if matches or repeated else HistoricalImportRow.Status.READY
                 error = "Possible duplicate in this file." if repeated else ""
             except ValidationError as exc:
@@ -549,11 +573,13 @@ def _import_profile(participant, data, *, actor, row):
         ParticipantNote.objects.create(participant=participant, content=data["staff_note"], author=actor)
 
 
-def import_ready(batch, *, actor):
+def import_ready(batch, *, actor, limit=None):
+    """Import ready rows in file order. With a limit, only that many; the rest stay ready for later."""
     if batch.status != HistoricalImportBatch.Status.PREVIEWED:
         raise ValidationError("Preview and map the batch before import.")
     imported = 0
-    for row in batch.rows.filter(status=HistoricalImportRow.Status.READY):
+    ready = batch.rows.filter(status=HistoricalImportRow.Status.READY).order_by("row_number")
+    for row in (ready[:limit] if limit else ready):
         try:
             with transaction.atomic():
                 if _matches(row.normalized_data):
@@ -567,9 +593,10 @@ def import_ready(batch, *, actor):
             row.status = HistoricalImportRow.Status.ERROR
             row.error = str(exc)[:1000]
             row.save(update_fields=("status", "error"))
-    batch.status = HistoricalImportBatch.Status.IMPORTED
-    batch.completed_at = timezone.now()
-    batch.save(update_fields=("status", "completed_at"))
+    if not batch.rows.filter(status=HistoricalImportRow.Status.READY).exists():
+        batch.status = HistoricalImportBatch.Status.IMPORTED
+        batch.completed_at = timezone.now()
+        batch.save(update_fields=("status", "completed_at"))
     audit_action(actor=actor, action="historical.import.complete", instance=batch,
                  new_data={"imported": imported, "review": batch.rows.filter(status="review").count(),
                            "errors": batch.rows.filter(status="error").count()})

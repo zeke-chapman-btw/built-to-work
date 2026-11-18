@@ -235,3 +235,94 @@ class BillingFlowTests(CustomerFixtures, TestCase):
         customer_mail = [m for m in mail.outbox if m.to == ["payer@example.test"]][0]
         self.assertIn("does not renew on its own", customer_mail.body)
         self.assertNotIn("/customers/", customer_mail.body)
+
+
+import shutil as _shutil
+import tempfile as _tempfile
+
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
+
+from apps.customers.test_portal import PortalFixtures
+
+_TMP = _tempfile.mkdtemp(prefix="btw-portal-billing-")
+
+
+@override_settings(PRIVATE_ONBOARDING_ROOT=_TMP)
+class PortalBillingTests(PortalFixtures, TestCase):
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        _shutil.rmtree(_TMP, ignore_errors=True)
+
+    def test_lead_sees_billing_documents_and_can_upload(self):
+        from apps.onboarding.models import CustomerDocument
+        org, member, user = self.lead()
+        MonthlyAgreement.objects.create(organization=org, amount_cents=150000, starts_on=timezone.localdate(),
+                                        ends_on=timezone.localdate() + timedelta(days=300), status="active", approved_by=self.admin)
+        CustomerDocument.objects.create(organization=org, kind="other", title="SYNTHETIC staff note", shared=False)
+        CustomerDocument.objects.create(organization=org, kind="w9", title="W-9", file_name="w9.pdf",
+                                        file=SimpleUploadedFile("w9.pdf", b"%PDF w9"))
+        self.customer_login(user)
+        page = self.client.get(reverse("customer_portal:workspace", args=["billing"]))
+        self.assertContains(page, "Billing &amp; documents")
+        self.assertContains(page, "1,500.00") if "1,500.00" in page.content.decode() else self.assertContains(page, "1500.00")
+        self.assertContains(page, "W-9")
+        self.assertNotContains(page, "SYNTHETIC staff note")
+        upload = SimpleUploadedFile("coi.pdf", b"%PDF coi", content_type="application/pdf")
+        response = self.client.post(reverse("billing:portal-upload"), {"kind": "insurance", "upload": upload})
+        self.assertEqual(response.status_code, 302)
+        doc = CustomerDocument.objects.get(kind="insurance")
+        self.assertTrue(doc.from_customer)
+        w9 = CustomerDocument.objects.get(kind="w9")
+        got = self.client.get(reverse("billing:portal-document", args=[w9.pk]))
+        self.assertEqual(b"".join(got.streaming_content), b"%PDF w9")
+        hidden = CustomerDocument.objects.get(shared=False)
+        self.assertEqual(self.client.get(reverse("billing:portal-document", args=[hidden.pk])).status_code, 404)
+        self.client.force_login(self.admin, backend=BACKEND)
+        self.assertContains(self.client.get(reverse("customers:workspace", args=[org.pk, "documents"])), "From customer")
+
+
+class DeliveryTests(BillingFlowTests):
+    def test_paid_for_vs_delivered_and_no_double_charge_on_reapproval(self):
+        from . import delivery
+        need = self.reviewed_need()
+        self.approve(need, fee_kind="skilled", candidates=6)
+        need.refresh_from_db()
+        p = delivery.progress(need)
+        self.assertEqual((p["paid_for"], p["delivered"], p["remaining"], p["unit"]), (6, 0, 6, "candidates"))
+        page = self.client.get(reverse("customers:workspace", args=[self.org_a.pk, "billing"]))
+        self.assertContains(page, "0 of 6 candidates delivered")
+        # A changed version is approved again: the screen defaults to no new charge.
+        self.org_a.refresh_from_db()
+        data = self.payload(self.org_a)
+        from apps.customers import services as svc
+        svc.save_hiring_draft(actor=self.admin, org_id=self.org_a.pk, expected_org_revision=self.org_a.revision, data=data,
+                              need_id=need.pk, expected_need_revision=need.revision, expected_working_id=None, why=WHY)
+        need.refresh_from_db()
+        for action in ("submit", "review"):
+            self.transition(self.org_a, need, action)
+        need.refresh_from_db()
+        self.org_a.refresh_from_db()
+        screen = self.client.get(reverse("customers:need-action", args=[self.org_a.pk, need.pk, "approve"]))
+        self.assertContains(screen, "already charged")
+
+
+class BusinessOverviewTests(BillingFlowTests):
+    def test_business_page_shows_money_customers_funnel_and_events(self):
+        need = self.reviewed_need()
+        connect_stripe()
+        with patch.object(stripe_api, "call", FakeStripe(intent_status="succeeded")):
+            self.ready_bank(FakeStripe(intent_status="succeeded"))
+            self.approve(need, fee_kind="general", people=2)
+        page = self.client.get(reverse("billing:business") + "?range=all")
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, "Position fees collected")
+        self.assertContains(page, "$2,000")
+        self.assertContains(page, "SYNTHETIC Alpha company")
+        self.assertContains(page, "Participant path")
+        self.assertContains(self.client.get(reverse("internal:reports")), reverse("billing:business"))
+        from django.contrib.auth import get_user_model
+        other = get_user_model().objects.create_user(username="bz-staff", password="x-test-only", is_staff=True)
+        self.client.force_login(other, backend=BACKEND)
+        self.assertEqual(self.client.get(reverse("billing:business")).status_code, 403)

@@ -343,6 +343,35 @@ def onboarding_submitted(today, now):
                    related={"owner": _people(user_target(row.created_by))})
 
 
+def delivery_behind(today, now):
+    from apps.billing.delivery import progress
+    from apps.billing.models import PositionCharge
+    seen = set()
+    rows = (PositionCharge.objects.filter(status__in=["paid", "processing"], kind__in=["skilled", "general"],
+                                          need__status="active", created_at__lte=now - timedelta(days=14))
+            .select_related("need__effective_revision", "need__recruiting_opportunity__owner",
+                            "organization__billing__account_manager").order_by("-created_at"))
+    for charge in rows[:300]:
+        need = charge.need
+        if need.pk in seen:
+            continue
+        seen.add(need.pk)
+        p = progress(need)
+        if not p["behind"]:
+            continue
+        org = charge.organization
+        profile = getattr(org, "billing", None)
+        opportunity = getattr(need, "recruiting_opportunity", None)
+        unit = "hired" if p["unit"] == "people" else "delivered"
+        done = p["hired"] if p["unit"] == "people" else p["delivered"]
+        yield Item(ref=f"delivery:{need.pk}", anchor=_local(charge.created_at).date(), created=charge.created_at,
+                   line=f"{org.name} · {p['title']}: {done} of {p['paid_for']} {unit}",
+                   link=reverse("customers:workspace", args=[org.pk, "billing"]),
+                   fields={"company": org.name, "position": p["title"], "remaining": str(p["remaining"])},
+                   related={"recruiter": _people(user_target(opportunity.owner if opportunity else None)),
+                            "account_manager": _people(user_target(profile.account_manager if profile else None))})
+
+
 def documents_expiring(today, now):
     from apps.onboarding.models import CustomerDocument
     rows = (CustomerDocument.objects.filter(removed_at__isnull=True, expires_on__isnull=False,
@@ -446,6 +475,9 @@ SOURCES = {s.key: s for s in (
            "it's submitted", {}, {"company": "the customer", "position": "position title"}),
     Source("onboarding_submitted", "Customers", "Customer onboarding forms ready to review", onboarding_submitted,
            ("new", "after"), "when they submitted it", {"owner": "Staff member who started it"}, {"company": "the customer"}),
+    Source("delivery_behind", "Recruiting", "Paid-for positions still short on candidates", delivery_behind, ("after",),
+           "when the position was charged", {"recruiter": "Recruiter on the position", "account_manager": "BTW account manager"},
+           {"company": "the customer", "position": "position title", "remaining": "how many are still owed"}),
     Source("documents_expiring", "Customers", "Customer documents expiring", documents_expiring, ("before",),
            "the document's expiration date", {"account_manager": "BTW account manager"},
            {"company": "the customer", "document": "document name", "end_date": "expiration date"}),

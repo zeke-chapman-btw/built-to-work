@@ -17,7 +17,7 @@ h1{margin:0;font-size:44px;line-height:1.05;text-transform:uppercase;font-family
 .note{margin-top:auto;padding-top:28px;font-size:13px;color:#666}
 @media print{body{background:#fff}.toolbar{display:none}.sheet{box-shadow:none;margin:0;width:auto;min-height:auto}}
 </style></head><body>
-<div class="toolbar"><a href="{% url 'participants:intake-config-index' %}">← Back to Forms</a><a href="{{ image }}?download=1">Download QR image</a><button type="button" onclick="window.print()">Print</button></div>
+<div class="toolbar"><a class="ux-back" href="{% url 'participants:intake-config-index' %}">← Back to Forms</a><a href="{{ image }}?download=1">Download QR image</a><button type="button" onclick="window.print()">Print</button></div>
 <main class="sheet">
 <div class="brand"><img src="{% static 'internal/images/built-to-work-linear.svg' %}" alt="Built to Work"></div>
 <p class="eyebrow">{% if event %}{{ event.name }}{% elif trailer %}Built to Work trailer{% else %}Built to Work{% endif %}</p>
