@@ -175,7 +175,8 @@ class DocumentTests(CustomerFixtures, TestCase):
         setup.is_on, setup.turned_on_at = True, timezone.now()
         setup.save()
         engine.run_rule(ReminderRule.objects.get(key="document_expiring"), now=timezone.now().replace(hour=20))
-        self.assertIn("Certificate of insurance", ReminderNotice.objects.get().title)
+        from apps.operations.models import TaskNotification
+        self.assertIn("Certificate of insurance", TaskNotification.objects.get(kind="reminder").message)
         self.client.post(reverse("onboarding:document-edit", args=[self.org_a.pk, doc.pk]), {"kind": "insurance", "title": "COI", "remove": "1"})
         doc.refresh_from_db()
         self.assertIsNotNone(doc.removed_at)
