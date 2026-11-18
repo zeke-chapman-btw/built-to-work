@@ -32,6 +32,9 @@ def inspect_scheduler(*, now=None, include_internal=False):
         'retry_pending': retry_pending,
         'jobs_by_state': {key: grouped.get(key, 0) for key in TaskReminderJob.State.values},
     }
+    from .event_reminder_sources import enabled as sources_enabled
+    result['event_approval_reminders_enabled'] = sources_enabled()
+    result['responsibility_issues'] = len((state.get('responsibility_health') or {}).get('issues', [])) if state else 0
     if include_internal:
         result['state'] = state
     return result

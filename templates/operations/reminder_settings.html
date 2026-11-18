@@ -1,11 +1,12 @@
 {% extends 'operations/task_base.html' %}
 {% block task_content %}
-<p><a href="{{ back }}">← {% if personal_settings %}Settings{% else %}Reminders{% endif %}</a></p>
-<section class="card reminder-settings">
-{% if reminder_event %}<h2>{{ reminder_event.name }}</h2>{% endif %}
-<form method="post">{% csrf_token %}{% include 'internal/ui/event_form_fields.html' with form=form %}
-<div class="reminder-actions"><button class="button button-primary" type="submit">Save</button></div></form>
-</section>
-{% if personal_settings and company_settings %}<section class="card reminder-settings"><a href="{% url 'operations:reminder-company' %}">Company reminders →</a></section>{% endif %}
-{% if reminder_events %}<section class="card reminder-settings"><h2>Event reminders</h2><ul class="reminder-event-list">{% for item in reminder_events %}<li><a href="{% url 'operations:reminder-event' item.pk %}">{{ item.name }}</a></li>{% endfor %}</ul></section>{% endif %}
+<p><a href="{{ back }}">← Settings</a></p>
+<div class="cp3 cp3-stack">
+{% if reminder_setup %}<section class="cp3-card"><header class="cp3-head"><h2>Reminder setup</h2><span class="cp3-chip y">Needs attention</span></header>{% for issue in reminder_setup %}<div class="cp3-row"><a href="{{ issue.url }}"{% if issue.popup %} data-record-editor{% endif %}>{{ issue.label }}</a></div>{% endfor %}</section>{% endif %}
+<section class="cp3-card"><header class="cp3-head"><h2>Your reminders</h2><a href="?edit=1" data-record-editor>Edit</a></header>
+<div class="cp3-body"><dl class="cp3-dl"><div><dt>Activity updates</dt><dd><span class="cp3-chip {% if form.activity_updates.value %}g{% endif %}">{% if form.activity_updates.value %}On{% else %}Off{% endif %}</span></dd></div></dl></div></section>
+{% if company_settings %}<section class="cp3-card"><div class="cp3-row"><a href="{% url 'operations:reminder-company' %}" data-record-editor>Company reminders →</a></div></section>{% endif %}
+{% if reminder_events %}<section class="cp3-card"><header class="cp3-head"><h2>Event reminders</h2></header>{% for item in reminder_events %}<div class="cp3-row"><a href="{% url 'operations:reminder-event' item.pk %}" data-record-editor>{{ item.name }}</a></div>{% endfor %}</section>{% endif %}
+</div>
+{% include 'internal/ui/event_editor_assets.html' %}
 {% endblock %}

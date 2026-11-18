@@ -112,6 +112,11 @@ def sync_task(task_id, *, now=None):
              .filter(pk__in=ids).order_by('pk')}
     current_recipient = recipient_id(task)
     current = fingerprint(task)
+    from .event_reminder_sources import owns_task
+    if owns_task(task):
+        TaskReminderJob.objects.filter(task=task, state__in=REPLACEABLE).update(
+            state='superseded', claim_token=None, lease_until=None, finished_at=now)
+        return []
     TaskReminderJob.objects.filter(task=task, state__in=REPLACEABLE).exclude(
         fingerprint=current).update(state='superseded', claim_token=None,
                                     lease_until=None, finished_at=now)
