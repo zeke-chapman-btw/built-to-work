@@ -23,6 +23,16 @@ class SecuritySettings(models.Model):
         return row
 
 
+class PersonRequirement(models.Model):
+    """An administrator requires two-step sign-in for this one person, whatever their role."""
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="two_step_required")
+    set_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    set_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        default_permissions = ()
+
+
 class TwoStepDevice(models.Model):
     class Method(models.TextChoices):
         APP = "app", "Authenticator app"

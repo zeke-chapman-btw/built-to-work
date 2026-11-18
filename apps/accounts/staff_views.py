@@ -36,6 +36,12 @@ def deliver_invitation(request, item):
             return
     transaction.on_commit(deliver)
 
+def _two_step_state(target):
+    from apps.security import services as two_step
+    device = two_step.device(target)
+    return {'on': bool(device), 'method': device.get_method_display() if device else '',
+            'personal': two_step.required_for_person(target), 'group': two_step.required_by_group(target)}
+
 @account_manager
 @require_http_methods(['GET'])
 def index(request):
@@ -83,7 +89,7 @@ def detail(request,user_id):
     from apps.core.models import AuditLog
     from django.contrib.contenttypes.models import ContentType
     logs=AuditLog.objects.filter(content_type=ContentType.objects.get_for_model(target),object_id=str(target.pk),action__startswith='staff.account.').order_by('-timestamp')[:30]
-    return page(request,'accounts/staff_account_detail.html',page_title='Sign-in & roles',target=target,roles=sorted(roles_for(target)),history=logs,invite_form=AccountActionForm(initial={'revision':revision(target)},auto_id='invite_%s'),state_form=AccountActionForm(initial={'revision':revision(target)},auto_id='state_%s'))
+    return page(request,'accounts/staff_account_detail.html',page_title='Sign-in & roles',target=target,roles=sorted(roles_for(target)),history=logs,invite_form=AccountActionForm(initial={'revision':revision(target)},auto_id='invite_%s'),state_form=AccountActionForm(initial={'revision':revision(target)},auto_id='state_%s'),two_step=_two_step_state(target))
 
 @account_manager
 @require_http_methods(['POST'])

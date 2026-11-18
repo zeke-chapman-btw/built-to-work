@@ -285,3 +285,36 @@ class EmailNotReadyTests(TestCase):
         page = self.client.get(reverse("security:setup"))
         self.assertContains(page, "Email isn")
         self.assertFalse(services.can_use("email", user))
+
+
+class PersonRequirementTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.admin = User.objects.create_superuser(username="pr-admin", password="x-test-only", email="pr-admin@example.test")
+        self.person = User.objects.create_user(username="pr-staff", password="x-test-only", email="pr@example.test", is_staff=True)
+
+    def test_admin_requires_one_person_who_then_must_set_it_up_and_cannot_turn_it_off(self):
+        from .models import PersonRequirement
+        self.assertFalse(services.required(self.person))
+        self.client.force_login(self.admin, backend=BACKEND)
+        page = self.client.get(reverse("security:settings")).content.decode()
+        self.assertIn("pr-staff", page)
+        self.client.post(reverse("security:require-person", args=[self.person.pk]), {"value": "1"})
+        self.assertTrue(PersonRequirement.objects.filter(user=self.person).exists())
+        self.assertTrue(services.required(self.person))
+        self.assertFalse(services.required(self.admin))
+        detail = self.client.get(reverse("accounts:staff-detail", args=[self.person.pk])).content.decode()
+        self.assertIn("Required for this person.", detail)
+        self.client.logout()
+        self.client.login(username="pr-staff", password="x-test-only")
+        self.assertIn(reverse("security:setup"), self.client.get(reverse("internal:home"))["Location"])
+        self.client.logout()
+        self.client.force_login(self.admin, backend=BACKEND)
+        self.client.post(reverse("security:require-person", args=[self.person.pk]), {"value": "0"})
+        self.assertFalse(services.required(self.person))
+
+    def test_only_administrators_can_require_it(self):
+        self.client.force_login(self.person, backend=BACKEND)
+        response = self.client.post(reverse("security:require-person", args=[self.admin.pk]), {"value": "1"})
+        self.assertIn(response.status_code, (302, 403))
+        self.assertFalse(services.required(self.admin))

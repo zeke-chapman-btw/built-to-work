@@ -46,7 +46,22 @@ def covered(request):
     return request.session.get("_auth_user_backend") == CUSTOMER_BACKEND
 
 
+def required_for_person(user):
+    from .models import PersonRequirement
+    return bool(getattr(user, "pk", None)) and PersonRequirement.objects.filter(user=user).exists()
+
+
+def required_by_group(user):
+    row = SecuritySettings.current()
+    if is_customer(user):
+        return row.require_two_step_customers
+    from apps.accounts.roles import manager
+    return row.require_two_step_staff or (row.require_two_step_managers and manager(user))
+
+
 def required(user):
+    if required_for_person(user):
+        return True
     row = SecuritySettings.current()
     if is_customer(user):
         return row.require_two_step_customers
