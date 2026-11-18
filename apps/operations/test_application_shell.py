@@ -165,14 +165,14 @@ class StaffSharedShellTests(PortalFixtures,TestCase):
                      reverse('participants:portal-invitations')]:
             with self.subTest(path=path):
                 response=self.client.get(path);links=chrome(self,response)
-                self.assertEqual([x['url'] for x in links],[x['url'] for x in response.context['primary_navigation']])
+                self.assertEqual([x['url'] for x in links],[x['url'] for x in response.context['primary_navigation'] if not x.get('gear')])
                 self.assertNotContains(response,'has-portal-shell')
                 self.assertContains(response,'data-notification-bell')
 
     def test_existing_staff_navigation_and_task_dialog_remain_staff_only(self):
         self.client.force_login(self.admin,backend='django.contrib.auth.backends.ModelBackend')
         response=self.client.get('/home/');links=chrome(self,response)
-        self.assertEqual([x['url'] for x in links],[x['url'] for x in response.context['primary_navigation']])
+        self.assertEqual([x['url'] for x in links],[x['url'] for x in response.context['primary_navigation'] if not x.get('gear')])
         self.assertContains(response,'data-notification-bell')
         self.assertContains(response,'id="task-create-dialog"',count=1)
         self.assertNotContains(response,'has-portal-shell');self.assertNotContains(response,'application-context')
