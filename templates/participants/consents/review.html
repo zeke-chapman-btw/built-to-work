@@ -1,2 +1,63 @@
 {% extends 'participants/consents/base.html' %}{% load consent_ui ticket_ui %}{% block consent_content %}{% if consent_error %}<p class="btw-feedback btw-feedback-warning" role="alert">{{ consent_error }}</p>{% endif %}<section class="card"><header class="btw-panel-heading"><div><h2>{{ document.title }}</h2><p>Version {{ document.version }} · {% if document.is_approved %}Published{% elif document.text_verified_at %}Text verified, awaiting publication{% else %}Draft{% endif %}</p></div><a class="button" href="{{ pdf_url }}" target="_blank" rel="noopener">Open original PDF</a></header><div class="event-record-actions"><a class="button secondary" href="{{ preview_url }}">See what participants see</a><a href="{% url 'participants:consent-history' document.pk %}">History</a><a href="{% url 'participants:consent-acceptances' %}?document={{ document.pk }}">Who agreed</a></div></section>
-{% consent_usage document as usage %}<section class="card cs-usage"><h2>Where it's shown</h2>{% if usage.unused %}<p class="event-help">Not shown anywhere right now.{% if document.is_approved %} The newest published "sign-up consent" is used for general online sign-up; events pick their consent in the event's sign-up settings.{% endif %}</p>{% else %}<ul>{% if usage.general %}<li><strong>General online sign-up</strong> <span class="event-help">— step 2 of the sign-up form</span></li>{% endif %}{% for e in usage.events %}<li><strong>{{ e.name }}</strong> <span class="event-help">— {{ e|event_dates }}</span></li>{% endfor %}{% for p in usage.trailers %}<li><strong>{{ p.trailer }}</strong> <span class="event-help">— trailer tablets at {{ p.event.name }}</span></li>{% endfor %}</ul>{% endif %}</section>{% if document.is_approved %}<section class="card"><h2>Published text</h2><div class="consent-copy">{{ document.body|consent_text }}</div></section>{% else %}<section class="card"><h2>Review document text</h2><form method="post" data-section-form>{% csrf_token %}<input type="hidden" name="action" value="save"><label for="consent-body">Extracted text</label><textarea id="consent-body" name="body" rows="22" required aria-describedby="consent-marks">{{ document.body }}</textarea><p class="event-help" id="consent-marks">Headings and bold text were picked up from the PDF. To change how it looks: start a line with <code>##</code> for a heading or <code>###</code> for a smaller one, wrap words in <code>**two stars**</code> for bold or <code>__two underscores__</code> for underline, and start a line with <code>•</code> for a bullet (<code>◦</code> for a point under it). Leave a blank line between paragraphs. Preview shows the result.</p><div class="btw-form-actions"><button class="button button-primary" type="submit">Save text and preview</button></div></form></section><section class="card"><h2>Verify and publish</h2><form method="post" data-section-form>{% csrf_token %}<input type="hidden" name="action" value="verify"><label class="btw-consent-confirm"><input type="checkbox" name="checked_against_pdf" required> I opened the original PDF and participant preview, and checked all displayed text against the PDF.</label><button class="button" type="submit">Confirm text checked against PDF</button></form>{% if document.text_verified_at %}<p class="event-help">Verified by {{ document.text_verified_by }} at {{ document.text_verified_at|date:'M j, Y · g:i A' }}.</p><form method="post" action="{{ publish_url }}" data-section-form>{% csrf_token %}<label class="btw-consent-confirm"><input type="checkbox" name="confirm_publish" required> Approve and publish this exact version for participant registration.</label><button class="button button-primary" type="submit">Approve &amp; Publish</button></form>{% endif %}</section>{% endif %}<details class="card"><summary>Source and publication details</summary><p>Original PDF SHA-256: <code>{{ document.content_hash }}</code></p>{% if document.published_at %}<p>Published by {{ document.published_by }} at {{ document.published_at|date:'M j, Y · g:i A' }}.</p>{% endif %}</details>{% endblock %}
+{% consent_usage document as usage %}<section class="card cs-usage"><h2>Where it's shown</h2>{% if usage.unused %}<p class="event-help">Not shown anywhere right now.{% if document.is_approved %} The newest published "sign-up consent" is used for general online sign-up; events pick their consent in the event's sign-up settings.{% endif %}</p>{% else %}<ul>{% if usage.general %}<li><strong>General online sign-up</strong> <span class="event-help">— step 2 of the sign-up form</span></li>{% endif %}{% for e in usage.events %}<li><strong>{{ e.name }}</strong> <span class="event-help">— {{ e|event_dates }}</span></li>{% endfor %}{% for p in usage.trailers %}<li><strong>{{ p.trailer }}</strong> <span class="event-help">— trailer tablets at {{ p.event.name }}</span></li>{% endfor %}</ul>{% endif %}</section>{% if document.is_approved %}<section class="card"><h2>Published text</h2><div class="consent-copy">{{ document.body|consent_text }}</div></section>{% else %}<section class="card"><h2>Review document text</h2><form method="post" data-section-form data-consent-editor-form>{% csrf_token %}<input type="hidden" name="action" value="save">
+<div class="ce-toolbar" role="toolbar" aria-label="Text formatting" hidden data-ce-toolbar>
+<button type="button" data-ce="h3" title="Heading">Heading</button><button type="button" data-ce="h4" title="Smaller heading">Small heading</button><button type="button" data-ce="p" title="Normal text">Normal text</button><span class="ce-sep"></span><button type="button" data-ce="bold" title="Bold"><b>B</b></button><button type="button" data-ce="underline" title="Underline"><u>U</u></button><span class="ce-sep"></span><button type="button" data-ce="list" title="Bullet list">• List</button><button type="button" data-ce="indent" title="Point under the one above">→ Sub-point</button><button type="button" data-ce="outdent" title="Back out one level">← Back out</button></div>
+<div class="consent-copy ce-area" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Consent text" hidden data-ce-area>{{ document.body|consent_text }}</div>
+<textarea id="consent-body" name="body" rows="22" required data-ce-source>{{ document.body }}</textarea>
+<p class="event-help" data-ce-help hidden>Type and format it like a normal document: pick a line and use the buttons above for headings, bold, underline and bullet points. Pasted text keeps its words but not outside formatting. Leave a blank line between paragraphs by pressing Enter. Preview shows exactly what participants see.</p>
+<div class="btw-form-actions"><button class="button button-primary" type="submit">Save text and preview</button></div></form>
+<style>.ce-toolbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px;border:1px solid #d6dade;border-bottom:0;border-radius:10px 10px 0 0;background:#f8f9fa;position:sticky;top:0;z-index:2}.ce-toolbar button{font:inherit;font-size:13px;padding:6px 10px;border:1px solid #d6dade;border-radius:7px;background:#fff;cursor:pointer;color:#27303a}.ce-toolbar button:hover{border-color:#ac1929;color:#ac1929}.ce-toolbar button.is-on{background:#fdf1f2;border-color:#ac1929;color:#ac1929}.ce-sep{width:1px;height:22px;background:#d6dade;margin:0 4px}.ce-area{min-height:420px;max-height:70vh;overflow:auto;padding:16px 18px;border:1px solid #d6dade;border-radius:0 0 10px 10px;background:#fff;line-height:1.55;outline:none}.ce-area:focus{border-color:#ac1929;box-shadow:0 0 0 3px rgba(172,25,41,.12)}.ce-area p,.ce-area h3,.ce-area h4{display:block !important;margin:0 0 .8em}.ce-area li{display:list-item !important}.ce-area :is(strong,b,u,em,i,span){display:inline !important;margin:0 !important}.ce-area ul{margin:0 0 .8em;padding-left:1.4em}</style>
+<script>
+(function(){
+  var form=document.querySelector('[data-consent-editor-form]'); if(!form||!document.execCommand) return;
+  var area=form.querySelector('[data-ce-area]'), src=form.querySelector('[data-ce-source]'), bar=form.querySelector('[data-ce-toolbar]');
+  area.hidden=false; bar.hidden=false; form.querySelector('[data-ce-help]').hidden=false; src.hidden=true; src.required=false;
+  try{document.execCommand('defaultParagraphSeparator',false,'p');}catch(e){}
+  function inline(node){
+    var out='';
+    node.childNodes.forEach(function(n){
+      if(n.nodeType===3){out+=n.textContent.replace(/\u00a0/g,' ');return;}
+      if(n.nodeType!==1) return;
+      var t=n.tagName.toLowerCase();
+      if(t==='br'){out+='\n';return;}
+      if(t==='ul'||t==='ol') return;
+      var inner=inline(n);
+      var bold=t==='strong'||t==='b'||/bold|[6-9]00/.test(n.style.fontWeight||'');
+      var under=t==='u'||/underline/.test(n.style.textDecoration||'');
+      if(inner.trim()){ if(bold) inner='**'+inner+'**'; if(under) inner='__'+inner+'__'; }
+      out+=inner;
+    });
+    return out;
+  }
+  function list(ul,level,lines){
+    ul.querySelectorAll(':scope > li').forEach(function(li){
+      var text=inline(li).replace(/\n+/g,' ').trim(); if(text) lines.push((level?'◦ ':'• ')+text);
+      li.querySelectorAll(':scope > ul, :scope > ol').forEach(function(sub){list(sub,level+1,lines);});
+    });
+  }
+  function toMarks(){
+    var blocks=[];
+    area.childNodes.forEach(function(n){
+      if(n.nodeType===3){ if(n.textContent.trim()) blocks.push(n.textContent.trim()); return; }
+      if(n.nodeType!==1) return;
+      var t=n.tagName.toLowerCase();
+      if(t==='ul'||t==='ol'){var lines=[];list(n,0,lines); if(lines.length) blocks.push(lines.join('\n')); return;}
+      var text=inline(n).replace(/\n{2,}/g,'\n').trim(); if(!text) return;
+      if(t==='h1'||t==='h2'||t==='h3') blocks.push('## '+text.replace(/\n/g,' '));
+      else if(t==='h4'||t==='h5'||t==='h6') blocks.push('### '+text.replace(/\n/g,' '));
+      else blocks.push(text);
+    });
+    return blocks.join('\n\n');
+  }
+  bar.addEventListener('mousedown',function(e){ if(e.target.closest('button')) e.preventDefault(); });
+  bar.addEventListener('click',function(e){
+    var b=e.target.closest('[data-ce]'); if(!b) return; area.focus();
+    var c=b.getAttribute('data-ce');
+    if(c==='h3'||c==='h4'||c==='p') document.execCommand('formatBlock',false,c);
+    else if(c==='list') document.execCommand('insertUnorderedList');
+    else document.execCommand(c);
+  });
+  area.addEventListener('paste',function(e){ e.preventDefault(); var text=(e.clipboardData||window.clipboardData).getData('text/plain'); document.execCommand('insertText',false,text); });
+  form.addEventListener('submit',function(){ src.value=toMarks(); });
+})();
+</script></section><section class="card"><h2>Verify and publish</h2><form method="post" data-section-form>{% csrf_token %}<input type="hidden" name="action" value="verify"><label class="btw-consent-confirm"><input type="checkbox" name="checked_against_pdf" required> I opened the original PDF and participant preview, and checked all displayed text against the PDF.</label><button class="button" type="submit">Confirm text checked against PDF</button></form>{% if document.text_verified_at %}<p class="event-help">Verified by {{ document.text_verified_by }} at {{ document.text_verified_at|date:'M j, Y · g:i A' }}.</p><form method="post" action="{{ publish_url }}" data-section-form>{% csrf_token %}<label class="btw-consent-confirm"><input type="checkbox" name="confirm_publish" required> Approve and publish this exact version for participant registration.</label><button class="button button-primary" type="submit">Approve &amp; Publish</button></form>{% endif %}</section>{% endif %}<details class="card"><summary>Source and publication details</summary><p>Original PDF SHA-256: <code>{{ document.content_hash }}</code></p>{% if document.published_at %}<p>Published by {{ document.published_by }} at {{ document.published_at|date:'M j, Y · g:i A' }}.</p>{% endif %}</details>{% endblock %}

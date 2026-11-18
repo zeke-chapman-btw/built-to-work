@@ -102,7 +102,7 @@ class AvailabilityForm(forms.Form):
     note = forms.CharField(required=False,max_length=1000,widget=forms.Textarea(attrs={"rows":3}),label="Availability note (visible to managers)")
     def __init__(self,*args,event,**kwargs):
         super().__init__(*args,**kwargs)
-        self.fields["dates"].choices=[(d.isoformat(),d.strftime("%a, %b %d, %Y")+(" · Setup" if d<event.local_start_at.date() else "")) for d in event_days(event)]
+        self.fields["dates"].choices=[(d.isoformat(),d.strftime("%a, %b %d, %Y")+(" · Setup day" if d<event.local_start_at.date() else " · Event day")) for d in event_days(event)]
 
 
 class AssignmentForm(forms.Form):

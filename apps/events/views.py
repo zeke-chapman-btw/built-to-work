@@ -446,7 +446,7 @@ def _schedule_rows(event):
         first, last = day == start.date(), day == end.date()
         opens = f"{start:%-I:%M %p}" if first else ""
         closes = f"{end:%-I:%M %p}" if last else ""
-        rows.append(dict(date=day, label="Setup + event day" if event.setup_date == day else "", open=(opens + " – " + closes) if opens and closes else (("Opens " + opens) if opens else ("Closes " + closes) if closes else "Event day"), staff=staff))
+        rows.append(dict(date=day, label="Setup + event day" if event.setup_date == day else "Event day", open=(opens + " – " + closes) if opens and closes else (("Opens " + opens) if opens else ("Closes " + closes) if closes else ""), staff=staff))
         day += timedelta(days=1)
     if event.return_date and event.return_date > end.date():
         rows.append(dict(date=event.return_date, label="Arrive home", open="", staff=""))
