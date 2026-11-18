@@ -305,7 +305,7 @@ class BellAndSummaryTests(SendingTests):
             with self.subTest(task_reminders=flag), override_settings(BTW_TASK_REMINDERS_ENABLED=flag):
                 bell = shell_context(self.staff)["task_updates"]
                 self.assertEqual(bell["unread"], 1)
-                self.assertEqual(bell["recent"][0].display_title, notice.message)
+                self.assertEqual(bell["recent"][0].display_title, notice.message.partition(" — ")[0])
         job = TaskReminderJob.objects.create(key="summary-test", kind="summary", recipient=self.staff,
                                              local_date=now.date(), scheduled_for=now + timedelta(hours=1),
                                              available_at=now + timedelta(hours=1))

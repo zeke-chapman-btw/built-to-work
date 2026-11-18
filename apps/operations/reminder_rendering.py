@@ -181,7 +181,7 @@ def decorate(user, notices):
     for notice in notices:
         notice.summary_sections = []
         if notice.kind == 'reminder' and not notice.task_id:  # from Settings → Reminders
-            notice.display_title = notice.message
+            notice.display_title, _, notice.detail = notice.message.partition(' — ')
             notice.destination = notice.link or reverse('operations:updates')
             continue
         if not notice.reminder_job_id:
