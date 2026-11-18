@@ -78,7 +78,13 @@ def save_account(*,actor,data,user_id=None):
     target.is_staff=True;target.is_superuser='administrator' in selected
     target.can_finalize_event_reports=finalizer;target.can_approve_weekly_payroll=payroll
     if not new:target.is_active=bool(data.get('is_active',target.is_active))
-    target.security_revision+=1
+    # Only changes that affect who can sign in or what they can do cancel open setup links and sessions.
+    # Fixing a name or re-saving without changes leaves an emailed setup link working.
+    keys=('username','email','active','staff','administrator','roles','can_finalize_event_reports','can_approve_weekly_payroll')
+    after={'username':target.username,'email':target.email,'active':target.is_active,'staff':True,'administrator':target.is_superuser,
+           'roles':sorted(selected),'can_finalize_event_reports':finalizer,'can_approve_weekly_payroll':payroll}
+    security_change=new or any((before or {}).get(k)!=after[k] for k in keys)
+    if security_change:target.security_revision+=1
     if new:target.set_unusable_password()
     target.full_clean(exclude=['password']);target.save()
     # Preserve unrelated legacy groups/direct grants. Only an Administrator can
@@ -98,7 +104,7 @@ def save_account(*,actor,data,user_id=None):
         if existing and existing.pk!=profile.pk:raise PermissionDenied('Review the existing account link before relinking.')
     else:profile=existing or StaffProfile(first_name=target.first_name or username,last_name=target.last_name,email=email)
     profile.user=target;profile.full_clean();profile.save()
-    StaffInvitation.objects.filter(user=target,accepted_at__isnull=True,revoked_at__isnull=True).update(revoked_at=timezone.now())
+    if security_change:StaffInvitation.objects.filter(user=target,accepted_at__isnull=True,revoked_at__isnull=True).update(revoked_at=timezone.now())
     audit(actor,'created' if new else 'updated',target,before,reason)
     return target
 

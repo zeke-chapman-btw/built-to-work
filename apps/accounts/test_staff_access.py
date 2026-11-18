@@ -166,3 +166,12 @@ class StaffFoundationTests(TestCase):
         with transaction.atomic(),self.assertRaises(PermissionDenied):
             CustomUserAdmin(U,admin.site).save_model(request,changed,None,True)
         self.worker.refresh_from_db();self.assertFalse(self.worker.is_superuser)
+
+class SetupLinkSurvivesHarmlessEditsTests(StaffFoundationTests):
+    def test_name_fix_keeps_setup_link_but_role_change_cancels_it(self):
+        user=self.pending();item=issue_invitation(user=user,actor=self.manager,expected_revision=revision(user),reason='SYNTHETIC setup');token=invitation_token(item)
+        user.refresh_from_db();data=self.data(user);data['first_name']='Renamed'
+        save_account(actor=self.manager,user_id=user.pk,data=data)
+        self.assertIsNotNone(read_invitation(token))  # a name fix leaves the emailed link working
+        user.refresh_from_db();save_account(actor=self.manager,user_id=user.pk,data=self.data(user,roles=['recruiter']))
+        self.assertIsNone(read_invitation(token))  # a role change still cancels it
