@@ -402,3 +402,20 @@ body.internal-app #main-content :not(.hv2) .hv2-pill, body.internal-app #main-co
 body.internal-app #main-content :not(.hv2) .hv2-pill.is-role { background:#f1eafb; color:#5b3492; }
 body.internal-app #main-content :not(.hv2) .hv2-pill.my-status-approved { background:#e3f4e8; color:#1d6b35; }
 body.internal-app #main-content :not(.hv2) .hv2-pill.my-status-declined { background:#fde8ea; color:#a3192d; }
+
+/* Pop-up forms: single checkboxes sit beside their label, full width. */
+.btw-editor-grid > div:has(> .btw-field-checkbox) { grid-column: 1 / -1; }
+.btw-editor-grid .btw-field-checkbox { display:flex !important; flex-direction:row !important; align-items:flex-start; gap:10px; }
+.btw-editor-grid .btw-field-checkbox > input[type=checkbox] { flex:0 0 auto; width:18px; height:18px; margin:1px 0 0; }
+.btw-editor-grid .btw-field-checkbox > label { margin:0; font-weight:500; line-height:20px; }
+.btw-editor-grid .btw-field-checkbox > :is(small,.helptext,.btw-help,p) { flex-basis:100%; margin:2px 0 0 28px; }
+/* Pop-up forms: tick lists (roles and similar) as tidy two-column choices. */
+.btw-editor-grid .btw-field > [id^="id_"]:has(> div > label > input[type=checkbox]) { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:6px 16px; margin-top:6px; }
+.btw-editor-grid .btw-field > [id^="id_"] > div > label:has(> input[type=checkbox]) { display:flex; align-items:center; gap:10px; margin:0; font-weight:400; padding:8px 10px; border:1px solid var(--line,#e4e4e7); border-radius:8px; cursor:pointer; }
+.btw-editor-grid .btw-field > [id^="id_"] > div > label:has(> input:checked) { border-color:#ac1929; background:#fdf1f2; }
+.btw-editor-grid .btw-field > [id^="id_"] > div > label > input[type=checkbox] { width:18px; height:18px; margin:0; flex:0 0 auto; }
+@media (max-width:560px) { .btw-editor-grid .btw-field > [id^="id_"]:has(> div > label > input[type=checkbox]) { grid-template-columns:1fr; } }
+/* Pop-up forms: street on its own line, then City | State | ZIP in one row. */
+.btw-editor-grid:has(.field-street_address):has(.field-zip_code) { grid-template-columns: 2fr 1fr 1fr; }
+.btw-editor-grid > div:has(> .field-street_address) { grid-column: 1 / -1; }
+@media (max-width:560px) { .btw-editor-grid:has(.field-street_address):has(.field-zip_code) { grid-template-columns: 1fr 1fr; } .btw-editor-grid > div:has(> .field-city) { grid-column:1 / -1; } }
