@@ -29,7 +29,7 @@ class SignatureTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(EmailSignature.objects.get(user=self.admin).html, "<p><b>Zeke C.</b></p>")
         self.assertTrue(reverse("messaging:signature").startswith("/settings/"))
-        page = self.client.get(reverse("internal:settings"))
+        page = self.client.get(reverse("my:account"))
         self.assertContains(page, "<b>Zeke C.</b>", html=False)
         self.assertContains(page, "Edit signature")
 

@@ -105,28 +105,16 @@ def workspace(request,workspace_id):
 def settings(request):
     _require_staff(request)
     from .settings_presentation import settings_context
-    from apps.accounts.personal_profile import PersonalProfileForm, save_personal_profile
-    from apps.reporting.access import staff
-    from apps.staffing.models import StaffProfile
-    user = staff(request.user)
     presentation = settings_context(request)
+    if not presentation:
+        return redirect('my:account')  # personal settings live in My stuff → My account
     if presentation['selected'] == 'staff':
         return redirect('staffing:directory')
-    profile = StaffProfile.objects.filter(user=user).first()
-    form = PersonalProfileForm(user=user, profile=profile)
     if request.method == 'POST':
-        if presentation['selected'] != 'account':
-            raise PermissionDenied
-        saved, form = save_personal_profile(actor=user, data=request.POST)
-        if saved:
-            messages.success(request, 'Your personal information was saved.')
-            return redirect('internal:settings')
+        raise PermissionDenied
     return render(request,"internal/settings.html",_staff_context(request,
         page_title="Settings",settings_presentation=presentation,
-        settings_section=presentation["selected"],settings_groups=presentation["groups"],
-        personal_form=form, linked_staff_profile=profile,
-        own_pay_available=bool(profile and profile.my_pay_enabled),
-        password_change_url=reverse("accounts:password-change")))
+        settings_section=presentation["selected"],settings_groups=presentation["groups"]))
 
 @login_required
 @require_http_methods(["GET", "POST"])

@@ -25,7 +25,7 @@ class WorkspaceFinalizationTests(TestCase):
              ("tasks", "TASKS"), ("operations", "OPERATIONS"), ("platform-tools", "PLATFORM TOOLS"), ("customers", "CUSTOMERS"), ("campaigns", "RECRUITING"), ("approvals", "APPROVALS"), ("administration", "ADMIN")],
         )
         self.assertEqual(response.context["settings_link"]["url"], reverse("internal:settings"))
-        self.assertContains(response, 'aria-label="Personal settings"')
+        self.assertContains(response, 'aria-label="Settings"')
         self.assertContains(response, "data-notification-bell", count=1)  # Native bell disclosure; workspace navigation remains direct.
         self.assertContains(response, reverse("events:event_list"))
         for workspace_id in ("participants", "operations", "platform-tools", "customers", "campaigns", "approvals", "administration"):
@@ -49,7 +49,7 @@ class WorkspaceFinalizationTests(TestCase):
         self.assertNotContains(response, "workspace-card")
 
     def test_settings_is_staff_only_and_uses_existing_self_password_change(self):
-        response = self.client.get(reverse("internal:settings"))
+        response = self.client.get(reverse("my:account"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.user.username)
         self.assertContains(response, reverse("accounts:password-change"))
@@ -108,4 +108,4 @@ class WorkspaceFinalizationTests(TestCase):
                 response = self.client.get(reverse(route))
                 self.assertEqual(response.status_code, 200)
                 self.assertContains(response, f'href="{reverse("internal:settings")}"')
-                self.assertContains(response, 'aria-label="Personal settings"')
+                self.assertContains(response, 'aria-label="Settings"')

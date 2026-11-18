@@ -166,13 +166,40 @@ def settings_page(request):
         return redirect("security:settings")
     from django.contrib.auth import get_user_model
     from apps.accounts.roles import manager
-    staff = [u for u in get_user_model().objects.filter(is_active=True, is_staff=True).order_by("first_name") if manager(u)]
+    from .models import PersonRequirement
+    staff = list(get_user_model().objects.filter(is_active=True, is_staff=True).order_by("first_name", "username"))
     on = set(TwoStepDevice.objects.filter(confirmed_at__isnull=False).values_list("user_id", flat=True))
+    personal = set(PersonRequirement.objects.values_list("user_id", flat=True))
     pages = [{"slug": slug, "title": title, "row": LegalPage.objects.filter(slug=slug).first()} for slug, title in LEGAL.items()]
     return render(request, "security/settings.html", {
         "page_title": "Settings", "row": row, "errors": ErrorAlert.objects.all()[:15], "pages": pages,
-        "managers": [{"user": u, "on": u.pk in on} for u in staff],
+        "managers": [{"user": u, "on": u.pk in on, "personal": u.pk in personal, "group": services.required_by_group(u),
+                      "role": "Admin" if u.is_superuser else "Manager" if manager(u) else "Staff"} for u in staff],
         "render_service": __import__("os").environ.get("RENDER_SERVICE_NAME") or "btw-preview"})
+
+
+@login_required(login_url="/admin/login/")
+@require_POST
+def require_person(request, user_id):
+    """Admins turn two-step on as a requirement for one person (or take that requirement away)."""
+    _admin(request)
+    from django.contrib.auth import get_user_model
+    from apps.core.audit import record_audit
+    from .models import PersonRequirement
+    target = get_object_or_404(get_user_model(), pk=user_id, is_staff=True)
+    want = request.POST.get("value") == "1"
+    if want:
+        PersonRequirement.objects.get_or_create(user=target, defaults={"set_by": request.user})
+        messages.success(request, f"Two-step sign-in is now required for {target.get_full_name() or target.username}. "
+                                  "They'll set it up the next time they sign in.")
+    else:
+        PersonRequirement.objects.filter(user=target).delete()
+        messages.success(request, f"{target.get_full_name() or target.username} no longer has to use two-step sign-in "
+                                  "(unless their role requires it).")
+    record_audit(actor=request.user, action="security.two_step_required" if want else "security.two_step_not_required",
+                 instance=target, source="security_settings", new_data={"required": want},
+                 reason="Two-step sign-in requirement changed for one person.")
+    return redirect(_safe(request.POST.get("next")) if request.POST.get("next") else "security:settings")
 
 
 class LegalForm(forms.Form):

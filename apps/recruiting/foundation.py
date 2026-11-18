@@ -78,7 +78,8 @@ def readiness(item):
 
 def freshness(item):
     row = RecruitingProfile.objects.filter(participant=item).first()
-    pending = ProfileUpdateRequest.objects.filter(participant_id__in=identity_members(item.pk), fulfilled_by__isnull=True).exists()
+    pending = ProfileUpdateRequest.objects.filter(participant_id__in=identity_members(item.pk), fulfilled_by__isnull=True,
+                                                  withdrawn_at__isnull=True).exists()
     return {'last_relevant_update': row.last_relevant_update_at if row else None,
         'last_confirmed': row.last_confirmed_at if row else None,
         'needs_confirmation': pending or not row or not row.last_confirmed_at or row.confirmed_fingerprint != profile_fingerprint(item),
@@ -189,7 +190,8 @@ def confirm_profile(*, actor, participant_id, expected_fingerprint, why='', part
         row.last_confirmed_at = timezone.now()
         row.confirmed_fingerprint = fingerprint
         row.save(update_fields=['last_confirmed_at', 'confirmed_fingerprint', 'updated_at'])
-        ProfileUpdateRequest.objects.filter(participant_id__in=identity_members(item.pk), fulfilled_by__isnull=True).update(fulfilled_by=confirmation)
+        ProfileUpdateRequest.objects.filter(participant_id__in=identity_members(item.pk), fulfilled_by__isnull=True,
+                                            withdrawn_at__isnull=True).update(fulfilled_by=confirmation)
         audit(actor, 'profile.confirmed', confirmation, data={'participant': item.pk, 'source': confirmation.source})
         return confirmation
 
@@ -204,6 +206,22 @@ def request_update(*, actor, participant_id, message, task=None):
                 raise PermissionDenied
         row = ProfileUpdateRequest.objects.create(participant=item, requested_by=actor, message=reason(message), task=task)
         audit(actor, 'profile.update_requested', row, data={'participant': item.pk})
+        return row
+
+
+def withdraw_update(*, actor, participant_id, request_id):
+    """Staff take back a request for missing information; its reminders stop."""
+    with policy_transaction():
+        actor = fresh_staff(actor)
+        item = person(participant_id, lock=True)
+        row = ProfileUpdateRequest.objects.select_for_update().filter(
+            pk=request_id, participant_id__in=identity_members(item.pk), fulfilled_by__isnull=True, withdrawn_at__isnull=True).first()
+        if row is None:
+            raise ValidationError('That request is already answered or withdrawn.')
+        row.withdrawn_at = timezone.now()
+        row.withdrawn_by = actor
+        row.save(update_fields=['withdrawn_at', 'withdrawn_by', 'updated_at'])
+        audit(actor, 'profile.update_request_withdrawn', row, data={'participant': item.pk})
         return row
 
 

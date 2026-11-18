@@ -124,7 +124,7 @@ class Build10ATests(TestCase):
         self.grant('events.view_event')
         self.assertIn('workdays:index',[x['url_name'] for x in visible_workspace_links(self.staff,'administration')])
     def test_personal_history_discoverable_and_no_manager_grant(self):
-        self.login();response=self.client.get(reverse('internal:settings'))
+        self.login();response=self.client.get(reverse('my:account'))
         self.assertContains(response,reverse('workdays:mine'))
         self.assertEqual(self.client.get(reverse('workdays:index')).status_code,403)
     def test_add_task_labels_and_no_legacy_action(self):

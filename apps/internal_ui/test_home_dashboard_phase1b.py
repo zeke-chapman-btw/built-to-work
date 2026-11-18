@@ -42,16 +42,16 @@ class HomeDashboardPolishTests(TestCase):
         nav = self.markup.with_class('workspace-nav')[0]
         links = [n for n in nav['children'] if n['tag'] == 'a']
         labels = [''.join(next(child for child in n['children'] if 'nav-label' in child['attrs'].get('class', '').split())['text']).strip() for n in links]
-        self.assertEqual(labels, ['Home', 'Tasks', 'Participants', 'Customers', 'Recruiting', 'Approvals', 'Events', 'Operations', 'SOPs', 'Reports & Analytics', 'Settings'])
+        self.assertEqual(labels, ['Home', 'Tasks', 'Participants', 'Customers', 'Recruiting', 'Approvals', 'Events', 'Operations', 'SOPs', 'Reports & Analytics'])
         self.assertEqual(len(self.markup.with_class('nav-planned')), 0)
         for link in links:
             self.assertTrue(any(child['tag'] == 'svg' and child['attrs'].get('aria-hidden') == 'true' for child in link['children']))
-        self.assertEqual([n['attrs']['href'] for n in links], [n['url'] for n in self.response.context['primary_navigation'] if not n.get('bottom')])
+        self.assertEqual([n['attrs']['href'] for n in links], [n['url'] for n in self.response.context['primary_navigation'] if not n.get('bottom') and not n.get('gear')])
         self.assertNotContains(self.response, 'nav-icon')
         gear = self.markup.with_class('settings-gear')
         self.assertEqual(len(gear), 1)
         self.assertEqual(gear[0]['attrs']['href'], reverse('internal:settings'))
-        self.assertEqual(gear[0]['attrs']['aria-label'], 'Personal settings')
+        self.assertEqual(gear[0]['attrs']['aria-label'], 'Settings')
 
     def test_business_panel_headings_and_real_secondary_actions(self):
         headers = self.markup.with_class('hv2-head')

@@ -51,7 +51,7 @@ class HomeDashboardPhaseOneTests(TestCase):
                 controls = Controls(); controls.feed(response.content.decode())
                 self.assertEqual(len(controls.gears), 1)
                 self.assertEqual(controls.gears[0]['href'], reverse('internal:settings'))
-                self.assertEqual(controls.gears[0]['aria-label'], 'Personal settings')
+                self.assertEqual(controls.gears[0]['aria-label'], 'Settings')
                 self.assertNotContains(response, '>SETTINGS</span>')
                 self.assertContains(response, self.user.username)
                 if route != 'internal:home':

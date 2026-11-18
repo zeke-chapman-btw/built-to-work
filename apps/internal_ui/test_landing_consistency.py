@@ -37,7 +37,7 @@ class LandingConsistencyTests(ReportingFixtures):
         ('/events/', 'Events', 'none'),
         ('/operations/', 'Operations', 'sections'),
         ('/reports/', 'Reports &amp; Analytics', 'sections'),
-        ('/settings/', 'Settings', 'sections'),
+        ('/settings/?tab=advanced', 'Settings', 'sections'),
     ]
 
     def setUp(self):
@@ -123,7 +123,7 @@ class LandingConsistencyTests(ReportingFixtures):
     def test_worker_settings_does_not_gain_administrator_sections(self):
         self.client.force_login(self.worker, backend='django.contrib.auth.backends.ModelBackend')
         response, _ = self.landing('/settings/?tab=advanced')
-        self.assertEqual(response.context['settings_section'],'account')
+        self.assertEqual(response.context['settings_section'],'overview')
         for key in ['staff','portal','compensation','recruiting','advanced']:
             self.assertNotContains(response, 'data-settings-tab="'+key+'"')
 

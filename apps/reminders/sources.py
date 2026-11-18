@@ -187,7 +187,8 @@ def unhandled_text_replies(today, now):
 
 def missing_info(today, now):
     from apps.recruiting.models import ProfileUpdateRequest
-    rows = (ProfileUpdateRequest.objects.filter(fulfilled_by__isnull=True, created_at__gte=now - timedelta(days=120))
+    rows = (ProfileUpdateRequest.objects.filter(fulfilled_by__isnull=True, withdrawn_at__isnull=True,
+                                                created_at__gte=now - timedelta(days=120))
             .select_related("participant", "requested_by"))
     for row in rows[:500]:
         person = row.participant
@@ -295,6 +296,53 @@ def payroll_ready(today, now):
         yield Item(ref=f"payroll:{row.starts_on.isoformat()}:{row.revision}", anchor=_local(row.updated_at).date(),
                    created=row.updated_at, line=f"Payroll for {label} is ready to approve",
                    link=reverse("reporting:payroll", args=[row.starts_on.isoformat()]), fields={"period": label}, related={})
+
+
+def mileage_pending(today, now):
+    """Mileage trips entered but not yet checked, for the pay week that's closing."""
+    from apps.workdays.models import MileageTrip
+    start = _period_start(today)
+    cutoff = start + timedelta(days=6)
+    rows = (MileageTrip.objects.filter(status="pending", claim_date__lte=cutoff, claim_date__gte=start - timedelta(days=28))
+            .select_related("staff", "event"))
+    waiting = {}
+    for trip in rows[:500]:
+        waiting.setdefault(trip.staff, []).append(trip)
+    for staff, trips in waiting.items():
+        yield Item(ref=f"mileage:{staff.pk}:{start.isoformat()}", anchor=cutoff,
+                   line=f"{staff.first_name} {staff.last_name}: {len(trips)} mileage trip{'s' if len(trips) != 1 else ''} waiting to be checked",
+                   link=reverse("workdays:index"),
+                   fields={"name": f"{staff.first_name} {staff.last_name}", "count": str(len(trips))},
+                   related={"staff": _people(staff_target(staff))})
+
+
+def payroll_not_approved(today, now):
+    """Pay weeks that have ended but aren't approved yet (the cutoff is the Sunday the week ends)."""
+    from apps.reporting.models import PayrollPeriod
+    from apps.workdays.models import Workday
+    last_monday = _period_start(today) - timedelta(days=7)
+    approved = set(PayrollPeriod.objects.filter(state="approved", starts_on__gte=last_monday - timedelta(days=21))
+                   .values_list("starts_on", flat=True))
+    for back in range(0, 4):
+        starts = last_monday - timedelta(days=7 * back)
+        ends = starts + timedelta(days=6)
+        if starts in approved or not Workday.objects.filter(work_date__gte=starts, work_date__lte=ends, is_active=True).exists():
+            continue  # approved already, or nobody worked that week
+        label = f"{starts:%b} {starts.day} – {ends:%b} {ends.day}"
+        yield Item(ref=f"payroll-open:{starts.isoformat()}", anchor=ends, line=f"Payroll for {label} isn't approved yet",
+                   link=reverse("reporting:payroll", args=[starts.isoformat()]), fields={"period": label}, related={})
+
+
+def report_ready(today, now):
+    """An event's cost report is fully reviewed and ready to read."""
+    from apps.event_reports.models import CostReview
+    rows = (CostReview.objects.filter(manual_reviewed=True, incentives_reviewed=True, staff_reviewed=True,
+                                      updated_at__gte=now - timedelta(days=30)).select_related("event"))
+    for row in rows[:200]:
+        event = row.event
+        yield Item(ref=f"report:{event.pk}:{row.source_fingerprint[:12]}", anchor=_local(row.updated_at).date(), created=row.updated_at,
+                   line=f"The cost report for {event.name} is ready", link=reverse("events:event_detail", args=[event.pk]),
+                   fields={"event": event.name}, related={})
 
 
 # ----------------------------------------------------------------- Admin
@@ -492,6 +540,13 @@ SOURCES = {s.key: s for s in (
            {"first_name": "their first name", "name": "staff member", "dates": "the missing days"}),
     Source("payroll_ready", "Payroll", "Payroll ready to approve", payroll_ready, ("new", "after"),
            "it's ready", {}, {"period": "the pay week"}),
+    Source("mileage_pending", "Payroll", "Mileage waiting to be checked", mileage_pending, ("before",),
+           "the end of the pay week (Sunday)", {"staff": "Staff with trips waiting"},
+           {"name": "staff member", "count": "how many trips"}),
+    Source("payroll_not_approved", "Payroll", "Pay weeks not approved yet", payroll_not_approved, ("after",),
+           "the end of the pay week (Sunday)", {}, {"period": "the pay week"}),
+    Source("report_ready", "Events", "Event cost reports ready to read", report_ready, ("new",),
+           "it's reviewed", {}, {"event": "event name"}),
     Source("connection_failing", "Admin", "Texting, email or Gmail sign-in failing", connection_failing, ("new", "after"),
            "it fails", {"owner": "The person whose Gmail it is"}, {"connection": "which connection"}),
     Source("messages_failing", "Admin", "Messages that didn't go out", messages_failing, ("after", "new"),

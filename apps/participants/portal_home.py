@@ -11,7 +11,7 @@ from apps.recruiting.models import ProfileUpdateRequest
 def home_context(actor, account, *, preview=False):
     person = account.participant
     requests = ProfileUpdateRequest.objects.filter(participant_id__in=identity_members(person.pk),
-        fulfilled_by__isnull=True).order_by('-created_at', '-pk')
+        fulfilled_by__isnull=True, withdrawn_at__isnull=True).order_by('-created_at', '-pk')
     interests = list(jobs.own_interests(actor)[:5])
     registrations = list(EventRegistration.objects.filter(participant_id__in=identity_members(person.pk),
         status='active', event__end_at__gte=timezone.now()).select_related('event').order_by('event__start_at', 'pk')[:3])

@@ -230,8 +230,11 @@ def _step(request, row, step, *, staff, token=None):
 @login_required(login_url="/admin/login/")
 def settings_page(request):
     _manager(request)
+    base = reverse("customers:directory")
+    area_tabs = [dict(label="All customers", url=base), dict(label="Recent activity", url=base + "?listing=activity"),
+                 dict(label="Follow-ups", url=base + "?listing=followups"), dict(label="Setup", url=request.path, selected=True)]
     return render(request, "onboarding/settings.html", {
-        "page_title": "Settings", "questions": OnboardingQuestion.objects.order_by("position", "pk"),
+        "page_title": "Customers", "area_tabs": area_tabs, "questions": OnboardingQuestion.objects.order_by("position", "pk"),
         "sections": OnboardingQuestion.Section.choices, "agreement": AgreementVersion.current(),
         "signed": CustomerOnboarding.objects.filter(signed_at__isnull=False).count()})
 

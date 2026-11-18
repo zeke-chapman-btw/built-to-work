@@ -65,7 +65,7 @@ def interest_detail(request, interest_id):
         'freshness': freshness(request.portal_account.participant),
         'profile_editable': not getattr(request, 'portal_preview', None) and active_account(request.user) is not None,
         'update_requests': ProfileUpdateRequest.objects.filter(participant_id__in=identity_members(request.portal_account.participant_id),
-            fulfilled_by__isnull=True).order_by('-created_at', '-pk')[:5]})
+            fulfilled_by__isnull=True, withdrawn_at__isnull=True).order_by('-created_at', '-pk')[:5]})
 
 
 @participant_view(allow_identity_review=True)

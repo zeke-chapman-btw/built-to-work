@@ -111,6 +111,9 @@ def directory(request):
         query = query.filter(provisioned=prepared == "yes")
     from apps.crm.directory_reads import directory_panel, directory_sections
     panel = directory_sections(request, CUSTOMER_LIST_TABS)
+    from apps.accounts.roles import manager
+    if manager(request.user):
+        panel['directory_sections'].append(dict(label='Setup', selected=False, url=reverse('onboarding:settings')))
     if panel['directory_listing'] != 'search':
         panel.update(directory_panel(request, 'customers'))
     rows = page(request, query)

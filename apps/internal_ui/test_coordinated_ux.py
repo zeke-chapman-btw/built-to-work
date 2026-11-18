@@ -24,9 +24,9 @@ class CoordinatedSettingsTests(TestCase):
         self.assertContains(response,'data-workspace-landing',count=1)
         self.assertContains(response,'data-workspace-header',count=1)
         self.assertContains(response,'data-workspace-content',count=1)
-        self.assertContains(response,'Your account')
+        self.assertContains(response,'Your own account')
         self.assertContains(response,'Portals')
-        self.assertContains(response,'href="'+reverse('internal:portal-preview')+'"',count=1)
+        self.assertContains(response,'href="'+reverse('internal:portal-preview')+'"',count=2)  # tab + overview row
         for text in ['future home','home to be reviewed','empty-state card','Other destinations']:
             self.assertNotContains(response,text)
 
@@ -43,7 +43,7 @@ class CoordinatedSettingsTests(TestCase):
         self.assertEqual(response.status_code,200)
         for name in ['accounts:staff-index','workdays:settings','event_reports:categories','internal:portal-preview']:
             self.assertNotContains(response,'href="'+reverse(name)+'"')
-        self.assertContains(response,reverse('workdays:mine'))
+        self.assertContains(response,reverse('my:account'))
 
     def test_staff_create_form_preserves_roles_identity_and_cancel(self):
         self.login();response=self.client.get(reverse('accounts:staff-create'))

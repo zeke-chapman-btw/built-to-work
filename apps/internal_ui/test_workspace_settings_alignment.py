@@ -16,11 +16,10 @@ class WorkspaceSettingsAlignmentTests(PortalFixtures, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['page_title'], 'Settings')
         self.assertContains(response, 'aria-label="Settings sections"')
-        for key in ['account', 'staff', 'portal', 'compensation', 'recruiting', 'advanced']:
+        for key in ['staff', 'portal', 'compensation', 'advanced']:
             self.assertContains(response, 'data-settings-tab="' + key + '"')
         self.assertNotContains(response, '<p class="nav-group-label">Internal</p>', html=True)
-        self.assertContains(response, reverse('accounts:password-change'))
-        self.assertContains(response, reverse('workdays:mine'))
+        self.assertContains(response, reverse('my:account'))  # personal settings moved to My stuff
         self.assertContains(response, reverse('staffing:directory'))
 
     def test_event_staff_cannot_reveal_administrator_tools_using_query_parameters(self):
@@ -28,7 +27,7 @@ class WorkspaceSettingsAlignmentTests(PortalFixtures, TestCase):
         for section in ['staff', 'portal', 'compensation', 'recruiting', 'advanced']:
             response = self.client.get(reverse('internal:settings'), {'tab': section})
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.context['settings_section'], 'account')
+            self.assertEqual(response.context['settings_section'], 'overview')
             for hidden in ['staff', 'portal', 'compensation', 'recruiting']:
                 self.assertNotContains(response, 'data-settings-tab="' + hidden + '"')
             self.assertNotContains(response, 'href="' + reverse('accounts:staff-index') + '"')
@@ -57,7 +56,7 @@ class WorkspaceSettingsAlignmentTests(PortalFixtures, TestCase):
         self.staff_login()
         response = self.client.get(reverse('internal:settings'), {'tab': 'https://outside.example/unsafe'})
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['settings_section'], 'account')
+        self.assertEqual(response.context['settings_section'], 'overview')
         self.assertNotContains(response, 'outside.example')
 
     def test_settings_sections_do_not_create_participants_consents_or_tasks(self):

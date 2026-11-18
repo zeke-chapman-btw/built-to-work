@@ -41,7 +41,7 @@ def fake_source(items, modes=("new",), related=None):
 
 class SeedTests(Base):
     def test_spreadsheet_rows_and_roles_are_seeded(self):
-        self.assertEqual(ReminderRule.objects.count(), 30)
+        self.assertEqual(ReminderRule.objects.count(), 33)
         self.assertEqual(ReminderRule.objects.exclude(built_in="").count(), 11)
         self.assertEqual(set(ReminderRole.objects.values_list("waiting_for", flat=True)), {"Zeke Chapman", "Jason Collins", ""})
         for rule in ReminderRule.objects.filter(built_in=""):
@@ -255,4 +255,32 @@ class PageTests(Base):
         self.assertContains(self.client.get(reverse("messaging:texts") + "?tab=reminders"), "Hello Sam")
 
     def test_settings_has_reminders_tab(self):
-        self.assertContains(self.client.get(reverse("internal:settings")), reverse("reminders:list"))
+        self.assertContains(self.client.get(reverse("reminders:list")), reverse("reminders:list"))
+
+
+class GapSourceTests(Base):
+    def test_payroll_not_approved_lists_ended_weeks_until_approved(self):
+        from apps.reporting.models import PayrollPeriod
+        today = date(2030, 1, 9)  # Wednesday; last pay week is Mon Dec 31 – Sun Jan 6
+        self.assertEqual(list(sources.payroll_not_approved(today, at(2030, 1, 9, 9))), [])  # nobody worked
+        with patch("apps.workdays.models.Workday.objects") as workdays:
+            workdays.filter.return_value.exists.return_value = True
+            items = list(sources.payroll_not_approved(today, at(2030, 1, 9, 9)))
+        self.assertEqual(items[0].ref, "payroll-open:2029-12-31")
+        self.assertEqual(items[0].anchor, date(2030, 1, 6))
+        PayrollPeriod.objects.create(starts_on=date(2029, 12, 31), state="approved")
+        with patch("apps.workdays.models.Workday.objects") as workdays:
+            workdays.filter.return_value.exists.return_value = True
+            refs = [i.ref for i in sources.payroll_not_approved(today, at(2030, 1, 9, 9))]
+        self.assertNotIn("payroll-open:2029-12-31", refs)
+
+    def test_withdrawn_missing_info_request_stops_reminding(self):
+        from apps.participants.models import Participant
+        from apps.recruiting.models import ProfileUpdateRequest
+        person = Participant.objects.create(first_name="Pat", last_name="Person")
+        row = ProfileUpdateRequest.objects.create(participant=person, requested_by=self.admin, message="Send your resume")
+        now = timezone.now()
+        self.assertEqual(len(list(sources.missing_info(now.date(), now))), 1)
+        row.withdrawn_at = now
+        row.save()
+        self.assertEqual(list(sources.missing_info(now.date(), now)), [])

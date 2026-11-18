@@ -22,38 +22,33 @@ def _sections(user):
                 remaining.append(link)
         if remaining:
             advanced.append({'label': group['label'], 'links': remaining})
-    sections = [{'key': 'account', 'label': 'Account', 'groups': []}]
+    sections = []  # personal settings are in My stuff → My account
     if staff:
         sections.append({'key': 'staff', 'label': 'Staff', 'url': reverse('staffing:directory'), 'groups': []})
     from apps.accounts.roles import manager
     from apps.sops.access import can_manage as can_manage_sops
-    if can_manage_sops(user):
-        sections.append({'key': 'sops', 'label': 'SOPs', 'url': reverse('sops:manage'), 'groups': []})
     for key, label in [('portal', 'Portals'), ('compensation', 'Pay')]:
         if key in direct:
             sections.append({'key': key, 'label': label, 'url': direct[key]['url'], 'groups': []})
-    # Preserve the existing Administrator-only catalog visibility and guards.
-    if user.is_superuser:
-        sections.append({'key': 'recruiting', 'label': 'Recruiting', 'groups': [{
-            'label': 'Recruiting', 'links': [
-                {'label': 'Work classifications',
-                 'description': 'Choices for employment type and availability.',
-                 'url': reverse('recruiting:classifications') + '?from=settings'},
-                {'label': 'Trades',
-                 'description': 'The trade chips on a participant\'s Work preferences.',
-                 'url': reverse('recruiting:classifications') + '?from=settings&kind=trade'},
-                {'label': 'Stages',
-                 'description': 'The steps a candidate moves through.',
-                 'url': reverse('recruiting:stages') + '?from=settings'},
-            ]}]})
+    # Area setup now lives in each area: Customers → Setup, Recruiting → Setup, SOPs → Manage library.
     if manager(user):
         sections.append({'key': 'messages', 'label': 'Messages', 'url': reverse('messaging:templates'), 'groups': []})
         sections.append({'key': 'reminders', 'label': 'Reminders', 'url': reverse('reminders:list'), 'groups': []})
-        sections.append({'key': 'onboarding', 'label': 'Customer onboarding', 'url': reverse('onboarding:settings'), 'groups': []})
     if user.is_superuser:
         sections.append({'key': 'connections', 'label': 'Connections', 'url': reverse('messaging:connections'), 'groups': []})
         sections.append({'key': 'billing', 'label': 'Billing', 'url': reverse('billing:settings'), 'groups': []})
         sections.append({'key': 'security', 'label': 'Security', 'url': reverse('security:settings'), 'groups': []})
+    elsewhere = []
+    if manager(user):
+        elsewhere.append({'label': 'Customers → Setup', 'description': 'Customer onboarding questions and the service agreement.',
+                          'url': reverse('onboarding:settings')})
+    if user.is_superuser:
+        elsewhere.append({'label': 'Recruiting → Setup', 'description': 'Work classifications, trades and candidate stages.',
+                          'url': reverse('recruiting:classifications')})
+    if can_manage_sops(user):
+        elsewhere.append({'label': 'SOPs → Manage library', 'description': 'Add, edit and organise SOPs.', 'url': reverse('sops:manage')})
+    if elsewhere:
+        advanced = advanced + [{'label': 'Set up in each area', 'links': elsewhere}]
     if advanced:
         sections.append({'key': 'advanced', 'label': 'Advanced', 'groups': advanced})
     return sections
@@ -67,13 +62,11 @@ def settings_context(request):
     home = reverse('internal:settings')
     path = request.path
     if path == home:
-        selected = request.GET.get('tab', 'account')
+        selected = request.GET.get('tab', '')
     elif path.startswith(reverse('internal:portal-preview')):
         selected = 'portal'
     elif path.startswith(reverse('internal:staff-pay')):
         selected = 'staff'
-    elif path.startswith(reverse('sops:manage')):
-        selected = 'sops'
     elif path.startswith(('/settings/staff/', reverse('staffing:directory'))):
         selected = 'staff'
     elif path.startswith('/settings/pay/'):
@@ -86,27 +79,32 @@ def settings_context(request):
         selected = 'security'
     elif path.startswith(reverse('billing:settings')):
         selected = 'billing'
-    elif path.startswith(reverse('onboarding:settings')):
-        selected = 'onboarding'
     elif path.startswith(reverse('reminders:list')):
         selected = 'reminders'
     elif path.startswith('/settings/expense-categories/'):
         selected = 'advanced'
     else:
-        from apps.recruiting.ui_context import from_settings
-        if from_settings(request):
-            selected = 'recruiting'
-        else:
-            return None
+        return None
     sections = _sections(user)
     available = {section['key']: section for section in sections}
     # Root query strings choose presentation only. Protected tools use their
     # existing routes and independently recheck their existing authorization.
-    if selected not in available or (path == home and selected in {'portal', 'compensation', 'staff-pay', 'sops', 'connections', 'messages', 'reminders', 'billing', 'onboarding', 'security'}):
-        selected = 'account'
+    if selected not in available or (path == home and selected in {'portal', 'compensation', 'staff-pay', 'connections', 'messages', 'reminders', 'billing', 'security'}):
+        selected = 'overview'  # the gear's landing page: every section, plus where personal settings went
     tabs = []
     for section in sections:
-        url = section.get('url') or (home if section['key'] == 'account' else home + '?tab=' + section['key'])
+        url = section.get('url') or (home + '?tab=' + section['key'])
         tabs.append({'key': section['key'], 'label': section['label'], 'url': url,
                      'active': section['key'] == selected})
+    if selected == 'overview':
+        about = {'staff': 'Staff list, sign-ins and roles.', 'portal': 'See the customer and participant portals as they do.',
+                 'compensation': 'Pay rates, per diem and mileage.', 'messages': 'Saved message templates.',
+                 'reminders': 'Who gets reminded about what, and when.', 'connections': 'Texting, email and Gmail.',
+                 'billing': 'Stripe and bank payments.', 'security': 'Two-step sign-in, error alerts, privacy and terms.',
+                 'advanced': 'Everything else, and each area\'s setup.'}
+        links = [{'label': t['label'], 'description': about.get(t['key'], ''), 'url': t['url']} for t in tabs]
+        groups = ([{'label': 'Settings', 'links': links}] if links else []) + [{'label': 'Your own account', 'links': [
+            {'label': 'My stuff → My account', 'description': 'Your name and contact details, email signature, password and two-step sign-in.',
+             'url': reverse('my:account')}]}]
+        return {'tabs': tabs, 'selected': 'overview', 'groups': groups}
     return {'tabs': tabs, 'selected': selected, 'groups': available[selected]['groups']}

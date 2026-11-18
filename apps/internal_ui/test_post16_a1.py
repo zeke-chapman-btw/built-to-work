@@ -103,7 +103,7 @@ class Post16A1Tests(EmployerFixtures, TestCase):
         for name in ['stages', 'classifications']:
             response = self.client.get(reverse('recruiting:' + name), {'from': 'settings'})
             self.assertEqual(response.status_code, 200)
-            self.assertContains(response, reverse('internal:settings') + '?tab=recruiting')
+            self.assertContains(response, 'aria-label="Recruiting setup"')  # setup now lives in Recruiting → Setup
         self.staff_login(self.recruiter)
         for name in ['stages', 'classifications']:
             self.assertEqual(self.client.get(reverse('recruiting:' + name), {'from': 'settings'}).status_code, 403)

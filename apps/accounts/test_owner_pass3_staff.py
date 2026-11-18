@@ -205,7 +205,7 @@ class StaffSetupTests(TestCase):
         self.client.force_login(self.admin, backend='django.contrib.auth.backends.ModelBackend')
         self.assertRedirects(self.client.get(reverse('internal:settings')+'?tab=staff'), reverse('staffing:directory'))
         self.client.force_login(self.event_staff, backend='django.contrib.auth.backends.ModelBackend')
-        response = self.client.get(reverse('internal:settings'))
+        response = self.client.get(reverse('my:account'))
         self.assertContains(response, reverse('reporting:my-pay'))
         from apps.internal_ui.navigation import visible_workspaces
         self.assertNotIn('my-pay', [x['id'] for x in visible_workspaces(self.event_staff)])
