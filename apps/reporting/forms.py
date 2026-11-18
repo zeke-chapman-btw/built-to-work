@@ -16,7 +16,7 @@ class ReportFilter(forms.Form):
     event = forms.ModelChoiceField(queryset=Event.objects.none(), required=False, empty_label="Any event")
     customer = forms.ModelChoiceField(queryset=CustomerOrganization.objects.none(), required=False, empty_label="Any customer")
     region = forms.CharField(required=False, max_length=100, label="State / region")
-    identifier = forms.ChoiceField(required=False, choices=[("", "Any participant identifier"), ("student","Student"), ("employee","Employee"), ("teacher_instructor","Teacher / Instructor"), ("job_seeker","Job Seeker"), ("other","Other"), ("unclassified","Unclassified")])
+    identifier = forms.ChoiceField(required=False, choices=[("", "Any participant identifier"), ("student","Student"), ("workforce","Workforce"), ("teacher_instructor","Teacher / Instructor"), ("other","Other"), ("unclassified","Unclassified")])
     segments = forms.CharField(required=False,max_length=4000,widget=forms.HiddenInput)
     travel = forms.ChoiceField(required=False,choices=[("","Any"),("yes","Yes"),("maybe","Maybe"),("no","No"),("unknown","Unknown")],widget=forms.HiddenInput)
     assessment = forms.ChoiceField(required=False,choices=[("","Any"),("quiz","Quiz"),("simulator","Simulator"),("game","Game")],widget=forms.HiddenInput)

@@ -80,7 +80,7 @@ class EventExportImportTests(TestCase):
         self.assertEqual((record.event_name, str(record.event_date)), ("SAMPLE Skills Challenge", "2026-11-14"))
         self.assertEqual(float(HistoricalSimulatorScore.objects.get(participant=alpha).raw_score), 45.83)
         bravo = Participant.objects.get(last_name="Bravo")
-        self.assertEqual((bravo.primary_identifier, bravo.address_line_2), ("job_seeker", "Apt 4"))
+        self.assertEqual((bravo.primary_identifier, bravo.address_line_2), ("workforce", "Apt 4"))
         self.assertEqual(str(bravo.career_profile.years_of_experience), "0.0")
         self.assertFalse(HistoricalSimulatorScore.objects.filter(participant=bravo).exists())
 

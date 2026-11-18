@@ -30,11 +30,25 @@ def current_preferences(participant):
     from apps.participants.intake_discovery import effective_travel
     from apps.participants.models import IntakeFieldState
     travel_state = IntakeFieldState.objects.filter(participant=participant, destination='travel_willingness').first()
-    return {'employment': classified('employment_classification', 'employment_status'),
+    employment = classified('employment_classification', 'employment_status')
+    words = ' '.join(str(employment['value']).casefold().split())
+    if words in ('not recorded', 'unknown', '', 'other'):
+        working = ''
+    elif any(w in words for w in ('unemployed', 'not working', 'not employed', 'retired', 'looking for work')) or words in ('student', 'none'):
+        working = 'No'
+    elif any(w in words for w in ('employed', 'working', 'full time', 'part time', 'self', 'contract', 'job')):
+        working = 'Yes'
+    else:
+        working = ''
+    interest = {'seeking':'Yes','open':'Maybe','not_seeking':'No'}.get(career.employment_interest if career else '', 'Not recorded')
+    if interest == 'Not recorded' and 'looking' in words:
+        interest = 'Yes'  # "Unemployed and looking for work" answers this too
+    stamps = [t for t in ((row.last_relevant_update_at or row.updated_at) if row else None, career.updated_at if career else None) if t]
+    return {'employment': employment, 'working': working, 'updated': max(stamps) if stamps else None,
         'availability': classified('availability_classification', 'work_availability'),
         'travel': {'yes': 'Yes', 'maybe': 'Maybe', 'no': 'No'}.get(effective_travel(career, travel_state), 'Not recorded'),
         'relocation': ({'yes':'Yes','maybe':'Maybe','no':'No'}.get(row.relocation_preference,'Not recorded') if row and row.relocation_preference is not None else yes_no(row.willing_to_relocate if row else None)),
-        'interest': {'seeking':'Yes','open':'Maybe','not_seeking':'No'}.get(career.employment_interest if career else '', 'Not recorded'),
+        'interest': interest,
         'historical_employment': career.employment_status if career else '',
         'historical_availability': career.work_availability if career else ''}
 

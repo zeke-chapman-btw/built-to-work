@@ -21,6 +21,6 @@ class IdentifierConcurrencyTests(TransactionTestCase):
                 save_identifier(actor=actor,participant_id=person.pk,value=value,expected_revision=expected,reason='SYNTHETIC concurrent review')
                 return 'saved'
             except ValidationError:return 'stale'
-        self.assertCountEqual(self.concurrent([lambda:edit('student'),lambda:edit('employee')]),['saved','stale'])
+        self.assertCountEqual(self.concurrent([lambda:edit('student'),lambda:edit('workforce')]),['saved','stale'])
         self.assertEqual(AuditLog.objects.filter(action='participants.identifier.changed').count(),1)
         self.assertEqual(IntakeFieldState.objects.filter(participant=person,destination='primary_identifier',is_protected=True).count(),1)

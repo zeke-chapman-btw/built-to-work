@@ -177,10 +177,8 @@ def _job_status_type(word):
     """Answers like "Unemployed and looking for work" become a participant type."""
     if "student" in word or word in ("highschool", "college", "tradeschool", "university") or "school" in word:
         return "student"
-    if "unemployed" in word or "lookingforwork" in word:
-        return "job_seeker"
-    if "employed" in word or "working" in word:
-        return "employee"
+    if "unemployed" in word or "lookingforwork" in word or "employed" in word or "working" in word or "workforce" in word:
+        return "workforce"
     if "teacher" in word or "instructor" in word:
         return "teacher_instructor"
     if "retired" in word or word == "other":
@@ -203,7 +201,9 @@ def _profile_values(data):
     from .identifier_definitions import PrimaryIdentifier
     from .models import ParticipantCareerProfile
     if data.get("participant_type"):
-        aliases = {"jobseeker": "job_seeker", "teacher": "teacher_instructor", "instructor": "teacher_instructor"}
+        aliases = {"jobseeker": "workforce", "jobseekers": "workforce", "employee": "workforce", "employed": "workforce",
+                   "workingorlookingforwork": "workforce", "working": "workforce", "teacher": "teacher_instructor",
+                   "instructor": "teacher_instructor"}
         word = _key(data["participant_type"])
         data["participant_type"] = (aliases.get(word) or _job_status_type(word)
                                     or _choice(data["participant_type"], PrimaryIdentifier.choices, "Participant type"))

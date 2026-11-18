@@ -38,7 +38,7 @@ class ParticipantIdentifierTests(TestCase):
         self.assignment = assign(actor=self.admin, version_id=self.version.pk, channel='online')
 
     def test_exact_five_values_and_database_constraint(self):
-        self.assertEqual(PrimaryIdentifier.values, ['student','employee','teacher_instructor','job_seeker','other'])
+        self.assertEqual(PrimaryIdentifier.values, ['student','workforce','teacher_instructor','other'])
         person = Participant.objects.create(first_name='SYNTHETIC', last_name='Unset')
         self.assertEqual(person.primary_identifier, '')
         self.assertFalse(Participant._meta.get_field('primary_identifier').editable)
@@ -55,8 +55,8 @@ class ParticipantIdentifierTests(TestCase):
         change = AuditLog.objects.get(action='participants.identifier.changed')
         self.assertEqual(change.old_data['value'], 'student')
         self.assertEqual(change.new_data['value'], 'teacher_instructor')
-        with self.assertRaises(ValidationError): self.manual(person, 'employee', expected_revision=stale)
-        self.manual(person, 'employee', reason=' ')  # reasons are optional
+        with self.assertRaises(ValidationError): self.manual(person, 'workforce', expected_revision=stale)
+        self.manual(person, 'workforce', reason=' ')  # reasons are optional
         self.manual(person, '')
         self.submit(current_situation='employed_other', current_industry='retail')
         person.refresh_from_db()
@@ -107,7 +107,8 @@ class ParticipantIdentifierTests(TestCase):
             with self.subTest(situation=situation):
                 source = self.submit(current_situation=situation, email=f'synthetic-id-{number}@example.test', phone=f'5550170{number:03}')
                 source.participant.refresh_from_db()
-                self.assertEqual(source.participant.primary_identifier, situation)
+                expected = {'job_seeker': 'workforce'}.get(situation, situation)  # "Looking for work" counts as Workforce
+                self.assertEqual(source.participant.primary_identifier, expected)
                 self.assertEqual(source.answers['current_situation'], situation)
                 self.assertEqual(source.intake_metadata['schema'], IDENTIFIER_SCHEMA)
 
@@ -171,7 +172,7 @@ class ParticipantIdentifierTests(TestCase):
         self.assertContains(self.client.get(profile),'participant-identifier-badge')
         response=self.client.get(url);self.assertEqual(response.status_code,200)
         form=response.context['form']
-        self.assertEqual(len(form.fields['identifier'].choices),6) # five values and non-category prompt
+        self.assertEqual(len(form.fields['identifier'].choices),5) # four types and the blank prompt
         response=self.client.post(url,{'identifier':'','operation':'clear','revision':form.initial['revision'],'audit_reason':'SYNTHETIC cleared'},HTTP_X_BTW_EDITOR='1')
         self.assertEqual(response.status_code,200)
         source.participant.refresh_from_db();self.assertEqual(source.participant.primary_identifier,'')
@@ -220,7 +221,7 @@ class ParticipantIdentifierTests(TestCase):
         from .identifier_services import preserve_reviewed_links
         source=Participant.objects.create(first_name='SYNTHETIC',last_name='Source')
         target=Participant.objects.create(first_name='SYNTHETIC',last_name='Target')
-        self.manual(source,'student');self.manual(target,'employee')
+        self.manual(source,'student');self.manual(target,'workforce')
         source.refresh_from_db();target.refresh_from_db()
         link=SimpleNamespace(source_participant=source,candidate_participant=target)
         with transaction.atomic(), self.assertRaises(ValidationError): preserve_reviewed_links([link])
@@ -247,7 +248,7 @@ class ParticipantIdentifierTests(TestCase):
         IntakeFieldState.objects.filter(participant_id__in=ids,destination='primary_identifier').delete()
         Participant.objects.filter(pk__in=ids).update(primary_identifier='')
         before=AuditLog.objects.count();report=historical_dry_run()
-        self.assertEqual(report['candidate_counts'],{'student':1,'employee':1})
+        self.assertEqual(report['candidate_counts'],{'student':1,'workforce':1})
         self.assertEqual(report['reliable_unset_candidates'],2)
         self.assertEqual(Participant.objects.filter(pk__in=ids,primary_identifier='').count(),2)
         self.assertEqual(AuditLog.objects.count(),before)

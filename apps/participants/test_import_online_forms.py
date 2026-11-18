@@ -72,18 +72,18 @@ class OnlineFormImportTests(TestCase):
         url = reverse("participants:historical-map", args=[self.batch.pk])
         page = self.client.get(url).content.decode()
         self.assertIn("Participant type for this upload", page)
-        post = {"map_full_name": "Name", "map_email": "Email", "map_phone": "Phone", "type_choice": "job_seeker"}
+        post = {"map_full_name": "Name", "map_email": "Email", "map_phone": "Phone", "type_choice": "workforce"}
         self.assertEqual(self.client.post(url, post).status_code, 302)
         self.batch.refresh_from_db()
         rows = {r.row_number: r for r in self.batch.rows.all()}
-        self.assertEqual({r.normalized_data.get("participant_type") for r in rows.values() if r.status == "ready"}, {"job_seeker"})
+        self.assertEqual({r.normalized_data.get("participant_type") for r in rows.values() if r.status == "ready"}, {"workforce"})
         self.client.post(url, dict(post, type_choice=""))
         self.assertFalse(any(r.normalized_data.get("participant_type") for r in self.batch.rows.all()))  # left blank: no guess
         self.client.post(url, post)
         self.assertEqual(import_ready(self.batch, actor=self.actor, limit=1), 1)
         self.batch.refresh_from_db()
         self.assertEqual(self.batch.status, "previewed")  # the rest wait for later
-        self.assertEqual(self.batch.rows.get(row_number=2).participant.primary_identifier, "job_seeker")
+        self.assertEqual(self.batch.rows.get(row_number=2).participant.primary_identifier, "workforce")
         self.assertEqual(self.batch.rows.get(row_number=3).status, "ready")
         self.assertEqual(import_ready(self.batch, actor=self.actor), 1)
         self.batch.refresh_from_db()

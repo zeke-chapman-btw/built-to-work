@@ -136,5 +136,5 @@ class PersonIdDirectoryTests(TestCase):
         self.assertEqual(response.status_code,200)
         self.assertNotContains(response,'>Edit type</a>')
         self.assertEqual(self.client.get(edit).status_code,403)
-        self.assertEqual(self.client.post(edit,{'identifier':'employee','operation':'save'}).status_code,403)
+        self.assertEqual(self.client.post(edit,{'identifier':'workforce','operation':'save'}).status_code,403)
         self.assertNotIn('primary_identifier',PortalProfileForm.base_fields)

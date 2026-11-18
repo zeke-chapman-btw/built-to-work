@@ -34,8 +34,8 @@ def historical_index(request):
         "import_max_mb": MAX_FILE_BYTES // (1024 * 1024), "import_max_rows": MAX_ROWS, "import_max_columns": MAX_COLUMNS})
 
 
-TYPE_CHOICES = (("", "Leave blank"), ("student", "Student"), ("employee", "Employee"), ("teacher_instructor", "Teacher / Instructor"),
-                ("job_seeker", "Job seeker"), ("other", "Other"), ("__column__", "From a column in the file"))
+TYPE_CHOICES = (("", "Leave blank"), ("student", "Student"), ("workforce", "Workforce"), ("teacher_instructor", "Teacher / Instructor"),
+                ("other", "Other"), ("__column__", "From a column in the file"))
 
 
 def _posted_spec(post, field):

@@ -8,7 +8,7 @@
   <fieldset class="import-map-group im-type" data-type-box><legend>Participant type for this upload</legend>
     <p class="pv-meta" style="margin:0 0 8px">Optional. Everyone in this file gets the type you pick. Leave it blank to set types later, one by one.</p>
     <div class="btw-chip-choices" role="radiogroup" style="display:flex;flex-wrap:wrap;gap:8px">{% for t in type_choices %}<label><input type="radio" name="type_choice" value="{{ t.value }}"{% if t.on %} checked{% endif %} data-type-choice> {{ t.label }}</label>{% endfor %}</div>
-    <div class="im-type-col" style="margin:10px 0 8px"><label for="map-participant_type">Column that holds the type</label><select id="map-participant_type" name="map_participant_type"><option value="">Choose a column</option>{% for item in examples %}<option value="{{ item.header }}"{% if item.header == type_column %} selected{% endif %}>{{ item.header }}{% if item.example %} — e.g. {{ item.example }}{% endif %}</option>{% endfor %}</select><p class="pv-meta">Values must be Student, Employee, Teacher / Instructor, Job seeker or Other.</p></div>
+    <div class="im-type-col" style="margin:10px 0 8px"><label for="map-participant_type">Column that holds the type</label><select id="map-participant_type" name="map_participant_type"><option value="">Choose a column</option>{% for item in examples %}<option value="{{ item.header }}"{% if item.header == type_column %} selected{% endif %}>{{ item.header }}{% if item.example %} — e.g. {{ item.example }}{% endif %}</option>{% endfor %}</select><p class="pv-meta">Values must be Student, Workforce (or Working / Job seeker / Employee), Teacher / Instructor or Other.</p></div>
   </fieldset>
   {% for group in groups %}
     <fieldset class="import-map-group"><legend>{{ group.title }}</legend>
@@ -20,7 +20,7 @@
     </fieldset>
   {% endfor %}
   {% if unused %}<p class="event-help">Columns not used yet: {{ unused|join:', ' }}</p>{% endif %}
-  <p class="event-help">Answers like Yes / No / Maybe, Full time / Part time and Student / Job seeker are understood. If someone is already in the system, we only fill in what's blank and never overwrite.</p>
+  <p class="event-help">Answers like Yes / No / Maybe, Full time / Part time and Student / Workforce are understood. If someone is already in the system, we only fill in what's blank and never overwrite.</p>
   <details class="btw-disclosure"><summary>Save this column match for next time</summary><div class="btw-field"><label for="map-name">Name</label><input id="map-name" name="template_name" maxlength="120" value="{{ request.POST.template_name }}"></div></details>
   <div class="btw-form-actions"><a class="button secondary" href="{% url 'participants:historical-index' %}">Cancel</a><button class="button button-primary" type="submit">Preview rows</button></div>
   </form>

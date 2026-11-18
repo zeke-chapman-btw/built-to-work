@@ -20,8 +20,8 @@ class ProfileCleanupTests(EmployerFixtures, TestCase):
 
     def test_work_preferences_drop_locations_and_availability_and_use_clear_labels(self):
         page = self.client.get(reverse("participants:staff-profile", args=[self.person.pk]))
-        self.assertContains(page, "Looking for work")
-        self.assertContains(page, "Work desired")
+        self.assertContains(page, "<dt>Looking</dt>", html=False)  # short labels so the card stays two columns
+        self.assertContains(page, "<dt>Hours</dt>", html=False)
         self.assertContains(page, "Participant type")
         self.assertNotContains(page, "<dt>Locations</dt>")
         self.assertNotContains(page, "<dt>Availability</dt>")
@@ -160,7 +160,7 @@ class ColumnMatchedImportTests(TestCase):
         preview_batch(batch, mapping, actor=self.actor)
         self.assertEqual(import_ready(batch, actor=self.actor), 1)
         person = Participant.objects.get(contact_email="pat@example.test")
-        self.assertEqual(person.primary_identifier, "job_seeker")
+        self.assertEqual(person.primary_identifier, "workforce")
         self.assertEqual(person.career_profile.employment_interest, "seeking")
         self.assertEqual(person.career_profile.preferred_work_type, "part_time")
         self.assertIs(person.career_profile.willing_to_travel, False)

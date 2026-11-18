@@ -14,7 +14,7 @@ def identifier_contract(snapshot):
     contract['schema'] = IDENTIFIER_SCHEMA
     question = next(q for q in contract['questions'] if q['destination'] == 'current_situation')
     question['options'].extend([{'value': 'teacher_instructor', 'label': str(PrimaryIdentifier.TEACHER.label)},
-                                {'value': 'job_seeker', 'label': str(PrimaryIdentifier.JOB_SEEKER.label)}])
+                                {'value': 'job_seeker', 'label': 'Looking for work'}])
     return validate_contract(contract)
 
 

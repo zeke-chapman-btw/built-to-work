@@ -287,3 +287,6 @@ body.internal-app.has-participant-workspace.has-participants-pass3.has-participa
 .has-crm-ux-profile .pv-facts dd a[href^="mailto:"] { overflow-wrap:anywhere; }
 .has-crm-ux-profile .pv-pref-grid .btw-badge,
 .has-crm-ux-profile .pv-ref-head .btw-badge { flex:none; white-space:nowrap; overflow-wrap:normal; max-width:none; }
+/* Work preferences: short labels on one line, "Updated" date beside the title. */
+.has-crm-ux-profile .pv-card-updated { font-size:12px; font-weight:400; color:var(--muted); margin-left:6px; white-space:nowrap; }
+.has-crm-ux-profile .pv-pref-grid dt { white-space:nowrap; }
