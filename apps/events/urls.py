@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, base44_import
 from . import offline_views
 from . import sync_views
 from . import downsync_views
@@ -25,6 +25,7 @@ urlpatterns = [
  path("tickets/<uuid:ticket_id>/reprint/", views.ticket_reprint, name="ticket_reprint"),
  path("", views.event_list, name="event_list"),
  path("create/", views.event_create, name="event_create"),
+ path("import/", base44_import.import_events, name="import-base44"),
  path("<uuid:event_id>/tickets/bulk/", views.bulk_tickets, name="bulk_tickets"),
  path("<uuid:event_id>/public/", public_views.public_settings, name="public-settings"),
  path("<uuid:event_id>/public/qr.png", public_views.public_link_qr, name="public-link-qr"),
