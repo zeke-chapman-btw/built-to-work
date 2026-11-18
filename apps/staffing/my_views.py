@@ -19,6 +19,7 @@ def my_tabs(request, active):
             dict(key="workdays", label="Days worked", url=reverse("workdays:mine"))]
     if profile and profile.my_pay_enabled:
         tabs.append(dict(key="pay", label="My pay", url=reverse("reporting:my-pay")))
+    tabs.append(dict(key="account", label="My account", url=reverse("my:account")))
     for tab in tabs:
         tab["active"] = tab["key"] == active
     return tabs
@@ -94,3 +95,25 @@ def schedule(request):
         today_item=today_item, week=week))
     response["Cache-Control"] = "private, no-store"
     return response
+
+
+@login_required
+def account(request):
+    """My account: name and contact details, email signature, password and two-step sign-in."""
+    from django.contrib import messages
+    from django.shortcuts import redirect
+    from apps.accounts.personal_profile import PersonalProfileForm, save_personal_profile
+    from apps.reporting.access import staff
+    if not (request.user.is_active and request.user.is_staff):
+        raise PermissionDenied
+    user = staff(request.user)
+    profile = StaffProfile.objects.filter(user=user).first()
+    form = PersonalProfileForm(user=user, profile=profile)
+    if request.method == "POST":
+        saved, form = save_personal_profile(actor=user, data=request.POST)
+        if saved:
+            messages.success(request, "Your personal information was saved.")
+            return redirect("my:account")
+    return render(request, "staffing/my_account.html", _staff_context(request,
+        page_title="My stuff", my_tabs=my_tabs(request, "account"), personal_form=form, linked_staff_profile=profile,
+        own_pay_available=bool(profile and profile.my_pay_enabled), password_change_url=reverse("accounts:password-change")))
