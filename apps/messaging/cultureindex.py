@@ -27,7 +27,9 @@ SYNC_HOUR = 2  # 2 AM Eastern
 
 
 class CultureIndexError(Exception):
-    pass
+    def __init__(self, message, *, refused=False):
+        super().__init__(message)
+        self.refused = refused
 
 
 def row():
@@ -60,9 +62,9 @@ def call(path, *, key=None, query=None):
             return json.loads(raw) if raw else []
     except error.HTTPError as exc:
         if exc.code in (401, 403):
-            raise CultureIndexError("Culture Index refused the API key.") from None
-        raise CultureIndexError(f"Culture Index error {exc.code}.") from None
-    except (error.URLError, socket.timeout, TimeoutError, ValueError):
+            raise CultureIndexError("Culture Index refused the API key.", refused=True) from None
+        raise CultureIndexError(f"Culture Index answered with error {exc.code}.") from None
+    except (OSError, ValueError, Exception):  # timeouts, dropped connections, bad replies
         raise CultureIndexError("Culture Index could not be reached.") from None
 
 

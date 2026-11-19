@@ -98,29 +98,31 @@ def _tiles(c):
     """The app tiles at the top of Connections. Each opens its own panel (or page) to change it."""
     gmail_count = sum(1 for p in c["gmail"]["people"] if p.active)
     groups = [
-        ("Texting and email", [
-            ("sending", "Automatic messages", "Ticket texts, emails and staff alerts", _on(c["sending"]["since"]), "bolt", "violet"),
-            ("texting", "EZ Texting", "Sends texts from the app", c["text"]["status"], "chat", "blue"),
-            ("replies", "Text replies", "Replies come into the app", _on(c["replies"]["forwarding"]), "reply", "blue"),
+        ("Apps", "Outside services Built to Work signs in to.", [
+            ("texting", "EZ Texting", "Sends and receives texts", c["text"]["status"], "chat", "blue"),
             ("email", "Automatic email", "noreply@ sends tickets and alerts", c["email"]["status"], "mail", "teal"),
             ("gmail-people", "Staff Gmail", "Staff email from their own address",
              (f"{gmail_count} connected", "g") if gmail_count else (("Ready", "y") if c["gmail"]["configured"] else ("Google project needed", "y")),
              "at", "red"),
-            ("email-replies", "Email replies", "Gmail replies copied to activity", _on(c["email_replies"]["enabled"]), "inbox", "red"),
-            ("signature", "Company signature", "Added to automatic emails", _on(c["company_signature"], "Set", "Not set"), "pen", "slate"),
-            ("statements", "Pay statement emails", "Tell staff their statement is ready", _on(c["statement_notices"]["on"]), "receipt", "slate"),
-        ]),
-        ("Other apps", [
             ("mailchimp", "Mailchimp", "Marketing email audience", c["mailchimp"]["status"], "megaphone", "amber"),
             ("culture-index", "Culture Index", "Survey link and results", c["culture_index"]["status"], "compass", "green"),
             ("stripe", "Stripe", "Customer billing and bank payments", _stripe_status(), "card", "indigo"),
         ]),
+        ("Settings", "How the app uses those apps.", [
+            ("sending", "Automatic messages", "Master switch for ticket texts, emails and alerts", _on(c["sending"]["since"]), "bolt", "violet"),
+            ("replies", "Text replies", "Uses EZ Texting · replies come into the Inbox", _on(c["replies"]["forwarding"]), "reply", "blue"),
+            ("email-replies", "Email replies", "Uses Staff Gmail · replies copied to activity", _on(c["email_replies"]["enabled"]), "inbox", "red"),
+            ("signature", "Company signature", "Added to automatic emails", _on(c["company_signature"], "Set", "Not set"), "pen", "slate"),
+            ("statements", "Pay statement emails", "Uses automatic email · tells staff a statement is ready", _on(c["statement_notices"]["on"]), "receipt", "slate"),
+            ("templates", "Message wording", "Saved texts and emails staff pick from", ("Edit", ""), "pen", "slate"),
+        ]),
     ]
     out = []
-    for label, items in groups:
-        out.append({"label": label, "items": [
+    for label, note, items in groups:
+        out.append({"label": label, "note": note, "items": [
             {"key": key, "name": name, "purpose": purpose, "status": status, "icon": icon, "tone": tone,
-             "url": reverse("billing:settings") if key == "stripe" else f"#{key}", "page": key == "stripe"}
+             "url": {"stripe": reverse("billing:settings"), "templates": reverse("messaging:templates")}.get(key, f"#{key}"),
+             "page": key in ("stripe", "templates")}
             for key, name, purpose, status, icon, tone in items]})
     return out
 
@@ -372,16 +374,26 @@ def edit_culture_index(request):
         del form.fields["remove_key"]
     if request.method == "POST" and form.is_valid():
         key = form.cleaned_data["api_key"].strip()
+        problem = ""
         if key:
             try:
                 cultureindex.call(values.get("list_path") or cultureindex.DEFAULT_PATH, key=key)
             except cultureindex.CultureIndexError as exc:
-                form.add_error("api_key", f"{exc} Check the key and try again.")
+                if exc.refused:
+                    form.add_error("api_key", f"{exc} Check the key and try again.")
+                else:
+                    problem = str(exc)
         if not form.errors:
             values.update(survey_link=form.cleaned_data["survey_link"].strip(), portal=form.cleaned_data["portal"])
+            if key:
+                values.update(last_error=problem)
             new_secret = key or ("" if form.cleaned_data.get("remove_key") else None)
             store.save(key=cultureindex.KEY, values=values, actor=request.user, new_secret=new_secret)
-            messages.success(request, "Culture Index saved." + (" Results will copy in tonight." if key else ""))
+            if problem:
+                messages.warning(request, f"Culture Index key saved, but the first check didn't work: {problem} "
+                                          "Try \"Copy results now\" later, or check the key with Culture Index.")
+            else:
+                messages.success(request, "Culture Index saved." + (" The key works; results will copy in tonight." if key else ""))
             return editor_success(request, _home() + "#culture-index")
     return _editor(request, form=form, title="Culture Index", save_label="Save",
                    context_line="Everyone takes the same survey link. Once the API key is saved, finished surveys are copied in each night and matched by email.")

@@ -113,6 +113,34 @@ def gmail_disconnect(request):
     return redirect(_next(request, request.POST.get("next")))
 
 
+@login_required(login_url="/admin/login/")
+@require_POST
+def gmail_test(request):
+    """Send a short email from the person's connected Gmail to that same address."""
+    _staff(request)
+    connection = GmailConnection.objects.filter(user=request.user).first()
+    if not (connection and connection.active):
+        messages.error(request, "Connect your Google account first.")
+        return redirect(_next(request, request.POST.get("next")))
+    from .signatures import build, personal
+    name = request.user.get_full_name() or request.user.get_username()
+    message = build("Built to Work test email",
+                    "This is a test sent from the Built to Work app through your Gmail. If you can read this, "
+                    "emails you send to participants from the app will come from this address.",
+                    f"{name} <{connection.google_email}>", [connection.google_email], signature_html=personal(request.user))
+    try:
+        google.send(connection, message)
+    except google.GmailError as exc:
+        if exc.reconnect:
+            connection.needs_reconnect = True
+            connection.last_error = str(exc)[:240]
+            connection.save(update_fields=["needs_reconnect", "last_error"])
+        messages.error(request, f"The test email wasn't sent: {exc}.")
+    else:
+        messages.success(request, f"Test email sent to {connection.google_email}. Check your inbox; it's also in your Gmail Sent folder.")
+    return redirect(_next(request, request.POST.get("next")))
+
+
 class ParticipantEmailForm(forms.Form):
     operation_id = forms.UUIDField(widget=forms.HiddenInput)
     subject = forms.CharField(max_length=200)

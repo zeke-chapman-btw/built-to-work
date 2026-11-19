@@ -1,5 +1,5 @@
 {% extends 'shared/workspace_landing.html' %}{% load static %}{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=rui-1112"><style>
-.cx-group{font-size:13px;font-weight:600;color:#5b6470;text-transform:uppercase;letter-spacing:.04em;margin:18px 0 8px}
+.cx-group{font-size:13px;font-weight:600;color:#5b6470;text-transform:uppercase;letter-spacing:.04em;margin:22px 0 2px}.cx-note{margin:0 0 10px;font-size:13px;color:#71717a}
 .cx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
 .cx-app{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;column-gap:12px;row-gap:10px;align-items:center;background:#fff;border:1px solid #e3e5e8;border-radius:12px;padding:14px;color:inherit;text-decoration:none;transition:border-color .12s,box-shadow .12s}
 .cx-app:hover{border-color:#a1a1aa;box-shadow:0 2px 8px rgba(0,0,0,.06)}
@@ -18,7 +18,7 @@
 </style>{% endblock %}{% block workspace_class %}ux-settings-page{% endblock %}{% block workspace_content %}<div class="cp3">
 <p class="ls-intro">The apps Built to Work connects to. Click one to see its details or change it. Only administrators can see or change these.</p>
 <div class="cp3-tiles"><div class="cp3-tile"><span>Automatic messages</span><b>{% if sending.since %}On{% else %}Off{% endif %}</b></div><div class="cp3-tile"><span>Waiting to send</span><b>{{ sending.queue.waiting }}</b></div><div class="cp3-tile"><span>Sent today</span><b>{{ sending.queue.sent }}</b></div><div class="cp3-tile{% if sending.queue.failed %} is-hot{% endif %}"><span>Failed today</span><b>{{ sending.queue.failed }}</b></div></div>
-<div class="cx-apps" id="cx-apps">{% for group in apps %}<h2 class="cx-group">{{ group.label }}</h2><div class="cx-grid">{% for app in group.items %}<a class="cx-app" href="{{ app.url }}" data-cx-open="{% if not app.page %}{{ app.key }}{% endif %}"><span class="cx-icon t-{{ app.tone }}">{% include 'messaging/connection_icon.html' with icon=app.icon %}</span><span class="cx-text"><strong>{{ app.name }}</strong><small>{{ app.purpose }}</small></span><span class="cp3-chip {{ app.status.1 }}">{{ app.status.0 }}</span></a>{% endfor %}</div>{% endfor %}</div>
+<div class="cx-apps" id="cx-apps">{% for group in apps %}<h2 class="cx-group">{{ group.label }}</h2><p class="cx-note">{{ group.note }}</p><div class="cx-grid">{% for app in group.items %}<a class="cx-app" href="{{ app.url }}" data-cx-open="{% if not app.page %}{{ app.key }}{% endif %}"><span class="cx-icon t-{{ app.tone }}">{% include 'messaging/connection_icon.html' with icon=app.icon %}</span><span class="cx-text"><strong>{{ app.name }}</strong><small>{{ app.purpose }}</small></span><span class="cp3-chip {{ app.status.1 }}">{{ app.status.0 }}</span></a>{% endfor %}</div>{% endfor %}</div>
 <div class="cx-panels" id="cx-panels">
 
 <section class="cp3-card" id="sending"><header class="cp3-head"><h2>Automatic messages</h2>{% if sending.since %}<span class="cp3-chip g">On</span>{% else %}<span class="cp3-chip">Off</span>{% endif %}</header>

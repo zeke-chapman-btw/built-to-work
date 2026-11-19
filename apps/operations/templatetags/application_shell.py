@@ -20,10 +20,14 @@ PARTICIPANT_SECTIONS = {'portal-home':'home','portal-interest':'jobs','portal-ti
     'portal-entry-archive':'profile','portal-document-add':'profile','portal-document-archive':'profile'}
 
 def short_name(user):
-    """'Zeke C.' from first and last name; the username when no name is saved."""
+    """The person's first name (from their account, else their staff profile); the username when no name is saved."""
     first, last = (user.first_name or '').strip(), (user.last_name or '').strip()
+    if not first:
+        profile = getattr(user, 'staff_profile', None) if getattr(user, 'pk', None) else None
+        if profile:
+            first, last = (profile.first_name or '').strip(), (profile.last_name or '').strip()
     if first:
-        return f"{first} {last[0].upper()}." if last else first
+        return first
     return user.get_username()
 
 

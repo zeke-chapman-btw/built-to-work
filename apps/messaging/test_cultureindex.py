@@ -78,3 +78,14 @@ class CultureIndexTests(TestCase):
         self.client.post(reverse("messaging:connections-culture-index"), {"survey_link": cultureindex.DEFAULT_LINK})
         self.assertFalse(cultureindex.in_portal())
         self.assertEqual(cultureindex.api_key(), "key-test-only")  # blank keeps the saved key
+
+    def test_key_is_kept_when_the_check_cannot_reach_culture_index(self):
+        self.client.force_login(self.admin, backend="django.contrib.auth.backends.ModelBackend")
+        url = reverse("messaging:connections-culture-index")
+        with patch("apps.messaging.cultureindex.request.urlopen", side_effect=ConnectionResetError()):
+            response = self.client.post(url, {"survey_link": cultureindex.DEFAULT_LINK, "api_key": "key-test-only"}, follow=True)
+        self.assertEqual(cultureindex.api_key(), "key-test-only")
+        self.assertContains(response, "first check didn")
+        with patch.object(cultureindex, "call", side_effect=cultureindex.CultureIndexError("refused", refused=True)):
+            response = self.client.post(url, {"survey_link": cultureindex.DEFAULT_LINK, "api_key": "other-test-only"})
+        self.assertEqual(cultureindex.api_key(), "key-test-only")

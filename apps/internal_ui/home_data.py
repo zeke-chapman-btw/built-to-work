@@ -50,7 +50,11 @@ def _event_destinations(user, events):
 def greeting(user, now=None):
     now = timezone.localtime(now)
     part = "morning" if now.hour < 12 else "afternoon" if now.hour < 17 else "evening"
-    name = (getattr(user, "first_name", "") or getattr(user, "username", "")).split(" ")[0]
+    name = (getattr(user, "first_name", "") or "").strip()
+    if not name and getattr(user, "pk", None):
+        profile = getattr(user, "staff_profile", None)
+        name = (profile.first_name or "").strip() if profile else ""
+    name = (name or getattr(user, "username", "")).split(" ")[0]
     return {"home_greeting": f"Good {part}, {name}" if name else f"Good {part}", "home_today": now}
 
 

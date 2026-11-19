@@ -65,6 +65,15 @@ class GmailConnectTests(EmployerFixtures, TestCase):
         self.connect(scope="openid email")
         self.assertFalse(GmailConnection.objects.exists())
 
+    def test_test_email_goes_to_your_own_address(self):
+        self.connect()
+        responses = [_Response({"access_token": "a"}), _Response({"id": "gm-t"})]
+        with patch("apps.messaging.google.request.urlopen", side_effect=responses) as urlopen:
+            response = self.client.post(reverse("messaging:gmail-test"), follow=True)
+        raw = base64.urlsafe_b64decode(json.loads(urlopen.call_args_list[1].args[0].data)["raw"]).decode()
+        self.assertIn("To: staff@example.test", raw)
+        self.assertContains(response, "Test email sent to staff@example.test")
+
     def test_send_records_history_once(self):
         self.connect()
         url = reverse("messaging:email-participant", args=[self.person.pk])

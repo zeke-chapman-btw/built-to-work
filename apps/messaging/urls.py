@@ -19,6 +19,7 @@ urlpatterns = [
     path("gmail/connect/", views.gmail_connect, name="gmail-connect"),
     path("gmail/callback/", views.gmail_callback, name="gmail-callback"),
     path("gmail/disconnect/", views.gmail_disconnect, name="gmail-disconnect"),
+    path("gmail/test/", views.gmail_test, name="gmail-test"),
     path("participants/<int:participant_id>/email/", views.email_participant, name="email-participant"),
     path("participants/<int:participant_id>/text/", text_views.text_participant, name="text-participant"),
     path("contacts/<uuid:contact_id>/text/", text_views.text_contact, name="text-contact"),
