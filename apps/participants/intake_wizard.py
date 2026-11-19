@@ -72,7 +72,8 @@ def _field(q):
         return forms.CharField(widget=forms.TextInput(attrs={"type": "tel", "autocomplete": "tel"}), **common)
     if q["type"] == "long_text":
         return forms.CharField(widget=forms.Textarea(attrs={"rows": 3}), **common)
-    return forms.CharField(max_length=q.get("max_length", 500), **common)
+    from .intake_contracts import DESTINATIONS
+    return forms.CharField(max_length=q.get("max_length", min(500, DESTINATIONS.get(q.get("destination"), {}).get("max_length") or 500)), **common)
 
 
 class IntakeStepForm(forms.Form):

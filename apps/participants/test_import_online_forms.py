@@ -88,3 +88,13 @@ class OnlineFormImportTests(TestCase):
         self.assertEqual(import_ready(self.batch, actor=self.actor), 1)
         self.batch.refresh_from_db()
         self.assertEqual(self.batch.status, "imported")
+
+
+class AddressQuestionTests(TestCase):
+    def test_street_address_question_can_be_added_without_a_length(self):
+        from apps.participants.intake_contracts import validate_contract
+        from apps.participants.intake_defaults import recommended_contract
+        contract = recommended_contract()
+        contract["questions"].insert(6, {"key": "street_address", "label": "Street address", "type": "short_text", "step": 1,
+                                         "required": False, "destination": "street_address"})
+        validate_contract(contract)  # used to fail: "Text length exceeds the approved destination limit"

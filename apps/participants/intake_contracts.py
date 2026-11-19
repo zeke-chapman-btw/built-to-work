@@ -204,8 +204,9 @@ def _question(question, prior, destinations, *, child=False):
     _rule(question.get("rule"), prior)
     if question["type"] in {"short_text", "long_text", "email", "phone"}:
         default_limit = 3000 if question["type"] == "long_text" else 500
-        limit = question.get("max_length", default_limit)
         maximum = DESTINATIONS.get(destination, {}).get("max_length") or default_limit
+        # A question without its own length uses the profile field's limit (e.g. Street address is 200).
+        limit = question.get("max_length", min(default_limit, maximum))
         if type(limit) is not int or not 1 <= limit <= maximum:
             _fail("Text length exceeds the approved destination limit.")
     for flag in ("max_selections", "min_selections"):
