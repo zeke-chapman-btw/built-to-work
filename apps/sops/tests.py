@@ -73,13 +73,16 @@ class SOPTests(TestCase):
         self.login(self.admin)
         bad = self.client.post(reverse("sops:add"), {"title": "SYNTHETIC Doc", "audience": "all", "kind": "doc",
                                                       "doc_url": "https://example.test/not-a-doc"})
-        self.assertContains(bad, "Paste the Google Doc", status_code=bad.status_code)
+        self.assertContains(bad, "Paste the link to a Google Doc", status_code=bad.status_code)
         self.client.post(reverse("sops:add"), {"title": "SYNTHETIC Doc", "audience": "all", "kind": "doc",
                                                "doc_url": "https://docs.google.com/document/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/edit?usp=sharing"})
         item = SOP.objects.get(title="SYNTHETIC Doc")
         page = self.client.get(reverse("sops:detail", args=[item.pk])).content.decode()
         self.assertIn("https://docs.google.com/document/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/preview", page)
-        self.assertIn("Open in Google Docs", page)
+        self.assertIn("Open in Google Drive", page)
+        from .models import drive_link
+        self.assertEqual(drive_link("https://drive.google.com/file/d/1ZJBUtLA75t1qeF63fkyPnA7UPGq/view?usp=sharing")[1],
+                         "https://drive.google.com/file/d/1ZJBUtLA75t1qeF63fkyPnA7UPGq/preview")
 
     def test_written_page_needs_steps_and_pdf_needs_storage(self):
         self.login(self.admin)
