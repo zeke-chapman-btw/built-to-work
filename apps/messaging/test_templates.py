@@ -24,7 +24,7 @@ class TemplateTests(TestCase):
         response = self.client.post(reverse("messaging:template-new"), {"name": "Event reminder", "channel": "both",
             "subject": "See you {first_name}", "body": "Hi {first_name}, see you Saturday. - {my_name}", "is_active": "on"})
         self.assertEqual(response.status_code, 302)
-        t = MessageTemplate.objects.get()
+        t = MessageTemplate.objects.get(name="Event reminder")
         page = self.client.get(reverse("messaging:text-participant", args=[self.person.pk]))
         self.assertContains(page, "Event reminder")
         page = self.client.get(reverse("messaging:text-participant", args=[self.person.pk]) + f"?template={t.pk}")
@@ -40,4 +40,4 @@ class TemplateTests(TestCase):
     def test_delete_template(self):
         t = MessageTemplate.objects.create(name="Temp", body="x")
         self.client.post(reverse("messaging:template-edit", args=[t.pk]), {"remove": "1"})
-        self.assertFalse(MessageTemplate.objects.exists())
+        self.assertFalse(MessageTemplate.objects.filter(pk=t.pk).exists())

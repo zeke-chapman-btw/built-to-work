@@ -176,7 +176,7 @@ def distance_edit(request,event_id):
     est=svc.automatic_miles(event)
     if obj and obj.method=='manager' and obj.destination==svc.destination(event):form.initial['one_way_miles']=obj.one_way_miles
     else:form.initial['one_way_miles']=None
-    if est:form.fields['one_way_miles'].help_text=f"Worked out: {est['straight_line']} mi straight line (by {est['based_on']}) + 20% = {est['one_way']} each way, {est['round_trip']} round trip. Leave blank to use this."
+    if est:form.fields['one_way_miles'].help_text=f"Worked out: {est['straight_line']} mi straight line (by {est['based_on']}) + 10% = {est['one_way']} each way, {est['round_trip']} round trip. Leave blank to use this."
     if request.headers.get('X-BTW-Editor')=='1':return wd_editor(request,'Change mileage',form,svc.destination(event),reverse('workdays:event',args=[event.pk]))
     return form_page(request,'Change mileage',form,('workdays:event',event.pk),event,summary=f'From {ORIGIN} to {svc.destination(event)}.')
 

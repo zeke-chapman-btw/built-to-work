@@ -55,14 +55,15 @@ def current_distance(event,actor=None):
     """The event's mileage. Worked out automatically, unless a manager set it for this same location."""
     obj=EventMileage.objects.filter(event=event).first()
     where=destination(event)
-    if obj and obj.destination==where:return obj
+    if obj and obj.destination==where and obj.method!='auto':return obj
     est=automatic_miles(event)
+    if obj and obj.destination==where and (not est or obj.one_way_miles==est['one_way']):return obj
     if not est:return None
     before=snap(obj) if obj else None
     if not obj:obj=EventMileage(event=event)
     obj.destination=where;obj.one_way_miles=est['one_way'];obj.straight_line_miles=est['straight_line'];obj.based_on=est['based_on'];obj.method='auto'
     obj.verified_by=None;obj.verified_at=timezone.now()
-    obj.reason=f"Worked out automatically: {est['straight_line']} mi straight line from Watkinsville (by {est['based_on']}) + 20% = {est['one_way']} mi each way."
+    obj.reason=f"Worked out automatically: {est['straight_line']} mi straight line from Watkinsville (by {est['based_on']}) + 10% = {est['one_way']} mi each way."
     obj.full_clean();obj.save()
     if actor is not None:audit(actor,'distance.automatic',obj,before)
     return obj

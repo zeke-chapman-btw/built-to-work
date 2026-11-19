@@ -1,4 +1,4 @@
-"""Automatic staff mileage: straight-line distance from Watkinsville plus 20%, doubled for the round trip.
+"""Automatic staff mileage: straight-line distance from Watkinsville plus 10%, doubled for the round trip.
 
 The event location comes from its map pin when one is set, otherwise from its ZIP code,
 otherwise from the average of the ZIP codes for its city and state. Everything is worked
@@ -9,7 +9,7 @@ from math import asin, cos, radians, sin, sqrt
 import re
 
 ORIGIN_POINT = (Decimal('33.8626'), Decimal('-83.4088'))  # Watkinsville, Georgia
-ROAD_FACTOR = Decimal('1.2')
+ROAD_FACTOR = Decimal('1.1')  # +10% for roads
 EARTH_MILES = 3958.8
 
 

@@ -167,7 +167,7 @@ class Workday9ETests(TestCase):
         self.distance();obj=self.trip_action(self.trip());self.trip_action(obj,'void');self.assertEqual(reports.totals(Workday.objects.all(),MileageTrip.objects.all())['mileage'],0)
     def test_new_event_location_requires_distance_reverification(self):
         self.distance();self.event.postal_code='30904';self.event.save();obj=self.trip()
-        verified=self.trip_action(obj,'verify');self.assertEqual(verified.one_way_miles,Decimal('102'));self.assertEqual(verified.round_trip_miles,Decimal('204'))
+        verified=self.trip_action(obj,'verify');self.assertEqual(verified.one_way_miles,Decimal('93'));self.assertEqual(verified.round_trip_miles,Decimal('186'))
         self.assertEqual(EventMileage.objects.get(event=self.event).method,'auto')
     def test_negative_distance_and_missing_confirmation_invalid(self):
         for value,confirm in [('-1','on'),('abc','on')]:

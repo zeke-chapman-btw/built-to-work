@@ -8,9 +8,9 @@ def place(**kw):
     base.update(kw);return NS(**base)
 
 class AutomaticMileageTests(SimpleTestCase):
-    def test_zip_code_gives_straight_line_plus_twenty_percent_doubled(self):
+    def test_zip_code_gives_straight_line_plus_ten_percent_doubled(self):
         est=estimate(place(postal_code='30904'))
-        self.assertEqual(est['straight_line'],Decimal('85'));self.assertEqual(est['one_way'],Decimal('102'));self.assertEqual(est['round_trip'],Decimal('204'))
+        self.assertEqual(est['straight_line'],Decimal('85'));self.assertEqual(est['one_way'],Decimal('93'));self.assertEqual(est['round_trip'],Decimal('186'))
         self.assertEqual(est['based_on'],'ZIP code 30904')
     def test_map_pin_wins_over_zip(self):
         est=estimate(place(postal_code='30904',map_latitude=Decimal('33.8626'),map_longitude=Decimal('-83.4088')))

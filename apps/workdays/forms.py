@@ -78,7 +78,7 @@ class RateForm(CompensationConfigurationForm):
         return data
 class DistanceForm(RevisionForm):
     one_way_miles = forms.DecimalField(max_digits=9,decimal_places=2,min_value=0,required=False,label='Miles each way from Watkinsville',
-        help_text='Leave blank to use the worked-out miles (straight line + 20%). Staff are paid for the round trip, so this is doubled.')
+        help_text='Leave blank to use the worked-out miles (straight line + 10%). Staff are paid for the round trip, so this is doubled.')
 class TripForm(RevisionForm):
     staff = ProfileChoice(queryset=StaffProfile.objects.all(),label='Employee')
     travel_start = forms.DateField(required=False,widget=forms.DateInput(attrs={'type':'date'}))
