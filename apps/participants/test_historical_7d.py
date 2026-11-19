@@ -81,7 +81,7 @@ class HistoricalDataTests(TestCase):
         batch = self.batch("First,Last,Email\nNo,Mail,\nNo,Mail,\nToo,Many,x@y.test,extra\n,Missing,x@y.test\n")
         rows = list(preview_batch(batch, self.mapping, actor=self.actor))
         self.assertEqual([r.status for r in rows], ["ready", "ready", "error", "error"])
-        self.assertIn("Column count", rows[2].error)
+        self.assertIn("more values than the file has columns", rows[2].error)
         self.assertEqual(import_ready(batch, actor=self.actor), 2)
         self.assertEqual(Participant.objects.count(), 2)
         batch2 = self.batch("First,Last,Email\nA,One,same@example.test\nB,Two,same@example.test\n")

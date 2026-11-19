@@ -37,7 +37,7 @@ def my_signature(request):
 
     return _editor(request, title="Your email signature",
                    intro="Paste your usual BTW signature below (copy it from Gmail → Settings → Signature, or from the bottom of a recent email). It is added to emails you send to participants from the app.",
-                   current=signatures.personal(request.user), save=save, back=reverse("internal:settings") + "#email")
+                   current=signatures.personal(request.user), save=save, back=reverse("my:account") + "#email")
 
 
 @login_required(login_url="/admin/login/")

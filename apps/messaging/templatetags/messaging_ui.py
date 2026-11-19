@@ -66,7 +66,7 @@ def text_replies_card(context):
 
 @register.inclusion_tag("messaging/account_email_card.html", takes_context=True)
 def account_email_card(context):
-    """Settings → Account: your Gmail connection and your email signature."""
+    """My stuff → My account: your Gmail connection and your email signature."""
     from apps.messaging import google, signatures
     from apps.messaging.models import GmailConnection
     request = context["request"]

@@ -98,3 +98,18 @@ class AddressQuestionTests(TestCase):
         contract["questions"].insert(6, {"key": "street_address", "label": "Street address", "type": "short_text", "step": 1,
                                          "required": False, "destination": "street_address"})
         validate_contract(contract)  # used to fail: "Text length exceeds the approved destination limit"
+
+
+class ShortRowTests(TestCase):
+    def test_a_row_that_stops_early_is_read_as_blank_at_the_end(self):
+        import tempfile
+        from django.test import override_settings
+        temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
+        setting = override_settings(PRIVATE_HISTORICAL_ROOT=temp.name); setting.enable(); self.addCleanup(setting.disable)
+        actor = get_user_model().objects.create_superuser("short-row-admin", "s@example.test", "pw")
+        batch = create_batch(uploaded_file=SimpleUploadedFile("s.csv", b"Name,Email,Phone,Notes\nPat Lee,pat@example.test\nSam Roe,sam@example.test,7065550100,hi,extra\n"), actor=actor)
+        headers, rows = _read_rows(batch)
+        first, second = rows[0][1], rows[1][1]
+        self.assertEqual(first["Phone"], "")
+        self.assertNotIn("__row_error__", first)
+        self.assertIn("__row_error__", second)  # more values than columns is still a problem

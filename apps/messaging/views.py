@@ -37,7 +37,7 @@ def _callback_uri(request):
 
 
 def _next(request, value):
-    home = reverse("internal:settings")
+    home = reverse("my:account")
     mine = reverse("my:schedule")
     if (value or "").split("#")[0] == home:
         return home + "#email"
@@ -79,7 +79,7 @@ def gmail_replies_toggle(request):
 def gmail_callback(request):
     _staff(request)
     expected = request.session.pop(SESSION_STATE, None)
-    destination = request.session.pop(SESSION_NEXT, None) or reverse("internal:settings") + "#email"
+    destination = request.session.pop(SESSION_NEXT, None) or reverse("my:account") + "#email"
     if not expected or request.GET.get("state") != expected:
         log.warning("GMAIL_CONNECT_FAILED user=%s reason=state_mismatch had_state=%s", request.user.pk, bool(expected))
         messages.error(request, "Gmail was not connected: that Google sign-in didn't match. Please try connecting again.")

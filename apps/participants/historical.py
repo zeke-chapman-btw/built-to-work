@@ -293,8 +293,12 @@ def _read_rows(batch):
     for row_number, values in enumerate(table[1:], 2):
         if any(_cell(value) for value in values):
             raw = dict(zip(headers, (_cell(value) for value in values)))
-            if len(values) != len(headers):
-                raw["__row_error__"] = "Column count does not match the header."
+            # Exports often stop a row early when its last answers are blank; those just count as blank.
+            # A row with MORE values than headers is still a problem: something shifted.
+            if len(values) > len(headers):
+                raw["__row_error__"] = "This row has more values than the file has columns."
+            for header in headers[len(values):]:
+                raw[header] = ""
             rows.append((row_number, raw))
     return headers, rows
 
