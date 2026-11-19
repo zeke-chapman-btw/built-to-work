@@ -14,14 +14,18 @@ from apps.internal_ui.record_editors import editor_response, editor_success
 
 from .models import MessageTemplate
 
-FIELDS = (("{first_name}", "their first name"), ("{last_name}", "their last name"), ("{my_name}", "your first name"))
+FIELDS = (("{first_name}", "their first name"), ("{last_name}", "their last name"), ("{my_name}", "your first name"),
+          ("{culture_index_link}", "the Culture Index survey link"))
 
 
 def fill(text, participant=None, user=None):
     values = {"first_name": getattr(participant, "preferred_name", "") or getattr(participant, "first_name", "") or "",
               "last_name": getattr(participant, "last_name", "") or "",
               "my_name": (getattr(user, "first_name", "") or "") if user else ""}
-    return re.sub(r"\{(first_name|last_name|my_name)\}", lambda m: values[m.group(1)], text or "")
+    if "{culture_index_link}" in (text or ""):
+        from .cultureindex import survey_link
+        values["culture_index_link"] = survey_link()
+    return re.sub(r"\{(first_name|last_name|my_name|culture_index_link)\}", lambda m: values.get(m.group(1), m.group(0)), text or "")
 
 
 def for_channel(channel):

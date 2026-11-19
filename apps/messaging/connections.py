@@ -58,7 +58,7 @@ def connections(request):
     email = store.email_settings()
     since = store.automatic_sending_since()
     history = (AuditLog.objects.filter(source="connections").select_related("actor").order_by("-timestamp")[:20])
-    return render(request, "messaging/connections.html", {
+    context = {
         "page_title": "Settings",
         "text": {"row": rows.get("eztexting"), "username": ez_user, "source": ez_source,
                  "status": _status(rows.get("eztexting"), bool(ez_user))},
@@ -73,7 +73,56 @@ def connections(request):
         "email_replies": _email_replies_summary(),
         "company_signature": _company_signature(),
         "statement_notices": _statement_summary(),
-    })
+        "culture_index": _culture_index_summary(),
+    }
+    context["apps"] = _tiles(context)
+    return render(request, "messaging/connections.html", context)
+
+
+def _on(flag, on="On", off="Off"):
+    return (on, "g") if flag else (off, "")
+
+
+def _stripe_status():
+    try:
+        from apps.billing.models import StripeSettings
+        row = StripeSettings.current()
+    except Exception:
+        return ("Not set up", "")
+    if not row.secret_key_encrypted:
+        return ("Not set up", "")
+    return {True: ("Connected", "g"), False: ("Sign-in failing", "r")}.get(row.last_test_ok, ("Saved · not tested", "y"))
+
+
+def _tiles(c):
+    """The app tiles at the top of Connections. Each opens its own panel (or page) to change it."""
+    gmail_count = sum(1 for p in c["gmail"]["people"] if p.active)
+    groups = [
+        ("Texting and email", [
+            ("sending", "Automatic messages", "Ticket texts, emails and staff alerts", _on(c["sending"]["since"]), "bolt", "violet"),
+            ("texting", "EZ Texting", "Sends texts from the app", c["text"]["status"], "chat", "blue"),
+            ("replies", "Text replies", "Replies come into the app", _on(c["replies"]["forwarding"]), "reply", "blue"),
+            ("email", "Automatic email", "noreply@ sends tickets and alerts", c["email"]["status"], "mail", "teal"),
+            ("gmail-people", "Staff Gmail", "Staff email from their own address",
+             (f"{gmail_count} connected", "g") if gmail_count else (("Ready", "y") if c["gmail"]["configured"] else ("Google project needed", "y")),
+             "at", "red"),
+            ("email-replies", "Email replies", "Gmail replies copied to activity", _on(c["email_replies"]["enabled"]), "inbox", "red"),
+            ("signature", "Company signature", "Added to automatic emails", _on(c["company_signature"], "Set", "Not set"), "pen", "slate"),
+            ("statements", "Pay statement emails", "Tell staff their statement is ready", _on(c["statement_notices"]["on"]), "receipt", "slate"),
+        ]),
+        ("Other apps", [
+            ("mailchimp", "Mailchimp", "Marketing email audience", c["mailchimp"]["status"], "megaphone", "amber"),
+            ("culture-index", "Culture Index", "Survey link and results", c["culture_index"]["status"], "compass", "green"),
+            ("stripe", "Stripe", "Customer billing and bank payments", _stripe_status(), "card", "indigo"),
+        ]),
+    ]
+    out = []
+    for label, items in groups:
+        out.append({"label": label, "items": [
+            {"key": key, "name": name, "purpose": purpose, "status": status, "icon": icon, "tone": tone,
+             "url": reverse("billing:settings") if key == "stripe" else f"#{key}", "page": key == "stripe"}
+            for key, name, purpose, status, icon, tone in items]})
+    return out
 
 
 def _bounce_count():
@@ -299,3 +348,72 @@ def toggle_sending(request):
     messages.success(request, "Automatic messages are on. New ticket texts and emails will go out within a minute."
                      if turn_on else "Automatic messages are off. New messages will wait until they're turned back on.")
     return redirect(_home())
+
+
+class CultureIndexForm(forms.Form):
+    survey_link = forms.URLField(label="Survey link", max_length=500,
+                                 help_text="The one link everyone takes. Staff send it from a participant's profile.")
+    portal = forms.BooleanField(label="Show the survey in the participant portal", required=False)
+    api_key = forms.CharField(label="API key", max_length=200, required=False, widget=forms.PasswordInput(render_value=False),
+                              help_text="From Culture Index. Leave blank to keep the saved key. Stored encrypted and never shown again.")
+    remove_key = forms.BooleanField(label="Remove the saved API key", required=False)
+
+
+@login_required(login_url="/admin/login/")
+@require_http_methods(["GET", "POST"])
+def edit_culture_index(request):
+    from . import cultureindex
+    _admin(request)
+    row = cultureindex.row()
+    values = dict(row.values) if row else {}
+    form = CultureIndexForm(request.POST or None, initial={"survey_link": cultureindex.survey_link(),
+                                                          "portal": values.get("portal", True)})
+    if not (row and row.secret_encrypted):
+        del form.fields["remove_key"]
+    if request.method == "POST" and form.is_valid():
+        key = form.cleaned_data["api_key"].strip()
+        if key:
+            try:
+                cultureindex.call(values.get("list_path") or cultureindex.DEFAULT_PATH, key=key)
+            except cultureindex.CultureIndexError as exc:
+                form.add_error("api_key", f"{exc} Check the key and try again.")
+        if not form.errors:
+            values.update(survey_link=form.cleaned_data["survey_link"].strip(), portal=form.cleaned_data["portal"])
+            new_secret = key or ("" if form.cleaned_data.get("remove_key") else None)
+            store.save(key=cultureindex.KEY, values=values, actor=request.user, new_secret=new_secret)
+            messages.success(request, "Culture Index saved." + (" Results will copy in tonight." if key else ""))
+            return editor_success(request, _home() + "#culture-index")
+    return _editor(request, form=form, title="Culture Index", save_label="Save",
+                   context_line="Everyone takes the same survey link. Once the API key is saved, finished surveys are copied in each night and matched by email.")
+
+
+@login_required(login_url="/admin/login/")
+@require_POST
+def culture_index_sync(request):
+    from . import cultureindex
+    _admin(request)
+    try:
+        outcome = cultureindex.sync()
+    except cultureindex.CultureIndexError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"Checked {outcome['seen']} survey(s): {outcome['added']} new, {outcome['matched']} matched to people.")
+    return redirect(_home() + "#culture-index")
+
+
+def _culture_index_summary():
+    from . import cultureindex
+    from .models import CultureIndexResult
+    row = cultureindex.row()
+    values = row.values if row else {}
+    connected = bool(row and row.secret_encrypted)
+    if not connected:
+        status = ("Link ready · no API key", "y")
+    elif row.last_test_ok is False:
+        status = ("Sync failing", "r")
+    else:
+        status = ("Connected", "g")
+    return {"row": row, "link": cultureindex.survey_link(), "portal": values.get("portal", True), "connected": connected,
+            "status": status, "last_sync": cultureindex._when(values.get("last_sync")), "error": values.get("last_error", ""),
+            "results": CultureIndexResult.objects.count(),
+            "matched": CultureIndexResult.objects.filter(participant__isnull=False).count()}

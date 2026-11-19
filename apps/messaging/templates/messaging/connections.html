@@ -1,7 +1,25 @@
-{% extends 'shared/workspace_landing.html' %}{% load static %}{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=rui-1112">{% endblock %}{% block workspace_class %}ux-settings-page{% endblock %}{% block workspace_content %}<div class="cp3">
-<p class="ls-intro">The services the app uses to send texts and email. Only administrators can see or change these.</p>
+{% extends 'shared/workspace_landing.html' %}{% load static %}{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=rui-1112"><style>
+.cx-group{font-size:13px;font-weight:600;color:#5b6470;text-transform:uppercase;letter-spacing:.04em;margin:18px 0 8px}
+.cx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.cx-app{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;column-gap:12px;row-gap:10px;align-items:center;background:#fff;border:1px solid #e3e5e8;border-radius:12px;padding:14px;color:inherit;text-decoration:none;transition:border-color .12s,box-shadow .12s}
+.cx-app:hover{border-color:#a1a1aa;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.cx-app.is-on{border:2px solid #18181b;padding:13px}
+.cx-app .cp3-chip{grid-column:1/-1;justify-self:start}
+.cx-icon{width:44px;height:44px;border-radius:11px;display:grid;place-items:center}
+.cx-text{min-width:0;display:flex;flex-direction:column}.cx-text strong{font-size:15px}.cx-text small{font-size:12.5px;color:#5b6470;line-height:1.35}
+.t-violet{background:#f1ecfe;color:#6d28d9}.t-blue{background:#e8f1fe;color:#1d64d8}.t-teal{background:#e3f6f4;color:#0f766e}.t-red{background:#fdecec;color:#c2272d}
+.t-slate{background:#eef0f3;color:#3f4a5a}.t-amber{background:#fdf3dc;color:#a16207}.t-green{background:#e6f6ea;color:#15803d}.t-indigo{background:#ebedfd;color:#4338ca}
+.cx-panels.cx-js>section.cp3-card[id]{display:none}.cx-panels.cx-js>section.cp3-card.is-open{display:block}
+.cx-panels.has-open{margin-top:18px}.cx-panels{display:flex;flex-direction:column;gap:14px}
+.cx-back{display:inline-block;margin:14px 20px 0;font-size:14px;color:#3f3f46;text-decoration:none}.cx-back:hover{text-decoration:underline}
+.cx-panels:not(.cx-js) .cx-back{display:none}
+@media (max-width:600px){.cx-grid{grid-template-columns:1fr 1fr}.cx-app{padding:12px}}
+@media (max-width:420px){.cx-grid{grid-template-columns:1fr}}
+</style>{% endblock %}{% block workspace_class %}ux-settings-page{% endblock %}{% block workspace_content %}<div class="cp3">
+<p class="ls-intro">The apps Built to Work connects to. Click one to see its details or change it. Only administrators can see or change these.</p>
 <div class="cp3-tiles"><div class="cp3-tile"><span>Automatic messages</span><b>{% if sending.since %}On{% else %}Off{% endif %}</b></div><div class="cp3-tile"><span>Waiting to send</span><b>{{ sending.queue.waiting }}</b></div><div class="cp3-tile"><span>Sent today</span><b>{{ sending.queue.sent }}</b></div><div class="cp3-tile{% if sending.queue.failed %} is-hot{% endif %}"><span>Failed today</span><b>{{ sending.queue.failed }}</b></div></div>
-<div class="cp3-cols"><div class="cp3-stack">
+<div class="cx-apps" id="cx-apps">{% for group in apps %}<h2 class="cx-group">{{ group.label }}</h2><div class="cx-grid">{% for app in group.items %}<a class="cx-app" href="{{ app.url }}" data-cx-open="{% if not app.page %}{{ app.key }}{% endif %}"><span class="cx-icon t-{{ app.tone }}">{% include 'messaging/connection_icon.html' with icon=app.icon %}</span><span class="cx-text"><strong>{{ app.name }}</strong><small>{{ app.purpose }}</small></span><span class="cp3-chip {{ app.status.1 }}">{{ app.status.0 }}</span></a>{% endfor %}</div>{% endfor %}</div>
+<div class="cx-panels" id="cx-panels">
 
 <section class="cp3-card" id="sending"><header class="cp3-head"><h2>Automatic messages</h2>{% if sending.since %}<span class="cp3-chip g">On</span>{% else %}<span class="cp3-chip">Off</span>{% endif %}</header>
 <p class="cp3-intro">Ticket texts and emails after sign-up, and staff alerts. While this is off, they wait in line instead of going out.</p>
@@ -36,7 +54,12 @@
 {% if mailchimp.errors %}<p class="cp3-warn">{{ mailchimp.errors }} contact{{ mailchimp.errors|pluralize }} couldn't sync. They'll be retried automatically.</p>{% endif %}
 <div class="cp3-more cp3-bar"><a class="button secondary" data-record-editor href="{% url 'messaging:mailchimp-setup' %}">{% if mailchimp.connected %}Change key or audience{% else %}Connect Mailchimp{% endif %}</a>{% if mailchimp.connected %}<span class="cp3-actions"><form method="post" action="{% url 'messaging:mailchimp-sync' %}">{% csrf_token %}<button class="button secondary" type="submit">Sync now</button></form><form method="post" action="{% url 'messaging:mailchimp-disconnect' %}">{% csrf_token %}<button class="button secondary" type="submit">Disconnect</button></form></span>{% endif %}</div></section>
 
-</div><aside class="cp3-stack">
+
+<section class="cp3-card" id="culture-index"><header class="cp3-head"><h2>Culture Index</h2><span class="cp3-chip {{ culture_index.status.1 }}">{{ culture_index.status.0 }}</span></header>
+<p class="cp3-intro">Everyone takes the same survey link. Staff send it by text or email from a participant's profile ("Email survey link" / "Text survey link"), and participants can take it from their portal. Culture Index can't send surveys for us, so the API key is only used to copy finished results in each night, matched by email address.</p>
+<dl class="cp3-dl"><dt>Survey link</dt><dd><a href="{{ culture_index.link }}" target="_blank" rel="noopener" style="overflow-wrap:anywhere">{{ culture_index.link }}</a></dd><dt>Participant portal</dt><dd>{% if culture_index.portal %}Shown on their Home page{% else %}Hidden{% endif %}</dd><dt>API key</dt><dd>{% if culture_index.connected %}Saved · changed by {{ culture_index.row.updated_by|default:'—' }} on {{ culture_index.row.updated_at|date:'M j, Y' }}{% else %}<span class="cp3-dash">—</span>{% endif %}</dd><dt>Last copy of results</dt><dd>{% if culture_index.last_sync %}{{ culture_index.last_sync|date:'M j, Y · g:i A' }}{% else %}<span class="cp3-dash">—</span>{% endif %}</dd><dt>Results</dt><dd>{{ culture_index.results }}{% if culture_index.results %} · {{ culture_index.matched }} matched to people{% endif %}</dd></dl>
+{% if culture_index.error %}<p class="cp3-warn">{{ culture_index.error }}</p>{% endif %}
+<div class="cp3-more cp3-bar"><a class="button secondary" data-record-editor href="{% url 'messaging:connections-culture-index' %}">{% if culture_index.connected %}Change link or key{% else %}Change link · add API key{% endif %}</a>{% if culture_index.connected %}<form method="post" action="{% url 'messaging:connections-culture-index-sync' %}" class="cp3-inline">{% csrf_token %}<button class="button secondary" type="submit">Copy results now</button></form>{% endif %}<a class="button secondary" href="{% url 'messaging:templates' %}">Message wording</a></div></section>
 <section class="cp3-card" id="email-replies"><header class="cp3-head"><h2>Email replies</h2><span class="cp3-chip {% if email_replies.enabled %}g{% endif %}">{% if email_replies.enabled %}On{% else %}Off{% endif %}</span></header>
 <p class="cp3-intro">When on, replies to emails staff send from the app are copied from their Gmail into the person's activity. The app only opens the conversations it started, and each staff member can turn it off for themselves. Staff reconnect their Gmail once to allow it.{% if not email_replies.enabled %} Google also needs the read permission added to the Google Cloud project first.{% endif %}</p>
 <dl class="cp3-dl"><dt>Staff copying replies</dt><dd>{{ email_replies.reading }} of {{ email_replies.connected }} connected</dd></dl>
@@ -44,5 +67,12 @@
 <section class="cp3-card" id="gmail-people"><header class="cp3-head"><h2>Staff Gmail</h2>{% if gmail.configured %}<span class="cp3-chip g">Google project set up</span>{% else %}<span class="cp3-chip y">Google project needed</span>{% endif %}</header>
 <p class="cp3-intro">Each person connects their own Gmail in My stuff → My account, so emails to participants come from their address.</p>
 {% for item in gmail.people %}<div class="cp3-row cp3-x"><span><strong>{{ item.user.get_full_name|default:item.user.username }}</strong><small>{{ item.google_email }}{% if item.last_sent_at %} · last used {{ item.last_sent_at|date:'M j' }}{% endif %}</small></span>{% if item.active %}<span class="cp3-chip g">Connected</span>{% else %}<span class="cp3-chip y">Needs reconnecting</span>{% endif %}</div>{% empty %}<p class="cp3-empty">No one has connected their Gmail yet.</p>{% endfor %}</section>
+
+</div>
 <details class="cp3-card cp3-fold"><summary>Change history</summary>{% for entry in history %}<div class="cp3-row"><span><strong>{% if 'eztexting' in entry.action %}Texting sign-in{% elif 'statement_notices' in entry.action %}Pay statement emails {% if entry.new_data.values.enabled %}turned on{% else %}turned off{% endif %}{% elif 'signature' in entry.action %}Company email signature{% elif 'gmail_replies' in entry.action %}Email replies setting{% elif 'replies' in entry.action %}Text replies setting{% elif 'mailchimp' in entry.action %}Mailchimp connection{% elif 'email' in entry.action %}Email sign-in{% else %}Automatic messages {% if entry.new_data.values.enabled %}turned on{% else %}turned off{% endif %}{% endif %}{% if entry.new_data.secret_changed and 'replies' not in entry.action %} · password changed{% endif %}</strong><small>{{ entry.actor|default:'—' }} · {{ entry.timestamp|date:'M j, Y · g:i A' }}</small></span></div>{% empty %}<p class="cp3-empty">No changes yet.</p>{% endfor %}</details>
-</aside></div></div>{% include 'internal/ui/event_editor_assets.html' %}{% endblock %}
+</div><script>(function(){var panels=document.getElementById('cx-panels');if(!panels)return;var apps=document.getElementById('cx-apps');panels.classList.add('cx-js');
+var all=panels.querySelectorAll(':scope>section.cp3-card[id]');all.forEach(function(p){var b=document.createElement('a');b.href='#';b.className='cx-back';b.textContent='← All connections';b.addEventListener('click',function(e){e.preventDefault();show('');history.replaceState(null,'',location.pathname+location.search);apps.scrollIntoView({block:'start'});});p.insertBefore(b,p.firstChild);});
+function show(key){var hit=false;all.forEach(function(p){var on=p.id===key;p.classList.toggle('is-open',on);hit=hit||on;});apps.querySelectorAll('.cx-app').forEach(function(a){a.classList.toggle('is-on',a.dataset.cxOpen===key&&!!key);});panels.classList.toggle('has-open',hit);return hit;}
+apps.addEventListener('click',function(e){var a=e.target.closest('.cx-app');if(!a||!a.dataset.cxOpen)return;e.preventDefault();history.replaceState(null,'','#'+a.dataset.cxOpen);if(show(a.dataset.cxOpen)){panels.scrollIntoView({behavior:'smooth',block:'start'});}});
+var start=location.hash.slice(1);if(start&&show(start)){setTimeout(function(){panels.scrollIntoView({block:'start'});},0);}})();</script>
+{% include 'internal/ui/event_editor_assets.html' %}{% endblock %}

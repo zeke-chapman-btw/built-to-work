@@ -100,6 +100,7 @@ class ConnectionSetting(models.Model):
         GMAIL_REPLIES = "gmail_replies", "Email replies"
         SIGNATURE = "signature", "Company email signature"
         STATEMENT_NOTICES = "statement_notices", "Pay statement emails"
+        CULTURE_INDEX = "cultureindex", "Culture Index"
 
     key = models.CharField(max_length=20, choices=Key.choices, unique=True)
     values = models.JSONField(default=dict, blank=True)
@@ -287,3 +288,26 @@ class StatementNotice(models.Model):
 
     class Meta:
         default_permissions = ()
+
+
+class CultureIndexResult(models.Model):
+    """A finished Culture Index survey copied from Culture Index each night, matched to a participant by email."""
+    survey_id = models.CharField(max_length=80, unique=True)
+    participant = models.ForeignKey("participants.Participant", null=True, blank=True, on_delete=models.SET_NULL,
+                                    related_name="culture_index_results")
+    email = models.EmailField(max_length=254, blank=True)
+    name = models.CharField(max_length=160, blank=True)
+    taken_at = models.DateTimeField(null=True, blank=True)
+    pattern = models.CharField(max_length=80, blank=True)
+    report_link = models.URLField(max_length=500, blank=True)
+    pattern_link = models.URLField(max_length=500, blank=True)
+    job_matches = models.JSONField(default=list, blank=True)
+    traits = models.JSONField(default=dict, blank=True)
+    synced_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        default_permissions = ()
+        ordering = ("-taken_at", "-pk")
+
+    def __str__(self):
+        return f"Culture Index · {self.name or self.email}"

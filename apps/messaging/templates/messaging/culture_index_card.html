@@ -1,0 +1,13 @@
+<section id="profile-culture-index" tabindex="-1" class="card p3-reading-section" aria-labelledby="profile-ci-title">
+  <header class="btw-panel-heading"><h2 id="profile-ci-title">Culture Index</h2>{% if result %}<span class="cp3-chip g">Taken {{ result.taken_at|date:'M j, Y'|default:'' }}</span>{% elif sent_at %}<span class="cp3-chip y">Sent · not taken yet</span>{% else %}<span class="cp3-chip">Not sent</span>{% endif %}</header>
+  {% if result %}
+  <dl class="pv-pref-grid">
+    <div><dt>Pattern</dt><dd>{% if result.pattern %}<span class="cp3-chip b">{{ result.pattern }}</span>{% else %}<span class="pv-unset">—</span>{% endif %}</dd></div>
+    <div><dt>Report</dt><dd>{% if result.report_link %}<a href="{{ result.report_link }}" target="_blank" rel="noopener">Open report ↗</a>{% else %}<span class="pv-unset">—</span>{% endif %}</dd></div>
+    {% if result.job_matches %}<div class="pv-pref-wide"><dt>Best job matches</dt><dd><span class="pv-chip-list">{% for m in result.job_matches|slice:':3' %}<span class="cp3-chip">{{ m.name }}{% if m.percent != None %} · {{ m.percent }}%{% endif %}</span>{% endfor %}</span></dd></div>{% endif %}
+  </dl>
+  {% else %}
+  <p class="p3-empty">{% if sent_at %}Survey link sent by {{ sent_by }} on {{ sent_at|date:'M j, Y' }}.{% else %}No survey yet.{% endif %} {% if connected %}Results show here the night after they finish.{% else %}Results will show here once the Culture Index API key is added in Settings → Connections.{% endif %}</p>
+  {% endif %}
+  {% if can_send and template %}<div class="ux-actions" style="margin-top:10px">{% if participant.contact_email %}<a class="button secondary" data-record-editor href="{% url 'messaging:email-participant' participant.pk %}?template={{ template.pk }}">Email survey link</a>{% endif %}{% if participant.contact_phone %}<a class="button secondary" data-record-editor href="{% url 'messaging:text-participant' participant.pk %}?template={{ template.pk }}">Text survey link</a>{% endif %}</div>{% endif %}
+</section>

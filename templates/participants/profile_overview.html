@@ -70,6 +70,8 @@
 </section>
 {% endif %}
 
+{% culture_index_card participant crm_can_add %}
+
 {% if can_view_quiz_results or can_view_game_results or can_view_simulator_results or can_view_historical_scores %}
 <section id="profile-assessments" tabindex="-1" class="card p3-reading-section" aria-labelledby="profile-assessments-title">
   <header class="btw-panel-heading"><h2 id="profile-assessments-title">Trailer results</h2><a data-profile-manager data-record-editor href="{% people_section_url 'assessments' %}" aria-label="View all trailer results">All results</a></header>

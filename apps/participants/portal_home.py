@@ -41,7 +41,17 @@ def home_context(actor, account, *, preview=False):
         step = {'title': 'Find your next opportunity', 'text': 'Explore approved opportunities and let BTW know what interests you.',
             'label': 'Browse opportunities', 'url': reverse('participants:portal-jobs')}
     return {'next_step': step, 'update_requests': pending, 'interests': [jobs.interest_projection(r) for r in interests],
-        'registrations': registrations, 'freshness': confirmation, **home_numbers(actor, person)}
+        'registrations': registrations, 'freshness': confirmation, 'culture_index': _culture_index(person),
+        **home_numbers(actor, person)}
+
+
+def _culture_index(person):
+    from apps.messaging import cultureindex
+    from apps.messaging.models import CultureIndexResult
+    if not cultureindex.in_portal():
+        return None
+    done = CultureIndexResult.objects.filter(participant_id__in=identity_members(person.pk)).order_by('-taken_at', '-pk').first()
+    return {'link': cultureindex.survey_link(), 'done': done}
 
 
 def home_numbers(actor, person):

@@ -88,6 +88,11 @@ def _work():
         except Exception:
             log.exception("GMAIL_REPLIES_FAILED")
         try:
+            from .cultureindex import run_nightly
+            run_nightly()
+        except Exception:
+            log.exception("CULTURE_INDEX_SYNC_FAILED")
+        try:
             run_bounces()
         except Exception:
             log.exception("BOUNCE_CHECK_ERROR")

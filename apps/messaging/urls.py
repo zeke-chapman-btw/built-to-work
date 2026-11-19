@@ -37,4 +37,6 @@ urlpatterns = [
     path("texts/<int:pk>/reassign/", text_views.text_reassign, name="text-reassign"),
     path("eztexting/webhook/<str:token>/", text_views.eztexting_webhook, name="eztexting-webhook"),
     path("connections/replies/", connections.replies_setup, name="connections-replies"),
+    path("connections/culture-index/", connections.edit_culture_index, name="connections-culture-index"),
+    path("connections/culture-index/sync/", connections.culture_index_sync, name="connections-culture-index-sync"),
 ]

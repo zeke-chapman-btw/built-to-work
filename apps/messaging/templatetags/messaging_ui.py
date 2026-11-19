@@ -82,3 +82,15 @@ def email_bounce_chip(context, participant, can_edit=False):
     if participant.contact_email:
         row = EmailBounce.objects.filter(address=participant.contact_email.strip().lower(), cleared_at__isnull=True).first()
     return {"bounce": row, "participant": participant, "can_edit": can_edit, "csrf_token": context.get("csrf_token")}
+
+
+@register.inclusion_tag("messaging/culture_index_card.html", takes_context=True)
+def culture_index_card(context, participant, can_send=False):
+    from apps.messaging import cultureindex
+    from apps.messaging.models import MessageTemplate
+    template = MessageTemplate.objects.filter(is_active=True, name="Culture Index survey").first() or \
+        MessageTemplate.objects.filter(is_active=True, body__contains="{culture_index_link}").first()
+    data = cultureindex.for_participant(participant)
+    connected = bool(cultureindex.row() and cultureindex.row().secret_encrypted)
+    return {"participant": participant, "can_send": can_send and not participant.archived_at, "template": template,
+            "connected": connected, **data}
