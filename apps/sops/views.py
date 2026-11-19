@@ -100,8 +100,9 @@ class SOPForm(forms.ModelForm):
 
     class Meta:
         model = SOP
-        fields = ("title", "category", "summary", "audience", "kind", "body")
+        fields = ("title", "category", "summary", "audience", "kind", "body", "doc_url")
         widgets = {"body": forms.Textarea(attrs={"rows": 10, "data-show-when": "kind=page"}),
+                   "doc_url": forms.URLInput(attrs={"data-show-when": "kind=doc", "placeholder": "https://docs.google.com/document/d/…"}),
                    "kind": forms.RadioSelect(attrs={"class": "btw-chip-choices"}),
                    "audience": forms.RadioSelect(attrs={"class": "btw-chip-choices"})}
         labels = {"body": "Steps"}
@@ -125,6 +126,10 @@ class SOPForm(forms.ModelForm):
         kind, upload = cleaned.get("kind"), cleaned.get("pdf_file")
         if kind == SOP.Kind.PAGE and not (cleaned.get("body") or "").strip():
             self.add_error("body", "Write the steps for this SOP.")
+        if kind == SOP.Kind.DOC:
+            from .models import doc_id
+            if not doc_id(cleaned.get("doc_url")):
+                self.add_error("doc_url", "Paste the Google Doc's link (it starts with https://docs.google.com/document/d/).")
         if kind == SOP.Kind.PDF:
             if not self.uploads:
                 self.add_error("kind", "PDF uploads aren't available yet. Use a written page for now.")

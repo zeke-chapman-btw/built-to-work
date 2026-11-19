@@ -69,6 +69,18 @@ class SOPTests(TestCase):
         self.everyone.refresh_from_db()
         self.assertFalse(self.everyone.is_active)
 
+    def test_google_doc_sop_shows_the_doc(self):
+        self.login(self.admin)
+        bad = self.client.post(reverse("sops:add"), {"title": "SYNTHETIC Doc", "audience": "all", "kind": "doc",
+                                                      "doc_url": "https://example.test/not-a-doc"})
+        self.assertContains(bad, "Paste the Google Doc", status_code=bad.status_code)
+        self.client.post(reverse("sops:add"), {"title": "SYNTHETIC Doc", "audience": "all", "kind": "doc",
+                                               "doc_url": "https://docs.google.com/document/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/edit?usp=sharing"})
+        item = SOP.objects.get(title="SYNTHETIC Doc")
+        page = self.client.get(reverse("sops:detail", args=[item.pk])).content.decode()
+        self.assertIn("https://docs.google.com/document/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/preview", page)
+        self.assertIn("Open in Google Docs", page)
+
     def test_written_page_needs_steps_and_pdf_needs_storage(self):
         self.login(self.admin)
         response = self.client.post(reverse("sops:add"), {"title": "SYNTHETIC Empty", "audience": "all", "kind": "page", "body": ""})
