@@ -347,9 +347,11 @@ class HistoricalSimulatorScore(models.Model):
     scored_at = models.DateTimeField(null=True, blank=True)
     source_batch = models.ForeignKey(HistoricalImportBatch, on_delete=models.PROTECT)
     source_row_number = models.PositiveIntegerField()
+    kind = models.CharField(max_length=16, choices=[("simulator", "Simulator"), ("trivia", "Trivia")], default="simulator")
+    details = models.CharField(max_length=500, blank=True)
 
     class Meta:
-        constraints = [models.UniqueConstraint(fields=("source_batch", "source_row_number"), name="historical_score_source_unique")]
+        constraints = [models.UniqueConstraint(fields=("source_batch", "source_row_number", "kind"), name="historical_score_source_kind_unique")]
 
 
 class HistoricalExportRecord(models.Model):

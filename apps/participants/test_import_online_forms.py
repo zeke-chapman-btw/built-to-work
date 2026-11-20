@@ -135,3 +135,28 @@ class UploadEventPickerTests(TestCase):
         self.client.post(url, {"map_full_name": "Name", "map_email": "Email", "upload_event": str(event.pk)})
         row = batch.rows.get()
         self.assertEqual(row.normalized_data.get("event_uuid"), str(event.pk))
+
+
+class TriviaScoreImportTests(TestCase):
+    def test_trivia_comes_in_beside_the_simulator_score(self):
+        import tempfile
+        from django.test import override_settings
+        from .historical import columns_spec, fixed_spec, import_ready, preview_batch
+        from .models import HistoricalSimulatorScore
+        temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
+        setting = override_settings(PRIVATE_HISTORICAL_ROOT=temp.name); setting.enable(); self.addCleanup(setting.disable)
+        actor = get_user_model().objects.create_superuser("trivia-admin", "t@example.test", "x-test-only")
+        body = (b"FName,LName,Email,Sim,TriviaTotalScore,TriviaWeldingScore,TriviaPlumbingScore,DateCaptured\n"
+                b"Pat,Lee,pat@example.test,82.5,10,7,3,2026-03-01\nSam,Ray,sam@example.test,,,,,2026-03-01\n")
+        batch = create_batch(uploaded_file=SimpleUploadedFile("t.csv", body), actor=actor)
+        preview_batch(batch, {"first_name": "FName", "last_name": "LName", "email": "Email", "simulator_score": "Sim",
+                              "score_method": fixed_spec("Truck Loading"), "score_source": fixed_spec("Mozeus export"),
+                              "scored_at": "DateCaptured", "event_name": fixed_spec("SYNTHETIC Rodeo"), "trivia_score": "TriviaTotalScore",
+                              "trivia_topics": columns_spec(["TriviaWeldingScore", "TriviaPlumbingScore"])}, actor=actor)
+        import_ready(batch, actor=actor)
+        trivia = HistoricalSimulatorScore.objects.get(kind="trivia")
+        self.assertEqual((trivia.raw_score, trivia.score_method, trivia.details), (10, "Trivia", "Welding: 7, Plumbing: 3"))
+        self.assertEqual(HistoricalSimulatorScore.objects.filter(kind="simulator").count(), 1)
+        self.client.force_login(actor, backend="django.contrib.auth.backends.ModelBackend")
+        page = self.client.get(reverse("participants:staff-profile", args=[trivia.participant.pk]) + "?section=assessments").content.decode()
+        self.assertIn("Welding: 7, Plumbing: 3", page)

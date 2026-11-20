@@ -28,7 +28,7 @@ PROFILE_IMPORT_FIELDS = ("participant_type", "found_us", "employment_status", "l
                          "willing_to_travel", "skills", "years_experience", "education", "staff_note")
 IMPORT_FIELDS = ("identity_uuid", "full_name", "first_name", "last_name", "preferred_name", "email", "phone",
                  "date_of_birth", "address_line_1", "address_line_2", "city", "state", "postal_code", *PROFILE_IMPORT_FIELDS, "event_uuid", "event_name",
-                 "event_date", "group_name", "simulator_score", "score_method", "score_source", "scored_at",
+                 "event_date", "group_name", "simulator_score", "score_method", "score_source", "scored_at", "trivia_score", "trivia_topics",
                  "consent_agreed", "consent_at")
 # Plain names, grouped the way the participant profile shows them.
 IMPORT_GROUPS = (
@@ -46,6 +46,7 @@ IMPORT_GROUPS = (
                                ("event_uuid", "BTW event ID"))),
     ("Past Simulator score (optional)", (("simulator_score", "Simulator score"), ("score_method", "How it was scored"),
                                          ("score_source", "Where the score came from"), ("scored_at", "Scored on"))),
+    ("Past trivia score (optional)", (("trivia_score", "Trivia score"), ("trivia_topics", "Trivia scores by topic"))),
     ("Consent (optional)", (("consent_agreed", "Agreed to the terms"), ("consent_at", "When they agreed"))),
     ("BTW records", (("identity_uuid", "BTW participant ID"),)),
 )
@@ -66,7 +67,7 @@ _ALIASES = {"full_name": ("name", "fullname", "participantname", "yourname"),
                               "whatindustrydoyouworkinwouldliketoworkin", "whatindustrydoyouworkinorwouldliketoworkin"),
             "willing_to_travel": ("travel", "willtravel", "willingtotravel", "areyouwillingtotravelforwork", "willingtotravelforwork"), "skills": ("skills", "skillsinterests", "skillsexperience", "skillsandexperience"),
             "years_experience": ("experience", "yearsofexperience", "yearsexperience", "yearsconstructionexperience"), "education": ("education", "training", "schooling"),
-            "staff_note": ("note", "notes", "comments", "staffnote", "workhistory"), "simulator_score": ("score", "simscore"),
+            "staff_note": ("note", "notes", "comments", "staffnote", "workhistory"), "simulator_score": ("score", "simscore"), "trivia_score": ("triviatotalscore", "triviascore", "trivia"),
             "event_name": ("eventname", "event"), "event_date": ("eventdate", "datecaptured"),
             "consent_agreed": ("consenttoterms", "consent", "agreedtoterms", "termsaccepted"),
             "consent_at": ("consentdate", "agreedat", "consentedat")}
@@ -100,7 +101,8 @@ def spec_columns(spec):
 def _column_label(header, prefix=""):
     text = header[len(prefix):] if prefix and header.startswith(prefix) and len(header) > len(prefix) else header
     text = re.sub(r"(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|(?<=[A-Za-z])(?=\d{2,})", " ", text.replace("_", " "))
-    return re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r"\s+", " ", text).strip()
+    return re.sub(r"\s*Free Text$", "", text) or text  # "Other Free Text" (a typed-in answer) reads as "Other"
 
 
 def _combined(raw, columns, *, lines=False):
@@ -395,6 +397,17 @@ def _normalize(raw, mapping):
             raise ValidationError("Invalid simulator score.") from exc
         if not data.get("score_method") or not data.get("score_source"):
             raise ValidationError("Simulator score requires its original method and source.")
+    if data.get("trivia_score"):
+        try:
+            trivia = Decimal(data["trivia_score"])
+            if not trivia.is_finite() or trivia.as_tuple().exponent < -4 or trivia.adjusted() >= 10:
+                raise InvalidOperation
+            data["trivia_score"] = str(trivia)
+        except InvalidOperation as exc:
+            raise ValidationError("Invalid trivia score.") from exc
+        data["trivia_topics"] = re.sub(r" Score(?=:)", "", data.get("trivia_topics") or "")[:500]
+    else:
+        data.pop("trivia_topics", None)
     if data.get("scored_at"):
         data["scored_at"] = _score_timestamp(data["scored_at"]).isoformat()
     _consent_values(data)
@@ -536,6 +549,11 @@ def _import_row(row, *, actor, participant=None):
             defaults={"participant": participant, "event_record": event_record,
                       "raw_score": Decimal(data["simulator_score"]), "score_method": data["score_method"],
                       "source": data["score_source"], "scored_at": _score_timestamp(data["scored_at"]) if data.get("scored_at") else None})
+    if data.get("trivia_score"):
+        HistoricalSimulatorScore.objects.get_or_create(source_batch=row.batch, source_row_number=row.row_number, kind="trivia",
+            defaults={"participant": participant, "event_record": event_record, "raw_score": Decimal(data["trivia_score"]),
+                      "score_method": "Trivia", "details": data.get("trivia_topics", ""),
+                      "source": data.get("score_source") or "Imported", "scored_at": _score_timestamp(data["scored_at"]) if data.get("scored_at") else None})
     _record_consent(participant, data, row, event=event_record.event if event_record else None)
     row.participant = participant
     row.status = HistoricalImportRow.Status.IMPORTED
@@ -692,7 +710,7 @@ def export_participants(*, fields, filters, file_format, actor):
                            "group_name": item.group_name, "registration_source": "historical",
                            "_event_id": item.event_id}
             related_scores = [score for score in person.historical_simulator_scores.all()
-                              if score.event_record_id == item.pk]
+                              if score.event_record_id == item.pk and score.kind == "simulator"]
             if related_scores:
                 for score in related_scores:
                     records.append({**base_record, "simulator_score": score.raw_score,
@@ -704,7 +722,7 @@ def export_participants(*, fields, filters, file_format, actor):
                             "group_name": item.group.name if item.group else "",
                             "registration_source": item.source, "_event_id": item.event_id})
         for score in person.historical_simulator_scores.all():
-            if score.event_record_id is None:
+            if score.event_record_id is None and score.kind == "simulator":
                 records.append({"simulator_score": score.raw_score, "score_method": score.score_method,
                                 "score_source": score.source})
         if not records:

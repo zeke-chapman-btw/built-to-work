@@ -70,7 +70,7 @@ class EventExportImportTests(TestCase):
         self.assertEqual(str(alpha.date_of_birth), "2008-03-04")
         self.assertEqual((alpha.address_line_1, alpha.primary_identifier), ("1 Test St", "student"))
         career = alpha.career_profile
-        self.assertEqual(career.career_interests, "Heavy Equipment Operator, Concrete Worker Finisher, Other, Other Free Text: Drone pilot")
+        self.assertEqual(career.career_interests, "Heavy Equipment Operator, Concrete Worker Finisher, Other, Other: Drone pilot")
         self.assertEqual(career.skills_interests, "EPA 608")
         self.assertEqual((career.employment_interest, career.employment_status, str(career.years_of_experience)),
                          ("seeking", "Student", "1.0"))
@@ -78,7 +78,7 @@ class EventExportImportTests(TestCase):
         self.assertEqual(ParticipantNote.objects.get(participant=alpha).content, "Trivia Total Score: 12\nDuck Hunter Score: 800")
         record = HistoricalEventRecord.objects.get(participant=alpha)
         self.assertEqual((record.event_name, str(record.event_date)), ("SAMPLE Skills Challenge", "2026-11-14"))
-        self.assertEqual(float(HistoricalSimulatorScore.objects.get(participant=alpha).raw_score), 45.83)
+        self.assertEqual(float(HistoricalSimulatorScore.objects.get(participant=alpha, kind="simulator").raw_score), 45.83)
         bravo = Participant.objects.get(last_name="Bravo")
         self.assertEqual((bravo.primary_identifier, bravo.address_line_2), ("workforce", "Apt 4"))
         self.assertEqual(str(bravo.career_profile.years_of_experience), "0.0")
