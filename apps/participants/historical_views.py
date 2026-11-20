@@ -30,7 +30,8 @@ def historical_index(request):
         except ValidationError as exc:
             error = "; ".join(exc.messages)
     batches = HistoricalImportBatch.objects.order_by("-created_at")[:50]
-    return render(request, "participants/historical_index.html", {"batches": batches, "error": error, "import_fields": IMPORT_FIELDS, "import_groups": IMPORT_GROUPS,
+    waiting = HistoricalImportRow.objects.filter(status=HistoricalImportRow.Status.REVIEW).count()
+    return render(request, "participants/historical_index.html", {"batches": batches, "error": error, "waiting": waiting, "import_fields": IMPORT_FIELDS, "import_groups": IMPORT_GROUPS,
         "import_max_mb": MAX_FILE_BYTES // (1024 * 1024), "import_max_rows": MAX_ROWS, "import_max_columns": MAX_COLUMNS})
 
 
@@ -168,26 +169,82 @@ def historical_batch(request, batch_id):
         "filters": filters, "error": error})
 
 
+COMPARE = (("Name", "name"), ("Email", "email"), ("Phone", "phone"), ("Date of birth", "dob"), ("Lives in", "place"))
+
+
+def _row_card(row):
+    data = row.normalized_data or {}
+    return {"name": " ".join(x for x in (data.get("first_name"), data.get("last_name")) if x),
+            "email": data.get("email", ""), "phone": data.get("phone", ""), "dob": data.get("date_of_birth", ""),
+            "place": ", ".join(x for x in (data.get("city"), data.get("state")) if x)}
+
+
+def _person_card(person):
+    return {"name": f"{person.first_name} {person.last_name}".strip(), "email": person.contact_email, "phone": person.contact_phone,
+            "dob": person.date_of_birth.isoformat() if person.date_of_birth else "",
+            "place": ", ".join(x for x in (person.city, person.state) if x)}
+
+
+def _candidates(row):
+    """Who this row might be, looked up now (people added since the preview, e.g. the same person's other event, count)."""
+    from .historical import _matches
+    ids = list(dict.fromkeys([*(row.possible_matches or []), *_matches(row.normalized_data or {})]))
+    return list(Participant.objects.filter(identity_uuid__in=ids, kind=Participant.Kind.PERSON)
+                .prefetch_related("historical_events")[:5])
+
+
+def _event_label(row):
+    from .historical import FIXED
+    spec = (row.batch.mapping or {}).get("event_uuid", "")
+    if spec.startswith(FIXED):
+        event = Event.objects.filter(pk=spec[len(FIXED):]).first()
+        if event:
+            return event.name_with_year
+    return (row.normalized_data or {}).get("event_name") or row.batch.original_filename
+
+
+@login_required
+def historical_review_list(request):
+    """Everyone from every upload who is waiting for a same-person / different-person decision."""
+    _require(request.user, "participants.view_historicalimportbatch")
+    rows = (HistoricalImportRow.objects.filter(status=HistoricalImportRow.Status.REVIEW)
+            .select_related("batch").order_by("batch__original_filename", "row_number"))
+    items = []
+    for row in rows:
+        people = _candidates(row)
+        items.append({"row": row, "card": _row_card(row), "event_label": _event_label(row),
+                      "why": "Already in the app" if people else "In the same file twice",
+                      "match": _person_card(people[0])["name"] if people else ""})
+    return render(request, "participants/historical_review_list.html", {"items": items, "page_title": "Needs a look"})
+
+
 @login_required
 @require_http_methods(["GET", "POST"])
 def historical_review(request, row_id):
     _require(request.user, "participants.change_historicalimportrow")
     row = get_object_or_404(HistoricalImportRow.objects.select_related("batch"), pk=row_id)
     if row.status != HistoricalImportRow.Status.REVIEW:
-        return people_saved(request,"participants:historical-batch", batch_id=row.batch_id)
+        return people_saved(request,"participants:historical-review-list")
     error = ""
     if request.method == "POST":
         try:
             chosen = request.POST.get("participant_uuid", "")
-            person = Participant.objects.filter(identity_uuid=chosen).first() if chosen else None
-            resolve_review(row, actor=request.user, decision=request.POST.get("decision", ""),
-                           reason=request.POST.get("reason", ""), participant=person)
-            return people_saved(request,"participants:historical-batch", batch_id=row.batch_id)
+            person = Participant.objects.filter(identity_uuid=chosen).first() if chosen and _uuid_like(chosen) else None
+            decision = request.POST.get("decision", "")
+            reason = request.POST.get("reason", "").strip() or (
+                "Same person, checked in Needs a look." if decision == "link" else "Different person, checked in Needs a look.")
+            resolve_review(row, actor=request.user, decision=decision, reason=reason, participant=person)
+            return people_saved(request,"participants:historical-review-list")
         except (ValidationError, ValueError) as exc:
-            error = str(exc)
-    matches = Participant.objects.filter(identity_uuid__in=row.possible_matches)
-    return render(request, "participants/historical_review.html", {"row": row,
-        "matches": matches, "error": error})
+            error = "; ".join(getattr(exc, "messages", [str(exc)]))
+    people = _candidates(row)
+    mine = _row_card(row)
+    cards = [{"person": p, "card": _person_card(p), "events": [r.event_name for r in p.historical_events.all()][:6]} for p in people]
+    compare = [{"label": label, "mine": mine[key], "theirs": [{"value": c["card"][key],
+               "same": bool(mine[key]) and str(mine[key]).strip().lower() == str(c["card"][key]).strip().lower()} for c in cards]}
+               for label, key in COMPARE]
+    return render(request, "participants/historical_review.html", {"row": row, "cards": cards, "compare": compare,
+        "event_label": _event_label(row), "error": error, "page_title": "Same person?"})
 
 
 @login_required

@@ -103,6 +103,7 @@ urlpatterns = [
     path("staff/historical/export/", historical_views.historical_export, name="historical-export"),
     path("staff/historical/<uuid:batch_id>/map/", historical_views.historical_map, name="historical-map"),
     path("staff/historical/<uuid:batch_id>/", historical_views.historical_batch, name="historical-batch"),
+    path("staff/historical/review/", historical_views.historical_review_list, name="historical-review-list"),
     path("staff/historical/review/<int:row_id>/", historical_views.historical_review, name="historical-review"),
     path("staff/qualifications/", qualification_views.qualification_directory, name="staff-qualifications"),
     path("staff/qualifications/<int:participant_id>/", qualification_views.participant_qualifications, name="staff-participant-qualifications"),

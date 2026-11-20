@@ -184,3 +184,31 @@ class MozeusTypeCleanupTests(TestCase):
         importlib.import_module("apps.participants.migrations.0027_mozeus_types").forwards(django_apps, None)
         types = dict(Participant.objects.values_list("last_name", "primary_identifier"))
         self.assertEqual(types, {"One": "student", "Two": "student", "Three": "teacher_instructor", "Four": "workforce"})
+
+
+class NeedsALookTests(TestCase):
+    def test_list_and_same_person(self):
+        import tempfile
+        from django.test import override_settings
+        from .historical import import_ready, preview_batch
+        from .models import HistoricalImportRow, Participant
+        temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
+        setting = override_settings(PRIVATE_HISTORICAL_ROOT=temp.name); setting.enable(); self.addCleanup(setting.disable)
+        actor = get_user_model().objects.create_superuser("look-admin", "l@example.test", "x-test-only")
+        existing = Participant.objects.create(first_name="SYNTHETIC", last_name="Lee", contact_email="pat@example.test")
+        body = b"FName,LName,Email\nPat,Lee,pat@example.test\nSam,Ray,sam@example.test\nSam,Ray,sam@example.test\n"
+        batch = create_batch(uploaded_file=SimpleUploadedFile("n.csv", body), actor=actor)
+        preview_batch(batch, {"first_name": "FName", "last_name": "LName", "email": "Email"}, actor=actor)
+        import_ready(batch, actor=actor)
+        self.client.force_login(actor, backend="django.contrib.auth.backends.ModelBackend")
+        self.assertContains(self.client.get(reverse("participants:historical-index")), "2 people from imports")
+        page = self.client.get(reverse("participants:historical-review-list")).content.decode()
+        self.assertIn("Already in the app", page)
+        self.assertIn("SYNTHETIC Lee", page)
+        self.assertIn("Sam Ray", page)  # the repeat now matches the copy that was brought in
+        row = HistoricalImportRow.objects.get(batch=batch, row_number=2)
+        compare = self.client.get(reverse("participants:historical-review", args=[row.pk])).content.decode()
+        self.assertIn("pat@example.test ✓", compare)
+        self.client.post(reverse("participants:historical-review", args=[row.pk]), {"decision": "link", "participant_uuid": str(existing.identity_uuid)})
+        row.refresh_from_db()
+        self.assertEqual((row.status, row.participant_id), ("imported", existing.pk))
