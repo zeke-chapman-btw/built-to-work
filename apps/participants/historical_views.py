@@ -34,8 +34,19 @@ def historical_index(request):
         "import_max_mb": MAX_FILE_BYTES // (1024 * 1024), "import_max_rows": MAX_ROWS, "import_max_columns": MAX_COLUMNS})
 
 
+from apps.events.models import Event  # noqa: E402
+
 TYPE_CHOICES = (("", "Leave blank"), ("student", "Student"), ("workforce", "Workforce"), ("teacher_instructor", "Teacher / Instructor"),
                 ("other", "Other"), ("__column__", "From a column in the file"))
+
+
+def _uuid_like(value):
+    import uuid
+    try:
+        uuid.UUID(str(value))
+    except ValueError:
+        return False
+    return True
 
 
 def _posted_spec(post, field):
@@ -77,6 +88,9 @@ def historical_map(request, batch_id):
     mapping = template.mapping if template else (batch.mapping or guess_mapping(headers))
     if request.method == "POST" and headers:
         mapping = {field: _posted_spec(request.POST, field) for field in IMPORT_FIELDS}
+        upload_event = request.POST.get("upload_event", "")
+        if _uuid_like(upload_event) and Event.objects.filter(pk=upload_event).exists():
+            mapping["event_uuid"] = fixed_spec(upload_event)  # everyone in this file came to the chosen event
         mapping = {field: spec for field, spec in mapping.items() if spec}
         try:
             preview_batch(batch, mapping, actor=request.user)
@@ -94,7 +108,12 @@ def historical_map(request, batch_id):
     used = {column for spec in mapping.values() for column in spec_columns(spec)}
     type_spec = mapping.get("participant_type", "")
     type_now = type_spec[len(FIXED):] if type_spec.startswith(FIXED) else "__column__" if type_spec else ""
+    event_spec = mapping.get("event_uuid", "")
+    event_now = event_spec[len(FIXED):] if event_spec.startswith(FIXED) else ""
+    events = [{"id": str(e.pk), "label": e.name_with_year, "on": str(e.pk) == event_now}
+              for e in Event.objects.exclude(status="archived").order_by("-start_at")[:300]]
     return render(request, "participants/historical_map.html", {"batch": batch, "headers": headers, "examples": examples,
+        "upload_events": events, "upload_event_from_file": bool(event_spec) and not event_now,
         "type_choices": [{"value": v, "label": label, "on": v == type_now} for v, label in TYPE_CHOICES],
         "type_column": type_spec if type_now == "__column__" else "",
         "groups": groups, "row_count": len(rows), "unused": [h for h in headers if h not in used],

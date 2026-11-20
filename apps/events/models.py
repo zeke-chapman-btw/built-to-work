@@ -178,6 +178,16 @@ class Event(models.Model):
             return f"{a:%b} {a.day} \u2013 {b:%b} {b.day}{tail}"
         return f"{a:%b} {a.day}, {a.year} \u2013 {b:%b} {b.day}, {b.year}"
 
+    @property
+    def year(self):
+        """The year the event happened in, shown as a chip beside its name."""
+        return self.first_day.year
+
+    @property
+    def name_with_year(self):
+        """For lists with no room for a chip (pickers, exports): 'Talladega · 2026'."""
+        return f"{self.name} \u00b7 {self.year}"
+
     def __str__(self):
         return self.name
 

@@ -113,3 +113,25 @@ class ShortRowTests(TestCase):
         self.assertEqual(first["Phone"], "")
         self.assertNotIn("__row_error__", first)
         self.assertIn("__row_error__", second)  # more values than columns is still a problem
+
+
+class UploadEventPickerTests(TestCase):
+    def test_one_event_for_the_whole_file(self):
+        import tempfile
+        from datetime import timedelta
+        from django.test import override_settings
+        from django.utils import timezone
+        from apps.events.models import Event
+        temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
+        setting = override_settings(PRIVATE_HISTORICAL_ROOT=temp.name); setting.enable(); self.addCleanup(setting.disable)
+        actor = get_user_model().objects.create_superuser("pick-admin", "k@example.test", "x-test-only")
+        start = timezone.now() - timedelta(days=200)
+        event = Event.objects.create(name="SYNTHETIC Talladega", status="completed", start_at=start, end_at=start + timedelta(hours=8))
+        batch = create_batch(uploaded_file=SimpleUploadedFile("t.csv", b"Name,Email\nPat Lee,pat@example.test\n"), actor=actor)
+        self.client.force_login(actor, backend="django.contrib.auth.backends.ModelBackend")
+        url = reverse("participants:historical-map", args=[batch.pk])
+        page = self.client.get(url).content.decode()
+        self.assertIn(f"SYNTHETIC Talladega · {event.year}", page)
+        self.client.post(url, {"map_full_name": "Name", "map_email": "Email", "upload_event": str(event.pk)})
+        row = batch.rows.get()
+        self.assertEqual(row.normalized_data.get("event_uuid"), str(event.pk))

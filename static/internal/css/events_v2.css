@@ -128,3 +128,4 @@ body.internal-app #main-content .rd-ticket{padding:12px 20px;text-align:center}
 body.internal-app #main-content .rd-ticket img{max-width:160px}
 body.internal-app #main-content .rd-actions{margin-top:16px}
 body.internal-app #main-content .rd-actions > summary{font-weight:600;cursor:pointer}
+.ev-year{display:inline-block;vertical-align:middle;font-size:12px;font-weight:600;line-height:1;padding:4px 8px;border-radius:999px;background:#eceef0;color:#46505b;margin-left:6px;letter-spacing:.02em;font-variant-numeric:tabular-nums}h1 .ev-year{font-size:13px;position:relative;top:-2px}

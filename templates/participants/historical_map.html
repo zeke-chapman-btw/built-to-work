@@ -5,6 +5,10 @@
   {% if error %}<p class="btw-feedback btw-feedback-warning" role="alert">{{ error }}</p>{% endif %}
   {% if templates %}<details class="btw-disclosure"><summary>Use a saved column match</summary>{% for item in templates %}<p><a href="?template={{ item.pk }}">{{ item.name }}</a></p>{% endfor %}</details>{% endif %}
   <form method="post" data-section-form>{% csrf_token %}
+  <fieldset class="import-map-group"><legend>Event for this upload</legend>
+    <p class="pv-meta" style="margin:0 0 8px">Pick the event everyone in this file came to. Leave it on "Not one event" if the file has people from several events (then match the BTW event ID column below).</p>
+    <select name="upload_event" id="upload_event" style="max-width:100%"><option value="">Not one event</option>{% for e in upload_events %}<option value="{{ e.id }}"{% if e.on %} selected{% endif %}>{{ e.label }}</option>{% endfor %}</select>
+  </fieldset>
   <fieldset class="import-map-group im-type" data-type-box><legend>Participant type for this upload</legend>
     <p class="pv-meta" style="margin:0 0 8px">Optional. Everyone in this file gets the type you pick. Leave it blank to set types later, one by one.</p>
     <div class="btw-chip-choices" role="radiogroup" style="display:flex;flex-wrap:wrap;gap:8px">{% for t in type_choices %}<label><input type="radio" name="type_choice" value="{{ t.value }}"{% if t.on %} checked{% endif %} data-type-choice> {{ t.label }}</label>{% endfor %}</div>
