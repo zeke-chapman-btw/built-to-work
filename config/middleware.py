@@ -48,3 +48,23 @@ class PreviewAccessMiddleware:
         username_matches = secrets.compare_digest(username.encode(), self.username.encode())
         password_matches = secrets.compare_digest(password.encode(), self.password.encode())
         return username_matches and password_matches
+
+
+class CanonicalHostMiddleware:
+    """Send visits on an old address (e.g. btw-production.onrender.com) to the main one, keeping the page path.
+
+    Set CANONICAL_HOST (e.g. app.builttoworkusa.com). The health check is left alone so Render can still reach it.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        from django.conf import settings
+        from django.http import HttpResponsePermanentRedirect
+        target = (getattr(settings, "CANONICAL_HOST", "") or "").strip().lower()
+        if target and not request.path.startswith("/health"):
+            host = request.get_host().split(":")[0].lower()
+            if host != target and host.endswith(".onrender.com"):
+                return HttpResponsePermanentRedirect(f"https://{target}{request.get_full_path()}")
+        return self.get_response(request)

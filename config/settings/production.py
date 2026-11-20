@@ -34,3 +34,12 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # Serve collected static assets with WhiteNoise in production.
 MIDDLEWARE.insert(MIDDLEWARE.index("config.middleware.PreviewAccessMiddleware") + 1, "whitenoise.middleware.WhiteNoiseMiddleware")
 STORAGES = {"default": {"BACKEND": "django.core.files.storage.FileSystemStorage"}, "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"}}
+
+# Old onrender.com address forwards to the main one.
+CANONICAL_HOST = os.environ.get("CANONICAL_HOST", "").strip()
+MIDDLEWARE.insert(MIDDLEWARE.index("django.middleware.security.SecurityMiddleware") + 1, "config.middleware.CanonicalHostMiddleware")
+
+# Private uploads (SOP PDFs, task files) live on the service's disk when a folder is given.
+if os.environ.get("PRIVATE_OPERATIONS_ROOT"):
+    OPERATIONAL_DOCUMENT_ROOT = os.environ["PRIVATE_OPERATIONS_ROOT"]
+    OPERATIONAL_DOCUMENT_STORAGE_DURABLE = True

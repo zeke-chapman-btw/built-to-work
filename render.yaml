@@ -45,6 +45,10 @@ services:
         value: /var/data/historical_imports
       - key: PRIVATE_ONBOARDING_ROOT
         value: /var/data/customer_onboarding
+      - key: PRIVATE_OPERATIONS_ROOT
+        value: /var/data/operations_documents
+      - key: CANONICAL_HOST
+        value: preview.builttoworkusa.com
       - key: EMAIL_BACKEND
         value: django.core.mail.backends.locmem.EmailBackend
 databases:

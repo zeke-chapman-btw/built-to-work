@@ -53,6 +53,10 @@ services:
         value: /var/data/historical_imports
       - key: PRIVATE_ONBOARDING_ROOT
         value: /var/data/customer_onboarding
+      - key: PRIVATE_OPERATIONS_ROOT
+        value: /var/data/operations_documents
+      - key: CANONICAL_HOST
+        value: app.builttoworkusa.com
       # Site email uses the sign-in saved in Settings → Connections; until one
       # exists, nothing leaves (messages are kept in memory like test mode).
       - key: EMAIL_BACKEND
