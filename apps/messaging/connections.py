@@ -379,10 +379,7 @@ def edit_culture_index(request):
             try:
                 cultureindex.call(values.get("list_path") or cultureindex.DEFAULT_PATH, key=key)
             except cultureindex.CultureIndexError as exc:
-                if exc.refused:
-                    form.add_error("api_key", f"{exc} Check the key and try again.")
-                else:
-                    problem = str(exc)
+                problem = str(exc)
         if not form.errors:
             values.update(survey_link=form.cleaned_data["survey_link"].strip(), portal=form.cleaned_data["portal"])
             if key:
@@ -390,8 +387,8 @@ def edit_culture_index(request):
             new_secret = key or ("" if form.cleaned_data.get("remove_key") else None)
             store.save(key=cultureindex.KEY, values=values, actor=request.user, new_secret=new_secret)
             if problem:
-                messages.warning(request, f"Culture Index key saved, but the first check didn't work: {problem} "
-                                          "Try \"Copy results now\" later, or check the key with Culture Index.")
+                messages.warning(request, f"Culture Index key saved, but the check didn't work: {problem} "
+                                          "Use \"Copy results now\" to try again.")
             else:
                 messages.success(request, "Culture Index saved." + (" The key works; results will copy in tonight." if key else ""))
             return editor_success(request, _home() + "#culture-index")
@@ -407,6 +404,10 @@ def culture_index_sync(request):
     try:
         outcome = cultureindex.sync()
     except cultureindex.CultureIndexError as exc:
+        row = cultureindex.row()
+        if row:
+            row.values = dict(row.values, last_error=str(exc))
+            row.save(update_fields=["values"])
         messages.error(request, str(exc))
     else:
         messages.success(request, f"Checked {outcome['seen']} survey(s): {outcome['added']} new, {outcome['matched']} matched to people.")
@@ -421,8 +422,8 @@ def _culture_index_summary():
     connected = bool(row and row.secret_encrypted)
     if not connected:
         status = ("Link ready · no API key", "y")
-    elif row.last_test_ok is False:
-        status = ("Sync failing", "r")
+    elif values.get("last_error") or row.last_test_ok is False:
+        status = ("Key not working", "r")
     else:
         status = ("Connected", "g")
     return {"row": row, "link": cultureindex.survey_link(), "portal": values.get("portal", True), "connected": connected,

@@ -85,7 +85,9 @@ class CultureIndexTests(TestCase):
         with patch("apps.messaging.cultureindex.request.urlopen", side_effect=ConnectionResetError()):
             response = self.client.post(url, {"survey_link": cultureindex.DEFAULT_LINK, "api_key": "key-test-only"}, follow=True)
         self.assertEqual(cultureindex.api_key(), "key-test-only")
-        self.assertContains(response, "first check didn")
-        with patch.object(cultureindex, "call", side_effect=cultureindex.CultureIndexError("refused", refused=True)):
-            response = self.client.post(url, {"survey_link": cultureindex.DEFAULT_LINK, "api_key": "other-test-only"})
-        self.assertEqual(cultureindex.api_key(), "key-test-only")
+        self.assertContains(response, "the check didn")
+        with patch.object(cultureindex, "call", side_effect=cultureindex.CultureIndexError("refused (401: Access denied)", refused=True)):
+            response = self.client.post(url, {"survey_link": cultureindex.DEFAULT_LINK, "api_key": "other-test-only"}, follow=True)
+        self.assertEqual(cultureindex.api_key(), "other-test-only")  # kept, so it can be tried again
+        self.assertContains(response, "Access denied")
+        self.assertContains(self.client.get(reverse("messaging:connections")), "Key not working")

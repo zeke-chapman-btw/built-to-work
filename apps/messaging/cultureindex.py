@@ -51,21 +51,37 @@ def api_key():
 
 
 def call(path, *, key=None, query=None):
-    key = key or api_key()
+    key = (key or api_key() or "").strip()
     if not key:
         raise CultureIndexError("Culture Index isn't connected yet.")
     url = BASE + path + "?" + parse.urlencode(dict(query or {}, **{"api-version": API_VERSION}))
-    req = request.Request(url, headers={"Ocp-Apim-Subscription-Key": key, "Accept": "application/json"})
+    # The API portal asks for the key twice: Azure's "Subscription key" and a "subscriptionkey" header.
+    req = request.Request(url, headers={"Ocp-Apim-Subscription-Key": key, "subscriptionkey": key,
+                                        "Accept": "application/json", "Cache-Control": "no-cache",
+                                        "User-Agent": "BuiltToWork/1.0"})
     try:
         with request.urlopen(req, timeout=30) as response:
             raw = response.read()
             return json.loads(raw) if raw else []
     except error.HTTPError as exc:
+        said = _their_words(exc)
         if exc.code in (401, 403):
-            raise CultureIndexError("Culture Index refused the API key.", refused=True) from None
-        raise CultureIndexError(f"Culture Index answered with error {exc.code}.") from None
+            raise CultureIndexError(f"Culture Index refused the API key ({exc.code}{': ' + said if said else ''}).", refused=True) from None
+        raise CultureIndexError(f"Culture Index answered with error {exc.code}{': ' + said if said else ''}.") from None
     except (OSError, ValueError, Exception):  # timeouts, dropped connections, bad replies
         raise CultureIndexError("Culture Index could not be reached.") from None
+
+
+def _their_words(exc):
+    """Culture Index's own short explanation of an error, so a wrong key or wrong setting is easy to tell apart."""
+    try:
+        body = exc.read(2000).decode("utf-8", "replace")
+        data = json.loads(body)
+        text = data.get("message") or data.get("detail") or data.get("title") or (data.get("error") or {}).get("message") or ""
+    except Exception:
+        text = ""
+    text = " ".join(str(text).split())
+    return text[:160]
 
 
 def _items(data):
