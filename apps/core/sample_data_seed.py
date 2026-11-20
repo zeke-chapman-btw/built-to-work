@@ -207,7 +207,9 @@ def events(admin, users):
             "state": "GA", "postal_code": "30901", "country": "US", "group_mode": "disabled", "group_label": "Group",
             "contact_name": "SAMPLE Coordinator", "contact_email": "sample.events@example.test", "contact_phone": "7065550110",
             "action": "publish"}))
-        saved(save_plan(actor=admin, event_id=event.pk, data={"revision": "new", "required_staff": 2,
+        from apps.staffing.models import StaffingPlan
+        plan = StaffingPlan.objects.filter(event=event).first()  # publishing opens staff sign-up, so the plan may exist
+        saved(save_plan(actor=admin, event_id=event.pk, data={"revision": plan.updated_at.isoformat() if plan else "new", "required_staff": 2,
             "required_drivers": 0, "is_published": True, "need_"+day.isoformat(): 2, "drivers_"+day.isoformat(): 0}))
         for i, user in enumerate(users[1:3]):
             saved(save_assignment(actor=admin, event_id=event.pk, data={"staff": user.staff_profile.pk,
