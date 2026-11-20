@@ -24,6 +24,8 @@ API_VERSION = "2022-10-01"
 DEFAULT_PATH = "/Surveys"
 EASTERN = ZoneInfo("America/New_York")
 SYNC_HOUR = 2  # 2 AM Eastern
+PAGE_SIZE = 100
+MAX_PAGES = 100
 
 
 class CultureIndexError(Exception):
@@ -136,7 +138,18 @@ def save_results(items):
 def sync(*, key=None):
     current = row()
     path = ((current.values.get("list_path") if current else "") or DEFAULT_PATH)
-    outcome = save_results(_items(call(path, key=key)))
+    # Results come back a page at a time; keep asking (skipping what we have) until a page brings nothing new.
+    items, seen_ids, skip = [], set(), 0
+    for _ in range(MAX_PAGES):
+        batch = [i for i in _items(call(path, key=key, query={"Top": PAGE_SIZE, "Skip": skip, "MaxPageSize": PAGE_SIZE}))
+                 if isinstance(i, dict)]
+        new = [i for i in batch if str(i.get("surveyId") or i.get("id") or "") not in seen_ids]
+        if not new:
+            break
+        seen_ids.update(str(i.get("surveyId") or i.get("id") or "") for i in new)
+        items.extend(new)
+        skip += len(batch)
+    outcome = save_results(items)
     current = row()
     if current:
         current.values = dict(current.values, last_sync=timezone.now().isoformat(), last_outcome=outcome, last_error="")

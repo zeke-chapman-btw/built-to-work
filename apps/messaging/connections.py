@@ -429,4 +429,5 @@ def _culture_index_summary():
     return {"row": row, "link": cultureindex.survey_link(), "portal": values.get("portal", True), "connected": connected,
             "status": status, "last_sync": cultureindex._when(values.get("last_sync")), "error": values.get("last_error", ""),
             "results": CultureIndexResult.objects.count(),
+            "recent": CultureIndexResult.objects.select_related("participant").order_by("-taken_at", "-pk")[:10],
             "matched": CultureIndexResult.objects.filter(participant__isnull=False).count()}

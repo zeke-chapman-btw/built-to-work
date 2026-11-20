@@ -91,3 +91,23 @@ class CultureIndexTests(TestCase):
         self.assertEqual(cultureindex.api_key(), "other-test-only")  # kept, so it can be tried again
         self.assertContains(response, "Access denied")
         self.assertContains(self.client.get(reverse("messaging:connections")), "Key not working")
+
+
+class PagingTests(TestCase):
+    def test_every_page_is_copied(self):
+        admin = get_user_model().objects.create_superuser(username="ci-pages", password="x-test-only")
+        store.save(key="cultureindex", values={}, actor=admin, new_secret="key-test-only")
+        pages = {0: [{"surveyId": n, "email": f"p{n}@example.test"} for n in range(1, 51)],
+                 50: [{"surveyId": n, "email": f"p{n}@example.test"} for n in range(51, 71)], 70: []}
+        with patch.object(cultureindex, "call", side_effect=lambda path, key=None, query=None: pages[query["Skip"]]):
+            outcome = cultureindex.sync()
+        self.assertEqual(outcome["seen"], 70)
+        self.assertEqual(CultureIndexResult.objects.count(), 70)
+
+    def test_an_api_that_ignores_paging_stops_after_one_repeat(self):
+        admin = get_user_model().objects.create_superuser(username="ci-pages2", password="x-test-only")
+        store.save(key="cultureindex", values={}, actor=admin, new_secret="key-test-only")
+        same = [{"surveyId": n} for n in range(1, 6)]
+        with patch.object(cultureindex, "call", return_value=same) as call:
+            self.assertEqual(cultureindex.sync()["seen"], 5)
+        self.assertEqual(call.call_count, 2)
