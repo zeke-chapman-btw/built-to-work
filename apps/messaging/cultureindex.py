@@ -105,9 +105,13 @@ def _when(value):
 
 
 def save_results(items):
-    """Store each survey once (by its id) and link it to the participant with that email."""
+    """Keep only surveys whose email belongs to one of our participants; everyone else in the Culture Index
+    account is skipped. Each survey is stored once (by its id), so running this again just updates it."""
     from apps.participants.models import Participant
     from .models import CultureIndexResult
+    people = {}
+    for person in Participant.objects.filter(archived_at__isnull=True).exclude(contact_email="").order_by("-pk"):
+        people[person.contact_email.strip().lower()] = person  # oldest record wins on a shared email
     added = matched = 0
     for item in items:
         if not isinstance(item, dict):
@@ -116,8 +120,9 @@ def save_results(items):
         if not survey_id:
             continue
         email = (item.get("email") or "").strip().lower()
-        person = (Participant.objects.filter(contact_email__iexact=email, archived_at__isnull=True).order_by("pk").first()
-                  if email else None)
+        person = people.get(email) if email else None
+        if not person:
+            continue
         matches = sorted(({"name": str(m.get("positionName") or "")[:120], "percent": m.get("matchPercent")}
                           for m in (item.get("appliedToPositionsMatches") or []) if isinstance(m, dict)),
                          key=lambda m: -(m["percent"] or 0))[:10]
@@ -131,7 +136,9 @@ def save_results(items):
         }
         result, created = CultureIndexResult.objects.update_or_create(survey_id=survey_id[:80], defaults=values)
         added += int(created)
-        matched += int(bool(person))
+        matched += 1
+    # Results that no longer match anyone (e.g. copied before we only kept matches) are removed.
+    CultureIndexResult.objects.filter(participant__isnull=True).delete()
     return {"added": added, "matched": matched, "seen": len(items)}
 
 

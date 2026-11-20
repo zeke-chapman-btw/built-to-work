@@ -34,7 +34,8 @@ class CultureIndexTests(TestCase):
 
     def test_results_are_matched_by_email_and_kept_once(self):
         outcome = cultureindex.save_results([SURVEY, {"surveyId": "S-2", "email": "nobody@example.test"}, "junk"])
-        self.assertEqual(outcome, {"added": 2, "matched": 1, "seen": 3})
+        self.assertEqual(outcome, {"added": 1, "matched": 1, "seen": 3})
+        self.assertFalse(CultureIndexResult.objects.filter(survey_id="S-2").exists())  # not one of ours: skipped
         result = CultureIndexResult.objects.get(survey_id="S-1")
         self.assertEqual(result.participant, self.person)
         self.assertEqual([m["name"] for m in result.job_matches], ["Electrician", "Welder"])
@@ -97,12 +98,14 @@ class PagingTests(TestCase):
     def test_every_page_is_copied(self):
         admin = get_user_model().objects.create_superuser(username="ci-pages", password="x-test-only")
         store.save(key="cultureindex", values={}, actor=admin, new_secret="key-test-only")
+        for n in (3, 60):
+            Participant.objects.create(first_name="SYNTHETIC", last_name=str(n), contact_email=f"P{n}@example.test")
         pages = {0: [{"surveyId": n, "email": f"p{n}@example.test"} for n in range(1, 51)],
                  50: [{"surveyId": n, "email": f"p{n}@example.test"} for n in range(51, 71)], 70: []}
         with patch.object(cultureindex, "call", side_effect=lambda path, key=None, query=None: pages[query["Skip"]]):
             outcome = cultureindex.sync()
         self.assertEqual(outcome["seen"], 70)
-        self.assertEqual(CultureIndexResult.objects.count(), 70)
+        self.assertEqual(CultureIndexResult.objects.count(), 2)  # only the two that belong to our participants
 
     def test_an_api_that_ignores_paging_stops_after_one_repeat(self):
         admin = get_user_model().objects.create_superuser(username="ci-pages2", password="x-test-only")

@@ -410,7 +410,8 @@ def culture_index_sync(request):
             row.save(update_fields=["values"])
         messages.error(request, str(exc))
     else:
-        messages.success(request, f"Checked {outcome['seen']} survey(s): {outcome['added']} new, {outcome['matched']} matched to people.")
+        messages.success(request, f"Checked {outcome['seen']} survey(s) in Culture Index: {outcome['matched']} belong to our participants "
+                                  f"({outcome['added']} new). The rest were skipped.")
     return redirect(_home() + "#culture-index")
 
 
