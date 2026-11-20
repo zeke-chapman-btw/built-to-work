@@ -56,3 +56,24 @@ class SignatureTests(TestCase):
             communications._provider_send("email", "p@example.test", subject="Ticket", body="Your ticket", idempotency_key="k1")
         self.assertIn("Built to Work", mail.outbox[-1].body)
         self.assertIn("<b>Built to Work</b>", mail.outbox[-1].alternatives[0][0])
+
+
+class GmailOnlyPictureTests(TestCase):
+    def test_gmail_only_picture_becomes_the_public_logo(self):
+        from apps.messaging import signatures
+        html = '<table><tr><td><img src="https://mail.google.com/mail/u/0/?ui=2&amp;view=fimg" width="159" height="100"></td><td>Zeke</td></tr></table>'
+        message = signatures.build("Hi", "Body", "Zeke <z@example.test>", ["p@example.test"], signature_html=html)
+        sent = message.alternatives[0][0]
+        self.assertNotIn("mail.google.com", sent)
+        self.assertIn("email/btw-logo", sent)
+        self.assertIn('width="180"', sent)
+
+    def test_sender_name_comes_from_the_staff_profile(self):
+        from django.contrib.auth import get_user_model
+        from apps.messaging.views import sender_name_for
+        from apps.staffing.models import StaffProfile
+        user = get_user_model().objects.create_user("zeke.test", password="x-test-only")
+        self.assertEqual(sender_name_for(user), "zeke.test")
+        StaffProfile.objects.create(user=user, first_name="Zeke", last_name="Chapman", email="z@example.test")
+        user.refresh_from_db()
+        self.assertEqual(sender_name_for(user), "Zeke Chapman")

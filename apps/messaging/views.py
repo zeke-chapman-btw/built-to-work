@@ -113,6 +113,15 @@ def gmail_disconnect(request):
     return redirect(_next(request, request.POST.get("next")))
 
 
+def sender_name_for(user):
+    """'Zeke Chapman' from the account, else from the staff profile; the username only as a last resort."""
+    name = user.get_full_name().strip()
+    profile = getattr(user, "staff_profile", None) if not name else None
+    if profile:
+        name = f"{profile.first_name} {profile.last_name}".strip()
+    return name or user.get_username()
+
+
 @login_required(login_url="/admin/login/")
 @require_POST
 def gmail_test(request):
@@ -123,7 +132,7 @@ def gmail_test(request):
         messages.error(request, "Connect your Google account first.")
         return redirect(_next(request, request.POST.get("next")))
     from .signatures import build, personal
-    name = request.user.get_full_name() or request.user.get_username()
+    name = sender_name_for(request.user)
     message = build("Built to Work test email",
                     "This is a test sent from the Built to Work app through your Gmail. If you can read this, "
                     "emails you send to participants from the app will come from this address.",
@@ -197,7 +206,7 @@ def _email(request, recipient):
 
 
 def _send_participant_email(request, connection, recipient, data):
-    sender_name = request.user.get_full_name() or request.user.get_username()
+    sender_name = sender_name_for(request.user)
     try:
         with transaction.atomic():
             row = SentEmail.objects.create(operation_id=data["operation_id"], sender=request.user,
