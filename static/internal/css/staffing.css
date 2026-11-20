@@ -81,3 +81,23 @@ body.internal-app #main-content .st2-facts dd{margin:0}
 @media (max-width:900px){body.internal-app #main-content .st2-cols{grid-template-columns:1fr}body.internal-app #main-content .st2-tr{grid-template-columns:1fr;gap:6px}body.internal-app #main-content .st2-th{display:none}}
 body.internal-app #main-content .st2-signup a,body.internal-app #main-content .st2-links a{color:var(--brand-red-dark,#a51d24);font-weight:500}
 body.internal-app #main-content .st2-tr .st-who{border:0;padding:0}
+
+/* Who's working each day */
+body.internal-app #main-content .st3-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;padding:16px 20px}
+body.internal-app #main-content .st3-day{border:1px solid #e3e5e8;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
+body.internal-app #main-content .st3-day.is-short{border-color:#f0b8bf}
+body.internal-app #main-content .st3-day header{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:2px 8px}
+body.internal-app #main-content .st3-day h3{margin:0;font-size:15px;font-weight:600}
+body.internal-app #main-content .st3-day header small{font-size:11px;font-weight:600;color:#5b6470;text-transform:uppercase;letter-spacing:.04em}
+body.internal-app #main-content .st3-day header .st2-roles{grid-column:1/-1;margin-top:4px}
+body.internal-app #main-content .st3-people{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border-top:1px solid #f1f2f4}
+body.internal-app #main-content .st3-people li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f1f2f4;font-size:14px}
+body.internal-app #main-content .st3-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.internal-app #main-content .st3-open span:first-child{color:#a3192d;font-style:italic}
+body.internal-app #main-content .st3-need{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px dashed #d0212f;color:#a3192d;white-space:nowrap}
+body.internal-app #main-content .st3-list{list-style:none;margin:0;padding:0}
+body.internal-app #main-content .st3-row{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr) auto;gap:6px 14px;align-items:center;padding:12px 20px;border-top:1px solid #f1f2f4;font-size:14px}
+body.internal-app #main-content .st3-when{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+body.internal-app #main-content .st3-times{margin-top:2px;border:0;padding:0}body.internal-app #main-content .st3-times summary{font-size:12px;color:#5b6470}body.internal-app #main-content .st3-times[open]{grid-column:1/-1}
+@media (max-width:700px){body.internal-app #main-content .st3-row{grid-template-columns:1fr auto}body.internal-app #main-content .st3-when{grid-column:1/-1;order:3}}
+body.internal-app #main-content .st3-row .st-who>small{border:0;padding:0;min-height:0}body.internal-app #main-content .st3-row .st-who>small:empty{display:none}body.internal-app #main-content .st3-row .st3-times{border-top:0;margin:4px 0 0}

@@ -231,6 +231,14 @@ def event_staffing(request,event_id):
         short={"staff":"Staff","staff_lead":"Lead","driver":"Driver","combined":"Combined"}.get(assignment.coverage_role,"No role")
         assignment.grid=[dict(date=d,on=d in worked,label=short) for d in context["grid_days"]]
     context["still_needed"]=[d for d in (summary["days"] if summary else []) if d["unfilled"]]
+    # Day board: who is working each day, and the open spots still to fill.
+    order={"staff_lead":0,"driver":1,"combined":2,"staff":3}
+    for day in (summary["days"] if summary else []):
+        people=[a for a in context["confirmed_assignments"] if any(d.date==day["date"] for d in a.days.all())]
+        day["people"]=sorted(people,key=lambda a:(order.get(a.coverage_role,9),str(a.staff)))
+        day["open"]=[dict(label=r["label"],key=r["key"]) for r in day.get("roles",[]) for _ in range(r.get("remaining") or 0)]
+    for assignment in context["confirmed_assignments"]:
+        assignment.worked_days=sorted(d.date for d in assignment.days.all())
     from apps.workdays import services as wd
     context["travel"]=dict(mileage=wd.automatic_miles(event) if wd.manager(request.user) else None,
         lodging=event.lodgings.first() if hasattr(event,"lodgings") else None,
@@ -255,7 +263,7 @@ def plan_edit(request,event_id):
         except ValidationError as exc:
             form=PlanForm(request.POST,event=event,plan=plan); form.is_valid(); form.add_error(None,exc)
     from django.urls import reverse
-    return display_form(request,form,title="Staffing needs and sign-up deadline",submit="Save staffing settings",back=reverse("staffing:event",args=[event.pk]),event=event)
+    return display_form(request,form,title="Staff sign-up and needs",submit="Save staffing settings",back=reverse("staffing:event",args=[event.pk]),event=event)
 
 
 @staff_view

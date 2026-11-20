@@ -57,8 +57,8 @@ class PlanForm(forms.Form):
     revision = forms.CharField(widget=forms.HiddenInput)
     required_staff = forms.IntegerField(min_value=0, max_value=1000, label="Default staff needed per day")
     required_drivers = forms.IntegerField(min_value=0, max_value=1000, required=False, label="Default drivers needed per day")
-    is_published = forms.BooleanField(required=False, label="Publish this staffing opportunity", help_text="Visible to active linked staff only while the event is Upcoming. Draft events remain hidden.")
-    signup_deadline = forms.CharField(required=False, label="Staff sign-up deadline (event local time)", widget=forms.DateTimeInput(attrs={"type": "datetime-local"}), help_text="Leave blank for no deadline. Managers may approve and assign after the deadline.")
+    is_published = forms.BooleanField(required=False, label="Open staff sign-up", help_text="Staff can see this event and ask to work it (only while the event is Upcoming). Managers can add staff either way.")
+    signup_deadline = forms.CharField(required=False, label="Sign-up closes", widget=forms.DateTimeInput(attrs={"type": "datetime-local"}), help_text="Leave blank to keep it open. Managers can still add staff after it closes.")
     def __init__(self, *args, event, plan, **kwargs):
         super().__init__(*args, **kwargs)
         self.event = event
@@ -80,6 +80,12 @@ class PlanForm(forms.Form):
     @property
     def settings_fields(self):
         return [self[n] for n in ("required_staff","required_drivers","is_published","signup_deadline")]
+
+    def signup_fields(self):
+        return [self["is_published"], self["signup_deadline"]]
+
+    def default_fields(self):
+        return [self["required_staff"], self["required_drivers"]]
     def clean(self):
         data=super().clean()
         for key in ["required_drivers", *("drivers_"+d.isoformat() for d in event_days(self.event))]:

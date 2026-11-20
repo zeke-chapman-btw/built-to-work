@@ -29,10 +29,10 @@ LABELS={
  'simulator_qualification_threshold':('Simulator passing score (%)','Scores at or above this count as qualified. Usually 50.'),
  'location_name':('Venue',''),'address_line_1':('Street address',''),'address_line_2':('Address line 2',''),'postal_code':('ZIP code','Used to work out staff mileage when there is no map pin.'),
  'map_latitude':('Map pin latitude','Optional, for an exact pin. In Google Maps, right-click the spot and copy the first number.'),'map_longitude':('Map pin longitude','The second number, usually negative in the US.'),
- 'timezone_name':('Time zone','Every time on this event uses this time zone.'),
- 'setup_date':('Setup day',''),'staff_arrival_time':('Staff arrive (setup day)',''),
- 'start_at':('Event starts','Tickets and trailer stations work between the start and end.'),'end_at':('Event ends',''),
- 'daily_start_time':('Staff start (each day)','Used when a staff assignment has no times of its own.'),'daily_end_time':('Staff end (each day)',''),
+ 'timezone_name':('Time zone',''),
+ 'setup_date':('Setup day',''),'staff_arrival_time':('Staff arrive',''),
+ 'start_at':('Starts',''),'end_at':('Ends',''),
+ 'daily_start_time':('Staff start',''),'daily_end_time':('Staff end',''),
  'return_date':('Arrive home',''),
  'contact_name':('Contact name',''),'contact_email':('Email',''),'contact_phone':('Phone',''),
  'housing_information':('Housing notes','For anything not covered by a housing entry.'),
@@ -91,7 +91,8 @@ def edit(request,event_id,section):
  return editor_response(request,template='events/section_form.html',panel='internal/ui/record_form_panel.html',context={
   'event':event,'form':form,'page_title':'Edit '+SECTIONS[section][0],'editor_context':event.name,'back':back,
   'save_label':'Save changes','save_conflict':conflict,'cautious_save':True,'editor_return_label':'event',
-  'fields_template':'internal/ui/section_fields.html','full_page_editor':request.headers.get('X-BTW-Editor')!='1'})
+  'fields_template':'events/schedule_fields.html' if section=='schedule' else 'internal/ui/section_fields.html',
+  'full_page_editor':request.headers.get('X-BTW-Editor')!='1'})
 
 
 QUICK_FIELDS=('name','event_type','event_type_other','timezone_name','start_at','end_at','location_name','city','state')

@@ -130,7 +130,7 @@ class StaffingEditorTests(TestCase):
         self.assertNotContains(response,'View daily coverage')
         self.assertNotContains(response,'2 required')
         staff=self.client.get(reverse('staffing:event',args=[self.event.pk]))
-        self.assertContains(staff,'Staff needed by day')
+        self.assertContains(staff,'Who\'s working each day')
 
     def test_replaced_assignment_post_retains_entries_and_returns_to_current_records(self):
         a=self.assignment(coverage_role='staff');revision=a.updated_at.isoformat()
