@@ -160,3 +160,27 @@ class TriviaScoreImportTests(TestCase):
         self.client.force_login(actor, backend="django.contrib.auth.backends.ModelBackend")
         page = self.client.get(reverse("participants:staff-profile", args=[trivia.participant.pk]) + "?section=assessments").content.decode()
         self.assertIn("Welding: 7, Plumbing: 3", page)
+
+
+class MozeusTypeCleanupTests(TestCase):
+    def test_each_person_gets_their_own_type(self):
+        import importlib, tempfile
+        from django.apps import apps as django_apps
+        from django.test import override_settings
+        from .historical import fixed_spec, import_ready, preview_batch
+        from .models import Participant
+        temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
+        setting = override_settings(PRIVATE_HISTORICAL_ROOT=temp.name); setting.enable(); self.addCleanup(setting.disable)
+        actor = get_user_model().objects.create_superuser("type-admin", "y@example.test", "x-test-only")
+        body = (b"FName,LName,Email,DOB,JobStatus,WorkIndustry,WorkIndustryOther\n"
+                b"Kid,One,k1@example.test,6/19/2012,Other,Other,\n"
+                b"Col,Two,c2@example.test,1/2/2003,Student,Other,\n"
+                b"Tea,Three,t3@example.test,1/2/1980,Currently employed in another industry,Education,\n"
+                b"Wor,Four,w4@example.test,1/2/1985,Currently employed in another industry,Other,Pilot\n")
+        batch = create_batch(uploaded_file=SimpleUploadedFile("m.csv", body), actor=actor)
+        preview_batch(batch, {"first_name": "FName", "last_name": "LName", "email": "Email", "date_of_birth": "DOB",
+                              "participant_type": fixed_spec("student")}, actor=actor)
+        import_ready(batch, actor=actor)
+        importlib.import_module("apps.participants.migrations.0027_mozeus_types").forwards(django_apps, None)
+        types = dict(Participant.objects.values_list("last_name", "primary_identifier"))
+        self.assertEqual(types, {"One": "student", "Two": "student", "Three": "teacher_instructor", "Four": "workforce"})
