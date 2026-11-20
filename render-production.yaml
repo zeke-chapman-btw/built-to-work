@@ -12,7 +12,7 @@ services:
     name: btw-production
     runtime: python
     branch: production
-    plan: 0.5c-512mb
+    plan: 1c-2g
     buildCommand: ./build.sh
     # Roles are code-defined and idempotent; applying them keeps staff permissions current.
     preDeployCommand: python manage.py migrate --noinput && python manage.py configure_staff_roles --apply
