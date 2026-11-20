@@ -91,6 +91,8 @@ def save_event(*, data, actor, event_id=None):
     audit_action(actor=actor, action="event.updated" if event_id else "event.created", instance=event, old_data=before, new_data=event_snapshot(event))
     if action == "publish":
         audit_action(actor=actor, action="event.published", instance=event, old_data={"status": "draft"}, new_data={"status": "upcoming"}, reason="Published to staff; public registration settings retained.")
+        from apps.staffing.services import open_signup_on_publish
+        open_signup_on_publish(event, actor)
     return event, form
 
 @transaction.atomic
@@ -136,6 +138,9 @@ def transition_event(*, event_id, action, actor, data):
         event.details_finalized_by = None
     event.full_clean()
     event.save()
+    if action == "publish":
+        from apps.staffing.services import open_signup_on_publish
+        open_signup_on_publish(event, actor)
     if action=="complete":
         from apps.operations.execution_services import record_ended
         record_ended(event=event,actor=actor,reason=form.cleaned_data.get('reason',''))

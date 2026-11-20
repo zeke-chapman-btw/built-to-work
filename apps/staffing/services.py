@@ -257,3 +257,22 @@ def validate_event_schedule(event, before):
                 raise ValidationError("The new event calendar excludes confirmed staff dates. Edit staffing first.")
             if row.date>=event.local_start_at.date() and (row.starts_at<event.start_at or row.ends_at>event.end_at):
                 raise ValidationError("The new event window excludes confirmed working times. Edit staffing first.")
+
+
+
+def open_signup_on_publish(event, actor=None):
+    """When an event becomes Upcoming, staff sign-up opens automatically. Managers can turn it off afterwards.
+    Days with no needs set yet start from the plan's defaults when the needs are saved."""
+    plan = StaffingPlan.objects.filter(event=event).first()
+    if plan is None:
+        plan = StaffingPlan.objects.create(event=event, is_published=True)
+    elif not plan.is_published:
+        plan.is_published = True
+        plan.save(update_fields=["is_published", "updated_at"])
+    else:
+        return plan
+    from apps.core.audit import record_audit
+    if actor is not None:
+        record_audit(actor=actor, action="staffing.signup_opened", instance=plan, source="event_publish",
+                     new_data={"is_published": True}, reason="Staff sign-up opens when the event is published.")
+    return plan

@@ -174,7 +174,7 @@ def _save(row, keep_secret_notes):
             deadline = None
     if row["staff"] or row["drivers"] or row["daily"]:
         plan = StaffingPlan.objects.create(event=event, required_staff=row["staff"], required_drivers=row["drivers"],
-                                           signup_deadline=deadline)
+                                           signup_deadline=deadline, is_published=event.status == "upcoming")
         for need in row["daily"]:
             DailyStaffingNeed.objects.create(plan=plan, date=_day(need["date"]), required_staff=need["staff"],
                                              required_drivers=need["drivers"])
