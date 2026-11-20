@@ -231,15 +231,18 @@ def historical_review(request, row_id):
             chosen = request.POST.get("participant_uuid", "")
             person = Participant.objects.filter(identity_uuid=chosen).first() if chosen and _uuid_like(chosen) else None
             decision = request.POST.get("decision", "")
-            reason = request.POST.get("reason", "").strip() or (
-                "Same person, checked in Needs a look." if decision == "link" else "Different person, checked in Needs a look.")
+            reason = request.POST.get("reason", "").strip() or {
+                "link": "Same person, checked in Needs a look.", "skip": "Left out, checked in Needs a look."}.get(
+                decision, "Different person, checked in Needs a look.")
             resolve_review(row, actor=request.user, decision=decision, reason=reason, participant=person)
             return people_saved(request,"participants:historical-review-list")
         except (ValidationError, ValueError) as exc:
             error = "; ".join(getattr(exc, "messages", [str(exc)]))
     people = _candidates(row)
     mine = _row_card(row)
-    cards = [{"person": p, "card": _person_card(p), "events": [r.event_name for r in p.historical_events.all()][:6]} for p in people]
+    label = _event_label(row).split(" · ")[0].strip().lower()
+    cards = [{"person": p, "card": _person_card(p), "events": [r.event_name for r in p.historical_events.all()][:6],
+              "has_event": any(r.event_name.strip().lower() == label for r in p.historical_events.all())} for p in people]
     compare = [{"label": label, "mine": mine[key], "theirs": [{"value": c["card"][key],
                "same": bool(mine[key]) and str(mine[key]).strip().lower() == str(c["card"][key]).strip().lower()} for c in cards]}
                for label, key in COMPARE]

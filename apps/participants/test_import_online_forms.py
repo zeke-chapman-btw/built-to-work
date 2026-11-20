@@ -212,3 +212,7 @@ class NeedsALookTests(TestCase):
         self.client.post(reverse("participants:historical-review", args=[row.pk]), {"decision": "link", "participant_uuid": str(existing.identity_uuid)})
         row.refresh_from_db()
         self.assertEqual((row.status, row.participant_id), ("imported", existing.pk))
+        sam = HistoricalImportRow.objects.get(batch=batch, row_number=4)
+        self.client.post(reverse("participants:historical-review", args=[sam.pk]), {"decision": "skip"})
+        sam.refresh_from_db()
+        self.assertEqual((sam.status, sam.participant_id), ("skipped", None))

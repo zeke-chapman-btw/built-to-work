@@ -626,12 +626,19 @@ def import_ready(batch, *, actor, limit=None):
 
 
 def resolve_review(row, *, actor, decision, reason, participant=None):
-    if not reason.strip() or decision not in ("link", "separate"):
+    if not reason.strip() or decision not in ("link", "separate", "skip"):
         raise ValidationError("A decision and audit reason are required.")
     with transaction.atomic():
         row = HistoricalImportRow.objects.select_for_update().get(pk=row.pk)
         if row.status != HistoricalImportRow.Status.REVIEW:
             raise ValidationError("This row is no longer awaiting review.")
+        if decision == "skip":  # not brought in: a test entry, or already in the app with this event
+            row.status = HistoricalImportRow.Status.SKIPPED
+            row.review_reason, row.reviewed_by, row.reviewed_at = reason.strip(), actor, timezone.now()
+            row.save(update_fields=("status", "review_reason", "reviewed_by", "reviewed_at"))
+            audit_action(actor=actor, action="historical.import.resolve", instance=row,
+                         new_data={"decision": "skip"}, reason=reason.strip())
+            return row
         if decision == "link":
             if participant is None or participant.kind != Participant.Kind.PERSON:
                 raise ValidationError("Choose a person to link.")
