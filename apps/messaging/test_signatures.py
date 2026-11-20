@@ -66,7 +66,7 @@ class GmailOnlyPictureTests(TestCase):
         sent = message.alternatives[0][0]
         self.assertNotIn("mail.google.com", sent)
         self.assertIn("email/btw-logo", sent)
-        self.assertIn('width="150"', sent)
+        self.assertIn('width="200"', sent)
 
     def test_sender_name_comes_from_the_staff_profile(self):
         from django.contrib.auth import get_user_model

@@ -144,7 +144,7 @@ def logo_url():
 def public_images(html):
     """Pictures copied from a Gmail signature point inside that person's Gmail, so nobody else can see them.
     Show the Built to Work logo there instead."""
-    return PRIVATE_IMAGE.sub(lambda m: f'<img src="{logo_url()}" alt="Built to Work" width="150" height="94" style="width:150px;height:auto">', html or "")
+    return PRIVATE_IMAGE.sub(lambda m: f'<img src="{logo_url()}" alt="Built to Work" width="200" height="125" style="width:200px;height:auto">', html or "")
 
 
 def build(subject, body, sender, to, *, signature_html="", **kwargs):
