@@ -137,14 +137,14 @@ def logo_url():
     from django.conf import settings
     from django.templatetags.static import static
     base = (getattr(settings, "PARTICIPANT_PORTAL_BASE_URL", "") or "").rstrip("/")
-    path = static("email/btw-logo.png")
+    path = static("email/btw-logo-stacked.png")
     return path if path.startswith("http") or not base else base + path
 
 
 def public_images(html):
     """Pictures copied from a Gmail signature point inside that person's Gmail, so nobody else can see them.
     Show the Built to Work logo there instead."""
-    return PRIVATE_IMAGE.sub(lambda m: f'<img src="{logo_url()}" alt="Built to Work" width="180" style="width:180px;height:auto">', html or "")
+    return PRIVATE_IMAGE.sub(lambda m: f'<img src="{logo_url()}" alt="Built to Work" width="150" height="94" style="width:150px;height:auto">', html or "")
 
 
 def build(subject, body, sender, to, *, signature_html="", **kwargs):
