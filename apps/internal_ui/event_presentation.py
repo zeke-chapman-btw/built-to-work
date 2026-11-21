@@ -104,7 +104,8 @@ def operations_overview_extras(user, data):
         form_name = ""
         try:
             from apps.participants.intake_models import IntakeFormAssignment
-            a = IntakeFormAssignment.objects.filter(event=event, channel="event", is_active=True).select_related("form", "active_version").first()
+            a = (IntakeFormAssignment.objects.filter(event=event, channel="event", is_active=True).select_related("form", "active_version").first()
+                 or IntakeFormAssignment.objects.filter(event=None, trailer=None, channel="event", is_active=True).select_related("form", "active_version").first())
             if a:
                 form_name = a.form.name + (f" · v{a.active_version.number}" if a.active_version_id else "")
         except Exception:

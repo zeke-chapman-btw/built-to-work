@@ -340,9 +340,9 @@ class IntakeTrailer11BTests(TestCase):
         self.assertEqual(review.evidence["registration_status"], "held")
         self.assertFalse(QrTicket.objects.exists())
 
-    def test_event_assignment_requires_scope(self):
-        with self.assertRaises(ValidationError):
-            assign(actor=self.admin, version_id=self.version.pk, channel="event")
+    def test_event_assignment_without_an_event_is_the_all_events_form(self):
+        assignment = assign(actor=self.admin, version_id=self.version.pk, channel="event")
+        self.assertEqual((assignment.event_id, assignment.scope_key), (None, "event:global:global"))
 
     def test_older_offline_answers_do_not_replace_newer_current_fields(self):
         from .models import RegistrationFormVersion, ConsentDocumentVersion

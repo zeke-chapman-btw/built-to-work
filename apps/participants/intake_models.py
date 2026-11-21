@@ -24,8 +24,7 @@ class IntakeFormAssignment(TimestampedModel):
     def clean(self):
         if self.channel == self.Channel.ONLINE and (self.event_id or self.trailer_id):
             raise ValidationError("General online assignments cannot name an event or trailer.")
-        if self.channel == self.Channel.EVENT and not self.event_id:
-            raise ValidationError("An event-linked assignment needs an event.")
+        # An event-linked assignment with no event is the form for every event that has none of its own.
         if self.channel == self.Channel.TRAILER and (not self.event_id or not self.trailer_id):
             raise ValidationError("Trailer assignments need an event and trailer.")
         if self.channel != self.Channel.TRAILER and self.trailer_id:

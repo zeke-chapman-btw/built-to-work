@@ -45,7 +45,8 @@ def public_assignment(event=None):
     """The form the public gets: the event's own form, else the general online form."""
     usable = dict(is_active=True, form__is_active=True, active_version__status="published")
     if event is not None:
-        own = IntakeFormAssignment.objects.filter(channel="event", event=event, **usable).first()
+        own = (IntakeFormAssignment.objects.filter(channel="event", event=event, **usable).first()
+               or IntakeFormAssignment.objects.filter(channel="event", event=None, trailer=None, **usable).first())
         if own:
             return own
     return IntakeFormAssignment.objects.filter(channel="online", event=None, trailer=None, **usable).first()
@@ -56,7 +57,7 @@ def public_start_url(event=None):
     if assignment is None:
         return None
     url = reverse("participants:intake-start", args=[assignment.pk])
-    return url + ("?event=" + str(event.pk) if event is not None and assignment.channel == "online" else "")
+    return url + ("?event=" + str(event.pk) if event is not None and assignment.event_id is None else "")
 
 
 @never_cache
@@ -71,7 +72,7 @@ def start(request, assignment_id):
         from .intake_submission import _staff_channel
         _staff_channel(request.user, assignment.channel)
     event = assignment.event
-    if assignment.channel == "online":
+    if assignment.channel == "online" or (assignment.channel == "event" and assignment.event_id is None):
         raw_event = request.GET.get("event") or request.POST.get("event")
         if raw_event:
             try:
@@ -79,6 +80,9 @@ def start(request, assignment_id):
             except (Event.DoesNotExist, ValueError, ValidationError):
                 raise Http404
     error = ""
+    screens = public_screens(assignment.active_version)
+    if screens["welcome_skip"]:
+        return _start_on_step_one(request, assignment, event, preparation)
     if request.method == "POST":
         try:
             session = start_session(assignment=assignment, browser_key=browser_key(request),
@@ -90,6 +94,29 @@ def start(request, assignment_id):
     return render(request, "participants/intake_start.html", {
         "assignment": assignment, "event": event, "error": error,
         "screens": public_screens(assignment.active_version)})
+
+
+def _start_on_step_one(request, assignment, event, preparation):
+    """No welcome screen: Step 1 shows straight away. Nothing is saved until the person presses
+    Save and continue, so someone who only looks at the page doesn't leave an empty sign-up behind."""
+    version = assignment.active_version
+    form = IntakeStepForm(request.POST if request.method == "POST" else None, contract=version.snapshot,
+                          step=contract_step_for(1), answers={}, consent_only=False, event=event, context={})
+    if request.method == "POST" and form.is_valid():
+        try:
+            session = start_session(assignment=assignment, browser_key=browser_key(request),
+                                    actor=request.user, event=event, preparation=preparation)
+            save_personal_information(session=session, values=form.payload(), expected_revision=session_revision(session))
+        except ValidationError as exc:
+            _errors(form, exc)
+        else:
+            return redirect("participants:intake-session", session_id=session.pk)
+    return render(request, "participants/intake_step.html", {
+        "session": None, "event": event, "form": form, "step": 1, "step_name": UI_STEP_NAMES[1], "progress": 20,
+        "questions": form.display_questions(), "experience_rows": form.display_rows(),
+        "experience_question": form.experience_question, "event_fields": [form[name] for name in form.event_fields],
+        "contract": version.snapshot, "prior_answers": {}, "revision": "", "previous_step": 0,
+        "marketing_wording": _marketing_wording(), "marketing_checked": False})
 
 
 @never_cache

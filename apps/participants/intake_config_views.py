@@ -102,7 +102,8 @@ def _form_rows():
     """One line per form: status, size and where it's used."""
     from .models import IntakeFormAssignment
     rows = []
-    live = list(IntakeFormAssignment.objects.filter(is_active=True).values_list("form_id", "channel"))
+    live = [(form_id, "events" if channel == "event" and not event_id else channel) for form_id, channel, event_id in
+            IntakeFormAssignment.objects.filter(is_active=True).values_list("form_id", "channel", "event_id")]
     for form in RegistrationForm.objects.filter(is_smart_intake=True).prefetch_related("versions").order_by("-is_active", "name"):
         versions = sorted(form.versions.all(), key=lambda v: v.version)
         latest = versions[-1] if versions else None
@@ -112,7 +113,9 @@ def _form_rows():
         channels = [channel for form_id, channel in live if form_id == form.pk]
         used = []
         if "online" in channels:
-            used.append("General online")
+            used.append("Website")
+        if "events" in channels:
+            used.append("All events")
         events = channels.count("event")
         if events:
             used.append(f"{events} event{'s' if events != 1 else ''}")
@@ -139,11 +142,17 @@ def _place_rows(places):
     from apps.events.templatetags.ticket_ui import event_dates, event_place
     rows = []
     general = places["general_assignment"]
-    rows.append({"kind": "online", "kind_label": "Online", "name": "General sign-up link", "sub": "Website, social posts, anyone not at an event",
+    rows.append({"kind": "online", "kind_label": "Online", "name": "Website sign-up", "sub": "The website, social posts, anyone not at an event",
                  "form": general.form.name if general else "", "status": "open" if general else "none",
                  "links": [("QR", reverse("participants:signup-qr-sheet", args=["general"]), True)]
                           + ([("Preview", reverse("participants:intake-config-preview", args=[general.active_version_id]), False)] if general else [])
                           + [("Change", reverse("participants:signup-where", args=["general"]), "editor")]})
+    events_default = places.get("events_default")
+    rows.append({"kind": "event", "kind_label": "Events", "name": "All events", "sub": "Any event without a form of its own",
+                 "form": events_default.form.name if events_default else ("Same as the website" if general else ""),
+                 "status": "open" if (events_default or general) else "none",
+                 "links": ([("Preview", reverse("participants:intake-config-preview", args=[events_default.active_version_id]), False)] if events_default else [])
+                          + [("Change", reverse("participants:signup-where", args=["events"]), "editor")]})
     for place in places["event_places"]:
         event = place["event"]
         where = event_place(event)
@@ -153,7 +162,7 @@ def _place_rows(places):
             links.append(("Preview", reverse("participants:intake-config-preview", args=[place["own"].active_version_id]), False))
         links.append(("Change", reverse("participants:signup-where", args=["event", event.pk]), "editor"))
         rows.append({"kind": "event", "kind_label": "Event", "name": event.name, "sub": event_dates(event) + (" · " + where if where else ""),
-                     "form": place["own"].form.name if place["own"] else ("Same as online" if general else ""),
+                     "form": place["own"].form.name if place["own"] else ("Same as all events" if (events_default or general) else ""),
                      "status": "open" if place["open"] else "closed", "links": links})
     for place in places["trailer_places"]:
         rows.append({"kind": "trailer", "kind_label": "Trailer sign", "name": str(place["trailer"]),
@@ -176,7 +185,8 @@ def _signup_places():
     for a in live:
         a.label = f"{a.form.name} · version {a.active_version.version}"
     general = next((a for a in live if a.channel == "online"), None)
-    own = {a.event_id: a for a in live if a.channel == "event"}
+    own = {a.event_id: a for a in live if a.channel == "event" and a.event_id}
+    events_default = next((a for a in live if a.channel == "event" and not a.event_id), None)
     from .intake_submission import _public_event
 
     def is_open(event):
@@ -188,7 +198,7 @@ def _signup_places():
     events = [{"event": e, "own": own.get(e.pk), "open": is_open(e)} for e in links.public_events()]
     trailers = [{"trailer": t, "event": links.trailer_event(t)} for t in TrailerInstance.objects.filter(is_active=True).order_by("display_name")]
     staffed = [a for a in live if a.channel in {"staff", "trailer"}]
-    return {"general_assignment": general, "event_places": events, "trailer_places": trailers, "staff_places": staffed}
+    return {"general_assignment": general, "events_default": events_default, "event_places": events, "trailer_places": trailers, "staff_places": staffed}
 
 
 @admin_page
@@ -489,12 +499,16 @@ class ScreensForm(forms.Form):
             self.fields[key] = forms.CharField(label=LABELS[key], required=False, max_length=LIMITS[key],
                 initial=(current or {})[key] if key in (current or {}) else default,
                 widget=forms.Textarea(attrs={"rows": 3}) if long else forms.TextInput())
+        self.fields["welcome_skip"] = forms.BooleanField(required=False, label="Skip the welcome screen",
+            initial=(current or {}).get("welcome_skip") == "yes",
+            help_text="People open straight on Step 1. Good for the website, where the page already explains the form.")
+        self.order_fields(["revision", "welcome_skip"])
         self.fields["welcome_challenge"].help_text = "Leave blank to hide this line."
         self.fields["finish_message"].help_text = "Shown when there is no event ticket. With a ticket, people see their ticket instead."
 
     @property
     def field_groups(self):
-        welcome = [self[k] for k in self.fields if k.startswith("welcome")]
+        welcome = [self[k] for k in self.fields if k.startswith("welcome")]  # the skip switch comes first
         finish = [self[k] for k in self.fields if k.startswith("finish")]
         return [{"title": "Welcome screen", "fields": welcome}, {"title": "Finish screen", "fields": finish}]
 

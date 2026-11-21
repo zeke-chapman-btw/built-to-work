@@ -28,6 +28,8 @@ def trailer_start(request, trailer_id):
 def _target(kind, obj_id):
     if kind == GENERAL:
         return None, "General online sign-up", links.general_path()
+    if kind == "events":
+        return None, "All events", links.general_path()
     if kind == "event":
         event = get_object_or_404(Event, pk=obj_id)
         return event, event.name, links.event_path(event)
@@ -62,9 +64,9 @@ def qr_sheet(request, kind, obj_id=None):
 class WhereForm(forms.Form):
     form = forms.ChoiceField(label="Form to use", widget=forms.RadioSelect(attrs={"class": "btw-chip-choices"}))
 
-    def __init__(self, *args, allow_general=False, **kwargs):
+    def __init__(self, *args, allow_general=False, all_events=False, **kwargs):
         super().__init__(*args, **kwargs)
-        choices = [("", "Use the general online form")] if allow_general else []
+        choices = [("", "Same as all events" if all_events else "Same as the website")] if allow_general else []
         for item in RegistrationForm.objects.filter(is_smart_intake=True, is_active=True).order_by("name"):
             published = item.versions.filter(status="published").order_by("-version").first()
             if published:
@@ -84,17 +86,19 @@ def where_edit(request, kind, obj_id=None):
     target, title, _ = _target(kind, obj_id)
     if kind == "trailer":
         raise Http404
+    if kind == "trailer":
+        raise Http404
     event = target if kind == "event" else None
-    channel = "event" if event else "online"
+    channel = "event" if event or kind == "events" else "online"
     current = IntakeFormAssignment.objects.filter(channel=channel, event=event, trailer=None, is_active=True).first()
-    form = WhereForm(request.POST or None, allow_general=event is not None,
+    form = WhereForm(request.POST or None, allow_general=channel == "event", all_events=event is not None,
                      initial={"form": str(current.active_version_id) if current else ""})
     back = reverse("participants:intake-config-index")
     if request.method == "POST" and form.is_valid():
         try:
             if form.cleaned_data["form"]:
                 assign(actor=request.user, version_id=int(form.cleaned_data["form"]), channel=channel, event=event)
-            elif event is not None:
+            elif channel == "event":
                 unassign(actor=request.user, channel="event", event=event)
         except ValidationError as exc:
             form.add_error(None, exc)

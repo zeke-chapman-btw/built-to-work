@@ -32,8 +32,14 @@ OPTIONAL = {"welcome_challenge"}
 LIMITS = {key: (600 if key.endswith("message") else 160) for key in DEFAULTS}
 
 
+SWITCHES = {"welcome_skip"}  # "yes" = open straight on Step 1, with no welcome screen
+
+
 def clean_screens(values):
     cleaned = {}
+    for key in SWITCHES:
+        if (values or {}).get(key) in (True, "yes", "on", "1"):
+            cleaned[key] = "yes"
     for key in DEFAULTS:
         text = str((values or {}).get(key) or "").strip()[:LIMITS[key]]
         if text and text != DEFAULTS[key]:
@@ -45,4 +51,6 @@ def clean_screens(values):
 
 def public_screens(version):
     saved = getattr(version, "screens", None) or {}
-    return {key: (saved[key] if key in saved else default) for key, default in DEFAULTS.items()}
+    result = {key: (saved[key] if key in saved else default) for key, default in DEFAULTS.items()}
+    result["welcome_skip"] = saved.get("welcome_skip") == "yes"
+    return result

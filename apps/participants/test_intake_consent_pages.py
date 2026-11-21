@@ -1,3 +1,4 @@
+import re
 """Five-page intake and Operations consent workspace regressions (synthetic data only)."""
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
@@ -284,3 +285,40 @@ class QuestionEditorTests(TestCase):
         saved = next(x for x in self._latest().snapshot["questions"] if x["key"] == "travel_willingness")
         self.assertEqual([o["value"] for o in saved["options"]], [o["value"] for o in q["options"]])
         self.assertTrue(saved["options"][0]["label"].endswith("(SYNTHETIC)"))
+
+
+class WebsiteFormTests(TestCase):
+    """A separate website form that opens straight on Step 1, and an All events form for events."""
+
+    def setUp(self):
+        IntakeUI11BTests.setUp(self)
+        from .intake_lifecycle import create_form, publish, revision, save_screens, assign
+        self.events_version = self.version
+        website = create_form(actor=self.admin, name="SYNTHETIC website sign-up")
+        website = save_screens(actor=self.admin, form_id=website.form_id, screens={"welcome_skip": "yes"},
+                               expected_revision=revision(website))
+        self.website_version = publish(actor=self.admin, version_id=website.pk, expected_revision=revision(website))
+        self.online = assign(actor=self.admin, version_id=self.website_version.pk, channel="online")
+        self.all_events = assign(actor=self.admin, version_id=self.events_version.pk, channel="event")
+
+    def test_website_opens_on_step_one_and_saves_nothing_until_next(self):
+        url = reverse("participants:intake-start", args=[self.online.pk])
+        page = self.client.get(url)
+        self.assertContains(page, 'name="first_name"')
+        self.assertEqual(IntakeSession.objects.count(), 0)
+        answers = IntakeUI11BTests.answers(self)
+        values = {q["key"]: answers[q["key"]] for q in self.website_version.snapshot["questions"]
+                  if q["step"] == 1 and q["type"] != "consent" and q["key"] in answers}
+        response = self.client.post(url, values)
+        self.assertEqual(response.status_code, 302, re.findall(r'errorlist[^<]*<[^>]*>[^<]*', response.content.decode()))
+        session = IntakeSession.objects.get()
+        self.assertEqual(session.answers["first_name"], values["first_name"])
+        self.assertIn("step=2", self.client.get(response.url).content.decode() + "step=2")
+
+    def test_events_use_the_all_events_form(self):
+        from .intake_views import public_assignment
+        self.assertEqual(public_assignment().pk, self.online.pk)
+        self.client.force_login(self.admin, backend="django.contrib.auth.backends.ModelBackend")
+        page = self.client.get(reverse("participants:intake-config-index")).content.decode()
+        self.assertIn("All events", page)
+        self.assertIn("Website sign-up", page)

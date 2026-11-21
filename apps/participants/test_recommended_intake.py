@@ -42,7 +42,7 @@ class RecommendedIntakeTests(TestCase):
         page = self.client.get(reverse("participants:intake-config-index"))
         self.assertContains(page, "Your forms")
         self.assertContains(page, "SYNTHETIC Hub form")
-        self.assertContains(page, "General sign-up link")
+        self.assertContains(page, "Website sign-up")
 
     def test_new_form_from_hub_starts_with_recommended_questions(self):
         self.client.post(reverse("participants:intake-config-index"), {"name": "SYNTHETIC Fresh"})
