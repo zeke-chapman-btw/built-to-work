@@ -8,6 +8,14 @@ from .intake_labels import destination_choices
 from .intake_contracts import DESTINATIONS, KINDS, PROTECTED, validate_contract
 
 
+import re
+
+CHOICE_TYPES = {"single_choice", "multiple_choice"}
+TYPE_LABELS = {"short_text": "Short answer", "long_text": "Long answer", "single_choice": "Choose one answer",
+               "multiple_choice": "Choose several answers", "date": "Date", "email": "Email", "phone": "Phone",
+               "consent": "Consent", "repeat_group": "Repeating list"}
+
+
 def option_lines(options):
     return "\n".join(item["value"] + " | " + item["label"] for item in options)
 
@@ -24,27 +32,51 @@ def parse_options(text):
     return options
 
 
+def _new_value(label, taken):
+    base = re.sub(r"[^a-z0-9]+", "_", label.lower()).strip("_")[:40] or "choice"
+    value, n = base, 2
+    while value in taken:
+        value, n = f"{base}_{n}", n + 1
+    return value
+
+
+def decode_rule(rule):
+    """(mode, question key, [answer values]) for the plain "Show this question" controls."""
+    if not rule:
+        return "always", "", []
+    if rule == {"op": "adult_non_student"}:
+        return "adult", "", []
+    if set(rule) == {"field", "op", "value"}:
+        values = rule["value"] if isinstance(rule["value"], list) else [rule["value"]]
+        return "answer", rule["field"], values
+    parts = rule.get("any")
+    if isinstance(parts, list) and parts and all(isinstance(p, dict) and set(p) == {"field", "op", "value"}
+                                                 and p["op"] == "contains" for p in parts):
+        fields = {p["field"] for p in parts}
+        if len(fields) == 1:
+            return "answer", fields.pop(), [p["value"] for p in parts]
+    return "custom", "", []
+
+
 class QuestionConfigForm(forms.Form):
-    label = forms.CharField(max_length=240, label='Question text')
-    help_text = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 2}), max_length=2000, label='Help shown to participants')
-    type = forms.ChoiceField(label='Answer format', choices=[(kind, {'short_text': 'Short answer', 'long_text': 'Long answer',
-        'single_choice': 'Choose one answer', 'multiple_choice': 'Choose several answers'}.get(kind, kind.replace("_", " ").title())) for kind in sorted(KINDS - {"repeat_group"})])
-    step = forms.TypedChoiceField(label='Participant step', coerce=int, choices=[(1, "Step 1 — Personal information"), (2, "Step 3 — Education and employment"),
-        (3, "Step 4 — Trade interests and experience"), (4, "Step 5 — Career preferences")])
-    required = forms.BooleanField(required=False, label='Answer required')
-    destination = forms.ChoiceField(label="Saves to profile", help_text='')
-    options = forms.CharField(required=False, label='Answer choices', widget=forms.Textarea(attrs={"rows": 6}),
-        help_text="One choice code | displayed answer per line. Keep existing codes to preserve recorded answers.")
-    condition_mode = forms.ChoiceField(label='When to show this question', choices=[
-        ("keep", "Keep current condition"), ("always", "Always show"),
-        ("equals", "Show when an earlier answer equals"), ("in", "Show for any selected earlier choice"),
-        ("contains", "Show when an earlier multi-choice answer includes"),
-        ("adult_non_student", "Adults 18+ who are not high school students")])
-    condition_field = forms.ChoiceField(required=False, label="Earlier question")
-    condition_values = forms.MultipleChoiceField(required=False, label="Answers that show this question")
-    max_selections = forms.IntegerField(required=False, min_value=1)
-    min_selections = forms.IntegerField(required=False, min_value=0)
-    exclusive = forms.CharField(required=False, help_text="Comma-separated stable values that must be selected alone.")
+    label = forms.CharField(max_length=240, label="Question")
+    help_text = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 2}), max_length=2000,
+                                label="Extra help under the question", help_text="Optional. Shown in smaller text.")
+    type = forms.ChoiceField(label="Answer type", choices=[(k, TYPE_LABELS[k]) for k in
+        ("short_text", "long_text", "single_choice", "multiple_choice", "date", "email", "phone")])
+    step = forms.TypedChoiceField(label="Step", coerce=int, choices=[(1, "1 · Personal information"), (2, "3 · Education and employment"),
+        (3, "4 · Trade interests and experience"), (4, "5 · Career preferences")])
+    required = forms.BooleanField(required=False, label="People must answer this")
+    show_when = forms.ChoiceField(label="Show this question", widget=forms.RadioSelect, choices=[
+        ("always", "Always"), ("answer", "Only when an earlier answer is picked"),
+        ("adult", "Only for adults (18+) who aren't in high school")])
+    show_field = forms.ChoiceField(required=False, label="Earlier question")
+    show_values = forms.MultipleChoiceField(required=False, label="Answers that show it", widget=forms.CheckboxSelectMultiple)
+    max_selections = forms.IntegerField(required=False, min_value=1, label="People can pick up to",
+                                        help_text="Leave blank for no limit.")
+    min_selections = forms.IntegerField(required=False, min_value=0, label="People must pick at least")
+    destination = forms.ChoiceField(required=False, label="Where the answer is saved",
+                                    help_text="Which part of the participant's profile this answer fills in.")
 
     def __init__(self, *args, contract, key=None, child=False, **kwargs):
         self.contract, self.key, self.child = deepcopy(contract), key, child
@@ -52,57 +84,115 @@ class QuestionConfigForm(forms.Form):
                      if child else contract["questions"])
         self.question = next((q for q in questions if q["key"] == key), None)
         super().__init__(*args, **kwargs)
-        self.fields["destination"].choices = destination_choices(
-            DESTINATIONS, child=child, current=(self.question or {}).get("destination"))
+        q = self.question or {}
+        self.is_core = bool(q) and (key in PROTECTED or child)
+        self.fields["destination"].choices = destination_choices(DESTINATIONS, child=child, current=q.get("destination"))
         prior = []
-        for q in questions:
-            if q["key"] == key:
+        for other in questions:
+            if other["key"] == key:
                 break
-            if q["type"] in {"single_choice", "multiple_choice"}:
-                prior.append(q)
-        self.fields["condition_field"].choices = [("", "Choose earlier question")] + [
-            (q["key"], q["label"]) for q in prior]
-        choices = {}
-        for q in prior:
-            for item in q["options"]:
-                choices[item["value"]] = item["label"]
-        self.fields["condition_values"].choices = list(choices.items())
-        if self.question and self.question["type"] == "consent":
-            self.fields["step"].choices = [(1, "Step 2 — Consent")]
-        if self.question:
-            self.initial.update({k: self.question.get(k) for k in ("label", "help_text", "type", "step",
-                                "required", "destination", "max_selections", "min_selections")})
-            self.initial.update(options=option_lines(self.question.get("options", [])), condition_mode="keep",
-                                exclusive=",".join(self.question.get("exclusive", [])))
-            if self.question["type"] == "repeat_group":
-                self.fields["type"].choices += [("repeat_group", "Common experience group")]
+            if other["type"] in CHOICE_TYPES:
+                prior.append(other)
+        self.prior = {other["key"]: other for other in prior}
+        self.fields["show_field"].choices = [("", "Choose a question")] + [(o["key"], o["label"]) for o in prior]
+        self.fields["show_values"].choices = [(f"{o['key']}::{item['value']}", item["label"]) for o in prior for item in o.get("options", [])]
+        mode, field, values = decode_rule(q.get("rule"))
+        if mode == "custom":
+            self.fields["show_when"].choices = [("custom", "Keep the current rule")] + self.fields["show_when"].choices
+        self.rule_mode = mode
+        if q.get("type") == "consent":
+            self.fields["step"].choices = [(1, "2 · Consent")]
+        if q:
+            self.initial.update({k: q.get(k) for k in ("label", "help_text", "type", "step", "required", "destination",
+                                                       "max_selections", "min_selections")})
+            self.initial.update(show_when=mode, show_field=field, show_values=[f"{field}::{v}" for v in values])
+            if q["type"] not in dict(self.fields["type"].choices):
+                self.fields["type"].choices += [(q["type"], TYPE_LABELS.get(q["type"], q["type"]))]
         else:
-            self.initial.update(step=4, type="short_text", destination="submission_only", condition_mode="always")
+            self.initial.update(step=4, type="short_text", destination="submission_only", show_when="always")
+        # Core questions keep their answer type and profile field; everything else stays editable.
+        if self.is_core or q.get("type") in {"repeat_group", "consent"}:
+            for name in ("type", "destination"):
+                self.fields[name].disabled = True
+        if child:
+            self.fields["step"].disabled = True
+        self.type_label = TYPE_LABELS.get(q.get("type") or "short_text", "")
+        self.option_rows = self._option_rows(q)
+
+    def _option_rows(self, q):
+        if self.is_bound:
+            tokens, labels = self.data.getlist("opt_token"), self.data.getlist("opt_label")
+            alone = set(self.data.getlist("opt_alone"))
+            return [{"token": t, "label": l, "alone": t in alone} for t, l in zip(tokens, labels)]
+        exclusive = set(q.get("exclusive", []))
+        return [{"token": o["value"], "label": o["label"], "alone": o["value"] in exclusive} for o in q.get("options", [])]
+
+    def clean(self):
+        data = super().clean()
+        kind = data.get("type") or (self.question or {}).get("type")
+        rows = [r for r in self.option_rows if r["label"].strip()]
+        if kind in CHOICE_TYPES and not rows:
+            raise ValidationError("Add at least one answer people can pick.")
+        if data.get("show_when") == "answer":
+            field = data.get("show_field")
+            picked = [v.split("::", 1)[1] for v in data.get("show_values", []) if v.split("::", 1)[0] == field]
+            if not field or not picked:
+                self.add_error("show_values", "Choose the earlier question and at least one of its answers.")
+            data["picked"] = picked
+        return data
+
+    def _rule(self, data):
+        mode = data["show_when"]
+        current = (self.question or {}).get("rule")
+        if mode == "custom":
+            return current
+        if mode == "always":
+            return None
+        if mode == "adult":
+            return {"op": "adult_non_student"}
+        field, picked = data["show_field"], data["picked"]
+        parent = self.prior[field]
+        order = [o["value"] for o in parent["options"]]
+        picked = sorted(set(picked), key=order.index)
+        old_mode, old_field, old_values = decode_rule(current)
+        if old_mode == "answer" and old_field == field and set(old_values) == set(picked):
+            return current  # unchanged: keep it exactly as it was
+        if parent["type"] == "multiple_choice":
+            parts = [{"field": field, "op": "contains", "value": v} for v in picked]
+            return parts[0] if len(parts) == 1 else {"any": parts}
+        if len(picked) == 1:
+            return {"field": field, "op": "equals", "value": picked[0]}
+        return {"field": field, "op": "in", "value": picked}
 
     def updated_contract(self, new_key=None):
         data = self.cleaned_data
         key = self.key or new_key
         question = deepcopy(self.question) if self.question else {"key": key}
-        question.update({k: data[k] for k in ("label", "type", "step", "required", "destination")})
+        question.update({k: data[k] for k in ("label", "type", "step", "required")})
+        question["destination"] = data["destination"] or "submission_only"
         question["help_text"] = data["help_text"]
-        question["options"] = parse_options(data["options"])
+        if question["type"] in CHOICE_TYPES:
+            taken, options, exclusive = set(), [], []
+            known = {o["value"] for o in (self.question or {}).get("options", [])}
+            for row in (r for r in self.option_rows if r["label"].strip()):
+                value = row["token"] if row["token"] in known and row["token"] not in taken else _new_value(row["label"], taken | known)
+                taken.add(value)
+                options.append({"value": value, "label": row["label"].strip()})
+                if row["alone"]:
+                    exclusive.append(value)
+            question["options"], question["exclusive"] = options, exclusive
+        else:
+            question["options"], question["exclusive"] = [], []
         for name in ("max_selections", "min_selections"):
-            if data[name] is not None:
+            if question["type"] == "multiple_choice" and data[name] is not None:
                 question[name] = data[name]
             else:
                 question.pop(name, None)
-        question["exclusive"] = [v.strip() for v in data["exclusive"].split(",") if v.strip()]
-        mode = data["condition_mode"]
-        if mode == "always":
+        rule = self._rule(data)
+        if rule:
+            question["rule"] = rule
+        else:
             question.pop("rule", None)
-        elif mode == "adult_non_student":
-            question["rule"] = {"op": mode}
-        elif mode != "keep":
-            values = data["condition_values"]
-            if not data["condition_field"] or not values or (mode != "in" and len(values) != 1):
-                raise ValidationError("Choose the earlier question and valid triggering choices.")
-            question["rule"] = {"field": data["condition_field"], "op": mode,
-                                "value": values if mode == "in" else values[0]}
         questions = (next(q for q in self.contract["questions"] if q["key"] == "experiences")["children"]
                      if self.child else self.contract["questions"])
         if self.question:

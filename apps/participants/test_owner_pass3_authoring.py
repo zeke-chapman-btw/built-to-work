@@ -32,7 +32,7 @@ class IntakeAuthoringPresentationTests(TestCase):
             flat.update(dict(label) if isinstance(label, (list, tuple)) else {value: label})
         self.assertEqual(set(flat), {'submission_only'} | set(DESTINATIONS))
         self.assertEqual(flat['dob'], 'Date of birth')
-        self.assertEqual(form.fields['destination'].label, 'Saves to profile')
+        self.assertEqual(form.fields['destination'].label, 'Where the answer is saved')
 
     def test_order_change_moves_within_participant_step_and_retains_published_version(self):
         from .intake_lifecycle import revision

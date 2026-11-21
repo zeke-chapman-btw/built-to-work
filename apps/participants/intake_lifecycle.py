@@ -148,8 +148,16 @@ def publish(*, actor, version_id, expected_revision):
         version.published_at = timezone.now()
         version.effective_at = version.published_at
         version.save(update_fields=["status", "snapshot", "content_hash", "published_at", "effective_at", "updated_at"])
-    # Publishing does not change any assignment or trailer activation.
-    _audit(actor, "version.published", version, version=version.version, digest=version.content_hash)
+    # Online, event and staff sign-ups that use this form move to the new version straight away, so the
+    # website shows what was just published. Trailer tablets keep their downloaded version until set up again.
+    from .intake_models import IntakeFormAssignment
+    moved = 0
+    for assignment in IntakeFormAssignment.objects.select_for_update(of=("self",)).filter(
+            form=form, is_active=True).exclude(channel="trailer"):
+        assignment.active_version, assignment.updated_by = version, actor
+        assignment.save(update_fields=["active_version", "updated_by", "updated_at"])
+        moved += 1
+    _audit(actor, "version.published", version, version=version.version, digest=version.content_hash, moved=moved)
     return version
 
 

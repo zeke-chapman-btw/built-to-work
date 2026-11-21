@@ -252,7 +252,8 @@ def detail(request, form_id):
         except ValidationError as exc:
             error = _message(exc)
         else:
-            messages.success(request, "Form action completed. Trailer downloads still require explicit local Admin confirmation.")
+            messages.success(request, "Published. The website and event sign-ups now show this version." if request.POST.get("action") == "publish"
+                             else "Saved.")
             return redirect("participants:intake-config-detail", form_id=model.pk)
     # Display the existing five participant-facing steps without rewriting the
     # retained schema, question ordering within a step, keys or conditions.
@@ -302,6 +303,8 @@ def edit(request, form_id, key=None, child=False, mode="question"):
                 from django.http import Http404
                 raise Http404
     form = classes[mode](request.POST if request.method == "POST" else None, **kwargs)
+    if mode == "question":
+        return _question_editor(request, model, version, form, key)
     if request.method == "POST" and form.is_valid():
         try:
             new_key = "custom_" + uuid.uuid4().hex[:12] if key is None else None
@@ -320,6 +323,31 @@ def edit(request, form_id, key=None, child=False, mode="question"):
         is_protected=key in PROTECTED or child, mode=mode, editor_groups=intake_editor_groups(form,mode)))
 
 
+def _question_editor(request, model, version, form, key):
+    """One question, edited in a pop-up from the form page (or a page of its own without scripts)."""
+    from django.urls import reverse
+    from apps.internal_ui.record_editors import editor_response, editor_success
+    back = reverse("participants:intake-config-detail", args=[model.pk])
+    if request.method == "POST" and form.is_valid():
+        try:
+            new_key = "custom_" + uuid.uuid4().hex[:12] if key is None else None
+            save_draft(actor=request.user, form_id=model.pk, contract=form.updated_contract(new_key=new_key),
+                       expected_revision=request.POST.get("revision"))
+        except ValidationError as exc:
+            form.add_error(None, exc)
+        else:
+            messages.success(request, "Saved. It goes live when you press Publish.")
+            return editor_success(request, back)
+    current = (form.question or {}).get("destination")
+    return editor_response(request, template="participants/intake_question_page.html",
+        panel="internal/ui/record_form_panel.html", context=context(request,
+            page_title="Edit question" if key else "New question", editor_context=model.name, intake_form=model,
+            form=form, back=back, save_label="Save", fields_template="participants/intake_question_fields.html",
+            revision=request.POST.get("revision") if form.is_bound else revision(version),
+            destination_text=destination_text(current) if current else "", save_conflict=has_edit_conflict(form),
+            full_page_editor=request.headers.get("X-BTW-Editor") != "1"))
+
+
 @admin_page
 @never_cache
 @require_http_methods(["POST"])
@@ -328,8 +356,19 @@ def reorder(request, form_id, key):
     latest = _latest(model)
     contract = deepcopy(latest.snapshot)
     try:
-        index = next(i for i, q in enumerate(contract["questions"]) if q["key"] == key)
         direction = request.POST.get("direction")
+        if request.POST.get("child") == "1":  # a question inside the work experience list
+            children = next(q for q in contract["questions"] if q["key"] == "experiences")["children"]
+            index = next(i for i, q in enumerate(children) if q["key"] == key)
+            other = index + (-1 if direction == "up" else 1)
+            if direction not in {"up", "down"} or not 0 <= other < len(children):
+                raise ValidationError("That question can't move further.")
+            children[index], children[other] = children[other], children[index]
+            validate_contract(contract)
+            save_draft(actor=request.user, form_id=model.pk, contract=contract, expected_revision=request.POST.get("revision"))
+            messages.success(request, "Order saved. It goes live when you press Publish.")
+            return redirect("participants:intake-config-detail", form_id=model.pk)
+        index = next(i for i, q in enumerate(contract["questions"]) if q["key"] == key)
         if direction == "remove":
             del contract["questions"][index]
         else:
@@ -346,7 +385,7 @@ def reorder(request, form_id, key):
     except (ValidationError, StopIteration) as exc:
         messages.error(request, _message(exc) if isinstance(exc, ValidationError) else "Question unavailable.")
     else:
-        messages.success(request, "Draft question order updated.")
+        messages.success(request, "Order saved. It goes live when you press Publish.")
     return redirect("participants:intake-config-detail", form_id=model.pk)
 
 

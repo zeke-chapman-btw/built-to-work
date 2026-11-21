@@ -1,0 +1,26 @@
+{% load ui_patterns %}<div class="qe-form" data-question-editor data-kind="{{ form.type.value }}"><input type="hidden" name="revision" value="{{ revision }}">
+{% if form.is_core %}<p class="qe-note">This is a core question. You can change its wording and answers, but not its answer type or where it's saved.</p>{% endif %}
+<div class="btw-field-stack">
+{% ui_field form.label %}{% ui_field form.help_text %}
+<div class="qe-pair">{% if form.type.field.disabled %}<div class="field btw-field"><span class="btw-field-label">Answer type</span><p class="qe-static">{{ form.type_label }}</p></div>{% else %}{% ui_field form.type %}{% endif %}{% if form.step.field.disabled %}<div class="field btw-field"><span class="btw-field-label">Step</span><p class="qe-static">Part of the work experience list</p></div>{% else %}{% ui_field form.step %}{% endif %}</div>
+{% ui_field form.required %}
+</div>
+
+<section class="qe-section" data-for-types="single_choice multiple_choice"><h3>Answers people can pick</h3>
+<ol class="qe-options" data-opt-list>{% for row in form.option_rows %}<li class="qe-opt"><input type="hidden" name="opt_token" value="{{ row.token }}"><input type="text" name="opt_label" value="{{ row.label }}" aria-label="Answer {{ forloop.counter }}" maxlength="240"><label class="qe-alone" data-for-types="multiple_choice"><input type="checkbox" name="opt_alone" value="{{ row.token }}"{% if row.alone %} checked{% endif %}> Only on its own</label><span class="qe-opt-tools"><button type="button" class="qe-icon" data-opt-up aria-label="Move up">↑</button><button type="button" class="qe-icon" data-opt-down aria-label="Move down">↓</button><button type="button" class="qe-icon" data-opt-remove aria-label="Remove answer">×</button></span></li>{% endfor %}</ol>
+<template data-opt-template><li class="qe-opt"><input type="hidden" name="opt_token" value=""><input type="text" name="opt_label" value="" aria-label="New answer" maxlength="240"><label class="qe-alone" data-for-types="multiple_choice"><input type="checkbox" name="opt_alone" value=""> Only on its own</label><span class="qe-opt-tools"><button type="button" class="qe-icon" data-opt-up aria-label="Move up">↑</button><button type="button" class="qe-icon" data-opt-down aria-label="Move down">↓</button><button type="button" class="qe-icon" data-opt-remove aria-label="Remove answer">×</button></span></li></template>
+<button type="button" class="button secondary qe-add" data-opt-add>+ Add answer</button>
+<p class="qe-help" data-for-types="multiple_choice">"Only on its own" is for an answer like "None of these" that can't be picked along with others.</p>
+<div data-for-types="multiple_choice">{% ui_field form.max_selections %}</div>
+</section>
+
+<section class="qe-section"><h3>When to show it</h3>
+{% ui_field form.show_when %}
+<div class="qe-rule" data-show-answer>{% ui_field form.show_field %}
+<div class="field btw-field{% if form.show_values.errors %} btw-field-invalid{% endif %}"><span class="btw-field-label">Answers that show it</span><div class="qe-values" data-show-values>{% for box in form.show_values %}<label class="qe-chip" data-value="{{ box.data.value }}">{{ box.tag }} {{ box.choice_label }}</label>{% endfor %}</div><p class="qe-help" data-show-empty>Choose a question above to see its answers.</p>{% if form.show_values.errors %}<div>{{ form.show_values.errors }}</div>{% endif %}</div></div>
+</section>
+
+<details class="btw-disclosure qe-more"{% if form.destination.errors or form.min_selections.errors %} open{% endif %}><summary>More options</summary>
+<div class="btw-field-stack"><div data-for-types="multiple_choice">{% ui_field form.min_selections %}</div>
+{% if form.destination.field.disabled %}<div class="field btw-field"><span class="btw-field-label">Where the answer is saved</span><p class="qe-static">{{ destination_text|default:"Kept with the sign-up" }}</p></div>{% else %}{% ui_field form.destination %}{% endif %}</div></details>
+</div>

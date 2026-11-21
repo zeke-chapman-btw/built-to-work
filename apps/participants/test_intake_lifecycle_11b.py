@@ -31,7 +31,7 @@ class IntakeLifecycle11BTests(TestCase):
         self.assertNotEqual(copy.stable_id, one.stable_id)
         self.assertEqual(RegistrationSubmission.objects.count(), 0)
 
-    def test_published_edits_make_new_version_and_do_not_reassign(self):
+    def test_published_edits_make_new_version_and_move_online_signups(self):
         original = self.published()
         assignment = assign(actor=self.admin, version_id=original.pk, channel="online")
         snapshot = deepcopy(original.snapshot)
@@ -42,7 +42,7 @@ class IntakeLifecycle11BTests(TestCase):
         new = publish(actor=self.admin, version_id=draft.pk, expected_revision=revision(draft))
         assignment.refresh_from_db()
         original.refresh_from_db()
-        self.assertEqual(assignment.active_version_id, original.pk)
+        self.assertEqual(assignment.active_version_id, new.pk)  # the website shows what was just published
         self.assertNotEqual(original.snapshot, new.snapshot)
         self.assertEqual(original.snapshot["questions"][0]["label"], "First name")
         assign(actor=self.admin, version_id=new.pk, channel="online")

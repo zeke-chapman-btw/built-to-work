@@ -137,9 +137,9 @@ class FivePageIntakeTests(TestCase):
         self.assertContains(response, ">Preview<")
         from .intake_config_forms import QuestionConfigForm
         consent = QuestionConfigForm(contract=self.version.snapshot, key="consent")
-        self.assertEqual(list(consent.fields["step"].choices), [(1, "Step 2 — Consent")])
+        self.assertEqual(list(consent.fields["step"].choices), [(1, "2 · Consent")])
         question = QuestionConfigForm(contract=self.version.snapshot, key="first_name")
-        self.assertIn((4, "Step 5 — Career preferences"), list(question.fields["step"].choices))
+        self.assertIn((4, "5 · Career preferences"), list(question.fields["step"].choices))
         self.assertEqual(next(q["step"] for q in self.version.snapshot["questions"] if q["key"] == "consent"), 1)
 
     def test_event_ticket_questions_remain_on_final_page_and_create_one_registration(self):
@@ -229,3 +229,58 @@ class OperationsConsentTests(ConsentDocumentWorkflowTests):
         self.assertTemplateUsed(preview, "participants/consents/preview.html")
         self.assertContains(preview, "Step 2 of 5")
         self.assertEqual(self.client.get(reverse("participants:consent-acceptances"), {"document": "bad-id"}).status_code, 404)
+
+
+class QuestionEditorTests(TestCase):
+    """The plain question editor: answers as a list, a readable show-when rule, pop-up saving."""
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        from .intake_lifecycle import create_form, publish, revision
+        self.admin = get_user_model().objects.create_superuser("qe-admin", "qe@example.test", "x-test-only")
+        draft = create_form(actor=self.admin, name="SYNTHETIC sign-up")
+        self.version = publish(actor=self.admin, version_id=draft.pk, expected_revision=revision(draft))
+        self.client.force_login(self.admin, backend="django.contrib.auth.backends.ModelBackend")
+
+    def _latest(self):
+        return self.version.form.versions.order_by("-version").first()
+
+    def test_core_question_shows_its_rule_and_answers_in_plain_words(self):
+        url = reverse("participants:intake-config-question", args=[self.version.form_id, "current_industry"])
+        page = self.client.get(url, HTTP_X_BTW_EDITOR="1").content.decode()
+        self.assertIn("Answers people can pick", page)
+        self.assertNotIn("choice code", page)
+        self.assertIn('value="current_situation::employed_other" id="id_show_values_4" checked', page)
+        core = self.client.get(reverse("participants:intake-config-question", args=[self.version.form_id, "current_situation"]),
+                               HTTP_X_BTW_EDITOR="1").content.decode()
+        self.assertIn("core question", core)
+        self.assertNotIn('name="type"', core)
+
+    def test_add_a_choice_question_with_a_none_answer_and_a_rule(self):
+        from .intake_config_forms import decode_rule
+        url = reverse("participants:intake-config-question-add", args=[self.version.form_id])
+        from .intake_lifecycle import revision
+        response = self.client.post(url, {"revision": revision(self.version), "label": "SYNTHETIC tools you own",
+            "type": "multiple_choice", "step": "4", "show_when": "answer", "show_field": "travel_willingness",
+            "show_values": ["travel_willingness::yes", "travel_willingness::maybe"], "max_selections": "2",
+            "opt_token": ["new1", "new2", "new3"], "opt_label": ["Hand tools", "Power tools", "None of these"],
+            "opt_alone": ["new3"], "destination": "submission_only"}, HTTP_X_BTW_EDITOR="1")
+        self.assertEqual(response.status_code, 200, response.content[:400])
+        question = next(q for q in self._latest().snapshot["questions"] if q["label"] == "SYNTHETIC tools you own")
+        self.assertEqual([o["label"] for o in question["options"]], ["Hand tools", "Power tools", "None of these"])
+        self.assertEqual(question["exclusive"], ["none_of_these"])
+        self.assertEqual(question["max_selections"], 2)
+        self.assertEqual(decode_rule(question["rule"])[1:], ("travel_willingness", ["yes", "maybe"]))
+
+    def test_rewording_an_answer_keeps_its_saved_value(self):
+        from .intake_lifecycle import revision
+        q = next(q for q in self.version.snapshot["questions"] if q["key"] == "travel_willingness")
+        url = reverse("participants:intake-config-question", args=[self.version.form_id, "travel_willingness"])
+        labels = [o["label"] + (" (SYNTHETIC)" if i == 0 else "") for i, o in enumerate(q["options"])]
+        response = self.client.post(url, {"revision": revision(self.version), "label": q["label"], "step": str(q["step"]),
+            "required": "on" if q["required"] else "", "show_when": "always",
+            "opt_token": [o["value"] for o in q["options"]], "opt_label": labels}, HTTP_X_BTW_EDITOR="1")
+        self.assertEqual(response.status_code, 200, response.content[:600])
+        saved = next(x for x in self._latest().snapshot["questions"] if x["key"] == "travel_willingness")
+        self.assertEqual([o["value"] for o in saved["options"]], [o["value"] for o in q["options"]])
+        self.assertTrue(saved["options"][0]["label"].endswith("(SYNTHETIC)"))

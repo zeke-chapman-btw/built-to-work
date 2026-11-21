@@ -1,0 +1,2 @@
+{% extends 'participants/intake_operations_base.html' %}{% load static %}{% block intake_content %}<link rel="stylesheet" href="{% static 'participants/forms_area.css' %}?v=fa-4"><script src="{% static 'participants/form_editor.js' %}?v=fe-1" defer></script>
+<div class="fa-page btw-editor-fallback"><a class="event-back" href="{{ back }}">← {{ intake_form.name }}</a>{% include 'internal/ui/record_form_panel.html' %}</div>{% endblock %}
