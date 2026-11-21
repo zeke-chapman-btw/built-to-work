@@ -68,3 +68,25 @@ class CanonicalHostMiddleware:
             if host != target and host.endswith(".onrender.com"):
                 return HttpResponsePermanentRedirect(f"https://{target}{request.get_full_path()}")
         return self.get_response(request)
+
+
+class EmbeddableSignupMiddleware:
+    """The public sign-up pages may be shown inside the Built to Work website (and nowhere else).
+
+    Everything else keeps the site-wide "never inside another site" rule. Only the WordPress site's own
+    address is allowed, so another site can't wrap our form in its page.
+    """
+
+    prefixes = ("/participants/register/", "/participants/intake/start/", "/participants/intake/session/")
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        origins = getattr(settings, "SIGNUP_EMBED_ORIGINS", ())
+        if origins and request.path_info.startswith(self.prefixes):
+            if "X-Frame-Options" in response:
+                del response["X-Frame-Options"]
+            response["Content-Security-Policy"] = "frame-ancestors 'self' " + " ".join(origins)
+        return response

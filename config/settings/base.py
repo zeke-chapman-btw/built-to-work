@@ -57,6 +57,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "config.middleware.EmbeddableSignupMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "config.middleware.PreviewAccessMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -71,6 +72,10 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "config.urls"
+
+# The public sign-up pages may be embedded on these websites (the Built to Work WordPress site).
+SIGNUP_EMBED_ORIGINS = tuple(o.strip() for o in os.environ.get(
+    "SIGNUP_EMBED_ORIGINS", "https://builttoworkusa.com,https://www.builttoworkusa.com").split(",") if o.strip())
 
 TEMPLATES = [
     {
