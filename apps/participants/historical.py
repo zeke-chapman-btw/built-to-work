@@ -625,7 +625,17 @@ def import_ready(batch, *, actor, limit=None):
     return imported
 
 
-def resolve_review(row, *, actor, decision, reason, participant=None):
+def _shared_contact(data):
+    """Email and phone that already belong to someone else in the app."""
+    shared = []
+    if data.get("email") and Participant.objects.filter(contact_email__iexact=data["email"]).exists():
+        shared.append("email")
+    if data.get("phone") and Participant.objects.filter(contact_phone=data["phone"]).exists():
+        shared.append("phone")
+    return shared
+
+
+def resolve_review(row, *, actor, decision, reason, participant=None, drop_shared=False):
     if not reason.strip() or decision not in ("link", "separate", "skip"):
         raise ValidationError("A decision and audit reason are required.")
     with transaction.atomic():
@@ -645,8 +655,24 @@ def resolve_review(row, *, actor, decision, reason, participant=None):
             source_uuid = row.normalized_data.get("identity_uuid")
             if source_uuid and str(participant.identity_uuid) != source_uuid:
                 raise ValidationError("A different source UUID cannot be silently replaced.")
+            # Contact details that differ from what the profile already has are kept in a note, not lost.
+            data = dict(row.normalized_data)
+            other = [f"{label}: {data[key]}" for key, label, current in (
+                ("email", "Email", participant.contact_email), ("phone", "Phone", participant.contact_phone))
+                if data.get(key) and str(data[key]).strip().lower() != (current or "").strip().lower()]
+            if other:
+                note = "Other contact details from an import: " + " · ".join(other)
+                data["staff_note"] = (data.get("staff_note", "") + "\n" + note).strip()
+                row.normalized_data = data
+                row.save(update_fields=("normalized_data",))
         else:
             participant = None
+            if drop_shared:  # a family member on the same email/phone: the person we had first keeps it
+                data = dict(row.normalized_data)
+                for key in _shared_contact(data):
+                    data.pop(key, None)
+                row.normalized_data = data
+                row.save(update_fields=("normalized_data",))
             if row.normalized_data.get("identity_uuid") and Participant.objects.filter(
                     identity_uuid=row.normalized_data["identity_uuid"]).exists():
                 raise ValidationError("Source UUID already belongs to an existing participant.")

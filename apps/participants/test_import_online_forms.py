@@ -216,3 +216,28 @@ class NeedsALookTests(TestCase):
         self.client.post(reverse("participants:historical-review", args=[sam.pk]), {"decision": "skip"})
         sam.refresh_from_db()
         self.assertEqual((sam.status, sam.participant_id), ("skipped", None))
+
+    def test_family_member_without_shared_email_and_new_contact_kept_in_note(self):
+        import tempfile
+        from django.test import override_settings
+        from .historical import import_ready, preview_batch
+        from .models import HistoricalImportRow, Participant, ParticipantNote
+        temp = tempfile.TemporaryDirectory(); self.addCleanup(temp.cleanup)
+        setting = override_settings(PRIVATE_HISTORICAL_ROOT=temp.name); setting.enable(); self.addCleanup(setting.disable)
+        actor = get_user_model().objects.create_superuser("fam-admin", "f@example.test", "x-test-only")
+        mom = Participant.objects.create(first_name="SYNTHETIC", last_name="Hogan", contact_email="fam@example.test", contact_phone="7065550100")
+        body = (b"FName,LName,Email,Phone\nLeo,Hogan,fam@example.test,7065550199\n"
+                b"SYNTHETIC,Hogan,new@example.test,7065550100\n")
+        batch = create_batch(uploaded_file=SimpleUploadedFile("f.csv", body), actor=actor)
+        preview_batch(batch, {"first_name": "FName", "last_name": "LName", "email": "Email", "phone": "Phone"}, actor=actor)
+        self.client.force_login(actor, backend="django.contrib.auth.backends.ModelBackend")
+        leo = HistoricalImportRow.objects.get(batch=batch, row_number=2)
+        self.assertContains(self.client.get(reverse("participants:historical-review", args=[leo.pk])), "without the shared email")
+        self.client.post(reverse("participants:historical-review", args=[leo.pk]), {"decision": "separate", "drop_shared": "1"})
+        leo.refresh_from_db()
+        self.assertEqual((leo.participant.contact_email, leo.participant.contact_phone), ("", "7065550199"))
+        same = HistoricalImportRow.objects.get(batch=batch, row_number=3)
+        self.client.post(reverse("participants:historical-review", args=[same.pk]), {"decision": "link", "participant_uuid": str(mom.identity_uuid)})
+        mom.refresh_from_db()
+        self.assertEqual(mom.contact_email, "fam@example.test")
+        self.assertIn("Email: new@example.test", ParticipantNote.objects.get(participant=mom).content)

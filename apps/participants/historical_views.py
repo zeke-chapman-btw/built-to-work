@@ -234,7 +234,8 @@ def historical_review(request, row_id):
             reason = request.POST.get("reason", "").strip() or {
                 "link": "Same person, checked in Needs a look.", "skip": "Left out, checked in Needs a look."}.get(
                 decision, "Different person, checked in Needs a look.")
-            resolve_review(row, actor=request.user, decision=decision, reason=reason, participant=person)
+            resolve_review(row, actor=request.user, decision=decision, reason=reason, participant=person,
+                           drop_shared=request.POST.get("drop_shared") == "1")
             return people_saved(request,"participants:historical-review-list")
         except (ValidationError, ValueError) as exc:
             error = "; ".join(getattr(exc, "messages", [str(exc)]))
@@ -246,7 +247,9 @@ def historical_review(request, row_id):
     compare = [{"label": label, "mine": mine[key], "theirs": [{"value": c["card"][key],
                "same": bool(mine[key]) and str(mine[key]).strip().lower() == str(c["card"][key]).strip().lower()} for c in cards]}
                for label, key in COMPARE]
-    return render(request, "participants/historical_review.html", {"row": row, "cards": cards, "compare": compare,
+    from .historical import _shared_contact
+    shared = _shared_contact(row.normalized_data or {})
+    return render(request, "participants/historical_review.html", {"row": row, "cards": cards, "compare": compare, "shared": " and ".join(shared),
         "event_label": _event_label(row), "error": error, "page_title": "Same person?"})
 
 
