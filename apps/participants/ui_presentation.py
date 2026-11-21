@@ -4,9 +4,10 @@
 def intake_editor_groups(form, mode):
     if mode == 'question':
         groups = [
-            ('Question', ('label', 'help_text', 'type', 'step', 'required', 'destination'), False),
-            ('Choices', ('options',), True),
-            ('When to show it', ('condition_mode', 'condition_field', 'condition_values', 'max_selections', 'min_selections', 'exclusive'), True),
+            ('Question', ('label', 'help_text', 'type', 'step', 'required'), False),
+            ('Answers people can pick', ('max_selections',), True),
+            ('When to show it', ('show_when', 'show_field', 'show_values'), True),
+            ('More options', ('min_selections', 'destination'), True),
         ]
     elif mode == 'skills':
         groups = [(field.label, (field.name,), True) for field in form.visible_fields()]
