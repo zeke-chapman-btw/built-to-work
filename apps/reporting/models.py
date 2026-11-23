@@ -126,3 +126,25 @@ class ContractorStatement(FrozenRecord):
 
 class CompensationLedgerLock(models.Model):
     id=models.PositiveSmallIntegerField(primary_key=True,default=1)
+
+
+class UsageSignIn(models.Model):
+    """One sign-in, kept 12 months, for the Usage report."""
+    AUDIENCES=[("staff","Staff"),("customer","Customer"),("participant","Participant")]
+    user=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name="usage_sign_ins")
+    audience=models.CharField(max_length=12,choices=AUDIENCES)
+    at=models.DateTimeField(db_index=True)
+    class Meta:
+        indexes=[models.Index(fields=["audience","at"],name="usage_signin_aud_at")]
+
+
+class UsageAreaDay(models.Model):
+    """How many pages a person opened in one area of the app on one day (Eastern)."""
+    user=models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name="usage_days")
+    audience=models.CharField(max_length=12,choices=UsageSignIn.AUDIENCES)
+    day=models.DateField(db_index=True)
+    area=models.CharField(max_length=60)
+    views=models.PositiveIntegerField(default=0)
+    class Meta:
+        constraints=[models.UniqueConstraint(fields=["user","day","area"],name="usage_area_day_unique")]
+        indexes=[models.Index(fields=["audience","day"],name="usage_day_aud_day")]

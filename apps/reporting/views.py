@@ -398,3 +398,19 @@ def my_statement(request,version_id):
         try:return value if isinstance(value,_date) else _date.fromisoformat(str(value)[:10])
         except (TypeError,ValueError):return None
     return page(request,'reporting/statement.html',page_title="Pay stub",snapshot=snapshot,week_start=_day(snapshot.get("period_start")),week_end=_day(snapshot.get("period_end")),report_table=table(PAY_COLUMNS,snapshot['rows']),exports=export_links(request),back_url=reverse('reporting:my-pay'))
+
+
+
+@login_required
+def usage(request):
+    """Who uses the app and which parts, split by staff, customers and participants. Admins only."""
+    from apps.accounts.roles import has_role
+    from . import usage as tracking
+    if not has_role(request.user,"administrator"):raise PermissionDenied
+    who=request.GET.get("who","staff")
+    if who not in ("staff","customer","participant"):who="staff"
+    days=int(request.GET.get("days","30")) if request.GET.get("days","30") in ("7","30","90","365") else 30
+    tracking.tidy()
+    tabs=[(key,label,tracking.report(key,days)["active"]) for key,label in (("staff","Staff"),("customer","Customers"),("participant","Participants"))]
+    return render(request,"reporting/usage.html",{"page_title":"App usage","who":who,"days":days,"tabs":tabs,
+        "data":tracking.report(who,days),"periods":[(7,"7 days"),(30,"30 days"),(90,"90 days"),(365,"12 months")]})

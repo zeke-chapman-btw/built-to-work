@@ -17,4 +17,7 @@ def report_destinations(user):
             "description": "Recorded workdays, daily compensation, mileage and reimbursement exports."})
     if user.has_perms(("participants.view_participant", "participants.view_participant_analytics")):
         destinations.append({"label": "Participant Intelligence", "url": reverse("participants:intelligence"), "description": "Participant discovery, acquisition and accepted evidence."})
+    if user.is_superuser:
+        destinations.append({"label": "App usage", "url": reverse("reporting:usage"),
+            "description": "Sign-ins and the parts of the app staff, customers and participants use."})
     return destinations

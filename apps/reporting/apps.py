@@ -4,3 +4,5 @@ class ReportingConfig(AppConfig):
     default_auto_field="django.db.models.BigAutoField"
     name="apps.reporting"
     verbose_name="Reports & Analytics"
+    def ready(self):
+        from . import usage  # noqa: F401  (records sign-ins)

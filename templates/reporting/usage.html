@@ -1,0 +1,21 @@
+{% extends 'reporting/base.html' %}{% block content %}<style>
+.us-page{display:grid;gap:16px}.us-tabs{display:flex;flex-wrap:wrap;gap:8px}.us-tab{padding:8px 14px;border:1px solid #e4e4e7;border-radius:999px;text-decoration:none;color:inherit}
+.us-tab.on{background:#18181b;color:#fff;border-color:#18181b}.us-tab small{opacity:.7;margin-left:4px}.us-periods{display:flex;gap:6px;flex-wrap:wrap;font-size:14px}
+.us-periods a{padding:4px 10px;border-radius:8px;text-decoration:none;color:#52525b}.us-periods a.on{background:#f4f4f5;color:#18181b;font-weight:600}
+.us-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.us-tile{padding:14px;display:grid;gap:4px}.us-tile span{font-size:13px;color:#52525b}
+.us-tile strong{font-size:28px;font-variant-numeric:tabular-nums}.us-dash{color:#a1a1aa}.us-chip{display:inline-block;padding:2px 8px;margin:0 4px 4px 0;border-radius:999px;background:#f4f4f5;font-size:12px}
+.us-num{text-align:right;font-variant-numeric:tabular-nums}
+</style>
+<div class="us-page">
+<header><h1>App usage</h1><p>Sign-ins and which parts of the app people use. Only counts are kept, for 12 months. Time spent isn't tracked.</p></header>
+<nav class="us-tabs" aria-label="Who">{% for key, label, n in tabs %}<a class="us-tab{% if key == who %} on{% endif %}" href="?who={{ key }}&amp;days={{ days }}">{{ label }}<small>{{ n }} active</small></a>{% endfor %}</nav>
+<nav class="us-periods" aria-label="Period">Last {% for n, label in periods %}<a{% if n == days %} class="on"{% endif %} href="?who={{ who }}&amp;days={{ n }}">{{ label }}</a>{% endfor %}</nav>
+<section class="us-tiles"><div class="card us-tile"><span>Active people</span><strong>{{ data.active }}</strong></div><div class="card us-tile"><span>Sign-ins</span><strong>{{ data.sign_ins }}</strong></div><div class="card us-tile"><span>Pages opened</span><strong>{{ data.pages }}</strong></div></section>
+<section class="card"><header class="btw-panel-heading"><h2>People</h2></header>
+{% if data.people %}<div class="btw-table-wrap"><table class="btw-table"><thead><tr><th scope="col">Name</th><th scope="col" class="us-num">Sign-ins</th><th scope="col" class="us-num">Days active</th><th scope="col" class="us-num">Pages</th><th scope="col">Last active</th><th scope="col">Uses most</th></tr></thead><tbody>
+{% for p in data.people %}<tr><td>{{ p.name }}</td><td class="us-num">{{ p.sign_ins }}</td><td class="us-num">{{ p.days }}</td><td class="us-num">{{ p.pages }}</td><td>{% if p.last %}{{ p.last|date:"M j, Y" }}{% else %}<span class="us-dash">—</span>{% endif %}</td><td>{% for a in p.areas %}<span class="us-chip">{{ a }}</span>{% empty %}<span class="us-dash">—</span>{% endfor %}</td></tr>{% endfor %}
+</tbody></table></div>{% else %}<p>No activity yet for this period. Counting started when this page was added.</p>{% endif %}</section>
+<section class="card"><header class="btw-panel-heading"><h2>Most-used areas</h2></header>
+{% if data.areas %}<div class="btw-table-wrap"><table class="btw-table"><thead><tr><th scope="col">Area</th><th scope="col" class="us-num">Pages opened</th><th scope="col" class="us-num">People</th></tr></thead><tbody>
+{% for a in data.areas %}<tr><td>{{ a.area }}</td><td class="us-num">{{ a.pages }}</td><td class="us-num">{{ a.people }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p><span class="us-dash">—</span></p>{% endif %}</section>
+</div>{% endblock %}
