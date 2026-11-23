@@ -104,6 +104,10 @@ def _form_rows():
     rows = []
     live = [(form_id, "events" if channel == "event" and not event_id else channel) for form_id, channel, event_id in
             IntakeFormAssignment.objects.filter(is_active=True).values_list("form_id", "channel", "event_id")]
+    from django.db.models import Count
+    from .models import RegistrationSubmission
+    filled = dict(RegistrationSubmission.objects.filter(status="submitted", form_version__form__is_smart_intake=True)
+                  .values_list("form_version__form").annotate(n=Count("pk")))
     for form in RegistrationForm.objects.filter(is_smart_intake=True).prefetch_related("versions").order_by("-is_active", "name"):
         versions = sorted(form.versions.all(), key=lambda v: v.version)
         latest = versions[-1] if versions else None
@@ -130,7 +134,7 @@ def _form_rows():
             status, tone = "Live", "success"
         else:
             status, tone = "Draft", "warning"
-        rows.append({"form": form, "latest": latest, "status": status, "tone": tone,
+        rows.append({"form": form, "latest": latest, "filled": filled.get(form.pk, 0), "status": status, "tone": tone,
                      "summary": f"{len(questions)} questions · {steps} steps · v{latest.version if latest else 0}",
                      "used": " · ".join(used)})
     return rows
@@ -284,8 +288,10 @@ def detail(request, form_id):
     can_use_recommended = model.is_active and bool(keys & set(RETIRED_FROM_RECOMMENDED))
     from .intake_trades import trades_out_of_date
     trades_stale = model.is_active and not can_use_recommended and trades_out_of_date(latest.snapshot)
+    from .models import RegistrationSubmission
+    filled_count = RegistrationSubmission.objects.filter(form_version__form=model, status="submitted").count()
     return render(request, "participants/intake_config_detail.html", context(request,
-        page_title=model.name, intake_form=model, version=latest, revision=revision(latest),
+        page_title=model.name, intake_form=model, version=latest, revision=revision(latest), filled_count=filled_count,
         questions=latest.snapshot["questions"], question_groups=question_groups, can_use_recommended=can_use_recommended, trades_stale=trades_stale,
         version_label=("Draft · v" if latest.status == "draft" else "Live · v") + str(latest.version),
         question_total=len(latest.snapshot["questions"]), versions=model.versions.order_by("-version"),

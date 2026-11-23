@@ -5,7 +5,7 @@ from . import intake_views, intake_config_views, intake_trailer_views, consent_v
 from . import portal_views, portal_auth
 from . import portal_profile_views
 app_name = "participants"
-from . import identifier_views, card_editors, removal
+from . import identifier_views, card_editors, removal, form_results
 urlpatterns = [
     path('staff/<int:participant_id>/cards/<str:card>/', card_editors.edit, name='profile-card-edit'),
     path("staff/<int:participant_id>/identifier/", identifier_views.edit, name="identifier-edit"),
@@ -41,6 +41,7 @@ urlpatterns = [
     path("staff/intake-review/<uuid:review_id>/", intake_views.review_detail, name="intake-review-detail"),
     path("staff/intake-forms/", intake_config_views.index, name="intake-config-index"),
     path("staff/intake-forms/<int:form_id>/", intake_config_views.detail, name="intake-config-detail"),
+    path("staff/intake-forms/<int:form_id>/results/", form_results.results, name="intake-config-results"),
     path("staff/intake-forms/<int:form_id>/questions/add/", intake_config_views.edit, name="intake-config-question-add"),
     path("staff/intake-forms/<int:form_id>/questions/<str:key>/", intake_config_views.edit, name="intake-config-question"),
     path("staff/intake-forms/<int:form_id>/experience/<str:key>/", intake_config_views.edit, {"child": True}, name="intake-config-child"),

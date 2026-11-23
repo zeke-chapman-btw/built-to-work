@@ -1,0 +1,21 @@
+{% extends 'participants/intake_operations_base.html' %}{% load static %}{% block intake_content %}<link rel="stylesheet" href="{% static 'participants/forms_area.css' %}?v=fa-5">
+<div class="fa-page fr-page">
+<a class="event-back" href="{% url 'participants:intake-config-detail' intake_form.pk %}">← {{ intake_form.name }}</a>
+<header class="fr-head"><div><h2>Results</h2><p>Everyone who filled out <strong>{{ intake_form.name }}</strong>{% if filtered %}, filtered{% endif %}.</p></div>
+<a class="button button-primary" href="?{% if query %}{{ query }}&amp;{% endif %}download=1">Download all ({{ stats.total }})</a></header>
+
+<form class="fr-filters card" method="get"><label>From <input type="date" name="from" value="{{ f.start|date:'Y-m-d' }}"></label><label>To <input type="date" name="to" value="{{ f.end|date:'Y-m-d' }}"></label>
+<label>Event <select name="event"><option value="">All</option>{% for e in events %}<option value="{{ e.pk }}"{% if f.event == e.pk|stringformat:'d' %} selected{% endif %}>{{ e.name_with_year }}</option>{% endfor %}</select></label>
+<label>Where <select name="source"><option value="">Anywhere</option>{% for key, label in sources %}<option value="{{ key }}"{% if f.source == key %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<button class="button secondary" type="submit">Show</button>{% if filtered %}<a href="?">Clear</a>{% endif %}</form>
+
+<section class="fr-tiles"><div class="card fr-tile"><span>Filled out</span><strong>{{ stats.total }}</strong></div><div class="card fr-tile"><span>This week</span><strong>{{ stats.this_week }}</strong></div><div class="card fr-tile"><span>Today</span><strong>{{ stats.today }}</strong></div><div class="card fr-tile"><span>Typical time</span><strong>{% if stats.typical_minutes %}{{ stats.typical_minutes }} min{% else %}<span class="fr-dash">—</span>{% endif %}</strong>{% if stats.timed %}<small>from {{ stats.timed }} finished</small>{% endif %}</div></section>
+
+<section class="card fr-funnel"><header class="btw-panel-heading"><div><h3>How far people get</h3><p>{% if stats.started %}{{ stats.started }} started on the website or at an event.{% else %}No one has started this form online yet.{% endif %} Trailer tablets save offline, so they only show up as finished.</p></div></header>
+{% for step in stats.funnel %}<div class="fr-bar{% if step.finish %} fr-finish{% endif %}"><span class="fr-bar-label">{{ step.label }}</span><span class="fr-bar-track"><span class="fr-bar-fill" style="width:{{ step.percent }}%"></span></span><span class="fr-bar-num">{{ step.count }} · {{ step.percent }}%</span></div>{% endfor %}</section>
+
+<section class="card"><header class="btw-panel-heading"><div><h3>Submissions</h3><p>{% if shown < stats.total %}The latest {{ shown }} of {{ stats.total }}. Download to see them all.{% else %}{{ stats.total }} in all.{% endif %}</p></div></header>
+{% if rows %}<div class="btw-table-wrap"><table class="btw-table"><thead><tr><th scope="col">When</th><th scope="col">Person</th><th scope="col">Where</th><th scope="col">Event</th></tr></thead><tbody>
+{% for r in rows %}<tr><td>{{ r.when|date:"M j, Y g:i A" }}</td><td>{% if r.submission.participant %}<a href="{% url 'participants:staff-profile' r.submission.participant_id %}">{{ r.submission.participant.first_name }} {{ r.submission.participant.last_name }}</a>{% else %}<span class="fr-dash">—</span>{% endif %}</td><td>{{ r.source|default:"—" }}</td><td>{{ r.submission.event.name|default:"—" }}</td></tr>{% endfor %}
+</tbody></table></div>{% else %}<p>No one has filled out this form yet{% if filtered %} for these filters{% endif %}.</p>{% endif %}</section>
+</div>{% endblock %}
