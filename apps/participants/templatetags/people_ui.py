@@ -223,3 +223,10 @@ def people_short_work(value):
     text = str(value or "")
     return {"full time": "FT", "full-time": "FT", "part time": "PT", "part-time": "PT", "any arrangement": "Any",
             "self employed": "Self-employed", "self-employed": "Self-employed"}.get(text.strip().casefold(), text)
+
+
+@register.filter
+def can_remove_people(user):
+    """Admins and managers can archive, restore and delete participants."""
+    from apps.accounts.roles import manager
+    return bool(manager(user))

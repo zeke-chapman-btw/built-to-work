@@ -1,6 +1,6 @@
 {% extends people_base|default:'participants/workspace_base.html' %}{% load static verification_status participant_workspace people_ui crm_ui ui_patterns %}
 {% block body_class %}{{ block.super }} has-participant-profile has-crm-ux-profile{% endblock %}
-{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<link rel="stylesheet" href="{% static 'crm/profile.css' %}?v=profile-v2-14"><script defer src="{% static 'crm/profile_copy.js' %}?v=profile-v2-1"></script><link rel="stylesheet" href="{% static 'participants/identifier.css' %}?v=identifier-1">{% endblock %}
+{% block extra_head %}{{ block.super }}{% include 'crm/assets.html' %}<link rel="stylesheet" href="{% static 'crm/profile.css' %}?v=profile-v2-15"><script defer src="{% static 'crm/profile_copy.js' %}?v=profile-v2-1"></script><link rel="stylesheet" href="{% static 'participants/identifier.css' %}?v=identifier-1">{% endblock %}
 {% block page_heading %}
 <section class="people-profile-hero p3-profile-hero">
   {% if section and section != 'overview' %}<a class="event-back" href="{% people_section_url 'overview' %}">← {{ participant }}</a>{% else %}<a class="event-back" href="{{ directory_origin }}">← {{ directory_origin_label }}</a>{% endif %}
@@ -16,10 +16,11 @@
       {% if crm_can_add and participant.contact_email and not participant.archived_at %}<a class="button secondary" data-record-editor href="{% url 'messaging:email-participant' participant.pk %}">Email</a>{% endif %}{% if crm_can_add and participant.contact_phone and not participant.archived_at %}<a class="button secondary" data-record-editor href="{% url 'messaging:text-participant' participant.pk %}">Text</a>{% endif %}
       {% if can_edit_profile and not participant.archived_at %}<a class="button secondary" data-record-editor href="{% url 'participants:profile-card-edit' participant.pk 'identity' %}?return_to={{ request.get_full_path|urlencode }}">Edit profile</a>{% endif %}
       {% profile_tools %}
+      {% if request.user|can_remove_people %}<details class="rm-menu"><summary class="button secondary" aria-label="More actions">More</summary><div class="rm-menu-list">{% if participant.archived_at %}<a data-record-editor href="{% url 'participants:participant-restore' participant.pk %}">Restore</a>{% else %}<a data-record-editor href="{% url 'participants:participant-archive' participant.pk %}">Archive</a>{% endif %}<a class="rm-danger" data-record-editor href="{% url 'participants:participant-delete' participant.pk %}">Delete</a></div></details>{% endif %}
     </div>
   </div>
 </section>{% endblock %}
-{% block people_content %}{% if not profile_manager %}<script defer src="{% static 'crm/profile_navigation.js' %}"></script>{% if participant.archived_at %}<p class="btw-inline-notice">Archived participant · staff profile management is read-only.</p>{% endif %}
+{% block people_content %}{% if not profile_manager %}<script defer src="{% static 'crm/profile_navigation.js' %}"></script>{% if participant.archived_at %}<p class="btw-inline-notice">Archived on {{ participant.archived_at|date:"M j, Y" }}. Hidden from lists, searches and messages{% if request.user|can_remove_people %}. Use More → Restore to bring them back{% endif %}.</p>{% endif %}
 {% include 'crm/previous.html' %}{% endif %}
 {% if section == 'relationship' %}<section class="card p3-reading-section crm-profile-summary-card" aria-labelledby="participant-relationship-summary"><header class="btw-panel-heading"><h2 id="participant-relationship-summary">Touchpoints</h2></header>{% include 'crm/summary.html' %}</section>{% endif %}
 {% if section == 'overview' %}{% include 'participants/profile_overview.html' %}

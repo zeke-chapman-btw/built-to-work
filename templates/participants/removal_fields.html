@@ -1,0 +1,5 @@
+{% load ui_patterns %}<div class="btw-field-stack">
+{% if mode == 'delete' %}<p class="btw-inline-notice">Use this for test entries and junk records. For a real person who should just stop showing up, use <strong>Archive</strong> instead, which can be undone.</p>
+{% if linked %}<p>This also removes:</p><ul class="rm-linked">{% for name, n in linked %}<li>{{ n }} {{ name }}</li>{% endfor %}</ul>{% else %}<p>Nothing else is recorded about them.</p>{% endif %}
+{% elif mode == 'archive' %}<p>They'll stay in the app with all their history. Anyone can find them again with the "Archived" filter, and Restore brings them back.</p>{% endif %}
+{% ui_field form.confirm %}</div>

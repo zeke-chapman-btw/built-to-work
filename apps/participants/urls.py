@@ -5,7 +5,7 @@ from . import intake_views, intake_config_views, intake_trailer_views, consent_v
 from . import portal_views, portal_auth
 from . import portal_profile_views
 app_name = "participants"
-from . import identifier_views, card_editors
+from . import identifier_views, card_editors, removal
 urlpatterns = [
     path('staff/<int:participant_id>/cards/<str:card>/', card_editors.edit, name='profile-card-edit'),
     path("staff/<int:participant_id>/identifier/", identifier_views.edit, name="identifier-edit"),
@@ -104,6 +104,9 @@ urlpatterns = [
     path("staff/historical/<uuid:batch_id>/map/", historical_views.historical_map, name="historical-map"),
     path("staff/historical/<uuid:batch_id>/", historical_views.historical_batch, name="historical-batch"),
     path("staff/historical/review/", historical_views.historical_review_list, name="historical-review-list"),
+    path("staff/directory/<int:participant_id>/archive/", removal.archive, name="participant-archive"),
+    path("staff/directory/<int:participant_id>/restore/", removal.archive, {"restore": True}, name="participant-restore"),
+    path("staff/directory/<int:participant_id>/delete/", removal.delete, name="participant-delete"),
     path("staff/historical/review/<int:row_id>/", historical_views.historical_review, name="historical-review"),
     path("staff/qualifications/", qualification_views.qualification_directory, name="staff-qualifications"),
     path("staff/qualifications/<int:participant_id>/", qualification_views.participant_qualifications, name="staff-participant-qualifications"),
