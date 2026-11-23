@@ -1,12 +1,13 @@
 """App usage is counted separately for staff, customers and participants; admins see it."""
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .models import UsageAreaDay, UsageSignIn
 from .usage import area_for, count_view
 
 
+@override_settings(USAGE_TRACKING=True)
 class UsageTests(TestCase):
     def setUp(self):
         users = get_user_model()

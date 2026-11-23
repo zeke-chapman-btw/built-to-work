@@ -7,3 +7,6 @@ PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 BTW_ERROR_ALERTS = False
 BTW_REMINDERS_MASTER_SWITCH = False  # tests turn reminder features on directly
+
+# Page-view counting is switched on only in the tests that check it.
+USAGE_TRACKING = False

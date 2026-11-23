@@ -5,6 +5,7 @@ Only counts (no clicks, no time-on-page) are kept, and only for 12 months.
 from datetime import timedelta
 from zoneinfo import ZoneInfo
 
+from django.conf import settings
 from django.contrib.auth.signals import user_logged_in
 from django.db import IntegrityError, transaction
 from django.db.models import Count, F, Max, Sum
@@ -48,7 +49,7 @@ def area_for(path):
 def record_sign_in(sender, request, user, **kwargs):
     from .models import UsageSignIn
     who = audience(user)
-    if who:
+    if who and getattr(settings, "USAGE_TRACKING", True):
         try:
             UsageSignIn.objects.create(user=user, audience=who, at=timezone.now())
         except Exception:  # usage numbers must never stop anyone signing in
@@ -62,7 +63,7 @@ class UsageMiddleware:
     def __call__(self, request):
         response = self.get_response(request)
         try:
-            if (request.method == "GET" and response.status_code == 200 and not request.path.startswith(SKIP)
+            if (getattr(settings, "USAGE_TRACKING", True) and request.method == "GET" and response.status_code == 200 and not request.path.startswith(SKIP)
                     and "text/html" in response.get("Content-Type", "") and request.headers.get("X-BTW-Editor") != "1"
                     and request.headers.get("X-Requested-With") != "XMLHttpRequest"):
                 who = audience(getattr(request, "user", None))
