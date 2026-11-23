@@ -19,6 +19,7 @@ from .models import RegistrationSubmission
 
 EASTERN = ZoneInfo("America/New_York")
 SOURCES = {"online": "Website", "event": "Event sign-up", "staff": "Staff tablet", "trailer": "Trailer tablet"}
+IMPORTED = "imported"  # people brought in from spreadsheets: shown only when asked for
 # The sign-up's saved steps: personal information and consent share the first one.
 STEPS = {1: "Personal information", 2: "Education and employment", 3: "Trade interests", 4: "Career preferences"}
 
@@ -49,8 +50,12 @@ def submissions(form, f):
     qs = _window(qs, "submitted_at", f)
     if f["event"].isdigit():
         qs = qs.filter(event_id=int(f["event"]))
-    if f["source"] in SOURCES:
-        qs = qs.filter(intake_metadata__channel=f["source"])
+    if f["source"] == IMPORTED:
+        qs = qs.filter(source="historical_import")
+    else:
+        qs = qs.exclude(source="historical_import")
+        if f["source"] in SOURCES:
+            qs = qs.filter(intake_metadata__channel=f["source"])
     return qs.order_by("-submitted_at")
 
 
@@ -129,7 +134,9 @@ def _row_answers(submission, questions):
 
 
 def source_label(submission):
-    return SOURCES.get((submission.intake_metadata or {}).get("channel"), "Imported" if submission.source not in {"smart_intake", "offline"} else "")
+    if submission.source == "historical_import":
+        return "Imported"
+    return SOURCES.get((submission.intake_metadata or {}).get("channel"), "")
 
 
 @never_cache
@@ -147,7 +154,7 @@ def results(request, form_id):
     events = Event.objects.filter(pk__in=event_ids).order_by("-start_at")
     return render(request, "participants/form_results.html", {
         "intake_form": form, "page_title": form.name + " · Results", "stats": summary(form, f), "rows": rows,
-        "shown": len(rows), "f": f, "events": events, "sources": SOURCES.items(),
+        "shown": len(rows), "f": f, "events": events, "sources": list(SOURCES.items()) + [(IMPORTED, "Imported from spreadsheets")],
         "query": request.GET.urlencode(), "filtered": any((f["start"], f["end"], f["event"], f["source"]))})
 
 

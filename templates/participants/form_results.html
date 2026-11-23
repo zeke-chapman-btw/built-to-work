@@ -1,7 +1,7 @@
 {% extends 'participants/intake_operations_base.html' %}{% load static %}{% block intake_content %}<link rel="stylesheet" href="{% static 'participants/forms_area.css' %}?v=fa-5">
 <div class="fa-page fr-page">
 <a class="event-back" href="{% url 'participants:intake-config-detail' intake_form.pk %}">← {{ intake_form.name }}</a>
-<header class="fr-head"><div><h2>Results</h2><p>Everyone who filled out <strong>{{ intake_form.name }}</strong>{% if filtered %}, filtered{% endif %}.</p></div>
+<header class="fr-head"><div><h2>Results</h2><p>{% if f.source == 'imported' %}People brought in from spreadsheets and linked to <strong>{{ intake_form.name }}</strong>.{% else %}Everyone who filled out <strong>{{ intake_form.name }}</strong>{% if filtered %}, filtered{% endif %}. People brought in from spreadsheets aren't counted; pick "Imported from spreadsheets" under Where to see them.{% endif %}</p></div>
 <a class="button button-primary" href="?{% if query %}{{ query }}&amp;{% endif %}download=1">Download all ({{ stats.total }})</a></header>
 
 <form class="fr-filters card" method="get"><label>From <input type="date" name="from" value="{{ f.start|date:'Y-m-d' }}"></label><label>To <input type="date" name="to" value="{{ f.end|date:'Y-m-d' }}"></label>

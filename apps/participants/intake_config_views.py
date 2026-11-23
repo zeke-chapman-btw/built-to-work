@@ -106,7 +106,7 @@ def _form_rows():
             IntakeFormAssignment.objects.filter(is_active=True).values_list("form_id", "channel", "event_id")]
     from django.db.models import Count
     from .models import RegistrationSubmission
-    filled = dict(RegistrationSubmission.objects.filter(status="submitted", form_version__form__is_smart_intake=True)
+    filled = dict(RegistrationSubmission.objects.filter(status="submitted", form_version__form__is_smart_intake=True).exclude(source="historical_import")
                   .values_list("form_version__form").annotate(n=Count("pk")))
     for form in RegistrationForm.objects.filter(is_smart_intake=True).prefetch_related("versions").order_by("-is_active", "name"):
         versions = sorted(form.versions.all(), key=lambda v: v.version)
@@ -289,7 +289,7 @@ def detail(request, form_id):
     from .intake_trades import trades_out_of_date
     trades_stale = model.is_active and not can_use_recommended and trades_out_of_date(latest.snapshot)
     from .models import RegistrationSubmission
-    filled_count = RegistrationSubmission.objects.filter(form_version__form=model, status="submitted").count()
+    filled_count = RegistrationSubmission.objects.filter(form_version__form=model, status="submitted").exclude(source="historical_import").count()
     return render(request, "participants/intake_config_detail.html", context(request,
         page_title=model.name, intake_form=model, version=latest, revision=revision(latest), filled_count=filled_count,
         questions=latest.snapshot["questions"], question_groups=question_groups, can_use_recommended=can_use_recommended, trades_stale=trades_stale,

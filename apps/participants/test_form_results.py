@@ -42,3 +42,7 @@ class FormResultsTests(TestCase):
         self.assertEqual(row[header.index(travel["label"])], next(o["label"] for o in travel["options"] if o["value"] == "yes"))
         self.assertIn("'=cmd", ";".join(row))  # never runs as a formula in Excel
         self.assertContains(self.client.get(reverse("participants:intake-config-detail", args=[form.pk])), "Results · 1")
+        RegistrationSubmission.objects.create(form_version=self.version, status="submitted", submitted_at=now, source="historical_import",
+                                              answers={}, answer_snapshot={})
+        self.assertIn("Download all (1)", self.client.get(reverse("participants:intake-config-results", args=[form.pk])).content.decode())
+        self.assertIn("Download all (1)", self.client.get(reverse("participants:intake-config-results", args=[form.pk]) + "?source=imported").content.decode())
