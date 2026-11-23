@@ -24,7 +24,7 @@
 .internal-app .ops-checklist-row p{margin:6px 0;font-size:13px}
 .internal-app .ops-checklist-row .event-record-actions{margin:0;flex:0 1 260px;justify-content:flex-end;gap:6px 14px}
 .internal-app .ops-checklist-row form{margin:0}
-.internal-app .ops-required{font-size:11px;color:#8e2639;font-weight:600}
+.internal-app .ops-required{font-size:12px;color:#8e2639;font-weight:600}
 .internal-app .ops-history{padding-left:20px;margin:12px 0}
 .internal-app .ops-history li{padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;overflow-wrap:anywhere}
 .internal-app .ops-history strong{font-weight:600}
@@ -88,7 +88,7 @@ body.internal-app.has-operations-refinement #main-content .consents-workspace { 
 body.internal-app.has-operations-refinement #main-content .consent-page-actions .button { font:500 13px/20px var(--font); }
 body.internal-app.has-operations-refinement #main-content .btw-table-wrap { min-width:0; max-width:100%; overflow-x:auto; }
 body.internal-app.has-operations-refinement #main-content .btw-table-wrap table :is(th,td) { padding:10px 12px; font-size:13px; line-height:20px; }
-body.internal-app.has-operations-refinement #main-content .btw-table-wrap th { font-size:11px; font-weight:500; color:var(--muted); }
+body.internal-app.has-operations-refinement #main-content .btw-table-wrap th { font-size:12px; font-weight:500; color:var(--muted); }
 body.internal-app.has-operations-refinement #main-content .btw-table-wrap td strong { font-weight:500; }
 @media(max-width:639.98px) {
  body.internal-app.has-operations-refinement #main-content :is(.button,.btw-section-navigation a,.btw-section-navigation summary,.btw-disclosure>summary,details.card>summary,.btw-section-row> a,.btw-table-wrap td>a) { min-height:44px; display:inline-flex; align-items:center; }
@@ -208,7 +208,7 @@ body.internal-app.has-operations-refinement #main-content .intake-authoring-step
 body.internal-app.has-operations-refinement #main-content .intake-authoring-step>summary{min-height:44px;line-height:24px;padding:10px 0;cursor:pointer;font-weight:600}
 body.internal-app.has-operations-refinement #main-content .intake-authoring-step[open]>summary{border-bottom:1px solid var(--line);margin-bottom:8px}
 
-body.internal-app.has-operations-refinement #main-content .ops-resource-menu a small{display:block;font-size:11px;line-height:16px;color:var(--muted);white-space:normal}
+body.internal-app.has-operations-refinement #main-content .ops-resource-menu a small{display:block;font-size:12px;line-height:16px;color:var(--muted);white-space:normal}
 
 /* Layout batch 2: "More" reads as a normal tab; the row scrolls on phones instead of clipping. */
 body.internal-app.has-operations-refinement #main-content .btw-workspace-navigation:has(.ops-resource-navigation){display:flex;align-items:stretch;gap:0;border-bottom:1px solid var(--line,#e5e7eb)}
@@ -340,7 +340,7 @@ body.internal-app #main-content .rc-filter-actions{display:flex;gap:14px;align-i
 body.internal-app #main-content .rc-filter-actions a{color:var(--brand-red-dark,#a51d24);font-size:13px;font-weight:500}
 body.internal-app #main-content .rc-table-wrap{overflow-x:auto}
 body.internal-app #main-content .rc-table{width:100%;border-collapse:collapse;font-size:14px}
-body.internal-app #main-content .rc-table th{text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:10px 16px;border-bottom:1px solid var(--line,#e5e7eb)}
+body.internal-app #main-content .rc-table th{text-align:left;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:10px 16px;border-bottom:1px solid var(--line,#e5e7eb)}
 body.internal-app #main-content .rc-table td{padding:12px 16px;border-bottom:1px solid var(--line,#e5e7eb);vertical-align:middle}
 body.internal-app #main-content .rc-table tr:last-child td{border-bottom:0}
 body.internal-app #main-content .rc-table td a{color:var(--brand-red-dark,#a51d24);font-weight:500}

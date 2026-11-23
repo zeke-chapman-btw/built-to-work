@@ -41,15 +41,35 @@ def onboarding_list(request):
     show = request.GET.get("show", "open")
     if show == "open":
         rows = rows.exclude(status="completed")
-    return render(request, "onboarding/list.html", {"page_title": "Customer onboarding", "rows": rows[:100], "show": show})
+    rows = list(rows[:100])
+    base = _base(request)
+    for row in rows:
+        row.link = "" if row.organization_id else base + reverse("onboarding:public", args=[services.token_for(row)])
+        row.contact = (row.contacts or {}).get("main") or {}
+    return render(request, "onboarding/list.html", {"page_title": "Customer onboarding", "rows": rows, "show": show})
+
+
+class StartForm(djforms.Form):
+    name = djforms.CharField(label="Company name", max_length=200, help_text="So you can tell this one apart in the list. The customer can correct it later.")
+    email = djforms.EmailField(label="Main contact email (optional)", required=False, help_text="Used when you send them the link.")
 
 
 @login_required(login_url="/admin/login/")
-@require_POST
+@require_http_methods(["GET", "POST"])
 def start(request):
     _manager(request)
-    row = CustomerOnboarding.objects.create(created_by=request.user)
-    return redirect("onboarding:step", row.pk, "company")
+    back = reverse("onboarding:list")
+    form = StartForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        email = form.cleaned_data["email"]
+        row = CustomerOnboarding.objects.create(
+            created_by=request.user, company={"name": form.cleaned_data["name"].strip()},
+            contacts={"main": {"email": email}} if email else {})
+        return editor_success(request, reverse("onboarding:step", args=[row.pk, "company"]))
+    return editor_response(request, template="messaging/connection_edit_page.html", panel="messaging/connection_edit_panel.html",
+                           context={"form": form, "page_title": "Onboard a customer", "editor_context": "New onboarding form",
+                                    "save_label": "Start", "back": back, "back_label": "Customer onboarding",
+                                    "fields_template": "internal/ui/form_fields.html"})
 
 
 @login_required(login_url="/admin/login/")

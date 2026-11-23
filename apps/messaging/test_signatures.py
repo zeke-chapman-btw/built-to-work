@@ -21,7 +21,7 @@ class SignatureTests(TestCase):
             '<img src="https://lh3.googleusercontent.com/logo.png" width="120" onerror="x()"><img src="data:image/png;base64,AA">'
             '<script>alert(1)</script><a href="javascript:alert(1)">bad</a><iframe src="https://x"></iframe></div>')
         self.assertEqual(html, '<div style="color:#333"><b>Zeke</b> | <a href="https://builttoworkusa.com" target="_blank">BTW</a>'
-                               '<img src="https://lh3.googleusercontent.com/logo.png" width="120"><a target="_blank">bad</a></div>')
+                               '<img src="https://lh3.googleusercontent.com/logo.png" width="120">' + signatures.LOGO_TAG() + '<a target="_blank">bad</a></div>')
         self.assertEqual(signatures.plain_text("<div>Zeke C.</div><div>Built to Work &amp; Co</div>"), "Zeke C.\nBuilt to Work & Co")
 
     def test_save_from_settings_and_card_shows_it(self):
@@ -56,6 +56,30 @@ class SignatureTests(TestCase):
             communications._provider_send("email", "p@example.test", subject="Ticket", body="Your ticket", idempotency_key="k1")
         self.assertIn("Built to Work", mail.outbox[-1].body)
         self.assertIn("<b>Built to Work</b>", mail.outbox[-1].alternatives[0][0])
+
+
+class OutlookSignatureTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(username="jason-test", password="x-test-only")
+        self.client.force_login(self.user, backend=BACKEND)
+
+    def test_outlook_pictures_become_one_company_logo(self):
+        html = signatures.clean_html('<p><b>Jason</b></p><img src="cid:image001.png"><img src="file:///C:/x.png">'
+                                     '<img src="https://attachments.office.net/owa/x/service.svc/s/GetFileAttachment?id=1">')
+        html = signatures.public_images(html)
+        self.assertEqual(html.count("email/btw-logo"), 2 - 1 + 1)  # one for the pasted picture, one for the private Outlook link
+        self.assertNotIn("cid:", html)
+        self.assertNotIn("office.net", html)
+
+    def test_logo_added_when_signature_has_no_picture(self):
+        self.client.post(reverse("messaging:signature"), {"signature_html": "<p><b>Jason Collins</b></p>", "add_logo": "1"})
+        saved = EmailSignature.objects.get(user=self.user).html
+        self.assertIn("Jason Collins", saved)
+        self.assertEqual(saved.count("email/btw-logo"), 1)
+        self.client.post(reverse("messaging:signature"), {"signature_html": saved, "add_logo": "1"})
+        self.assertEqual(EmailSignature.objects.get(user=self.user).html.count("email/btw-logo"), 1)
+        page = self.client.get(reverse("messaging:signature"))
+        self.assertContains(page, "Add the Built to Work logo")
 
 
 class GmailOnlyPictureTests(TestCase):

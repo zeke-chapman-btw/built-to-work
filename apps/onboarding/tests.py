@@ -59,7 +59,7 @@ class OnboardingTests(CustomerFixtures, TestCase):
         self.assertIn("DRAFT", AgreementVersion.current().body)
 
     def test_customer_link_full_flow_then_staff_creates_customer(self):
-        self.client.post(reverse("onboarding:start"))
+        self.client.post(reverse("onboarding:start"), {"name": "SYNTHETIC Start Co"})
         row = CustomerOnboarding.objects.get()
         response = self.client.post(reverse("onboarding:send", args=[row.pk]), {"email": "main@example.test"})
         self.assertEqual(response.status_code, 302)
@@ -118,12 +118,29 @@ class OnboardingTests(CustomerFixtures, TestCase):
         self.assertEqual(CustomerOrganization.objects.filter(name="SYNTHETIC Onboard Co").count(), 1)
 
     def test_staff_can_fill_it_in_without_signature(self):
-        self.client.post(reverse("onboarding:start"))
+        self.client.post(reverse("onboarding:start"), {"name": "SYNTHETIC Start Co"})
         row = CustomerOnboarding.objects.get()
         self.client.post(reverse("onboarding:step", args=[row.pk, "company"]), self.company())
         response = self.client.post(reverse("onboarding:step", args=[row.pk, "documents"]), {})
         self.assertEqual(response.status_code, 302)
         self.assertContains(self.client.get(reverse("onboarding:list")), "SYNTHETIC Onboard Co")
+
+    def test_start_requires_company_name_and_list_shows_link_details(self):
+        response = self.client.post(reverse("onboarding:start"), {"name": ""})
+        self.assertContains(response, "Company name", status_code=response.status_code)
+        self.assertFalse(CustomerOnboarding.objects.exists())
+        self.client.post(reverse("onboarding:start"), {"name": "SYNTHETIC Named Co", "email": "boss@example.test"})
+        row = CustomerOnboarding.objects.get()
+        self.assertEqual((row.name, row.contacts["main"]["email"]), ("SYNTHETIC Named Co", "boss@example.test"))
+        page = self.client.get(reverse("onboarding:list"))
+        self.assertContains(page, "SYNTHETIC Named Co")
+        self.assertContains(page, "Not emailed yet")
+        self.assertContains(page, "Copy link")
+        self.assertContains(page, "/onboard/")
+        self.client.post(reverse("onboarding:send", args=[row.pk]), {"email": "boss@example.test"})
+        page = self.client.get(reverse("onboarding:list"))
+        self.assertContains(page, "Emailed to <b>boss@example.test</b>", html=False)
+        self.assertContains(page, "Email again")
 
     def test_settings_questions_and_new_agreement_version(self):
         page = self.client.get(reverse("onboarding:settings"))

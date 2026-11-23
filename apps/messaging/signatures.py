@@ -46,7 +46,7 @@ def _safe_style(value):
 class _Cleaner(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
-        self.out, self.skip, self.open = [], 0, []
+        self.out, self.skip, self.open, self.logo_used = [], 0, [], False
 
     def handle_starttag(self, tag, attrs):
         if tag in DROP_WITH_CONTENT:
@@ -68,7 +68,13 @@ class _Cleaner(HTMLParser):
                         continue
                 kept.append(f'{name}="{escape(value or "")}"')
         if tag == "img" and not any(item.startswith("src=") for item in kept):
-            return  # a picture with nowhere to load from
+            # A picture pasted from Outlook or the computer has nowhere public to load from.
+            # Use the company logo once in its place; drop any others (social icons and the like).
+            if self.logo_used:
+                return
+            self.logo_used = True
+            self.out.append(LOGO_TAG())
+            return
         if tag == "a":
             kept.append('target="_blank"')
         self.out.append(f"<{tag}{(' ' + ' '.join(kept)) if kept else ''}>")
@@ -129,7 +135,21 @@ def company():
     return (row.values or {}).get("html", "") if row else ""
 
 
-PRIVATE_IMAGE = re.compile(r'<img[^>]*\bsrc="https?://mail\.google\.com/[^"]*"[^>]*>', re.I)
+PRIVATE_IMAGE = re.compile(r'<img[^>]*\bsrc="https?://(?:mail\.google\.com|[a-z0-9.-]*outlook\.(?:office|office365|live)\.com|attachments\.office\.net)/[^"]*"[^>]*>', re.I)
+
+
+def LOGO_TAG():
+    return f'<img src="{logo_url()}" alt="Built to Work" width="200" height="125" style="width:200px;height:auto">'
+
+
+def has_logo(html):
+    return "email/btw-logo" in (html or "")
+
+
+def with_logo(html):
+    """Add the company logo under a signature that doesn't have it yet."""
+    html = html or ""
+    return html if has_logo(html) else (html + "<br>" if html else "") + LOGO_TAG()
 
 
 def logo_url():
@@ -144,7 +164,7 @@ def logo_url():
 def public_images(html):
     """Pictures copied from a Gmail signature point inside that person's Gmail, so nobody else can see them.
     Show the Built to Work logo there instead."""
-    return PRIVATE_IMAGE.sub(lambda m: f'<img src="{logo_url()}" alt="Built to Work" width="200" height="125" style="width:200px;height:auto">', html or "")
+    return PRIVATE_IMAGE.sub(lambda m: LOGO_TAG(), html or "")
 
 
 def build(subject, body, sender, to, *, signature_html="", **kwargs):

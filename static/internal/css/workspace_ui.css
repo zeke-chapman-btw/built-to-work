@@ -125,7 +125,7 @@ body.internal-app {
   font: 500 10px/16px var(--font);
 }
 .internal-app .nav-item.active .nav-planned { border-color: #fff9; color: #fff; }
-.internal-app .nav-group-label { margin: 20px 12px 4px; color: #a1a1aa; font-size: 11px; line-height: 16px; letter-spacing: .08em; text-transform: uppercase; }
+.internal-app .nav-group-label { margin: 20px 12px 4px; color: #a1a1aa; font-size: 12px; line-height: 16px; letter-spacing: .08em; text-transform: uppercase; }
 .internal-app .sidebar-bottom { margin-top: auto; padding: 12px 0 0; border-top: 1px solid #3f3f46; }
 .internal-app .sidebar-bottom .sidebar-user { padding: 8px 12px; color: #d4d4d8; font-size: 12px; line-height: 18px; }
 .internal-app .sidebar-user > span { min-width: 0; overflow-wrap: anywhere; }
@@ -167,7 +167,7 @@ body.internal-app.has-corrective-p2 #main-content { padding-inline: 24px; }
 .internal-app #main-content :is(.section-heading h2,.workspace-card strong,.empty-state h2) { font: 600 16px/24px var(--font); }
 .internal-app .card, .internal-app .btw-panel { border-radius: 10px; box-shadow: 0 1px 2px #18181b08; }
 .internal-app #main-content :is(.workspace-table,.btw-table,.event-table) :is(th,td) { padding: 12px 16px; font-size: 14px; line-height: 20px; }
-.internal-app #main-content :is(.workspace-table,.btw-table,.event-table) th { padding: 10px 16px; font-size: 11px; font-weight: 500; letter-spacing: .025em; }
+.internal-app #main-content :is(.workspace-table,.btw-table,.event-table) th { padding: 10px 16px; font-size: 12px; font-weight: 500; letter-spacing: .025em; }
 .internal-app .btw-stack { gap: 20px; }
 .internal-app .btw-panel { padding: 16px; }
 .internal-app .planned-workspace { max-width: 720px; }
@@ -272,7 +272,7 @@ body.internal-app #main-content .btw-section-surface :is(.btw-table-wrap,.table-
 body.internal-app #main-content .people-table-scroll > table:not(.btw-compact-table) th,
 body.internal-app.intake-workspace #main-content .btw-section-surface :is(.btw-table-wrap,.table-scroll) > table.btw-compact-table th {
   padding: 10px 16px;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 20px;
   font-weight: 500;
   letter-spacing: .05em;
@@ -406,7 +406,7 @@ body.internal-app:has([data-pass-a-event]) #main-content .event-coverage-tile .e
 }
 body.internal-app:has([data-pass-a-event]) #main-content .event-coverage-tile .coverage-state { grid-column:1/-1; white-space:normal; }
 body.internal-app:has([data-pass-a-event]) #main-content .event-coverage-tile :is(p,.event-coverage-review) { margin:0; overflow-wrap:normal; }
-body.internal-app:has([data-pass-a-event]) #main-content .event-coverage-tile .event-coverage-review { font-size:11px; line-height:16px; }
+body.internal-app:has([data-pass-a-event]) #main-content .event-coverage-tile .event-coverage-review { font-size:12px; line-height:16px; }
 /* Compact hierarchy keeps warnings and financial values distinct. */
 body.internal-app:has([data-pass-a-event]) #main-content :is(.btw-panel-heading,.btw-list-heading) h2,
 body.internal-app:has([data-pass-a-event]) #main-content :is(.reports-page,.workdays-page)>.card>h2 {

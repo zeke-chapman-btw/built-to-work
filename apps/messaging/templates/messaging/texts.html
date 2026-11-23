@@ -4,7 +4,7 @@
 {% block workspace_selection_kind %}sections{% endblock %}
 {% block workspace_selection %}<nav class="recruiting-tabs btw-workspace-nav" aria-label="Inbox">{% for key, label, count in tabs %}<a href="?tab={{ key }}"{% if tab == key %} aria-current="page"{% endif %}>{{ label }}{% if count %} <span class="ib-count">{{ count }}</span>{% endif %}</a>{% endfor %}</nav>{% endblock %}
 {% block workspace_content %}<link rel="stylesheet" href="{% static 'shared/portal_pages.css' %}?v=pp3-5"><link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=rui-1112"><style>
-.inbox-workspace .ib-count{display:inline-block;min-width:18px;margin-left:4px;padding:0 6px;border-radius:9px;background:#d0212f;color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center}
+.inbox-workspace .ib-count{display:inline-block;min-width:18px;margin-left:4px;padding:0 6px;border-radius:9px;background:#d0212f;color:#fff;font-size:12px;font-weight:700;line-height:18px;text-align:center}
 .ib{display:grid;gap:16px}
 .ib .cp3-card{margin:0}
 .ib-row{display:grid;grid-template-columns:minmax(160px,220px) minmax(0,1fr) auto;gap:20px;align-items:start;padding:16px 20px;border-top:1px solid #eef0f2}
@@ -13,7 +13,7 @@
 .ib-who strong{display:block;font-size:14px}.ib-who a{color:inherit;text-decoration:none}.ib-who a:hover strong{color:#d0212f}
 .ib-who small,.ib-msg small{display:block;margin-top:4px;color:#71717a;font-size:12px}
 .ib-msg p{margin:0;font-size:14px;line-height:1.45;white-space:pre-line;overflow-wrap:anywhere}
-.ib-msg small .cp3-chip{display:inline-block;margin-left:6px;padding:1px 8px;font-size:11px;line-height:16px;vertical-align:0}.ib-msg small .cp3-chip:first-child{margin-left:0}
+.ib-msg small .cp3-chip{display:inline-block;margin-left:6px;padding:1px 8px;font-size:12px;line-height:16px;vertical-align:0}.ib-msg small .cp3-chip:first-child{margin-left:0}
 .ib-act{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;align-items:center}
 .ib-act form{margin:0}
 .ib-act .button{min-height:34px;padding:6px 12px;font-size:13px}

@@ -59,6 +59,8 @@ class ParticipantDocumentTests(TestCase):
         self.assertTrue(ParticipantDocumentAudit.objects.filter(
             document=document, action='uploaded', actor=self.staff
         ).exists())
+        from apps.participants.verification_services import document_verification_summary
+        self.assertEqual(document_verification_summary(document)["label"], "Verified")
         download = self.client.get(
             reverse('participants:staff-document-download', args=[document.uuid])
         )

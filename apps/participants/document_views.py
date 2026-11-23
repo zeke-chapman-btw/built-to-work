@@ -40,6 +40,18 @@ def _safe_upload_name(upload, content_type):
     return upload
 
 
+def _mark_staff_verified(document, user):
+    """Files staff upload themselves are trusted, so they start out verified."""
+    from django.utils import timezone
+    from .verification_models import ParticipantVerificationRecord
+    ParticipantVerificationRecord.objects.create(
+        participant=document.participant, document=document,
+        status=ParticipantVerificationRecord.Status.VERIFIED,
+        method=ParticipantVerificationRecord.Method.STAFF_CONFIRMED,
+        reviewer=user, reviewed_at=timezone.now(), reason='Uploaded by staff',
+    )
+
+
 @login_required
 def document_directory(request):
     _require_staff(request.user, *VIEW_PERMS)
@@ -98,6 +110,7 @@ def participant_documents(request, participant_id):
                     _audit(document, request.user, 'uploaded', form.cleaned_data['audit_reason'], {
                         'size': document.file_size, 'content_type': document.content_type,
                     })
+                    _mark_staff_verified(document, request.user)
             except Exception:
                 if document.file and document.file.name:
                     document.file.storage.delete(document.file.name)
@@ -210,6 +223,7 @@ def document_replace(request, document_uuid):
                 reason = form.cleaned_data['audit_reason']
                 _audit(previous, request.user, 'replaced', reason, {'replacement_uuid': str(replacement.uuid)})
                 _audit(replacement, request.user, 'replacement_uploaded', reason, {'replaces_uuid': str(previous.uuid)})
+                _mark_staff_verified(replacement, request.user)
         except Exception:
             if 'replacement' in locals() and replacement.file and replacement.file.name:
                 replacement.file.storage.delete(replacement.file.name)

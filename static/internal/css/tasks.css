@@ -92,7 +92,7 @@
 .task-page .task-views { gap:6px; }
 .task-page .task-views a { padding:6px 10px; font-size:13px; }
 .task-page .task-card .task-badges { gap:6px; }
-.task-page .task-card .task-badges :is(span) { font-size:11px; }
+.task-page .task-card .task-badges :is(span) { font-size:12px; }
 .task-page .task-due { margin:0; color:var(--muted); font-size:12px; }
 .task-page .task-card-description { margin:5px 0; font-size:13px; }
 .task-page .task-record-indicators:empty { display:none; }

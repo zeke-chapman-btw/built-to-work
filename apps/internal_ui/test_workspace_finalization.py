@@ -43,7 +43,7 @@ class WorkspaceFinalizationTests(TestCase):
         self.assertRegex(response.content.decode(), r'class="[^"]*\bcustomer-page\b[^"]*"')
         self.assertContains(response, 'data-workspace-landing', count=1)
         self.assertContains(response, 'No customers yet')
-        self.assertContains(response, reverse('customers:new'))
+        self.assertContains(response, reverse('onboarding:list'))
         self.assertNotContains(response, 'planned-workspace')
         self.assertNotContains(response, 'Candidate rankings')
         self.assertNotContains(response, "workspace-card")

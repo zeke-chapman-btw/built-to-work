@@ -118,7 +118,7 @@
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-day-tile.coverage-complete{border-color:#9bcbb0;background:#f1faf5}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-coverage-role{display:grid;grid-template-columns:1fr auto auto;gap:4px 8px;margin-top:8px;font-size:12px;align-items:center}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-coverage-role strong{font-size:15px;font-variant-numeric:tabular-nums}
-.internal-app:is(.has-event-context,.has-event-resource-context) .event-coverage-role .coverage-state{font-size:10px;color:#865619;white-space:nowrap}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-coverage-role .coverage-state{font-size:12px;color:#865619;white-space:nowrap}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-coverage-role.is-filled,.internal-app:is(.has-event-context,.has-event-resource-context) .event-coverage-role.is-filled .coverage-state{color:#22653d}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-day-state{color:#22653d;font-weight:600;border-top:1px solid #c7e2d1;padding-top:7px}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-coverage-review{color:#865619;border-top:1px solid var(--line);padding-top:7px}
@@ -129,10 +129,10 @@
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .event-record-actions{align-self:start;margin-top:0;font-size:12px;gap:6px 12px}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .event-record-actions a{min-height:36px}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .staffing-record h3{font:600 14px/1.5 var(--font)}
-.internal-app:is(.has-event-context,.has-event-resource-context) .event-role-badge{display:inline-flex;padding:3px 8px;border-radius:6px;background:#f0eafa;color:#65448b;font-size:11px;font-weight:600}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-role-badge{display:inline-flex;padding:3px 8px;border-radius:6px;background:#f0eafa;color:#65448b;font-size:12px;font-weight:600}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-role-badge.is-driver{background:#e8f1fd;color:#275a91}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-role-badge.needs-role-review{background:#fff4df;color:#865619}
-.internal-app:is(.has-event-context,.has-event-resource-context) .staffing-date-list li{padding:3px 7px;border:0;background:#f1f3f5;font-size:11px}
+.internal-app:is(.has-event-context,.has-event-resource-context) .staffing-date-list li{padding:3px 7px;border:0;background:#f1f3f5;font-size:12px}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-times{padding-left:18px;font-size:12px;line-height:1.8}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-needs-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-needs-day{min-width:0;padding:12px;border:1px solid var(--line);border-radius:8px}
@@ -151,7 +151,7 @@
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .staffing-record>p:first-of-type{display:inline;margin-left:8px}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-assignment-item .staffing-date-list{margin:8px 0 3px}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-expense-table table{min-width:440px}
-.internal-app:is(.has-event-context,.has-event-resource-context) .event-expense-meta{margin:5px 0;font-size:11px;color:var(--muted);line-height:1.5}
+.internal-app:is(.has-event-context,.has-event-resource-context) .event-expense-meta{margin:5px 0;font-size:12px;color:var(--muted);line-height:1.5}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-row-actions>summary{white-space:nowrap;font-weight:500}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-row-actions .btw-toolbar{display:grid;gap:8px;justify-items:start;padding:5px 0}
 .internal-app:is(.has-event-context,.has-event-resource-context) .event-row-actions .btw-toolbar a{display:inline-flex;align-items:center;min-height:36px;font-size:12px}

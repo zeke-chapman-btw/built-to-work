@@ -30,7 +30,7 @@ body.internal-app.has-participant-workspace.has-participants-pass3.has-participa
 body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-profile-hero .people-profile-heading { margin-top: 12px; align-items: flex-start; gap: 16px; }
 body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-profile-actions { align-self: flex-start; padding-top: 2px; }
 .has-crm-ux-profile .crm-profile-reading-tools { justify-content: flex-end; margin-block: -12px -8px; min-height: 28px; }
-.has-crm-ux-profile .crm-profile-jumps > summary { min-height: 28px; padding-block: 4px; font-size: 11px; line-height: 20px; color: #52525b; }
+.has-crm-ux-profile .crm-profile-jumps > summary { min-height: 28px; padding-block: 4px; font-size: 12px; line-height: 20px; color: #52525b; }
 body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-reading-section > .btw-panel-heading { min-height: 48px; padding: 2px 16px; margin-bottom: 4px; }
 body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-reading-section > .btw-panel-heading h2 { font-size: 12px; line-height: 18px; color: #52525b; letter-spacing: .035em; }
 body.internal-app.has-participant-workspace.has-participants-pass3.has-participant-profile.has-crm-ux-profile #main-content .p3-reading-section .p3-compact-facts dt,

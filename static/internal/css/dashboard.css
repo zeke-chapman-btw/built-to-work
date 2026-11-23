@@ -36,11 +36,11 @@
 .dashboard-metric:hover { border-color:var(--red); }
 .dashboard-metric strong { font-size:25px; line-height:1.1; }
 .dashboard-metric span { font-weight:700; font-size:13px; }
-.dashboard-metric small { font-size:11px; color:var(--muted); }
+.dashboard-metric small { font-size:12px; color:var(--muted); }
 @media(min-width:1280px) { .dashboard-actions { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 .dashboard-tasks .dashboard-list>li { padding:9px 14px; }
-.dashboard-tasks .status-pill { font-size:11px; padding:2px 7px; }
-.dashboard-tasks .task-due-soon,.dashboard-tasks .task-overdue { font-size:11px; padding:3px 6px; }
+.dashboard-tasks .status-pill { font-size:12px; padding:2px 7px; }
+.dashboard-tasks .task-due-soon,.dashboard-tasks .task-overdue { font-size:12px; padding:3px 6px; }
 @media(max-width:1000px) { .home-dashboard { grid-template-columns:minmax(0,1fr); } }
 @media(max-width:640px) { .dashboard-edit,.dashboard-read { min-height:44px; } .dashboard-section-header { padding:10px 12px; } .dashboard-list>li { padding:12px; } .dashboard-row-heading { align-items:flex-start; flex-wrap:wrap; } .dashboard-actions,.dashboard-analytics { padding:12px; } }
 
@@ -184,7 +184,7 @@ a.hv2-stat:hover{border-color:#bbb}
 .hv2-table td a:hover{text-decoration:underline}
 .hv2-table td small{display:block;color:#666;font-size:12px;margin-top:2px}
 .hv2-date{width:56px;text-align:center;line-height:1}
-.hv2-date span{display:block;color:var(--brand-red-dark,#b3141f);font-size:11px;font-weight:600}
+.hv2-date span{display:block;color:var(--brand-red-dark,#b3141f);font-size:12px;font-weight:600}
 .hv2-date strong{display:block;font-size:22px;font-weight:600;margin-top:2px}
 .hv2-short{color:var(--brand-red-dark,#b3141f);font-weight:600}
 .hv2-pill{display:inline-block;padding:2px 10px;border-radius:999px;background:#e5eefc;color:#1d4f9a;font-size:12px}

@@ -18,7 +18,7 @@
 .event-list-page .event-record p { margin:3px 0; font-size:13px; }
 .event-timezone { display:inline-block; margin-left:8px; color:var(--muted); font-size:12px; }
 .event-record-meta { display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:7px; color:var(--muted); font-size:12px; }
-.event-list-page .status-pill { font-size:11px; padding:3px 8px; }
+.event-list-page .status-pill { font-size:12px; padding:3px 8px; }
 .event-list-page .event-open { display:inline-flex; align-items:center; min-height:32px; font-size:12px; font-weight:700; color:#ab1520; }
 .events-page .event-status-upcoming { background:#e6effb; color:#205087; }
 .events-page .event-status-completed,.events-page .status-finalized { background:#e3f1e8; color:#245838; }

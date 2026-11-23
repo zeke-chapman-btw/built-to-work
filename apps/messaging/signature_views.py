@@ -1,4 +1,5 @@
 """Paste-in email signatures (your own, and the company one for automatic email)."""
+import json
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -18,12 +19,15 @@ def _editor(request, *, title, intro, current, save, back, company=False):
             save("")
             messages.success(request, "Signature removed.")
             return redirect(back)
-        html = signatures.clean_html(request.POST.get("signature_html", ""))
+        html = signatures.public_images(signatures.clean_html(request.POST.get("signature_html", "")))
+        if html and request.POST.get("add_logo") == "1" and "<img" not in html:
+            html = signatures.with_logo(html)
         save(html)
         messages.success(request, "Signature saved. It will be added to emails from now on." if html else "Signature removed.")
         return redirect(back)
     return render(request, "messaging/signature_page.html", {
-        "page_title": title, "intro": intro, "current": current, "back": back, "company": company})
+        "page_title": title, "intro": intro, "current": current, "back": back, "company": company,
+        "logo_tag_json": json.dumps(signatures.LOGO_TAG()).replace("<", "\\u003c"), "has_logo": signatures.has_logo(current)})
 
 
 @login_required(login_url="/admin/login/")

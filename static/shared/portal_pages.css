@@ -83,7 +83,7 @@ body.has-portal-shell .cp3-dl > dt,body.has-portal-shell .cp3-dl > dd{margin:0 !
 a.cp3-locked{color:#1a1a1a !important}a.cp3-locked:hover{background:#fafbfc}
 body.has-portal-shell .cp3-dl{margin:0 !important;padding:14px 20px !important}
 .cp3-date{display:flex;flex-direction:column;align-items:center;border:1px solid #e3e5e8;border-radius:8px;padding:4px 0;width:52px;background:#fff}
-.cp3-date small{font-size:11px;color:#5b6470;display:block}.cp3-date b{font-size:18px;line-height:22px}
+.cp3-date small{font-size:12px;color:#5b6470;display:block}.cp3-date b{font-size:18px;line-height:22px}
 /* Participant portal (pp3) */
 .pp3-next-row{display:flex;gap:16px;align-items:center;padding:16px 20px;flex-wrap:wrap}
 .pp3-grow{flex:1;min-width:220px}.pp3-grow strong{display:block;font-size:16px;font-weight:600}.pp3-grow small{display:block;font-size:13px;color:#5b6470;margin-top:2px}

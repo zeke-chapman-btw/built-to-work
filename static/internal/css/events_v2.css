@@ -25,10 +25,10 @@ body.internal-app #main-content .ev2-row{display:grid;grid-template-columns:52px
 body.internal-app #main-content .ev2-month-title + .ev2-row{border-top:0}
 body.internal-app #main-content .ev2-row:hover{background:#fafbfc}
 body.internal-app #main-content .ev2-date{width:46px;height:46px;border-radius:50%;background:#fde8ea;color:#a3192d;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}
-body.internal-app #main-content .ev2-date small{font-size:10px;font-weight:700}body.internal-app #main-content .ev2-date b{font-size:17px}
+body.internal-app #main-content .ev2-date small{font-size:12px;font-weight:700}body.internal-app #main-content .ev2-date b{font-size:17px}
 body.internal-app #main-content .ev2-main{min-width:0}body.internal-app #main-content .ev2-main strong{display:block;font-weight:600}
 body.internal-app #main-content .ev2-main small{display:block;font-size:13px;color:#5b6470;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-body.internal-app #main-content .ev2-stat small{display:block;font-size:11px;color:#5b6470}body.internal-app #main-content .ev2-stat b{font-weight:600;font-size:14px}
+body.internal-app #main-content .ev2-stat small{display:block;font-size:12px;color:#5b6470}body.internal-app #main-content .ev2-stat b{font-weight:600;font-size:14px}
 body.internal-app #main-content .ev2-stat b.is-short{color:#a3192d}body.internal-app #main-content .ev2-stat b.is-blank{color:#a3a9b1}
 body.internal-app #main-content .ev2-state{justify-self:start}
 @media (max-width:900px){body.internal-app #main-content .event-list-page .ev2-tiles{grid-template-columns:1fr 1fr}body.internal-app #main-content .ev2-row{grid-template-columns:46px minmax(0,1fr) auto}body.internal-app #main-content .ev2-row .ev2-stat{display:none}body.internal-app #main-content .ev2-more-panel{grid-template-columns:1fr;left:0;right:auto}}
@@ -46,7 +46,7 @@ body.internal-app #main-content .ev2-days{display:flex;gap:10px;flex-wrap:wrap;p
 body.internal-app #main-content .ev2-day{min-width:130px;border:1px solid #e3e5e8;border-radius:8px;padding:8px 12px;display:flex;flex-direction:column;gap:4px}
 body.internal-app #main-content .ev2-day.is-short{border-color:#f3c2c8}
 body.internal-app #main-content .ev2-day strong{font-size:13px}
-body.internal-app #main-content .ev2-day strong small{font-size:11px;color:#5b6470}
+body.internal-app #main-content .ev2-day strong small{font-size:12px;color:#5b6470}
 body.internal-app #main-content .ev2-day > small{font-size:12px;color:#5b6470}
 body.internal-app #main-content .ev2-day-roles{display:flex;gap:6px;flex-wrap:wrap}
 body.internal-app #main-content .ev2-role{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#eceef0;color:#46505b}

@@ -16,7 +16,7 @@
 .internal-app .participant-search input,.internal-app .participant-search button { padding:7px 10px; }
 .internal-app .notification-bell>summary { border-color:transparent; border-radius:6px; padding:6px; gap:0; position:relative; }
 .internal-app .notification-bell>summary svg { width:20px; height:20px; }
-.internal-app .notification-count { position:absolute; right:0; top:0; min-width:17px; padding:1px 4px; font-size:10px; line-height:16px; }
+.internal-app .notification-count { position:absolute; right:0; top:0; min-width:17px; padding:1px 4px; font-size:12px; line-height:16px; }
 .internal-app .events-list-heading { align-items:flex-start; gap:16px; }
 .internal-app .events-list-heading h1 { padding-top:6px; }
 .internal-app .events-search-form { display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:flex-start; gap:8px; min-width:0; max-width:100%; }
@@ -37,7 +37,7 @@
 .internal-app .event-summary { margin:0 0 7px; font-size:12px; color:var(--muted); overflow-wrap:anywhere; }
 .internal-app .event-header-actions { display:flex; justify-content:flex-end; align-items:flex-start; flex-wrap:wrap; gap:6px; max-width:48%; flex-shrink:0; }
 .internal-app .event-header-actions .button { font-size:12px; min-height:36px; padding:7px 10px; }
-.internal-app .event-record-header .status-pill { font-size:11px; padding:3px 8px; }
+.internal-app .event-record-header .status-pill { font-size:12px; padding:3px 8px; }
 .internal-app .event-lifecycle { position:relative; }
 .internal-app .event-lifecycle summary { list-style:none; }
 .internal-app .event-lifecycle summary::-webkit-details-marker { display:none; }

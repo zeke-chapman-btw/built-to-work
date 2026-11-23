@@ -49,7 +49,7 @@ body.internal-app #main-content .st2-days{display:grid;grid-template-columns:rep
 body.internal-app #main-content .st2-day{border:1px solid #e3e5e8;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
 body.internal-app #main-content .st2-day.is-short{border:2px solid #d0212f;padding:9px 11px;background:#fffafa}
 body.internal-app #main-content .st2-day h3{margin:0;font-size:14px;font-weight:600}
-body.internal-app #main-content .st2-day h3 small{font-size:11px;color:#5b6470}
+body.internal-app #main-content .st2-day h3 small{font-size:12px;color:#5b6470}
 body.internal-app #main-content .st2-day small{font-size:12px}
 body.internal-app #main-content .st2-roles{display:flex;gap:6px;flex-wrap:wrap}
 body.internal-app #main-content .st2-role{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:#eceef0;color:#46505b;white-space:nowrap}
@@ -88,7 +88,7 @@ body.internal-app #main-content .st3-day{border:1px solid #e3e5e8;border-radius:
 body.internal-app #main-content .st3-day.is-short{border-color:#f0b8bf}
 body.internal-app #main-content .st3-day header{display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:2px 8px}
 body.internal-app #main-content .st3-day h3{margin:0;font-size:15px;font-weight:600}
-body.internal-app #main-content .st3-day header small{font-size:11px;font-weight:600;color:#5b6470;text-transform:uppercase;letter-spacing:.04em}
+body.internal-app #main-content .st3-day header small{font-size:12px;font-weight:600;color:#5b6470;text-transform:uppercase;letter-spacing:.04em}
 body.internal-app #main-content .st3-day header .st2-roles{grid-column:1/-1;margin-top:4px}
 body.internal-app #main-content .st3-people{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border-top:1px solid #f1f2f4}
 body.internal-app #main-content .st3-people li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f1f2f4;font-size:14px}
