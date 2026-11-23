@@ -15,7 +15,7 @@ from apps.accounts.roles import manager
 from apps.internal_ui.record_editors import editor_response, editor_success
 
 from . import engine, sources
-from .models import ReminderNotice, ReminderRole, ReminderRule, ReminderSetup
+from .models import ReminderNotice, ReminderPreference, ReminderRole, ReminderRule, ReminderSetup
 
 AREAS = ("Tasks", "Events", "Participants", "Recruiting", "Customers", "Billing", "Payroll", "Admin", "Other")
 BUILT_IN = {
@@ -152,6 +152,20 @@ class RuleForm(forms.ModelForm):
         self.fields["message"].help_text += " Fill-ins: " + fill_ins + "."
         if len(self.fields["mode"].choices) == 1:
             self.fields["mode"].widget = forms.HiddenInput()
+        saved = rule.conditions or {}
+        for key, label, kind, extra in getattr(source, "filters", ()):
+            name = "cond_" + key
+            if kind == "choices":
+                self.fields[name] = forms.MultipleChoiceField(label=label, choices=extra, required=False,
+                                                              widget=forms.CheckboxSelectMultiple, help_text="Leave all unticked for any.")
+            elif kind == "words":
+                self.fields[name] = forms.CharField(label=label, required=False, max_length=300, help_text=extra)
+            else:
+                self.fields[name] = forms.BooleanField(label=label, required=False)
+            self.initial.setdefault(name, saved.get(key, [] if kind == "choices" else False if kind == "flag" else ""))
+
+    def condition_fields(self):
+        return [self[name] for name in self.fields if name.startswith("cond_")]
 
     def clean_days(self):
         value = self.cleaned_data.get("days", "")
@@ -174,6 +188,8 @@ class RuleForm(forms.ModelForm):
         rule = super().save(commit=False)
         rule.recipients = {k: list(self.cleaned_data.get(k) or []) for k in ("related", "roles", "people")
                            if self.cleaned_data.get(k)}
+        rule.conditions = {name[5:]: value for name, value in self.cleaned_data.items()
+                           if name.startswith("cond_") and value not in ("", [], False, None)}
         if commit:
             rule.save()
         return rule
@@ -290,3 +306,46 @@ def notice_read(request, pk=None):
     rows.update(read_at=timezone.now())
     target = request.POST.get("next") or ""
     return redirect(target if target.startswith("/") else reverse("messaging:texts") + "?tab=reminders")
+
+
+# ------------------------------------------------------- my notifications
+
+def _reaches(rule, user, roles):
+    spec = rule.recipients or {}
+    if str(user.pk) in [str(p) for p in spec.get("people", [])]:
+        return True
+    for key in spec.get("roles", []):
+        role = roles.get(key)
+        if role and (user in role.holders.all() or (not role.holders.exists() and engine.waiting_user(role.waiting_for) == user)):
+            return True
+    return bool(spec.get("related")) and rule.source in sources.SOURCES and any(
+        k not in ("customer_team", "customer_contact", "participant") for k in spec["related"])
+
+
+@login_required(login_url="/admin/login/")
+@require_http_methods(["GET", "POST"])
+def mine(request):
+    """Each staff member picks how each reminder reaches them."""
+    if not request.user.is_staff:
+        raise PermissionDenied
+    roles = {r.key: r for r in ReminderRole.objects.prefetch_related("holders")}
+    rules = [r for r in ReminderRule.objects.filter(enabled=True, built_in="").exclude(source="")
+             if _reaches(r, request.user, roles)]
+    saved = {p.rule_id: p for p in ReminderPreference.objects.filter(user=request.user)}
+    if request.method == "POST":
+        for rule in rules:
+            picked = {c: request.POST.get(f"r{rule.pk}_{c}") == "1" for c in ("bell", "email", "text")}
+            if picked == {c: getattr(rule, c) for c in picked} and rule.pk not in saved:
+                continue
+            ReminderPreference.objects.update_or_create(user=request.user, rule=rule, defaults=picked)
+        messages.success(request, "Your notification choices are saved.")
+        return redirect("reminders:mine")
+    rows = []
+    for rule in rules:
+        pref = saved.get(rule.pk)
+        rows.append({"rule": rule, "timing": timing(rule),
+                     "on": {c: getattr(pref or rule, c) for c in ("bell", "email", "text")}})
+    profile = getattr(request.user, "staff_profile", None)
+    return render(request, "reminders/mine.html", {"page_title": "My notifications", "rows": rows,
+                                                   "has_phone": bool(profile and profile.phone),
+                                                   "has_email": bool((profile and profile.email) or request.user.email)})

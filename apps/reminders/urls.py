@@ -5,6 +5,7 @@ from . import views
 app_name = "reminders"
 urlpatterns = [
     path("", views.reminder_list, name="list"),
+    path("mine/", views.mine, name="mine"),
     path("switch/", views.switch, name="switch"),
     path("new/", views.rule_edit, name="new"),
     path("<int:pk>/", views.rule_edit, name="edit"),

@@ -42,7 +42,7 @@ def fake_source(items, modes=("new",), related=None):
 
 class SeedTests(Base):
     def test_spreadsheet_rows_and_roles_are_seeded(self):
-        self.assertEqual(ReminderRule.objects.count(), 33)
+        self.assertEqual(ReminderRule.objects.count(), 35)
         self.assertEqual(ReminderRule.objects.exclude(built_in="").count(), 11)
         self.assertEqual(set(ReminderRole.objects.values_list("waiting_for", flat=True)), {"Zeke Chapman", "Jason Collins", ""})
         for rule in ReminderRule.objects.filter(built_in=""):
@@ -322,3 +322,76 @@ class BellAndSummaryTests(SendingTests):
             self.assertTrue(run_tick(worker_id="test")["paused"])
             self.turn_on(timezone.now())
             self.assertNotIn("paused", run_tick(worker_id="test"))
+
+
+class NewParticipantAndChoiceTests(SendingTests):
+    def person(self, **kw):
+        from apps.participants.models import Participant
+        values = dict(first_name="SYNTHETIC", last_name="Welder", state="GA", city="Augusta", date_of_birth=date(1995, 5, 1))
+        values.update(kw)
+        return Participant.objects.create(**values)
+
+    def test_new_participant_shows_with_details_and_conditions_filter(self):
+        now = timezone.now()
+        self.person()
+        self.person(first_name="SYNTHETIC Teen", state="SC", date_of_birth=date.today() - timedelta(days=365 * 15))
+        items = list(sources.new_participants(now.date(), now))
+        self.assertEqual(len(items), 2)
+        self.assertTrue(any("signed up" in i.line and "Augusta, GA" in i.line for i in items))
+        kept = [i for i in items if sources.matches({"states": "Georgia", "adults": True}, i)]
+        self.assertEqual([i.fields["name"] for i in kept], ["SYNTHETIC Welder"])
+        self.assertEqual(len([i for i in items if sources.matches({"states": "ga, sc"}, i)]), 2)
+        self.assertEqual(len([i for i in items if sources.matches({"joined": ["website"]}, i)]), 0)
+        self.assertEqual(len([i for i in items if sources.matches({"trades": "welding"}, i)]), 0)
+
+    def test_rule_conditions_and_personal_delivery_choice(self):
+        from .models import ReminderPreference
+        now = timezone.now()
+        adult = sources.Item(ref="a", line="Adult signed up", created=now, fields={"name": "A"}, facts={"age": 30},
+                             related={"owner": [sources.user_target(self.staff)]})
+        teen = sources.Item(ref="b", line="Teen signed up", created=now, fields={"name": "B"}, facts={"age": 15},
+                            related={"owner": [sources.user_target(self.staff)]})
+        rule = self.make_rule(email=True, conditions={"adults": True})
+        ReminderPreference.objects.create(user=self.staff, rule=rule, bell=False, email=True, text=False)
+        self.turn_on(now - timedelta(hours=1))
+        with patch.dict(sources.SOURCES, {"fake": fake_source([adult, teen])}):
+            engine.run_pass(now)
+        self.assertFalse(TaskNotification.objects.filter(kind="reminder").exists())  # they turned the bell off
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("Adult", mail.outbox[0].subject + mail.outbox[0].body)
+        self.assertNotIn("Teen", mail.outbox[0].body)
+
+    def test_customer_gets_portal_link_not_staff_link(self):
+        now = timezone.now()
+        customer = sources.Target("ci:1", "Cora Customer", email="cora@example.test", portal_url="/portal/candidates/x/")
+        item = sources.Item(ref="s", line="New candidate", created=now, link="/recruiting/candidates/x/",
+                            fields={"name": "Pat P.", "company": "SYNTHETIC Co", "position": "Welder"},
+                            related={"owner": [customer]})
+        self.make_rule(bell=False, email=True, backup="none", subject="New candidate for {position}", message="Hi, {name}")
+        self.turn_on(now - timedelta(hours=1))
+        with patch.dict(sources.SOURCES, {"fake": fake_source([item])}):
+            engine.run_pass(now)
+        self.assertEqual(mail.outbox[0].subject, "New candidate for Welder")
+        self.assertIn("/portal/candidates/x/", mail.outbox[0].body)
+        self.assertNotIn("/recruiting/", mail.outbox[0].body)
+
+    def test_editor_saves_conditions_and_my_notifications_page(self):
+        rule = ReminderRule.objects.get(key="new_participant")
+        page = self.client.get(reverse("reminders:edit", args=[rule.pk]))
+        self.assertContains(page, "Only when")
+        self.assertContains(page, "18 and older only")
+        data = {"enabled": "on", "name": rule.name, "area": rule.area, "mode": "new", "days": "", "repeat_every": "0",
+                "send_time": "08:00", "bell": "on", "email": "on", "people": [str(self.staff.pk)], "backup": "admins",
+                "subject": rule.subject, "message": rule.message, "cond_type": ["workforce"], "cond_states": "GA",
+                "cond_adults": "on", "cond_trades": ""}
+        response = self.client.post(reverse("reminders:edit", args=[rule.pk]), data)
+        self.assertEqual(response.status_code, 302)
+        rule.refresh_from_db()
+        self.assertEqual(rule.conditions, {"type": ["workforce"], "states": "GA", "adults": True})
+        self.client.force_login(self.staff, backend=BACKEND)
+        page = self.client.get(reverse("reminders:mine"))
+        self.assertContains(page, "New participant signed up")
+        self.client.post(reverse("reminders:mine"), {f"r{rule.pk}_text": "1"})
+        from .models import ReminderPreference
+        pref = ReminderPreference.objects.get(user=self.staff, rule=rule)
+        self.assertEqual(pref.channels(), ["text"])

@@ -1,0 +1,15 @@
+{% extends 'shared/workspace_landing.html' %}{% load static %}{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'shared/portal_pages.css' %}?v=pp3-5"><style>
+.mn-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 20px;border-top:1px solid #f1f2f4}
+.mn-row small{display:block;color:#5b6470;font-size:13px;margin-top:2px}
+.mn-pick{display:flex;gap:14px;flex-wrap:wrap}
+.mn-pick label{display:flex;gap:6px;align-items:center;font-size:14px;cursor:pointer}
+@media (max-width:700px){.mn-row{grid-template-columns:1fr}}
+</style>{% endblock %}{% block workspace_class %}ux-settings-page{% endblock %}{% block workspace_content %}<div class="cp3">
+<a class="ux-back" href="{% url 'my:account' %}#email">← My account</a>
+<p class="ls-intro">Pick how each notification reaches you. Untick all three to stop getting one.{% if not has_phone %} Texts need a mobile number on your staff profile.{% endif %}{% if not has_email %} Email needs an email address on your staff profile.{% endif %}</p>
+<form method="post">{% csrf_token %}<section class="cp3-card"><header class="cp3-head"><h2>My notifications</h2></header>
+{% for r in rows %}<div class="mn-row"><span><strong>{{ r.rule.name }}</strong><small>{{ r.timing }}</small>{% if r.rule.conditions %}<small>Only some: set by your manager</small>{% endif %}</span>
+<span class="mn-pick"><label><input type="checkbox" name="r{{ r.rule.pk }}_bell" value="1"{% if r.on.bell %} checked{% endif %}> Bell</label><label><input type="checkbox" name="r{{ r.rule.pk }}_email" value="1"{% if r.on.email %} checked{% endif %}> Email</label><label><input type="checkbox" name="r{{ r.rule.pk }}_text" value="1"{% if r.on.text %} checked{% endif %}> Text</label></span></div>
+{% empty %}<p class="cp3-empty">No notifications are set to reach you yet.</p>{% endfor %}
+{% if rows %}<div style="padding:14px 20px;display:flex;justify-content:flex-end"><button class="button button-primary" type="submit">Save</button></div>{% endif %}
+</section></form></div>{% endblock %}

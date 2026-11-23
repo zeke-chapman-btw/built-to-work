@@ -17,3 +17,7 @@
 .has-portal-shell #main-content .profile-identity .profile-name{font:600 20px/28px var(--font);margin:0 0 6px;letter-spacing:0;text-transform:none}
 .has-portal-shell .portal-page .intro{font:400 14px/22px var(--font)}
 @media(max-width:1023px){.has-portal-shell .application-company-switch :is(select,button),.has-portal-shell .application-return .button,.has-portal-shell .application-account{min-height:44px}.has-portal-shell .application-account{width:44px;height:44px}}
+
+/* Big desktop screens: scale the whole staff app up a little so text isn't tiny. */
+@media (min-width: 1680px) { body.internal-app { zoom: 1.1; } }
+@media (min-width: 2200px) { body.internal-app { zoom: 1.25; } }

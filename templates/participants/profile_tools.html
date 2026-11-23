@@ -6,5 +6,6 @@
     {% if source_tools_url %}<a href="{{ source_tools_url }}">Source &amp; identity tools</a>{% endif %}
     {% if perms.participants.manage_portal_invitations %}<a href="{% url 'participants:portal-invitations' %}?participant={{ participant.pk }}">Participant portal invitation</a>{% endif %}
     {% if section == 'overview' %}{% include 'participants/profile_jumps.html' with in_profile_tools=True %}{% endif %}
+    {% if can_remove %}<p>Remove</p>{% if participant.archived_at %}<a data-record-editor href="{% url 'participants:participant-restore' participant.pk %}">Restore</a>{% else %}<a data-record-editor href="{% url 'participants:participant-archive' participant.pk %}">Archive</a>{% endif %}<a class="rm-danger" data-record-editor href="{% url 'participants:participant-delete' participant.pk %}">Delete</a>{% endif %}
   </div>
 </details>

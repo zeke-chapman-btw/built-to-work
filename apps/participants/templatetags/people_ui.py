@@ -95,6 +95,7 @@ def profile_tools(context):
     authorized=context.get('can_manage_acquisition') or context.get('can_view_internal_review') or user.has_perms(('participants.view_participant','events.view_participantmatchreview'))
     if authorized and (not general_recruiter(user) or user.has_perm('participants.view_registrationsubmission')):
         result['source_tools_url']=profile_link(context['request'],context['participant'],'acquisition')+'&tools=source'
+    result['can_remove']=can_remove_people(user)
     return result
 
 @register.simple_tag(takes_context=True)

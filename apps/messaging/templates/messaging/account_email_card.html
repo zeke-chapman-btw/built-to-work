@@ -13,5 +13,8 @@
     {% if signature %}<div style="border:1px solid #ececef;border-radius:10px;background:#fafafa;padding:12px 14px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45;max-height:220px;overflow:auto">{{ signature|safe }}</div>
     {% else %}<p class="ux-note" style="margin:0">No signature yet. Emails you send to participants from the app go out without one.</p>{% endif %}
     <p style="margin:12px 0 0"><a class="button secondary" href="{% url 'messaging:signature' %}">{% if signature %}Edit signature{% else %}Add your signature{% endif %}</a></p>
+    <p style="margin:18px 0 6px;font-weight:600">Notifications</p>
+    <p class="ux-note" style="margin:0 0 8px">Choose how each notification reaches you: bell, email or text.</p>
+    <p style="margin:0"><a class="button secondary" href="{% url 'reminders:mine' %}">My notifications</a></p>
   </div>
 </section>

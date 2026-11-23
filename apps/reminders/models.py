@@ -73,6 +73,7 @@ class ReminderRule(models.Model):
     email = models.BooleanField(default=False)
     text = models.BooleanField(default=False)
     recipients = models.JSONField(default=dict, blank=True)
+    conditions = models.JSONField(default=dict, blank=True, help_text="Only items that match these go out.")
     backup = models.CharField(max_length=10, choices=Backup.choices, default=Backup.ADMINS)
     subject = models.CharField(max_length=160, blank=True)
     message = models.TextField(blank=True)
@@ -95,6 +96,23 @@ class ReminderRule(models.Model):
             if part.isdigit():
                 values.append(int(part))
         return sorted(set(values), reverse=True)
+
+    def channels(self):
+        return [c for c in ("bell", "email", "text") if getattr(self, c)]
+
+
+class ReminderPreference(models.Model):
+    """How one person wants a reminder delivered to them (overrides the reminder's own choice)."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reminder_preferences")
+    rule = models.ForeignKey(ReminderRule, on_delete=models.CASCADE, related_name="preferences")
+    bell = models.BooleanField(default=True)
+    email = models.BooleanField(default=False)
+    text = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        default_permissions = ()
+        constraints = [models.UniqueConstraint(fields=("user", "rule"), name="reminders_one_preference")]
 
     def channels(self):
         return [c for c in ("bell", "email", "text") if getattr(self, c)]

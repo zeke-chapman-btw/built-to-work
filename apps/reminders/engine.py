@@ -17,7 +17,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from . import sources
-from .models import ReminderNotice, ReminderRole, ReminderRule, ReminderSend, ReminderSetup, ReminderWatch
+from .models import ReminderNotice, ReminderPreference, ReminderRole, ReminderRule, ReminderSend, ReminderSetup, ReminderWatch
 
 log = logging.getLogger(__name__)
 TEXT_HOURS = (time(8, 0), time(21, 0))
@@ -203,7 +203,8 @@ def deliver_email(rule, target, title, body, link):
     if bounces.bounced(target.email):
         raise ValueError("Email address bounced")
     config = store.email_settings()
-    url = absolute(link) if target.user else ""  # customers and participants never get staff-only links
+    # customers and participants never get staff-only links; customers get their portal page instead
+    url = absolute(target.portal_url) if target.portal_url else (absolute(link) if target.user else "")
     send_mail(title, body + (f"\n\nOpen: {url}" if url else ""), config.get("from_address") or None, [target.email],
               fail_silently=False, connection=store.smtp_connection())
 
@@ -284,9 +285,12 @@ def run_rule(rule, now=None, setup=None, roles=None, cache=None):
     roles = roles if roles is not None else {r.key: r for r in ReminderRole.objects.all()}
     cache = cache if cache is not None else {}
     channels = rule.channels()
+    chosen = {p.user_id: p.channels() for p in ReminderPreference.objects.filter(rule=rule)}
     texts_ok = text_hours(now_local)
     plan = {}
     for item in source.finder(now_local.date(), now):
+        if not sources.matches(rule.conditions, item):
+            continue
         if rule.mode == ReminderRule.Mode.CHANGED:
             occ = _changed(rule, item, ready=texts_ok or "text" not in channels)
         else:
@@ -294,7 +298,8 @@ def run_rule(rule, now=None, setup=None, roles=None, cache=None):
         if not occ:
             continue
         for target in targets_for(rule, item, roles, cache):
-            for channel in channels:
+            mine = chosen.get(target.user.pk, channels) if target.user else channels
+            for channel in mine:
                 if (channel == "text" and not texts_ok) or (channel == "bell" and not target.user) \
                         or (channel == "email" and not target.email) or (channel == "text" and not target.phone):
                     continue
@@ -340,7 +345,8 @@ def preview(rule, now=None, limit=6):
     if not source:
         return {"count": 0, "items": []}
     try:
-        items = list(source.finder(timezone.localtime(now, sources.EASTERN).date(), now))
+        items = [i for i in source.finder(timezone.localtime(now, sources.EASTERN).date(), now)
+                 if sources.matches(rule.conditions, i)]
     except Exception:
         log.exception("REMINDER_PREVIEW_FAILED %s", rule.source)
         return {"count": 0, "items": [], "error": True}

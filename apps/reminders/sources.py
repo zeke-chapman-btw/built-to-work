@@ -27,6 +27,7 @@ class Target:
     email: str = ""
     phone: str = ""
     participant: object = None
+    portal_url: str = ""  # customers get their own portal link, never a staff page
 
     @property
     def first_name(self):
@@ -43,6 +44,7 @@ class Item:
     fields: dict = field(default_factory=dict)
     related: dict = field(default_factory=dict)
     fingerprint: str = ""
+    facts: dict = field(default_factory=dict)  # what conditions are checked against
 
 
 def user_target(user):
@@ -482,6 +484,113 @@ def billing_problems(today, now):
                    related={"account_manager": _people(user_target(profile.account_manager if profile else None))})
 
 
+# --------------------------------------------------------- New people
+
+def _age(dob, today):
+    if not dob:
+        return None
+    return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+
+
+def new_participants(today, now):
+    from apps.participants.intake_discovery import current_interest_expression
+    from apps.participants.models import Participant
+    rows = (Participant.objects.filter(kind="person", archived_at__isnull=True, created_at__gte=now - timedelta(days=4))
+            .exclude(registration_submissions__source="historical_import")
+            .annotate(_interest=current_interest_expression())
+            .prefetch_related("registration_submissions__event", "registration_submissions__intake_session")
+            .order_by("created_at"))
+    for person in rows[:500]:
+        subs = sorted(person.registration_submissions.all(), key=lambda x: x.pk)
+        sub = subs[0] if subs else None
+        session = getattr(sub, "intake_session", None) if sub else None
+        if sub and sub.event_id:
+            joined, where = "event", f"at {sub.event.name}"
+        elif sub and (getattr(session, "channel", "") == "online" or sub.source in ("public", "online", "website")):
+            joined, where = "website", "on the website"
+        else:
+            joined, where = "staff", "added by staff"
+        name = f"{person.preferred_name or person.first_name} {person.last_name}".strip()
+        kind = person.get_primary_identifier_display() if person.primary_identifier else ""
+        place = ", ".join(p for p in (person.city, person.state) if p)
+        trades = (person._interest or "").strip()
+        bits = [b for b in (kind, place, trades and f"interested in {trades}") if b]
+        yield Item(ref=f"participant:{person.pk}", created=person.created_at, anchor=_local(person.created_at).date(),
+                   line=f"{name} signed up {where}" + (f" ({'; '.join(bits)})" if bits else ""),
+                   link=reverse("participants:staff-profile", args=[person.pk]),
+                   fields={"name": name, "type": kind, "place": place, "trades": trades, "joined": where},
+                   facts={"type": person.primary_identifier, "state": person.state or "", "trades": trades,
+                          "age": _age(person.date_of_birth, today), "joined": joined,
+                          "event": str(sub.event_id) if sub and sub.event_id else ""})
+
+
+def candidates_shared(today, now):
+    from apps.customers.models import CustomerMembership
+    from apps.recruiting.models import CandidateDisclosure
+    rows = (CandidateDisclosure.objects.filter(revoked_at__isnull=True, released_at__gte=now - timedelta(days=4))
+            .select_related("participant", "organization", "need_revision", "candidate__opportunity__owner"))
+    teams = {}
+    for row in rows[:500]:
+        org = row.organization
+        if org.pk not in teams:
+            members = (CustomerMembership.objects.filter(organization=org, state="enabled", identity__activated_at__isnull=False)
+                       .select_related("identity"))
+            teams[org.pk] = members
+        portal = reverse("customer_portal:recruiting-candidate", args=[row.pk])
+        team = [Target(f"ci:{m.identity_id}", f"{m.identity.first_name} {m.identity.last_name}".strip(),
+                       email=m.identity.email, phone=m.identity.phone or "", portal_url=portal) for m in teams[org.pk]]
+        person = row.participant
+        shown = f"{person.preferred_name or person.first_name} {person.last_name[:1]}.".strip()
+        position = getattr(row.need_revision, "title", "") or "your open position"
+        yield Item(ref=f"shared:{row.pk}", created=row.released_at, anchor=_local(row.released_at).date(),
+                   line=f"New candidate for {org.name} ({position}): {shown}",
+                   link=reverse("recruiting:candidate-detail", args=[row.candidate_id]),
+                   fields={"name": shown, "company": org.name, "position": position},
+                   related={"customer_team": team,
+                            "recruiter": _people(user_target(row.candidate.opportunity.owner))})
+
+
+# Conditions a reminder can be limited by. Each: key, label, kind.
+PARTICIPANT_FILTERS = (
+    ("type", "Participant type", "choices", (("workforce", "Workforce"), ("student", "Student"),
+                                             ("teacher_instructor", "Teacher / Instructor"), ("other", "Other"))),
+    ("joined", "How they signed up", "choices", (("website", "Website form"), ("event", "At an event"), ("staff", "Added by staff"))),
+    ("states", "States", "words", "Like GA, SC. Leave blank for anywhere."),
+    ("trades", "Trade interests", "words", "Like Welding, Heavy Equipment. Matches any of them. Leave blank for all."),
+    ("adults", "18 and older only", "flag", ""),
+)
+
+STATE_NAMES = {"al": "alabama", "fl": "florida", "ga": "georgia", "nc": "north carolina", "sc": "south carolina",
+               "tn": "tennessee", "va": "virginia", "ms": "mississippi", "ky": "kentucky", "tx": "texas"}
+
+
+def _words(value):
+    return [w.strip().casefold() for w in str(value or "").split(",") if w.strip()]
+
+
+def matches(conditions, item):
+    """True when the item meets every condition the reminder has."""
+    if not conditions:
+        return True
+    facts = item.facts or {}
+    if conditions.get("type") and facts.get("type") not in conditions["type"]:
+        return False
+    if conditions.get("joined") and facts.get("joined") not in conditions["joined"]:
+        return False
+    states = _words(conditions.get("states"))
+    if states:
+        have = (facts.get("state") or "").strip().casefold()
+        wanted = set(states) | {STATE_NAMES.get(s, s) for s in states} | {k for k, v in STATE_NAMES.items() if v in states}
+        if not have or have not in wanted:
+            return False
+    trades = _words(conditions.get("trades"))
+    if trades and not any(t in (facts.get("trades") or "").casefold() for t in trades):
+        return False
+    if conditions.get("adults") and (facts.get("age") is None or facts["age"] < 18):
+        return False
+    return True
+
+
 @dataclass(frozen=True)
 class Source:
     key: str
@@ -492,6 +601,7 @@ class Source:
     anchor_label: str
     related: dict
     fields: dict
+    filters: tuple = ()
 
 
 COMMON = {"line": "a one-line summary of the item"}
@@ -506,6 +616,12 @@ SOURCES = {s.key: s for s in (
     Source("participant_event", "Participants", "Participants signed up for an event (texts allowed)",
            participant_event_day_before, ("before",), "the event day", {"participant": "The participant"},
            {"first_name": "their first name", "event": "event name", "when": "start day and time", "place": "location"}),
+    Source("new_participant", "Participants", "New participants", new_participants, ("new",), "they sign up", {},
+           {"name": "the participant", "type": "participant type", "place": "city and state", "trades": "trade interests",
+            "joined": "where they signed up"}, PARTICIPANT_FILTERS),
+    Source("candidate_shared", "Recruiting", "Candidates shared with a customer", candidates_shared, ("new",),
+           "the candidate is shared", {"customer_team": "The customer's portal users", "recruiter": "Recruiter on the position"},
+           {"name": "candidate (first name and last initial)", "company": "the customer", "position": "the position"}),
     Source("follow_up", "Participants", "Follow-up dates on touchpoints", follow_ups, ("before", "after"),
            "the follow-up date", {"owner": "Person who set the follow-up"}, {"name": "who to follow up with", "summary": "the note"}),
     Source("text_reply", "Participants", "Text replies still marked New", unhandled_text_replies, ("after", "new"),
