@@ -137,7 +137,7 @@ footer { padding: 14px clamp(18px, 4vw, 58px); border-top: 1px solid var(--line)
 .compact-filters label { display:block; font-size:12px; font-weight:700; margin-bottom:4px; }
 .compact-filters :is(input,select) { width:100%; }
 @media(max-width:640px) { .compact-filters { grid-template-columns:minmax(0,1fr); } }
-.filter-advanced { grid-column:1/-1; border-top:1px solid var(--line); padding-top:8px; }
+.filter-advanced { grid-column:1/-1; padding-top:4px; }
 .filter-advanced>summary { cursor:pointer; font-weight:700; color:#454f5a; min-height:32px; padding:5px 0; }
 .filter-advanced-fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; padding:8px 0 0; }
 .internal-app .filter-toolbar { display:grid; grid-template-columns:minmax(180px,2fr) repeat(2,minmax(120px,1fr)) auto; gap:12px; align-items:end; }

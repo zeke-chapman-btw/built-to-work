@@ -178,7 +178,7 @@ class CorrectiveDWorkflowTests(TestCase):
         self.login()
         response=self.client.get(reverse('internal:workspace',kwargs={'workspace_id':'operations'}))
         html=response.content.decode()
-        self.assertLess(html.index('aria-label="Operations sections"'),html.index('Resource configuration'))
+        self.assertLess(html.index('aria-label="Operations sections"'),html.index('Event setup'))
         for route in ['operations:execution-index','participants:intake-config-index','participants:consent-index']:
             self.assertContains(response,reverse(route))
 

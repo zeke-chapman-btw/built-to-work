@@ -73,6 +73,8 @@ def _source(ref, user, event, title, label, section, url, window, *version):
 
 
 def event_sources(event, now, *, issues=None):
+    if getattr(event, "managed_in_base44", False):
+        return []  # still run from base44: no reminders here
     issues = issues if issues is not None else []
     if not enabled() or event.status == 'archived':
         return []

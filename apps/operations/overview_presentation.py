@@ -69,6 +69,7 @@ def resource_overview_rows(user, rows):
     except PermissionDenied:
         forms_allowed = False
     forms_available = forms_allowed
+    default_form = False
     if forms_available:
         from apps.participants.intake_models import IntakeFormAssignment
         try:
@@ -76,6 +77,9 @@ def resource_overview_rows(user, rows):
                 event_id__in=event_ids, channel='event', is_active=True,
                 form__is_active=True, form__is_smart_intake=True,
                 active_version__status='published').values_list('event_id', flat=True))
+            default_form = IntakeFormAssignment.objects.filter(
+                event__isnull=True, channel='event', is_active=True, form__is_active=True,
+                active_version__status='published').exists()
         except DatabaseError:
             forms_available = False
     result = []
@@ -83,7 +87,7 @@ def resource_overview_rows(user, rows):
         row = dict(original)
         event = row['event']
         checks = [dict(label='Forms', icon='resource-form',
-            state='Assigned' if forms_available and event.pk in assigned_forms else 'Unknown' if forms_allowed else 'Restricted',
+            state=('Assigned' if event.pk in assigned_forms else 'All-events form' if default_form else 'Not set') if forms_available else 'Unknown' if forms_allowed else 'Restricted',
             detail='Active published event-linked form assignment; general online forms and trailer activation are separate.' if event.pk in assigned_forms else 'Event-linked form availability is not established here. General online forms and local trailer activation are separate.',
             url=reverse('participants:intake-config-index') if forms_allowed else None)]
         setup = {}
@@ -102,7 +106,7 @@ def resource_overview_rows(user, rows):
                 detail=item['detail'] if item else 'Configuration information is unavailable.' if unavailable else 'Configuration details are unavailable to your role.',
                 url=reverse('events:event_detail', args=[event.pk]) + '?section=operations' if setup else None))
         for check in checks:
-            check['tone'] = 'configured' if check['state'] in ('Configured', 'Assigned') else 'missing' if check['state'] == 'Not set' else 'unknown'
+            check['tone'] = 'configured' if check['state'] in ('Configured', 'Assigned', 'All-events form') else 'missing' if check['state'] == 'Not set' else 'unknown'
         row['resource_checks'] = checks
         # Use the established event/schedule destinations. Execution tools remain in the row menu.
         if user.has_perm('events.view_event'):

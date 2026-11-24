@@ -88,6 +88,9 @@ def event_list(request):
             events = events.filter(status="upcoming", start_at__lte=now, end_at__gte=now)
         elif selected == "upcoming":
             events = events.filter(status="upcoming", start_at__gt=now)
+        elif selected == "completed":
+            # Past: finished events, plus ones whose dates are over but nobody marked ended yet.
+            events = events.filter(Q(status="completed") | Q(status="upcoming", end_at__lt=now))
         elif selected != "all":
             events = events.filter(status=selected)
         if values["q"]:
@@ -142,13 +145,13 @@ def event_list(request):
             cov = _cov(event) if event.status in ("upcoming", "draft") else None
             event.staff_cov = cov if cov and cov["required"] else None
         short = 0
-        for e in _E.objects.filter(status="upcoming", end_at__gte=now).order_by("start_at")[:50]:
+        for e in _E.objects.filter(status="upcoming", end_at__gte=now, managed_in_base44=False).order_by("start_at")[:50]:
             cov = _cov(e)
             if cov and cov["unfilled"]:
                 short += 1
         list_alerts = {"short": short,
                        "requests": AvailabilityRequest.objects.filter(status="pending", event__status__in=("upcoming", "draft")).count(),
-                       "details": _E.objects.filter(status="upcoming", end_at__gte=now, details_finalized_at__isnull=True).count(),
+                       "details": _E.objects.filter(status="upcoming", end_at__gte=now, details_finalized_at__isnull=True, managed_in_base44=False).count(),
                        "next30": _E.objects.filter(status="upcoming", end_at__gte=now, start_at__lte=now + timedelta(days=30)).count()}
     for event in rows:
         try:

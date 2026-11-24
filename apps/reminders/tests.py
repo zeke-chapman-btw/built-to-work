@@ -401,3 +401,17 @@ class WaitingNameTests(Base):
     def test_role_finds_person_by_username_when_name_is_blank(self):
         user = get_user_model().objects.create_user(username="pat.example", password="x-test-only", is_staff=True)
         self.assertEqual(engine.waiting_user("Pat Example"), user)
+
+
+class Base44EventTests(Base):
+    def test_events_still_run_in_base44_get_no_reminders(self):
+        from apps.events.models import Event
+        from apps.operations.event_reminder_sources import event_sources
+        now = timezone.now()
+        kw = dict(start_at=now + timedelta(days=3), end_at=now + timedelta(days=3, hours=6), status="upcoming")
+        mine = Event.objects.create(name="SYNTHETIC here", **kw)
+        theirs = Event.objects.create(name="SYNTHETIC base44", managed_in_base44=True, **kw)
+        ids = set(sources._upcoming_events(now.date()).values_list("pk", flat=True))
+        self.assertIn(mine.pk, ids)
+        self.assertNotIn(theirs.pk, ids)
+        self.assertEqual(event_sources(theirs, now), [])

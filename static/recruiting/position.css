@@ -74,4 +74,5 @@ body.internal-app #main-content .rh-pos small{display:block;font-size:12px;color
 body.internal-app #main-content .rh-funnel{padding:12px 20px;display:flex;flex-direction:column;gap:8px;font-size:13px}
 body.internal-app #main-content .rh-funnel-row{display:flex;justify-content:space-between}
 body.internal-app #main-content .rh-bar{display:block;height:8px;border-radius:4px;background:#d0212f;margin-top:3px;min-width:2px}
+body.internal-app #main-content .rh-bar[style="width:0%"]{display:none}
 body.internal-app #main-content .rh-bar.is-hired{background:#1d6b35}

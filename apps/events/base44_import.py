@@ -161,7 +161,7 @@ def _save(row, keep_secret_notes):
         setup_date=_day(row["setup_date"]), staff_arrival_time=_time(row["arrival_time"]),
         daily_start_time=start_clock, daily_end_time=end_clock, return_date=_day(row["return_date"]),
         contact_name=row["contact_name"], contact_email=row["contact_email"], contact_phone=row["contact_phone"],
-        housing_information=housing, description=row["notes"])
+        housing_information=housing, description=row["notes"], managed_in_base44=True)
     if event.end_at < event.start_at:
         event.end_at = event.start_at
     event.full_clean(exclude=["code", "contact_email"])

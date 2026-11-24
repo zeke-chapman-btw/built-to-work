@@ -103,7 +103,7 @@ def _upcoming_events(today, days_ahead=21):
     from apps.events.models import Event
     start = datetime.combine(today - timedelta(days=1), datetime.min.time(), EASTERN)
     end = datetime.combine(today + timedelta(days=days_ahead), datetime.min.time(), EASTERN)
-    return Event.objects.filter(status="upcoming").filter(
+    return Event.objects.filter(status="upcoming", managed_in_base44=False).filter(
         Q(start_at__gte=start, start_at__lt=end) | Q(setup_date__gte=today, setup_date__lte=today + timedelta(days=days_ahead)))
 
 

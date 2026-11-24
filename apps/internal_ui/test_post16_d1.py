@@ -88,7 +88,7 @@ class Post16D1Tests(EmployerFixtures, TestCase):
     def test_operations_configuration_does_not_claim_execution_or_hardware_readiness(self):
         self.client.force_login(self.admin, backend='django.contrib.auth.backends.ModelBackend')
         response = self.client.get(reverse('internal:workspace',kwargs={'workspace_id':'operations'}))
-        self.assertContains(response, 'Resource configuration')
+        self.assertContains(response, 'Event setup')
         self.assertNotContains(response, '<h2>Event Readiness</h2>')
         self.assertContains(response, 'Device and server observations belong in Trailer Control')
 

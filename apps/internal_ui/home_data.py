@@ -89,7 +89,7 @@ def _more_attention(user, unavailable, covered=None):
             if pending:
                 rows.append(dict(id="staff-requests", count=pending, label="Staff requests to approve",
                                  action="Review", url=reverse("internal:workspace", kwargs={'workspace_id': "approvals"}) + "?tab=events"))
-            soon = Event.objects.filter(status=Event.Status.UPCOMING, start_at__gte=timezone.now(),
+            soon = Event.objects.filter(status=Event.Status.UPCOMING, managed_in_base44=False, start_at__gte=timezone.now(),
                                         start_at__lte=timezone.now() + __import__('datetime').timedelta(days=30))
             if covered['staffing']:
                 from apps.operations.reminder_home import covered_staffing_events

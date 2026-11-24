@@ -17,7 +17,7 @@
 <div class="cx2-cell"><span class="cx2-label">Open positions</span><span class="cx2-num">{{ org.open_position_count }}</span></div>
 {% if show_last_contact %}<div class="cx2-cell"><span class="cx2-label">Last touchpoint</span>{% if org.latest_touch %}{% timezone 'America/New_York' %}<span>{{ org.latest_touch.get_activity_type_display }} · {{ org.latest_touch.occurred_at|date:'M j' }}<small>{{ org.latest_touch.summary|truncatechars:48 }}</small></span>{% endtimezone %}{% else %}<span class="cx2-none">—</span>{% endif %}</div>
 <div class="cx2-cell"><span class="cx2-label">Next</span>{% if org.next_state == 'overdue' %}{% ui_badge 'Overdue · '|add:org.next_due|date:'M j' 'danger' %}{% elif org.next_state == 'today' %}{% ui_badge 'Follow up today' 'warning' %}{% elif org.next_state == 'later' %}<span>{{ org.next_due|date:'M j' }}</span>{% else %}<a href="{% url 'customers:workspace' org.pk 'crm' %}">Log touchpoint</a>{% endif %}</div>{% else %}<div class="cx2-cell"><span class="cx2-label">Status</span>{% ui_badge org.get_status_display org.status|customer_status_tone %}</div><div></div>{% endif %}
-</article>{% empty %}<p class="customer-empty">{% if q or status or provisioned or chip %}No customers match these filters{% else %}No customers yet{% endif %}</p>{% endfor %}
+</article>{% empty %}<p class="customer-empty">{% if q or status or provisioned or chip %}No customers match these filters{% else %}No customers yet. Press <b>Onboarding</b> to add your first one.{% endif %}</p>{% endfor %}
 </section>
 {% include 'customers/pagination.html' %}{% else %}{% include 'crm/directory_panel.html' %}{% endif %}{% endblock %}
 {% block workspace_title %}Customers{% endblock %}

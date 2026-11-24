@@ -11,8 +11,9 @@ body.internal-app #main-content .ev2-chips{display:flex;gap:6px;flex-wrap:wrap;a
 body.internal-app #main-content .ev2-chip{display:inline-flex;align-items:center;font-size:13px;padding:7px 12px;border-radius:999px;border:1px solid #d6dade;background:#fff;color:#3d4450;text-decoration:none;cursor:pointer;list-style:none}
 body.internal-app #main-content .ev2-chip::-webkit-details-marker{display:none}
 body.internal-app #main-content .ev2-chip[aria-current]{font-weight:600;border-color:#ac1929;background:#fdf1f2;color:#ac1929}
-body.internal-app #main-content .ev2-more{position:relative}
+body.internal-app #main-content .ev2-more{position:relative;border-top:0;padding-top:0;grid-column:auto}
 body.internal-app #main-content .ev2-more[open] > .ev2-chip{border-color:#ac1929;color:#ac1929}
+body.internal-app #main-content .ev2-more>summary.ev2-chip{font-weight:400;min-height:0;padding:7px 12px}
 body.internal-app #main-content .ev2-more-panel{position:absolute;right:0;top:calc(100% + 6px);z-index:20;width:min(560px,90vw);display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;background:#fff;border:1px solid #e3e5e8;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.12);padding:16px}
 body.internal-app #main-content .ev2-more-panel .ev2-more-views,body.internal-app #main-content .ev2-more-panel .filter-actions{grid-column:1/-1;display:flex;gap:12px;flex-wrap:wrap}
 body.internal-app #main-content .ev2-more-panel .ev2-more-views a[aria-current]{font-weight:600}

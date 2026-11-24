@@ -73,8 +73,8 @@ def _events(actor, request, state, query):
             detail=detail, link=reverse('staffing:event', args=[record.event_id]), action='Review request' if record.status == 'pending' else 'View staffing',
             tone='warning' if record.status == 'pending' else 'success' if record.status == 'approved' else 'neutral'))
     return dict(page=page, rows=items, state=state, states=choices,
-        description='BTW staff requests to work an event. Approval confirms staffing, not attendance or pay.',
-        empty='No staff work requests match this view.', source_url=reverse('staffing:queue'), source_label='Existing staff request queue')
+        description='Staff asking to work an event. Approving puts them on the event.',
+        empty='Nothing waiting. New requests show up here.', source_url=reverse('staffing:queue'), source_label='Open full list')
 
 
 def _verification(actor, request, state, query):
@@ -110,8 +110,8 @@ def _verification(actor, request, state, query):
         tone='success' if summary['status']=='verified' else 'warning' if summary['status'] in ('pending','expired') else 'neutral')
         for kind, record, summary in page]
     return dict(page=page, rows=items, state=state, states=choices,
-        description='Qualification and document evidence. This is a review worklist; not every item is a submitted request.',
-        empty='No evidence matches this state and search.', source_url=reverse('participants:staff-qualification-approvals'), source_label='Existing verification queue')
+        description='Licenses, certifications and documents to check.',
+        empty='Nothing to check right now.', source_url=reverse('participants:staff-qualification-approvals'), source_label='Open full list')
 
 
 def _opportunities(actor):
@@ -162,7 +162,7 @@ def _customer(actor, request, state, query):
                 date_label='Revoked' if record.revoked_at else 'Released', actor=record.revoked_by if record.revoked_at else record.released_by, actor_label='Revoked by' if record.revoked_at else 'Released by',
                 detail='Retained release history. Recorded release is not proof of current employer access; source consent and projection checks still apply.',
                 link=reverse('recruiting:disclosure' if can_manage else 'recruiting:candidate-detail',args=[record.candidate_id]),action='Review release history' if can_manage else 'View candidate'))
-    return dict(page=page,rows=items,state=state,states=choices,description='Scoped candidate release review and history. No candidate information is released from this workspace.',empty='No candidate release records match this view.')
+    return dict(page=page,rows=items,state=state,states=choices,description='Candidates waiting for approval before a customer sees them.',empty='Nothing waiting.')
 
 
 def _jobs(actor, request, state, query):
@@ -204,7 +204,7 @@ def _jobs(actor, request, state, query):
                 date_label='Publication version created' if record.publication_id else 'Opportunity created', actor=record.publication.published_by if record.publication_id else record.owner, actor_label='Published by' if record.publication_id else 'Owner',
                 detail='Publication is separate from position review. Current approved version, reviewed public copy and expiry are checked by the source workflow.',
                 link=reverse('recruiting:opportunity-settings' if can_manage else 'recruiting:matching',args=[record.pk]),action='Review publication' if can_manage else 'View opportunity'))
-    return dict(page=page,rows=items,state=state,states=choices,description='Position revision review and publication are separate. Only submitted or in-review position revisions are pending approvals.',empty='No position or publication records match this view.')
+    return dict(page=page,rows=items,state=state,states=choices,description='Customer positions waiting to be approved or posted.',empty='Nothing waiting.')
 
 
 @require_GET
@@ -225,4 +225,4 @@ def workspace(request):
         approval_states=[{'label':label,'selected':key==data['state'],'url':url(request,tab=selected,state=key,page=None)}for key,label in data['states']],
         query=query,selected=selected,previous_page_url=url(request,page=data['page'].previous_page_number())if data['page'].has_previous()else'',
         next_page_url=url(request,page=data['page'].next_page_number())if data['page'].has_next()else'',clear_url=url(request,q=None,page=None))
-    return render(request,'internal/approvals.html',_staff_context(request,page_title='Approvals',page_description='Existing review workflows, together in one workspace.',**data))
+    return render(request,'internal/approvals.html',_staff_context(request,page_title='Approvals',page_description='Everything waiting for a yes or no.',**data))

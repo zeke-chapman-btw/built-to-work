@@ -70,7 +70,7 @@ class OperationsReferenceRefinementTests(TestCase):
     def test_resource_states_reuse_configuration_without_certifying_readiness(self):
         rows=resource_overview_rows(self.admin,overview_rows(self.admin,[self.event,self.future]))
         states={item['label']:item['state'] for item in rows[0]['resource_checks']}
-        self.assertEqual(states,{'Forms':'Unknown','Quizzes':'Not set','Games':'Configured','Simulators':'Configured'})
+        self.assertEqual(states,{'Forms':'Not set','Quizzes':'Not set','Games':'Configured','Simulators':'Configured'})
         self.assertTrue(all(item['state']!='Ready' for row in rows for item in row['resource_checks']))
         self.assertEqual(next(x for x in rows[1]['resource_checks'] if x['label']=='Simulators')['state'],'Not set')
         self.assertEqual(EventExecution.objects.count(),0)
@@ -99,8 +99,8 @@ class OperationsReferenceRefinementTests(TestCase):
     def test_landing_is_compact_and_detailed_execution_stays_reachable(self):
         self.login();response=self.client.get(reverse('internal:workspace',kwargs={'workspace_id':'operations'}))
         self.assertEqual(response.status_code,200)
-        self.assertContains(response,'Resource configuration');self.assertContains(response,'ops-resource-event-row')
-        self.assertContains(response,'ops-resource-checks');self.assertContains(response,'About these statuses')
+        self.assertContains(response,'Event setup');self.assertContains(response,'ops-resource-event-row')
+        self.assertContains(response,'ops-resource-checks');self.assertContains(response,'What these mean')
         self.assertNotContains(response,'ops-overview-progress');self.assertNotContains(response,'Tools &amp; configuration')
         self.assertNotContains(response,'>Ready<')
         self.assertContains(response,reverse('events:event_detail',args=[self.event.pk]))

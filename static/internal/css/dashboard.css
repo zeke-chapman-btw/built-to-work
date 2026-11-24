@@ -221,3 +221,6 @@ a.hv2-stat:hover{border-color:#bbb}
 .hv2-menu-list a{padding:10px 12px;font-size:14px;color:#1a1a1a;text-decoration:none}
 .hv2-menu-list a+a{border-top:1px solid #f1f2f4}
 .hv2-menu-list a:hover{background:#fdf3f4;color:#ac1929}
+/* Quick actions: let the + Email/Text menu show outside the card. */
+.hv2 .card.hv2-actions{overflow:visible;position:relative;z-index:5}
+.hv2-menu-list{min-width:170px;left:auto;right:0}

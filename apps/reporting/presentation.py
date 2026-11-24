@@ -71,8 +71,8 @@ def event_summary(actor,events,filters):
     for row in rows:
         month=row["event"].start_at.astimezone(ZoneInfo(definitions.REPORT_TIMEZONE)).strftime("%Y-%m");monthly[month]["leads"]+=row["leads"]
         if row["qualified"] is not None:monthly[month]["qualified"]+=row["qualified"]
-    charts=[chart("Event lead trends",[{"label":k,"count":v["leads"],"url":reverse("internal:reports")+"?"+urlencode({**serialize_filters(filters),"tab":"events","start":k+"-01","end":k+"-"+str(monthrange(int(k[:4]),int(k[5:]))[1])})} for k,v in sorted(monthly.items())[-24:]],"Unique person-event leads; repeated registrations do not multiply people. Most recent 24 recorded months.")]
-    if definitions.INTEREST_MAPPING:charts.append(chart("Qualified leads over time",[{"label":k,"count":v["qualified"]} for k,v in sorted(monthly.items())[-24:]],"Each participant must meet their event threshold and the approved job-interest rule."))
+    charts=[chart("Event lead trends",[{"label":k,"count":v["leads"],"url":reverse("internal:reports")+"?"+urlencode({**serialize_filters(filters),"tab":"events","start":k+"-01","end":k+"-"+str(monthrange(int(k[:4]),int(k[5:]))[1])})} for k,v in sorted(monthly.items())[-24:]],"People who signed up at events, by month. Each person counts once per event.")]
+    if definitions.INTEREST_MAPPING:charts.append(chart("Qualified leads over time",[{"label":k,"count":v["qualified"]} for k,v in sorted(monthly.items())[-24:]],"People who hit the event's score and said they want a job."))
     return rows,{"leads":total("leads") if rows else 0,"qualified":total("qualified"),"plays":total("plays") if rows else 0,"interested":total("interested")},charts
 
 
@@ -104,7 +104,7 @@ def workspace_data(actor,tab,filters,request,*,export=False):
             monthly_cost=defaultdict(lambda:ZERO)
             for start,amount in EventReport.objects.filter(event__in=events,state__in=("finalized","refinalized"),current_version__isnull=False).values_list("event__start_at","current_version__snapshot__data__cost__total").iterator():
                 if amount is not None:monthly_cost[start.astimezone(ZoneInfo(definitions.REPORT_TIMEZONE)).strftime("%Y-%m")]+=Decimal(str(amount))
-            cost_chart=chart("Finalized event cost trend",[{"label":month,"count":amount} for month,amount in sorted(monthly_cost.items())[-24:]],"USD, complete finalized snapshot totals grouped by event start month. Draft/incomplete costs are excluded.")
+            cost_chart=chart("Finalized event cost trend",[{"label":month,"count":amount} for month,amount in sorted(monthly_cost.items())[-24:]],"Final event costs by month. Events still being costed are left out.")
             cost_chart["money"]=True;data["charts"].append(cost_chart)
             finalized,cpl,cpq=finalized_ratios(events)
             add("Cost per lead · finalized",cpl,str(finalized)+" finalized reports; numerator and denominator from the same frozen versions.",reverse("internal:reports")+"?tab=events","money")
@@ -159,8 +159,8 @@ def workspace_data(actor,tab,filters,request,*,export=False):
         add("Active opportunities",counts["active_opportunities"],"Authorized active positions with approved revisions.",reverse("internal:reports")+"?tab=opportunities")
         add("Requested workers",counts["requested_positions"],"Recorded approved worker quantities; missing quantity remains unavailable.")
         add("Active candidate engagements",counts["candidates"],"Current candidate engagements within your owner/collaborator opportunity scope.")
-        data["charts"].append(chart("Recruiting pipeline",[{"label":r["stage__label"],"count":r["count"]} for r in stages],"Existing recorded stages only; stage labels are not invented qualification or hiring outcomes."))
-        data["charts"].append(chart("Opportunity creation trend",[{"label":r["month"].strftime("%b %Y"),"count":r["count"]} for r in months[-24:]],"Opportunity creation dates, not inferred campaign starts."))
+        data["charts"].append(chart("Recruiting pipeline",[{"label":r["stage__label"],"count":r["count"]} for r in stages],"Where candidates are right now."))
+        data["charts"].append(chart("Opportunity creation trend",[{"label":r["month"].strftime("%b %Y"),"count":r["count"]} for r in months[-24:]],"New positions opened each month."))
         if tab=="opportunities":
             records,data["page"]=page_rows(opps.select_related("need__campaign","need__organization","need__effective_revision").annotate(candidate_total=Count("candidates",filter=Q(candidates__merged_into__isnull=True),distinct=True)),request,export)
             data["report_rows"]=[{"position":o.need.effective_revision.title if o.need.effective_revision else "Approved position not recorded","customer":o.need.organization.name,"campaign":o.need.campaign.name if o.need.campaign_id else "General recruiting","state":o.need.get_status_display(),"quantity":o.need.effective_revision.worker_quantity if o.need.effective_revision else None,"candidates":o.candidate_total,"url":reverse("recruiting:matching",args=[o.pk])} for o in records]
@@ -170,9 +170,9 @@ def workspace_data(actor,tab,filters,request,*,export=False):
         hires=metrics.confirmed_hires(actor,filters)
         add("Confirmed hires",hires.count(),"Explicit BTW-confirmed hired outcomes with attributable confirmation evidence.",reverse("internal:reports")+"?tab=hires")
         groups=list(hires.values("opportunity__need__organization__name").annotate(count=Count("pk",distinct=True)).order_by("-count")[:10])
-        data["charts"].append(chart("Confirmed hires by customer",[{"label":g["opportunity__need__organization__name"],"count":g["count"]} for g in groups],"Top ten authorized customers; unconfirmed employer feedback, selection and releases are excluded."))
+        data["charts"].append(chart("Confirmed hires by customer",[{"label":g["opportunity__need__organization__name"],"count":g["count"]} for g in groups],"Top ten customers by confirmed hires."))
         hire_months=list(hires.annotate(month=TruncMonth("confirmed_on",tzinfo=ZoneInfo(definitions.REPORT_TIMEZONE))).values("month").annotate(count=Count("pk")).order_by("month"))
-        data["charts"].append(chart("Confirmed hiring trend",[{"label":r["month"].strftime("%b %Y"),"count":r["count"]} for r in hire_months[-24:]],"Explicit confirmation timestamp in America/New_York; no date is inferred from pipeline position."))
+        data["charts"].append(chart("Confirmed hiring trend",[{"label":r["month"].strftime("%b %Y"),"count":r["count"]} for r in hire_months[-24:]],"Confirmed hires by month."))
         if tab=="hires":
             records,data["page"]=page_rows(hires,request,export)
             data["report_rows"]=[{"participant":str(h.participant),"customer":h.opportunity.need.organization.name,"campaign":h.opportunity.need.campaign.name if h.opportunity.need.campaign_id else "General recruiting","position":h.opportunity.need.effective_revision.title if h.opportunity.need.effective_revision else "Not recorded","confirmed":h.confirmed_on.isoformat(),"elapsed":round((h.confirmed_on-h.created_at).total_seconds()/86400,2) if h.confirmed_on and h.confirmed_on>=h.created_at else None,"url":reverse("recruiting:candidate-detail",args=[h.pk])} for h in records]
@@ -186,7 +186,7 @@ def workspace_data(actor,tab,filters,request,*,export=False):
         status=list(needs.values("status").annotate(count=Count("pk")).order_by("status"))
         data["charts"].append(chart("Customer position status",[{"label":g["status"].replace("_"," ").title(),"count":g["count"]} for g in status],"Current state of positions created in the reporting period."))
         activity=list(needs.annotate(month=TruncMonth("created_at",tzinfo=ZoneInfo(definitions.REPORT_TIMEZONE))).values("month").annotate(count=Count("pk")).order_by("month"))
-        data["charts"].append(chart("Customer position activity",[{"label":r["month"].strftime("%b %Y"),"count":r["count"]} for r in activity[-24:]],"Recorded position creation; this is not spending, revenue or inferred hiring."))
+        data["charts"].append(chart("Customer position activity",[{"label":r["month"].strftime("%b %Y"),"count":r["count"]} for r in activity[-24:]],"Positions customers added each month."))
         if tab=="customers":
             records,data["page"]=page_rows(customers.annotate(position_count=Count("workforce_needs",distinct=True),request_count=Count("workforce_requests",distinct=True)),request,export)
             data["report_rows"]=[{"customer":c.name,"state":c.get_status_display(),"positions":c.position_count,"requests":c.request_count,"url":reverse("customers:workspace",args=[c.pk,"overview"])} for c in records]
@@ -206,7 +206,7 @@ def workspace_data(actor,tab,filters,request,*,export=False):
         add("Recorded weekly periods",qs.count(),"Nonoverlapping Monday–Sunday periods; date filters select week starts.")
         add("Approved periods",qs.filter(state="approved").count(),"Explicit designated-Administrator approval, not payment status.")
         add("Under correction",qs.filter(state="reopened").count(),"Previous approved versions and submissions are retained.")
-        data["charts"]=[chart("Weekly payroll state",[{"label":r["state"].title(),"count":r["count"]} for r in qs.values("state").annotate(count=Count("pk"))],"1099 contractor reporting only. No tax withholding, overtime, net-pay or payment engine.")]
+        data["charts"]=[chart("Weekly payroll state",[{"label":r["state"].title(),"count":r["count"]} for r in qs.values("state").annotate(count=Count("pk"))],"Weekly 1099 payroll status.")]
         data["notes"].append("Payroll reminders and earnings-statement delivery remain deferred to Build 18. A/P submission tracking records a manual action; it sends no email.")
         data["source_detail"]="Compensation and reimbursements remain separate. Open a week to compile, approve, correct, export or record its manual A/P submission."
     if definitions.INTEREST_MAPPING is None and tab in ("highlights","events"):

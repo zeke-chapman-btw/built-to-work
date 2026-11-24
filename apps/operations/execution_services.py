@@ -310,7 +310,7 @@ def can_end_event(user,event_id):
 def end_reminder_candidates():
     """Data for future reminders only; this function never ends events or delivers notifications."""
     from django.db.models import Q
-    return Event.objects.filter(status="upcoming",end_at__lt=timezone.now()).filter(
+    return Event.objects.filter(status="upcoming",end_at__lt=timezone.now(),managed_in_base44=False).filter(
         Q(execution__isnull=True)|Q(execution__actual_ended_at__isnull=True))
 
 def require_current_manager(user,execution):

@@ -132,7 +132,7 @@ def event_editor_sections(form):
     """Progressive disclosure uses the original bound fields and error state."""
     result = []
     for key, title, names, optional in (
-        ("basics", "Basic information", ("name", "event_type", "event_type_other", "description", "simulator_qualification_threshold"), False),
+        ("basics", "Basic information", ("name", "event_type", "event_type_other", "description", "simulator_qualification_threshold", "managed_in_base44"), False),
         ("purpose", "Purpose", ("purpose", "customer", "campaign"), True),
         ("schedule", "Event dates", ("start_at", "end_at", "timezone_name"), False),
         ("location", "Location", ("location_name", "address_line_1", "address_line_2", "city", "state", "postal_code", "country", "map_latitude", "map_longitude"), False),

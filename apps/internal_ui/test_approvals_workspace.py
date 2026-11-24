@@ -37,7 +37,7 @@ class StaffApprovalsHubTests(TestCase):
         self.assertEqual(response.context['page'].paginator.count,1)
         self.assertContains(response,str(self.person))
         self.assertContains(response,'Requested days: 2030-07-01, 2030-07-02')
-        self.assertContains(response,'not attendance or pay')
+        self.assertContains(response,'Approving puts them on the event')
         self.assertContains(response,reverse('staffing:event',args=[self.event.pk]))
         self.assertEqual(before,{model._meta.label:model.objects.count()for model in [AvailabilityRequest,StaffAssignment,AssignmentDay,AuditLog,*apps.get_app_config('workdays').get_models()]})
         self.assertEqual(self.client.post(URL,{'tab':'events','decision':'approve'}).status_code,405)
