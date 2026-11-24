@@ -120,8 +120,8 @@ def _people_progress(guides):
     people = []
     for user in get_user_model().objects.filter(is_active=True, is_staff=True).order_by("first_name", "last_name", "username"):
         roles = roles_for(user)
-        mine = {"admin"} if user.is_superuser else set()
-        mine |= {r for r in roles if r in STAFF_AUDIENCES}
+        from .access import audiences_for
+        mine = audiences_for(user) & set(STAFF_AUDIENCES)
         theirs = [g for g in required if mine & set(g.audiences)]
         if not theirs:
             continue

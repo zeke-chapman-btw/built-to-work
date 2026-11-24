@@ -12,6 +12,11 @@ def audiences_for(user):
         if user.is_superuser or "administrator" in roles:
             found.add("admin")
         found |= {r for r in roles if r in ("manager", "recruiter", "event_staff")}
+        # Admins and managers oversee everyone, so they get the guides for the people they manage too.
+        if "admin" in found:
+            found |= {"manager", "recruiter", "event_staff"}
+        if "manager" in found:
+            found |= {"recruiter", "event_staff"}
     from apps.customers.models import CustomerIdentity
     if CustomerIdentity.objects.filter(user=user).exists():
         found.add("customer")

@@ -28,7 +28,7 @@ class TrainingTests(TestCase):
         self.client.force_login(self.staff, backend=BACKEND)
         page = self.client.get(reverse("training:mine"))
         self.assertContains(page, "Ask to work an event")
-        self.assertContains(page, "0 of 5 done")
+        self.assertContains(page, "0 of 6 done")
         guide = self.client.get(reverse("training:guide", args=["ask-to-work-an-event"]))
         self.assertContains(guide, "Walk me through it")
         self.assertContains(guide, "training/es-request-days.jpg")
@@ -36,7 +36,7 @@ class TrainingTests(TestCase):
         self.assertEqual(len(steps["steps"]), 5)
         self.client.post(reverse("training:done", args=["ask-to-work-an-event"]))
         self.assertTrue(GuideProgress.objects.filter(user=self.staff, guide__slug="ask-to-work-an-event").exists())
-        self.assertContains(self.client.get(reverse("training:mine")), "1 of 5 done")
+        self.assertContains(self.client.get(reverse("training:mine")), "1 of 6 done")
 
     def test_recruiter_does_not_see_event_staff_only_guides(self):
         self.client.force_login(self.recruiter, backend=BACKEND)
