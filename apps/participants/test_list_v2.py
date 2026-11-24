@@ -27,11 +27,11 @@ class ParticipantListV2Tests(TestCase):
 
     def test_trade_interest_counts_each_trade_separately(self):
         from apps.participants.models import ParticipantCareerProfile
-        for first, trades in (('Derrick', 'Welder, Electrician'), ('Marcus', 'Welder'), ('Tanya', 'Electrician, Supervisor')):
+        for first, trades in (('Derrick', 'Welder, Electrician'), ('Marcus', 'Welder, Electrician'), ('Tanya', 'Electrician, Supervisor')):
             ParticipantCareerProfile.objects.filter(participant__first_name=first).update(career_interests=trades)
         response = self.client.get(reverse('participants:staff-directory'))
         trades = next(c for c in response.context['list_insights'] if c['title'] == 'Trade interest')
-        self.assertEqual({r['label']: r['count'] for r in trades['rows']}, {'Welder': 2, 'Electrician': 2, 'Supervisor': 1})
+        self.assertEqual({r['label']: r['count'] for r in trades['rows']}, {'Electrician': 3, 'Welder': 2, 'Supervisor': 1})
 
     def test_seeking_chip_filters_the_list(self):
         response = self.client.get(reverse('participants:staff-directory'), {'employment': 'open'})

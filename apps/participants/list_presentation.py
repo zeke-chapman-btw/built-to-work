@@ -75,8 +75,9 @@ def insights(user, population, groups):
     # People often pick several trades ("Welder, Electrician"); count each trade on its own.
     from collections import Counter
     tally, names = Counter(), {}
-    for text in (base.exclude(_current_interest__isnull=True).exclude(_current_interest="")
-                 .values_list("_current_interest", flat=True)):
+    # (pk, text) pairs: the list query is DISTINCT, so the text alone would collapse people with the same answer.
+    for _pk, text in (base.exclude(_current_interest__isnull=True).exclude(_current_interest="")
+                      .values_list("pk", "_current_interest")):
         for part in {p.strip() for p in str(text).replace(";", ",").split(",") if p.strip()}:
             key = part.casefold()
             names.setdefault(key, part)
