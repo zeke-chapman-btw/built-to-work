@@ -46,6 +46,10 @@ def onboarding_list(request):
     for row in rows:
         row.link = "" if row.organization_id else base + reverse("onboarding:public", args=[services.token_for(row)])
         row.contact = (row.contacts or {}).get("main") or {}
+        row.parts = _parts(row)
+        row.parts_done = sum(1 for _label, ok in row.parts if ok)
+        by = row.created_by
+        row.started_by = (f"{by.first_name} {by.last_name[:1]}.".strip() if by and by.first_name else (by.get_username() if by else ""))
     return render(request, "onboarding/list.html", {"page_title": "Customer onboarding", "rows": rows, "show": show})
 
 
@@ -118,6 +122,44 @@ def send(request, pk):
                            context={"form": form, "page_title": "Send onboarding link", "editor_context": row.name,
                                     "save_label": "Send", "back": back, "back_label": "Customer onboarding",
                                     "fields_template": "onboarding/send_fields.html", "link": link})
+
+
+def _parts(row):
+    company, main = row.company or {}, (row.contacts or {}).get("main") or {}
+    return [("Company", bool(company.get("name") and (company.get("city") or company.get("phone") or company.get("address_line1")))),
+            ("Contacts", bool(main.get("first_name") and main.get("email"))),
+            ("Hiring", bool(row.answers)),
+            ("W-9", bool(row.w9)),
+            ("Agreement", bool(row.signed_at))]
+
+
+class DeleteForm(djforms.Form):
+    confirm = djforms.BooleanField(label="Yes, delete this onboarding form", required=True,
+                                   help_text="This removes the form, its answers and any W-9 uploaded to it. A link already sent to the customer stops working. This can't be undone.")
+
+
+@login_required(login_url="/admin/login/")
+@require_http_methods(["GET", "POST"])
+def delete(request, pk):
+    """Remove an onboarding form that was started but never turned into a customer."""
+    _manager(request)
+    row = get_object_or_404(CustomerOnboarding, pk=pk, organization__isnull=True)
+    form = DeleteForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        name = row.name
+        for doc in row.documents.filter(organization__isnull=True):
+            if doc.file:
+                doc.file.delete(save=False)
+            doc.delete()
+        if row.w9:
+            row.w9.delete(save=False)
+        row.delete()
+        messages.success(request, f"Deleted the onboarding form for {name}.")
+        return editor_success(request, reverse("onboarding:list"))
+    return editor_response(request, template="messaging/connection_edit_page.html", panel="messaging/connection_edit_panel.html",
+                           context={"form": form, "page_title": "Delete onboarding form", "editor_context": row.name,
+                                    "save_label": "Delete", "back": reverse("onboarding:list"), "back_label": "Customer onboarding",
+                                    "fields_template": "internal/ui/form_fields.html"})
 
 
 @login_required(login_url="/admin/login/")
@@ -234,7 +276,7 @@ def _step(request, row, step, *, staff, token=None):
                 return redirect(_url(row, step, staff, token))
             return redirect(_url(row, following or step, staff, token))
     return render(request, "onboarding/step.html", {
-        "page_title": "Customer onboarding", "row": row, "form": form, "step": step, "staff": staff, "token": token,
+        "page_title": row.name if staff else "Customer onboarding", "row": row, "form": form, "step": step, "staff": staff, "token": token,
         "steps": [{"key": k, "label": label, "url": _url(row, k, staff, token), "current": k == step,
                    "done": i < index} for i, (k, label) in enumerate(steps)],
         "number": index + 1, "total": len(steps),

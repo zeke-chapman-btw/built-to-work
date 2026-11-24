@@ -1,11 +1,49 @@
-<style>.rm-fs{border:0;border-top:1px solid #eef0f2;margin:0 0 6px;padding:10px 0 0}.rm-fs:first-of-type{border-top:0;padding-top:0}.rm-fs legend{float:left;width:100%;font-weight:700;font-size:15px;color:#ac1929;margin:0 0 8px;padding:0}.rm-fs legend+*{clear:both}.rm-people .btw-field>div{max-height:150px;overflow:auto;border:1px solid #e4e4e7;border-radius:8px;padding:6px 10px}.rm-inline{display:flex;flex-wrap:wrap;gap:4px 18px}.rm-inline .btw-field{margin:0}.rm-prev{margin:4px 0 0;padding:10px 12px;background:#f7f7f8;border-radius:8px;font-size:13px}.rm-prev ul{margin:6px 0 0;padding-left:18px}</style>
+<style>
+.rm-fs{border:0;border-top:1px solid #eef0f2;margin:0 0 6px;padding:12px 0 2px}.rm-fs:first-of-type{border-top:0;padding-top:0}
+.rm-fs legend{float:left;width:100%;font-weight:700;font-size:15px;color:#18181b;margin:0 0 8px;padding:0}.rm-fs legend+*{clear:both}
+.rm-fs legend small{font-weight:400;color:#71717a;font-size:13px;margin-left:6px}
+.rm-inline{display:flex;flex-wrap:wrap;gap:4px 22px}.rm-inline .btw-field{margin:0}
+.rm-chk .btw-field>div{display:flex;flex-wrap:wrap;gap:4px 18px}.rm-chk .btw-field>div>div{margin:0}
+.rm-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 16px}
+.rm-people .btw-field>div{max-height:170px;overflow:auto;border:1px solid #e4e4e7;border-radius:8px;padding:6px 10px}
+.rm-more{border:1px solid #eef0f2;border-radius:10px;margin:10px 0 0;padding:0 14px}
+.rm-more>summary{cursor:pointer;padding:11px 0;font-weight:600;font-size:14px;color:#3f3f46;list-style:none}.rm-more>summary::-webkit-details-marker{display:none}
+.rm-more>summary:before{content:"▸ ";color:#a1a1aa}.rm-more[open]>summary:before{content:"▾ "}
+.rm-more[open]{padding-bottom:8px}
+.rm-top{display:flex;gap:14px;align-items:flex-end}.rm-top>.btw-field:first-child{flex:1}
+.rm-prev{margin:12px 0 0;padding:10px 12px;background:#f7f7f8;border-radius:8px;font-size:13px}.rm-prev ul{margin:6px 0 0;padding-left:18px}
+.rm-gone{display:none!important}
+@media (max-width:640px){.rm-two{grid-template-columns:1fr}.rm-top{flex-direction:column;align-items:stretch}}
+</style>
 {{ form.non_field_errors }}
 <input type="hidden" name="source" value="{{ rule.source }}">
-<fieldset class="rm-fs"><legend>Reminder</legend>{% include 'reminders/field.html' with field=form.enabled %}{% include 'reminders/field.html' with field=form.name %}{% include 'reminders/field.html' with field=form.area %}</fieldset>
-<fieldset class="rm-fs"><legend>When</legend><p class="cp3-note" style="margin:0 0 8px">Counted from {{ source.anchor_label }}.</p>{% include 'reminders/field.html' with field=form.mode %}{% if 'changed' not in source.modes %}{% include 'reminders/field.html' with field=form.days %}{% include 'reminders/field.html' with field=form.business_days %}{% include 'reminders/field.html' with field=form.repeat_every %}{% include 'reminders/field.html' with field=form.send_time %}{% include 'reminders/field.html' with field=form.weekdays_only %}{% else %}<div hidden>{{ form.days }}{{ form.repeat_every }}{{ form.send_time }}</div>{% endif %}</fieldset>
-<fieldset class="rm-fs"><legend>Who gets it</legend>{% if form.related %}{% include 'reminders/field.html' with field=form.related %}{% endif %}{% include 'reminders/field.html' with field=form.roles %}<div class="rm-people">{% include 'reminders/field.html' with field=form.people %}</div>{% include 'reminders/field.html' with field=form.backup %}</fieldset>
-{% if form.condition_fields %}<fieldset class="rm-fs"><legend>Only when</legend><p class="cp3-note" style="margin:0 0 8px">Leave these blank to hear about everyone.</p>{% for f in form.condition_fields %}{% include 'reminders/field.html' with field=f %}{% endfor %}</fieldset>{% endif %}
-<fieldset class="rm-fs"><legend>How</legend><p class="cp3-note" style="margin:0 0 8px">The starting choice. Each staff member can change how it reaches them in Settings → Reminders → My notifications.</p><div class="rm-inline">{% include 'reminders/field.html' with field=form.bell %}{% include 'reminders/field.html' with field=form.email %}{% include 'reminders/field.html' with field=form.text %}</div></fieldset>
-<fieldset class="rm-fs"><legend>Wording</legend>{% include 'reminders/field.html' with field=form.subject %}{% include 'reminders/field.html' with field=form.message %}</fieldset>
-{% if preview %}<div class="rm-prev"><strong>Right now this covers {{ preview.count }} item{{ preview.count|pluralize }}.</strong>{% if preview.items %}<ul>{% for item in preview.items %}<li>{{ item.line }}</li>{% endfor %}</ul>{% endif %}<small style="display:block;margin-top:4px;color:#71717a">Timing decides when each one actually goes out.</small></div>{% endif %}
-{% if rule.pk %}<p class="cp3-note" style="margin-top:10px"><button class="button secondary" type="submit" name="remove" value="1" formnovalidate>Delete reminder</button></p>{% endif %}
+<p class="cp3-note" style="margin:0 0 12px">Sends about <b>{{ source.label|lower }}</b>.</p>
+<div class="rm-top">{% include 'reminders/field.html' with field=form.name %}{% include 'reminders/field.html' with field=form.enabled %}</div>
+
+<fieldset class="rm-fs" data-rm-when><legend>When</legend>
+{% include 'reminders/field.html' with field=form.mode %}
+{% if 'changed' in source.modes %}<div hidden>{{ form.days }}{{ form.repeat_every }}{{ form.send_time }}</div><p class="cp3-note" style="margin:0">Goes out as soon as it changes.</p>
+{% else %}<p class="cp3-note rm-new-only" style="margin:0 0 6px">Goes out as soon as it comes in.</p>
+<div class="rm-two"><div class="rm-dated">{% include 'reminders/field.html' with field=form.days %}</div><div class="rm-timed">{% include 'reminders/field.html' with field=form.send_time %}</div></div>
+{% endif %}</fieldset>
+
+<fieldset class="rm-fs"><legend>Who gets it</legend>
+{% if form.related %}<div class="rm-chk">{% include 'reminders/field.html' with field=form.related %}</div>{% endif %}
+<div class="rm-chk">{% include 'reminders/field.html' with field=form.roles %}</div>
+<details class="rm-more rm-people"{% if form.people.value %} open{% endif %}><summary>Specific people{% if form.people.value %} ({{ form.people.value|length }} picked){% endif %}</summary>{% include 'reminders/field.html' with field=form.people %}</details>
+</fieldset>
+
+{% if form.condition_fields %}<fieldset class="rm-fs"><legend>Only when <small>Leave blank to hear about everyone</small></legend>
+{% for f in form.condition_fields %}<div class="rm-chk">{% include 'reminders/field.html' with field=f %}</div>{% endfor %}</fieldset>{% endif %}
+
+<fieldset class="rm-fs"><legend>How it's sent <small>Each person can change this for themselves</small></legend><div class="rm-inline">{% include 'reminders/field.html' with field=form.bell %}{% include 'reminders/field.html' with field=form.email %}{% include 'reminders/field.html' with field=form.text %}</div></fieldset>
+
+<details class="rm-more"><summary>Change the wording</summary>{% include 'reminders/field.html' with field=form.subject %}{% include 'reminders/field.html' with field=form.message %}</details>
+<details class="rm-more"><summary>More settings</summary>
+{% if 'changed' not in source.modes %}<div class="rm-repeat">{% include 'reminders/field.html' with field=form.repeat_every %}</div><div class="rm-dated">{% include 'reminders/field.html' with field=form.business_days %}</div>{% include 'reminders/field.html' with field=form.weekdays_only %}{% endif %}
+{% include 'reminders/field.html' with field=form.backup %}
+{% include 'reminders/field.html' with field=form.area %}
+{% if rule.pk %}<p style="margin:10px 0 0"><button class="button secondary" type="submit" name="remove" value="1" formnovalidate>Delete this reminder</button></p>{% endif %}
+</details>
+
+{% if preview %}<div class="rm-prev"><strong>Right now this covers {{ preview.count }} item{{ preview.count|pluralize }}.</strong>{% if preview.items %}<ul>{% for item in preview.items %}<li>{{ item.line }}</li>{% endfor %}</ul>{% endif %}</div>{% endif %}

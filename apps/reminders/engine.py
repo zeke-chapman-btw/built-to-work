@@ -106,8 +106,17 @@ def waiting_user(name):
     parts = name.strip().split()
     if len(parts) < 2:
         return None
-    matches = list(get_user_model().objects.filter(is_active=True, is_staff=True, first_name__iexact=parts[0],
-                                                   last_name__iexact=parts[-1])[:2])
+    users = get_user_model().objects.filter(is_active=True, is_staff=True)
+    matches = list(users.filter(first_name__iexact=parts[0], last_name__iexact=parts[-1])[:2])
+    if len(matches) == 1:
+        return matches[0]
+    if not matches:  # sign-ins without a name filled in: use the staff profile, then a first.last username
+        from apps.staffing.models import StaffProfile
+        ids = list(StaffProfile.objects.filter(first_name__iexact=parts[0], last_name__iexact=parts[-1], user__isnull=False)
+                   .values_list("user_id", flat=True)[:2])
+        matches = list(users.filter(pk__in=ids)) if len(ids) == 1 else []
+        if not matches:
+            matches = list(users.filter(username__iexact=f"{parts[0]}.{parts[-1]}")[:2])
     return matches[0] if len(matches) == 1 else None
 
 

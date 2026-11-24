@@ -1,23 +1,36 @@
 {% extends 'shared/workspace_landing.html' %}{% load static %}{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=rui-1112"><style>
-.ob-row{grid-template-columns:minmax(0,1.4fr) minmax(0,1.2fr) minmax(0,1fr) auto minmax(220px,auto)}
-.ob-head{display:grid;gap:12px;padding:10px 20px;font-size:12px;font-weight:600;color:#5b6470;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #f1f2f4}
+.obl{width:100%;border-collapse:collapse;font-size:14px}
+.obl th{text-align:left;font-size:12px;font-weight:600;color:#5b6470;text-transform:uppercase;letter-spacing:.04em;padding:10px 16px;border-bottom:1px solid #eef0f3}
+.obl td{padding:14px 16px;border-bottom:1px solid #f3f4f6;vertical-align:middle;text-align:left}
+.obl tr:last-child td{border-bottom:0}
+.obl td small{display:block;color:#6b7280;font-size:13px;margin-top:2px}
+.obl .ob-name{font-weight:600;color:#111827;text-decoration:none}.obl .ob-name:hover{color:#d0212f}
+.ob-dots{display:flex;gap:4px;margin-bottom:4px}.ob-dots i{width:22px;height:6px;border-radius:3px;background:#e5e7eb}.ob-dots i.on{background:#16a34a}
+.ob-act{display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.ob-more{position:relative}.ob-more summary{list-style:none;cursor:pointer;border:1px solid #d5d9df;border-radius:8px;padding:6px 10px;background:#fff;line-height:1}.ob-more summary::-webkit-details-marker{display:none}
+.ob-more div{position:absolute;right:0;top:calc(100% + 4px);z-index:20;min-width:190px;background:#fff;border:1px solid #e4e4e7;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:6px}
+.ob-more a,.ob-more button{display:block;width:100%;text-align:left;padding:8px 10px;border:0;background:none;font:inherit;font-size:14px;color:#18181b;text-decoration:none;border-radius:6px;cursor:pointer}
+.ob-more a:hover,.ob-more button:hover{background:#f4f4f5}.ob-more .danger{color:#b91c1c}
 .ob-none{color:#9aa1ab}
-.ob-copy{border:1px solid #d5d9df;background:#fff;border-radius:8px;padding:5px 10px;font:inherit;font-size:13px;cursor:pointer}
-.ob-copy.is-done{border-color:#2f8a4b;color:#2f8a4b}
-@media (max-width:900px){.ob-row,.ob-head{grid-template-columns:1fr}.ob-head{display:none}.cp3-actions{justify-self:start}}
+@media (max-width:900px){.obl thead{display:none}.obl tr{display:block;border-bottom:1px solid #eef0f3;padding:8px 0}.obl td{display:block;border:0;padding:4px 16px}.ob-act{justify-content:flex-start}}
 </style>{% endblock %}{% block workspace_actions %}<a class="button secondary" data-record-editor href="{% url 'customers:new' %}" title="Adds just a name and basic details, with no onboarding form">Quick add</a><a class="button button-primary" data-record-editor href="{% url 'onboarding:start' %}">+ Onboard customer</a>{% endblock %}{% block workspace_content %}<div class="cp3">
-<p class="ls-intro">Start a new customer here. Fill the form in yourself, or send the customer a link. When it's done, press <b>Create customer</b> on the Review step.</p>
 <section class="cp3-card"><header class="cp3-head"><h2>{% if show == 'open' %}In progress{% else %}All onboarding forms{% endif %}</h2><a class="cp3-fchip{% if show != 'open' %} is-on{% endif %}" href="?show={% if show == 'open' %}all{% else %}open{% endif %}">{% if show == 'open' %}Show finished{% else %}Hide finished{% endif %}</a></header>
-{% if rows %}<div class="ob-head ob-row"><span>Company</span><span>Link</span><span>Progress</span><span>Status</span><span></span></div>{% endif %}
-{% for r in rows %}<div class="cp3-row ob-row">
-<span><strong>{{ r.name }}</strong><small>{% if r.contact.email %}{{ r.contact.first_name }} {{ r.contact.last_name }} {{ r.contact.email }}{% else %}<span class="ob-none">No contact yet</span>{% endif %}</small><small>Started {{ r.created_at|date:'M j, Y' }}{% if r.created_by %} by {{ r.created_by.get_full_name|default:r.created_by }}{% endif %}</small></span>
-<span>{% if r.sent_at %}<small style="margin:0">Emailed to <b>{{ r.sent_to }}</b></small><small>{{ r.sent_at|date:'M j, Y · g:i A' }}</small>{% else %}<small class="ob-none" style="margin:0">Not emailed yet</small>{% endif %}</span>
-<span><small style="margin:0">{% if r.w9 %}W-9 ✓{% else %}No W-9{% endif %} · {% if r.signed_at %}Agreement signed{% else %}Not signed{% endif %}</small>{% if r.submitted_at %}<small>Submitted {{ r.submitted_at|date:'M j · g:i A' }}</small>{% else %}<small>Last change {{ r.updated_at|date:'M j · g:i A' }}</small>{% endif %}</span>
-<span><span class="cp3-chip{% if r.status == 'submitted' %} y{% elif r.status == 'completed' %} g{% elif r.status == 'sent' %} b{% endif %}">{{ r.get_status_display }}</span></span>
-<span class="cp3-actions">{% if r.organization %}<a href="{% url 'customers:workspace' r.organization.pk 'overview' %}">Open customer</a>{% else %}{% if r.status == 'submitted' %}<a href="{% url 'onboarding:step' r.pk 'review' %}">Review</a>{% else %}<a href="{% url 'onboarding:step' r.pk 'company' %}">Continue</a>{% endif %}<a data-record-editor href="{% url 'onboarding:send' r.pk %}">{% if r.sent_at %}Email again{% else %}Email link{% endif %}</a><button type="button" class="ob-copy" data-link="{{ r.link }}">Copy link</button>{% endif %}</span></div>
-{% empty %}<p class="cp3-empty">No onboarding forms in progress.</p>{% endfor %}</section></div>
+{% if rows %}<table class="obl"><thead><tr><th>Company</th><th>Customer contact</th><th>Progress</th><th>Status</th><th></th></tr></thead><tbody>
+{% for r in rows %}<tr>
+<td>{% if r.organization %}<a class="ob-name" href="{% url 'customers:workspace' r.organization.pk 'overview' %}">{{ r.name }}</a>{% else %}<a class="ob-name" href="{% url 'onboarding:step' r.pk 'company' %}">{{ r.name }}</a>{% endif %}<small>Started {{ r.created_at|date:'M j' }}{% if r.started_by %} by {{ r.started_by }}{% endif %}</small></td>
+<td>{% if r.contact.email %}{{ r.contact.first_name }} {{ r.contact.last_name }}<small>{{ r.contact.email }}</small>{% elif r.sent_to %}{{ r.sent_to }}{% else %}<span class="ob-none">—</span>{% endif %}{% if r.sent_at %}<small>Link emailed {{ r.sent_at|date:'M j, g:i A' }}</small>{% endif %}</td>
+<td><span class="ob-dots" title="{% for label, ok in r.parts %}{{ label }}: {% if ok %}done{% else %}not yet{% endif %}{% if not forloop.last %} · {% endif %}{% endfor %}">{% for label, ok in r.parts %}<i class="{% if ok %}on{% endif %}"></i>{% endfor %}</span><small style="margin:0">{{ r.parts_done }} of 5 done{% if not r.w9 %} · no W-9{% endif %}{% if not r.signed_at %} · not signed{% endif %}</small></td>
+<td><span class="cp3-chip{% if r.status == 'submitted' %} y{% elif r.status == 'completed' %} g{% elif r.status == 'sent' %} b{% endif %}">{{ r.get_status_display }}</span><small>Updated {{ r.updated_at|date:'M j' }}</small></td>
+<td><div class="ob-act">{% if r.organization %}<a class="button secondary" href="{% url 'customers:workspace' r.organization.pk 'overview' %}">Open customer</a>{% else %}<a class="button {% if r.status == 'submitted' %}button-primary{% else %}secondary{% endif %}" href="{% if r.status == 'submitted' %}{% url 'onboarding:step' r.pk 'review' %}{% else %}{% url 'onboarding:step' r.pk 'company' %}{% endif %}">{% if r.status == 'submitted' %}Review{% else %}Continue{% endif %}</a>
+<details class="ob-more"><summary aria-label="More actions for {{ r.name }}">•••</summary><div>
+<a data-record-editor href="{% url 'onboarding:send' r.pk %}">{% if r.sent_at %}Email the link again{% else %}Email the link{% endif %}</a>
+<button type="button" class="ob-copy" data-link="{{ r.link }}">Copy link</button>
+<a class="danger" data-record-editor href="{% url 'onboarding:delete' r.pk %}">Delete</a></div></details>{% endif %}</div></td>
+</tr>{% endfor %}</tbody></table>
+{% else %}<p class="cp3-empty">No onboarding forms in progress. Press <b>+ Onboard customer</b> to start one.</p>{% endif %}</section></div>
 <script>
 document.addEventListener('click',function(e){var b=e.target.closest('.ob-copy');if(!b)return;var link=b.getAttribute('data-link');
-function done(){b.textContent='Copied ✓';b.classList.add('is-done');setTimeout(function(){b.textContent='Copy link';b.classList.remove('is-done')},2500)}
+function done(){b.textContent='Copied ✓';setTimeout(function(){b.textContent='Copy link';var d=b.closest('details');if(d)d.open=false},1200)}
 if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(link).then(done,function(){window.prompt('Copy this link:',link)})}else{window.prompt('Copy this link:',link)}});
+document.addEventListener('click',function(e){document.querySelectorAll('.ob-more[open]').forEach(function(d){if(!d.contains(e.target))d.open=false})});
 </script>{% include 'internal/ui/event_editor_assets.html' %}{% endblock %}

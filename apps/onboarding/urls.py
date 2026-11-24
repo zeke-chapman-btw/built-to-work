@@ -8,6 +8,7 @@ urlpatterns = [
     path("customers/onboarding/start/", views.start, name="start"),
     path("customers/onboarding/<uuid:pk>/send/", views.send, name="send"),
     path("customers/onboarding/<uuid:pk>/cancel/", views.cancel, name="cancel"),
+    path("customers/onboarding/<uuid:pk>/delete/", views.delete, name="delete"),
     path("customers/onboarding/<uuid:pk>/create/", views.create, name="create"),
     path("customers/onboarding/<uuid:pk>/w9/", views.w9, name="w9"),
     path("customers/onboarding/<uuid:pk>/<slug:step>/", views.staff_step, name="step"),

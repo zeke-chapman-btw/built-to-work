@@ -134,13 +134,23 @@ class OnboardingTests(CustomerFixtures, TestCase):
         self.assertEqual((row.name, row.contacts["main"]["email"]), ("SYNTHETIC Named Co", "boss@example.test"))
         page = self.client.get(reverse("onboarding:list"))
         self.assertContains(page, "SYNTHETIC Named Co")
-        self.assertContains(page, "Not emailed yet")
         self.assertContains(page, "Copy link")
         self.assertContains(page, "/onboard/")
         self.client.post(reverse("onboarding:send", args=[row.pk]), {"email": "boss@example.test"})
         page = self.client.get(reverse("onboarding:list"))
-        self.assertContains(page, "Emailed to <b>boss@example.test</b>", html=False)
-        self.assertContains(page, "Email again")
+        self.assertContains(page, "Link emailed")
+        self.assertContains(page, "Email the link again")
+
+    def test_unfinished_onboarding_can_be_deleted(self):
+        self.client.post(reverse("onboarding:start"), {"name": "SYNTHETIC Delete Co"})
+        row = CustomerOnboarding.objects.get()
+        page = self.client.get(reverse("onboarding:list"))
+        self.assertContains(page, reverse("onboarding:delete", args=[row.pk]))
+        self.assertContains(page, "0 of 5 done")
+        self.client.post(reverse("onboarding:delete", args=[row.pk]), {})
+        self.assertTrue(CustomerOnboarding.objects.filter(pk=row.pk).exists())  # needs the confirm box
+        self.client.post(reverse("onboarding:delete", args=[row.pk]), {"confirm": "on"})
+        self.assertFalse(CustomerOnboarding.objects.filter(pk=row.pk).exists())
 
     def test_settings_questions_and_new_agreement_version(self):
         page = self.client.get(reverse("onboarding:settings"))

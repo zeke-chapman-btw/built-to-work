@@ -1,5 +1,5 @@
 {% extends base_template %}{% load static %}{% block workspace_class %}ux-settings-page{% endblock %}{% block workspace_content %}<style>
-.ob{max-width:880px}
+.ob{max-width:960px}
 .ob-steps{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px;padding:0;list-style:none}
 .ob-steps a{display:flex;align-items:center;gap:8px;padding:7px 12px 7px 8px;border:1px solid #e4e4e7;border-radius:999px;background:#fff;color:#3f3f46;text-decoration:none;font-size:13px}
 .ob-steps a span{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#f1f2f4;font-size:12px;font-weight:700}
@@ -9,7 +9,10 @@
 .ob-card h3{margin:20px 0 4px;font-size:15px;padding-top:16px;border-top:1px solid #f1f2f4}.ob-card h3:first-of-type{margin-top:4px;padding-top:0;border-top:0}
 .ob-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 18px}
 .ob-grid .ob-wide{grid-column:1/-1}
-.ob-field{margin:8px 0}.ob-field>label{display:block;font-weight:600;font-size:14px;margin-bottom:4px}.ob-field small{display:block;color:#71717a;font-size:12px;margin:-2px 0 6px}
+.ob-field{margin:8px 0}.ob-field>label{display:block;font-weight:600;font-size:14px;margin-bottom:4px}.ob-field small.ob-help{display:block;color:#71717a;font-size:13px;margin:5px 0 0}
+.ob-grid{align-items:start}
+.ob-check{padding:4px 0}
+.ob-hidden{display:none}
 .ob-field input[type=text],.ob-field input[type=email],.ob-field input[type=url],.ob-field input[type=number],.ob-field input[type=date],.ob-field select,.ob-field textarea{width:100%;box-sizing:border-box}
 .ob-field div>div label,.ob-field ul label{font-weight:400;display:flex;gap:8px;align-items:center;margin:4px 0}
 .ob-field>div:has(input[type=checkbox]){display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:0 16px}
@@ -21,7 +24,7 @@
 .ob-warn{background:#fef9c3;border-radius:10px;padding:10px 14px;font-size:14px}
 @media (max-width:700px){.ob-grid,.ob-sum{grid-template-columns:1fr}.ob-card{padding:18px 16px}}
 </style><div class="ob">
-{% if staff %}<a class="ux-back" href="{% url 'onboarding:list' %}">← Customer onboarding</a><h1 style="margin:10px 0 12px;font-size:22px">{{ row.name }} <span class="cp3-chip">{{ row.get_status_display }}</span></h1>{% endif %}
+{% if staff %}<p style="display:flex;gap:12px;align-items:center;margin:0 0 14px"><a class="ux-back" href="{% url 'onboarding:list' %}">← Customer onboarding</a><span class="cp3-chip">{{ row.get_status_display }}</span></p>{% endif %}
 <ol class="ob-steps">{% for s in steps %}<li><a href="{{ s.url }}"{% if s.current %} aria-current="step"{% endif %} class="{% if s.done %}is-done{% endif %}"><span>{{ forloop.counter }}</span>{{ s.label }}</a></li>{% endfor %}</ol>
 {% if step == 'review' %}
 <section class="ob-card"><h2>Review</h2><p class="ob-sub">{% if staff %}Check everything, then create the customer. This sets up the company, contacts, portal access, billing details and monthly agreement.{% else %}Check your answers. You can go back to any step to change something.{% endif %}</p>
@@ -46,4 +49,6 @@
 </section>
 <div class="ob-actions"><div>{% if previous %}<a class="button secondary" href="{{ previous }}">Back</a>{% endif %}</div><div><button class="button secondary" name="then" value="stay">Save</button><button class="button button-primary">Save &amp; continue</button></div></div>
 </form>{% endif %}
-</div>{% if staff %}{% include 'internal/ui/event_editor_assets.html' %}{% endif %}{% endblock %}
+</div><script>(function(){var same=document.querySelector('input[name="billing_same"]');if(!same)return;
+var rows=[].slice.call(document.querySelectorAll('[data-field^="billing_"]')).filter(function(el){return el.getAttribute('data-field')!=='billing_same'});
+function sync(){rows.forEach(function(el){el.classList.toggle('ob-hidden',same.checked)})}same.addEventListener('change',sync);sync()})();</script>{% if staff %}{% include 'internal/ui/event_editor_assets.html' %}{% endif %}{% endblock %}

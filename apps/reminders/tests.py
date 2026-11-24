@@ -395,3 +395,9 @@ class NewParticipantAndChoiceTests(SendingTests):
         from .models import ReminderPreference
         pref = ReminderPreference.objects.get(user=self.staff, rule=rule)
         self.assertEqual(pref.channels(), ["text"])
+
+
+class WaitingNameTests(Base):
+    def test_role_finds_person_by_username_when_name_is_blank(self):
+        user = get_user_model().objects.create_user(username="pat.example", password="x-test-only", is_staff=True)
+        self.assertEqual(engine.waiting_user("Pat Example"), user)
