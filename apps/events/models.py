@@ -52,8 +52,8 @@ class Event(models.Model):
     public_consent_document = models.ForeignKey("participants.ConsentDocumentVersion", null=True, blank=True, on_delete=models.PROTECT, related_name="public_events")
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="created_events")
     managed_in_base44 = models.BooleanField(
-        "Still managed in base44", default=False, db_default=False,
-        help_text="While ticked, this app sends no reminders and lists no to-dos for this event. Untick once the event is run from here.")
+        "Managed outside of this app", default=False, db_default=False,
+        help_text="No reminders or to-dos are sent for this event. Untick once the event is run from this app.")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

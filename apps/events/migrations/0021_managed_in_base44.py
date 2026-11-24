@@ -21,8 +21,8 @@ class Migration(migrations.Migration):
             field=models.BooleanField(
                 db_default=False,
                 default=False,
-                help_text="While ticked, this app sends no reminders and lists no to-dos for this event. Untick once the event is run from here.",
-                verbose_name="Still managed in base44",
+                help_text="No reminders or to-dos are sent for this event. Untick once the event is run from this app.",
+                verbose_name="Managed outside of this app",
             ),
         ),
         migrations.RunPython(mark_imported, migrations.RunPython.noop),
