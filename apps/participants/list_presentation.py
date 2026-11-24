@@ -72,9 +72,18 @@ def insights(user, population, groups):
         return []
     option_urls = {g["key"]: {o["value"]: o["url"] for o in g["options"]} for g in groups}
     charts = []
-    interest = [dict(label=r["_current_interest"].strip()[:40], count=r["n"]) for r in
-                base.exclude(_current_interest__isnull=True).exclude(_current_interest="")
-                    .values("_current_interest").annotate(n=Count("pk", distinct=True)).order_by("-n", "_current_interest")[:INSIGHT_LIMIT]]
+    # People often pick several trades ("Welder, Electrician"); count each trade on its own.
+    from collections import Counter
+    tally, names = Counter(), {}
+    for text in (base.exclude(_current_interest__isnull=True).exclude(_current_interest="")
+                 .values_list("_current_interest", flat=True)):
+        for part in {p.strip() for p in str(text).replace(";", ",").split(",") if p.strip()}:
+            key = part.casefold()
+            names.setdefault(key, part)
+            tally[key] += 1
+    interest = [dict(label=names[key][:40], count=n,
+                     url=option_urls.get("trade_interest", {}).get(names[key], ""))
+                for key, n in sorted(tally.items(), key=lambda kv: (-kv[1], kv[0]))[:INSIGHT_LIMIT]]
     if interest:
         charts.append(dict(title="Trade interest", rows=_bars(interest, total)))
     labels = {"seeking": "Yes", "open": "Maybe", "not_seeking": "No"}

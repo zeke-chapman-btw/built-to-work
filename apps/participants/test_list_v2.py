@@ -25,6 +25,14 @@ class ParticipantListV2Tests(TestCase):
         self.assertContains(response, 'No contact yet')
         self.assertContains(response, 'Search by name, phone, email or ID')
 
+    def test_trade_interest_counts_each_trade_separately(self):
+        from apps.participants.models import ParticipantCareerProfile
+        for first, trades in (('Derrick', 'Welder, Electrician'), ('Marcus', 'Welder'), ('Tanya', 'Electrician, Supervisor')):
+            ParticipantCareerProfile.objects.filter(participant__first_name=first).update(career_interests=trades)
+        response = self.client.get(reverse('participants:staff-directory'))
+        trades = next(c for c in response.context['list_insights'] if c['title'] == 'Trade interest')
+        self.assertEqual({r['label']: r['count'] for r in trades['rows']}, {'Welder': 2, 'Electrician': 2, 'Supervisor': 1})
+
     def test_seeking_chip_filters_the_list(self):
         response = self.client.get(reverse('participants:staff-directory'), {'employment': 'open'})
         self.assertEqual(response.context['total_participants'], 1)

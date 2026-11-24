@@ -544,6 +544,8 @@ def _import_row(row, *, actor, participant=None):
             source_row_number=row.row_number, defaults={"participant": participant, "event": event,
             "event_name": data.get("event_name") or (event.name if event else "Historical Event"),
             "event_date": _date(data.get("event_date"), "event_date"), "group_name": data.get("group_name", "")})
+        if event is not None:
+            _event_acquisition(participant, event, event_record.event_date, actor=actor, row=row, heard=data.get("found_us", ""))
     if data.get("simulator_score"):
         HistoricalSimulatorScore.objects.get_or_create(source_batch=row.batch, source_row_number=row.row_number,
             defaults={"participant": participant, "event_record": event_record,
@@ -561,6 +563,22 @@ def _import_row(row, *, actor, participant=None):
     audit_action(actor=actor, action="historical.import.row", instance=row,
                  new_data={"participant_uuid": str(participant.identity_uuid), "row": row.row_number})
     return participant
+
+
+def _event_acquisition(participant, event, day, *, actor, row, heard=""):
+    """People brought in from an event's file joined at that event."""
+    from datetime import datetime, time as dtime
+    from django.utils import timezone
+    from .workspace_models import ParticipantAcquisition
+    if ParticipantAcquisition.objects.filter(participant=participant).exclude(channel="unknown").exists():
+        return
+    when = timezone.make_aware(datetime.combine(day, dtime(12))) if day else event.start_at
+    if when and when > timezone.now():
+        when = timezone.now()
+    note = f"Event import: {row.batch.original_filename} row {row.row_number}" + (f" · heard about us: {heard}" if heard else "")
+    ParticipantAcquisition.objects.update_or_create(participant=participant, defaults=dict(
+        channel="event", event=event, acquired_at=when, online_source="", recorded_by=actor,
+        provenance=note[:240], correction_reason="Imported from an event file"))
 
 
 def _import_profile(participant, data, *, actor, row):
@@ -587,7 +605,7 @@ def _import_profile(participant, data, *, actor, row):
             career.save()
     if data.get("participant_type") and not participant.primary_identifier:
         Participant.objects.filter(pk=participant.pk, primary_identifier="").update(primary_identifier=data["participant_type"])
-    if data.get("found_us") and not ParticipantAcquisition.objects.filter(participant=participant).exists():
+    if data.get("found_us") and not data.get("event_uuid") and not ParticipantAcquisition.objects.filter(participant=participant).exists():
         ParticipantAcquisition.objects.create(participant=participant, channel="online", online_source=data["found_us"],
             recorded_by=actor, provenance=f"Spreadsheet import: {row.batch.original_filename} row {row.row_number}"[:240],
             correction_reason="Imported from spreadsheet")
