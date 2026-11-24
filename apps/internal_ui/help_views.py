@@ -18,5 +18,11 @@ def guide(request):
     if manager(user):
         mine.update({"recruit", "event", "manage"})
     show_all = request.GET.get("all") == "1"
+    from apps.training.access import audiences_for, done_ids, guides_for
+    from apps.training.models import STAFF_AUDIENCES
+    guides = guides_for(STAFF_AUDIENCES if show_all else audiences_for(user))
+    finished = done_ids(user)
+    for g in guides:
+        g.is_done = g.pk in finished
     return render(request, "internal/help.html", {"page_title": "Help", "mine": mine, "show_all": show_all,
-                                                  "is_manager": manager(user)})
+                                                  "is_manager": manager(user), "guides": guides})

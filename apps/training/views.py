@@ -70,7 +70,8 @@ def _guide_page(request, guide, template, extra=None):
 def guide(request, slug):
     _staff(request)
     item = get_object_or_404(Guide, slug=slug)
-    if not (item.published or request.user.is_superuser) or not can_see(request.user, item):
+    # Any staff guide can be opened from Help; only your own role's guides are on your training list.
+    if not (item.published or request.user.is_superuser) or not (can_see(request.user, item) or set(item.audiences) & set(STAFF_AUDIENCES)):
         raise PermissionDenied
     from apps.internal_ui.views import _staff_context
     from apps.staffing.my_views import my_tabs

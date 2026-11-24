@@ -43,7 +43,13 @@ class TrainingTests(TestCase):
         page = self.client.get(reverse("training:mine"))
         self.assertContains(page, "Find your way around")
         self.assertNotContains(page, "Ask to work an event")
-        self.assertEqual(self.client.get(reverse("training:guide", args=["ask-to-work-an-event"])).status_code, 403)
+        self.assertEqual(self.client.get(reverse("training:guide", args=["ask-to-work-an-event"])).status_code, 200)
+
+    def test_help_lists_the_guides(self):
+        self.client.force_login(self.staff, backend=BACKEND)
+        page = self.client.get(reverse("security:help"))
+        self.assertContains(page, "Step-by-step guides")
+        self.assertContains(page, reverse("training:guide", args=["check-in-at-an-event"]))
 
     def test_admin_page_edits_guides_and_shows_progress(self):
         self.client.force_login(self.admin, backend=BACKEND)
