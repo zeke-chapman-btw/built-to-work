@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "apps.sops.apps.SopsConfig",
     "apps.messaging.apps.MessagingConfig",
     "apps.reminders.apps.RemindersConfig",
+    "apps.training.apps.TrainingConfig",
     "apps.billing.apps.BillingConfig",
     "apps.onboarding.apps.OnboardingConfig",
     "apps.security.apps.SecurityConfig",
@@ -147,6 +148,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 PRIVATE_CONSENT_ROOT = Path(os.environ.get("PRIVATE_CONSENT_ROOT", BASE_DIR / "private_consent_documents"))
 PRIVATE_DOCUMENT_ROOT = Path(os.environ.get("PRIVATE_DOCUMENT_ROOT", BASE_DIR / "private_media" / "participant_documents"))
 BTW_PREVIEW_GATE_ENABLED = os.environ.get("BTW_PREVIEW_GATE_ENABLED", "false").lower() == "true"
+# Portal views (participant and customer, with practice data) on every site, not just the preview site.
+BTW_PORTAL_VIEWS_ENABLED = os.environ.get("BTW_PORTAL_VIEWS_ENABLED", "true").lower() == "true"
 BTW_PREVIEW_GATE_USERNAME = os.environ.get("BTW_PREVIEW_GATE_USERNAME", "")
 BTW_PREVIEW_GATE_PASSWORD = os.environ.get("BTW_PREVIEW_GATE_PASSWORD", "")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

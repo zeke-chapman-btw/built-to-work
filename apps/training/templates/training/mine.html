@@ -1,0 +1,7 @@
+{% extends 'internal/base.html' %}{% load static %}{% block extra_head %}<link rel="stylesheet" href="{% static 'training/training.css' %}">{% endblock %}{% block page_heading %}<header class="page-header btw-section-heading"><h1>My stuff</h1></header>{% endblock %}
+{% block content %}<div class="btw-standard-workspace my-page">{% include 'internal/ui/my_tabs.html' %}<div class="tr-wrap">
+{% if progress.total %}<section class="card tr-progress"><div><small style="color:#6b7280">Your training</small><br><strong>{{ progress.done }} of {{ progress.total }} done</strong></div><div class="tr-bar" aria-hidden="true"><i style="width:{{ progress.percent }}%"></i></div></section>{% endif %}
+{% for group in groups %}<section class="card tr-group"><h2>{{ group.label }}</h2>
+{% for g in group.guides %}<a class="tr-row" href="{% url 'training:guide' g.slug %}"><span class="tr-check{% if g.is_done %} is-done{% endif %}" aria-label="{% if g.is_done %}Done{% else %}Not done yet{% endif %}">{% if g.is_done %}✓{% endif %}</span><span><strong>{{ g.title }}</strong>{% if g.summary %}<small>{{ g.summary }}</small>{% endif %}</span><span class="tr-chip">{% if g.video_url %}▶ Video · {% endif %}{{ g.minutes }} min{% if not g.required %} · Optional{% endif %}</span></a>{% endfor %}
+</section>{% empty %}<section class="card"><p class="ops-list-empty" style="padding:18px 20px">No training has been set up for your role yet.</p></section>{% endfor %}
+</div></div>{% endblock %}

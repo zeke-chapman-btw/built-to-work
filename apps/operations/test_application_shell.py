@@ -193,7 +193,7 @@ class PreviewSharedShellTests(PortalFixtures,TestCase):
         self.assertEqual(self.client.session['_auth_user_id'],str(self.admin.pk))
         self.assertEqual(self.client.post(reverse('internal:portal-preview-enter')).status_code,302)
         response=self.client.get(reverse('participants:profile'));links=chrome(self,response)
-        self.assertEqual(len(links),6);self.assertTrue(all(x['url'].startswith('/participants/') for x in links))
+        self.assertEqual(len(links),7);self.assertTrue(all(x['url'].startswith('/participants/') for x in links))
         self.assertContains(response,'Admin Preview — Participant Portal');self.assertContains(response,'Return to Admin',count=1)
         self.assertNotContains(response,'data-task-create');self.assertNotContains(response,'class="sign-out-form"')
         self.assertEqual(self.client.post(reverse('internal:portal-preview-exit')).status_code,302)

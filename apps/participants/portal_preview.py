@@ -26,9 +26,10 @@ _context = ContextVar('btw_admin_participant_preview', default=None)
 
 
 def enabled():
-    # The existing gate alone is not evidence that a service is non-production.
-    # Pin interactive fixtures to the owner-approved Preview service or isolated
-    # test settings; migrations never create fixtures in any environment.
+    # The owner turned portal views on for the main site too (Nov 2026). The practice person, event and company
+    # are kept out of lists, reports and reminders.
+    if getattr(settings, 'BTW_PORTAL_VIEWS_ENABLED', False):
+        return True
     service = os.environ.get('RENDER_SERVICE_ID')
     # Django's override_settings holder intentionally has SETTINGS_MODULE=None.
     module = settings.SETTINGS_MODULE or os.environ.get('DJANGO_SETTINGS_MODULE')
@@ -37,9 +38,23 @@ def enabled():
     return bool(getattr(settings, 'BTW_PREVIEW_GATE_ENABLED', False) and destination)
 
 
+def can_view_participant_portal(user):
+    """Admins, managers and recruiters can look at the participant portal with practice data."""
+    from apps.accounts.roles import has_role, manager
+    return bool(getattr(user, 'is_authenticated', False) and user.is_active and user.is_staff
+                and (user.is_superuser or manager(user) or has_role(user, 'recruiter')))
+
+
+def can_view_customer_portal(user):
+    """Admins and managers can look at the customer portal with practice data."""
+    from apps.accounts.roles import manager
+    return bool(getattr(user, 'is_authenticated', False) and user.is_active and user.is_staff
+                and (user.is_superuser or manager(user)))
+
+
 def require_admin(user):
-    if not (getattr(user, 'is_authenticated', False) and user.is_active and user.is_staff and user.is_superuser):
-        raise PermissionDenied('Portal Preview is available to BTW administrators only.')
+    if not can_view_participant_portal(user):
+        raise PermissionDenied('The participant portal view is for admins, managers and recruiters.')
 
 
 def _audit(user, action, fixture):
@@ -83,8 +98,11 @@ def fixture_for(user):
     document = ConsentDocumentVersion.objects.create(key='admin-portal-preview-' + str(user.pk),
         version=uuid.uuid4().hex, title='Synthetic preview notice', body=body,
         content_hash=hashlib.sha256(body.encode()).hexdigest(), is_approved=True)
-    draft = create_form(actor=user, name='SYNTHETIC Admin Portal Preview')
-    version = publish(actor=user, version_id=draft.pk, expected_revision=revision(draft))
+    owner = user if user.is_superuser else get_user_model().objects.filter(is_superuser=True, is_active=True).order_by('pk').first()
+    if owner is None:
+        raise PermissionDenied('An administrator account is needed to set up the practice portal.')
+    draft = create_form(actor=owner, name='SYNTHETIC Admin Portal Preview')
+    version = publish(actor=owner, version_id=draft.pk, expected_revision=revision(draft))
     # A private, explicitly synthetic fixture, with no public intake assignment.
     submission = RegistrationSubmission.objects.create(participant=person, form_version=version,
         source='admin_portal_preview', status='submitted', submitted_at=timezone.now(),
@@ -185,12 +203,13 @@ def index(request):
     names = {v: k for k, v in ROLE_GROUPS.items()}
     label = {'manager': 'Manager', 'recruiter': 'Recruiter', 'event_staff': 'Event staff'}
     staff_targets = []
-    for person in eligible_targets().prefetch_related('groups'):
+    for person in (eligible_targets().prefetch_related('groups') if request.user.is_superuser else []):
         roles = [label[names[g.name]] for g in person.groups.all() if g.name in names]
         staff_targets.append({'id': person.pk, 'name': person.get_full_name() or person.get_username(),
                               'username': person.get_username(), 'roles': ', '.join(sorted(roles)) or 'No role'})
     return render(request, 'internal/portal_preview.html', _staff_context(request,
-        page_title='Portal preview', preview_enabled=enabled(), staff_targets=staff_targets))
+        page_title='Portal preview', preview_enabled=enabled(), staff_targets=staff_targets,
+        show_staff_view=request.user.is_superuser, show_customer_view=can_view_customer_portal(request.user)))
 
 
 @never_cache

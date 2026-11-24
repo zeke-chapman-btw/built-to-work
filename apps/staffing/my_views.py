@@ -19,6 +19,7 @@ def my_tabs(request, active):
             dict(key="workdays", label="Days worked", url=reverse("workdays:mine"))]
     if profile and profile.my_pay_enabled:
         tabs.append(dict(key="pay", label="My pay", url=reverse("reporting:my-pay")))
+    tabs.append(dict(key="training", label="Training", url=reverse("training:mine")))
     tabs.append(dict(key="account", label="My account", url=reverse("my:account")))
     for tab in tabs:
         tab["active"] = tab["key"] == active

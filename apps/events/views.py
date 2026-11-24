@@ -77,7 +77,7 @@ def event_list(request):
     data = request.GET.copy()
     data.setdefault("view", "upcoming")
     filters = EventFilterForm(data)
-    events = Event.objects.all()
+    events = Event.objects.filter(admin_preview_fixture__isnull=True)  # practice portal events stay hidden
     selected = data.get("view", "upcoming")
     valid = filters.is_valid()
     if valid:

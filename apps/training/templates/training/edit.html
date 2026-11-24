@@ -1,0 +1,21 @@
+{% extends 'shared/workspace_landing.html' %}{% load static %}{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=rui-1112"><link rel="stylesheet" href="{% static 'training/training.css' %}">{% endblock %}{% block workspace_class %}ux-settings-page{% endblock %}{% block workspace_content %}<div class="cp3 tr-wrap" style="max-width:900px">
+<p style="margin:0"><a class="ux-back" href="{% url 'training:manage' %}">← Training</a></p>
+<form method="post" class="card" style="padding:18px 22px">{% csrf_token %}
+<h2 style="margin:0 0 12px;font-size:18px">{% if guide.pk %}Edit guide{% else %}New guide{% endif %}</h2>
+{% include 'internal/ui/form_fields.html' %}
+<h3 style="margin:22px 0 4px;font-size:16px">Steps</h3>
+<p class="pv-meta" style="margin:0 0 12px;color:#6b7280;font-size:13px">"Page" and "Highlight" are used by the on-screen walk-through: the page this step happens on (like /my/schedule/) and what to point at on it. Leave them blank for a step that's just reading.</p>
+{% for s in step_rows %}<fieldset class="tr-step-edit"><legend>Step {{ forloop.counter }}</legend>
+<label>Title</label><input type="text" name="step_title" value="{{ s.title }}">
+<label>What to do</label><textarea name="step_body" rows="3">{{ s.body }}</textarea>
+<div class="tr-two"><div><label>Page</label><input type="text" name="step_page" value="{{ s.page }}"></div><div><label>Highlight</label><input type="text" name="step_target" value="{{ s.target }}"></div></div>
+<div class="tr-two"><div><label>Screenshot file</label><input type="text" name="step_image" value="{{ s.image }}"></div><div><label style="margin-top:28px;font-weight:400"><input type="checkbox" name="step_delete" value="{{ forloop.counter0 }}"> Remove this step</label></div></div>
+</fieldset>{% endfor %}
+<fieldset class="tr-step-edit"><legend>Add a step</legend>
+<label>Title</label><input type="text" name="step_title" value="">
+<label>What to do</label><textarea name="step_body" rows="3"></textarea>
+<div class="tr-two"><div><label>Page</label><input type="text" name="step_page" value=""></div><div><label>Highlight</label><input type="text" name="step_target" value=""></div></div>
+<input type="hidden" name="step_image" value="">
+</fieldset>
+<div style="display:flex;gap:10px;justify-content:space-between;margin-top:14px">{% if guide.pk %}<button class="button secondary" type="submit" name="delete" value="1" formnovalidate onclick="return confirm('Delete this guide?')">Delete guide</button>{% else %}<span></span>{% endif %}<button class="button button-primary" type="submit">Save</button></div>
+</form></div>{% endblock %}

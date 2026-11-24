@@ -12,9 +12,10 @@ PARTICIPANT_LINKS = (
     ('jobs','Jobs','campaigns','participants:portal-jobs'),
     ('activity','My activity','clock','participants:portal-activity'),
     ('account','Account','settings','participants:portal-account'),
+    ('help','Help','help','participants:portal-help'),
 )
 PARTICIPANT_TITLES = {'home':'Home','profile':'My profile','events':'Events',
-                      'jobs':'Jobs','activity':'My activity','account':'Account'}
+                      'jobs':'Jobs','activity':'My activity','account':'Account','help':'Help'}
 PARTICIPANT_SECTIONS = {'portal-home':'home','portal-interest':'jobs','portal-ticket':'activity','portal-event':'events',
     'portal-profile-edit':'profile','portal-entry-add':'profile','portal-entry-edit':'profile',
     'portal-entry-archive':'profile','portal-document-add':'profile','portal-document-archive':'profile'}
@@ -94,7 +95,7 @@ def application_shell(context):
             return_url=reverse('customer_portal:logout') if preview else '',
             account_url=reverse('customer_portal:workspace',args=['account']) if authorized and not preview else '',
             account_link_label='Account & Security',account_active=active == 'account',
-            utility_links=[{'label':'Help', 'url':reverse('customer_portal:workspace',args=['account'])+'#help'}] if authorized else [])
+            utility_links=[{'label':'Help', 'url':reverse('customer_portal:workspace',args=['help'])}] if authorized else [])
         if authorized and not preview:
             identity = member.identity
             shell['account_label'] = (' '.join(filter(None,[identity.first_name,identity.last_name])).strip()

@@ -98,7 +98,7 @@ class AcquisitionForm(forms.ModelForm):
         choices = [("event", "Event"), ("online", "Online"), ("unknown", "Not known")]
         self.fields["channel"].choices = choices
         self.fields["channel"].widget = forms.RadioSelect(attrs={"class": "btw-chip-choices"}, choices=choices)
-        self.fields["event"].queryset = Event.objects.order_by("-start_at") if user.has_perm("events.view_event") else Event.objects.none()
+        self.fields["event"].queryset = Event.objects.filter(admin_preview_fixture__isnull=True).order_by("-start_at") if user.has_perm("events.view_event") else Event.objects.none()
         self.fields["event"].empty_label = "Choose an event"
         self.fields["online_source"].widget.attrs["placeholder"] = "Website, Facebook, Indeed, a friend..."
         self.fields["event"].widget.attrs["data-show-when"] = "channel=event"
@@ -199,7 +199,7 @@ class DiscoveryForm(forms.Form):
     def __init__(self, *args, user, **kwargs):
         super().__init__(*args, **kwargs)
         if user.has_perm("events.view_eventregistration"):
-            self.fields["event"].queryset = Event.objects.order_by("-start_at")
+            self.fields["event"].queryset = Event.objects.filter(admin_preview_fixture__isnull=True).order_by("-start_at")
         from apps.recruiting.models import Classification
         for name, kind in (("employment_classification", "employment"), ("availability_classification", "availability")):
             if name in self.fields:

@@ -38,7 +38,7 @@ class WorkspaceSettingsAlignmentTests(PortalFixtures, TestCase):
         self.assertEqual(response.redirect_chain, [(reverse('staffing:directory'), 302)])
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'href="' + reverse('accounts:staff-index') + '"')
-        self.assertNotContains(response, 'data-settings-tab="portal"')
+        self.assertContains(response, 'data-settings-tab="portal"')  # managers can open the portal views
         self.assertNotContains(response, 'data-settings-tab="compensation"')
         self.assertNotContains(response, 'data-settings-tab="recruiting"')
 

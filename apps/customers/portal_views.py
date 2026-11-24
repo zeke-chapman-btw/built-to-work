@@ -16,9 +16,9 @@ from .presentation import HIRING_LABELS
 from .models import WorkforceNeed as Need, WorkforceNeedRevision as Revision, Campaign, CustomerMembership as Membership, TERM_FIELD_NAMES
 
 TABS = [('overview', 'Dashboard'), ('candidates', 'Candidates'), ('needs', 'Positions'), ('campaigns', 'Campaigns'), ('company', 'Company & team')]
-SECONDARY_TABS = {'recruiting':'Recruiting overview', 'users':'Company & team',
+SECONDARY_TABS = {'help':'Help', 'recruiting':'Recruiting overview', 'users':'Company & team',
     'access':'Seats & access', 'history':'Activity', 'account':'Account & security', 'billing':'Billing & documents'}
-TAB_GROUPS = {'recruiting':'overview', 'users':'company', 'access':'company', 'history':'company', 'account':'account', 'billing':'company'}
+TAB_GROUPS = {'help':'account', 'recruiting':'overview', 'users':'company', 'access':'company', 'history':'company', 'account':'account', 'billing':'company'}
 
 
 def customer_view(view):
@@ -114,6 +114,10 @@ def workspace(request, tab='overview'):
         return directory_content(request)
     org = organization(request)
     data = context(request, tab)
+    if tab == 'help':
+        from apps.training.access import guides_for
+        data['guides'] = guides_for({'customer'})
+        return render(request, 'customers/portal/help.html', data)
     if tab in {'overview', 'recruiting'}:
         from .portal_dashboard import recruiting_context
         data.update(recruiting_context(request.user, org.pk, can_needs=data['can_needs'], can_campaigns=data['can_campaigns']))
@@ -380,3 +384,20 @@ def invitation_action(request, record_id, action):
         return invites.revoke_invitation(**args) if action == 'revoke' else invites.invite_membership(**args, origin=request.build_absolute_uri('/').rstrip('/'))
     return form_page(request, action.title() + ' Member invitation', form, tab='users',
         notice='Expired, revoked and replaced invitations retain their prepared seat. Suspend or remove the membership explicitly to release it. Resend invalidates every older invitation for this membership.', save=save)
+
+
+
+@customer_view
+@require_http_methods(['GET'])
+def help_guide(request, slug):
+    from apps.training.access import guides_for
+    from apps.training.models import GuideProgress
+    guide = next((g for g in guides_for({'customer'}) if g.slug == slug), None)
+    if guide is None:
+        raise Http404
+    data = context(request, 'help')
+    preview = bool(data.get('customer_admin_preview'))
+    data.update(guide=guide, steps=guide.steps.all(), portal='customer', title=guide.title,
+                done=None if preview else GuideProgress.objects.filter(user=request.user, guide=guide).first(),
+                steps_url=reverse('training:steps', args=[guide.slug]), done_url=reverse('training:done', args=[guide.slug]))
+    return render(request, 'customers/portal/help.html', data)

@@ -13,6 +13,7 @@ urlpatterns = [
     path('auth/invitation/<str:token>/', a.accept, name='accept'),
     path('switch/', v.switch_company, name='switch'),
     path('workspace/<str:tab>/', v.workspace, name='workspace'),
+    path('help/<slug:slug>/', v.help_guide, name='help-guide'),
     path('needs/new/', v.need_editor, name='need-create'),
     path('needs/<uuid:record_id>/', v.need_detail, name='need'),
     path('needs/<uuid:record_id>/edit/', v.need_editor, name='need-edit'),

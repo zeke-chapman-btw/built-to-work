@@ -26,9 +26,10 @@ PREVIEW_LAST_NAME = 'Admin Customer Preview'
 def require_admin(user):
     if not getattr(user, 'is_authenticated', False):
         raise PermissionDenied('Administrator sign-in is required.')
-    fresh = get_user_model().objects.filter(pk=user.pk, is_active=True, is_staff=True, is_superuser=True).first()
-    if not fresh or fresh.get_session_auth_hash() != user.get_session_auth_hash():
-        raise PermissionDenied('Customer Portal Preview is available to current BTW administrators only.')
+    from apps.participants.portal_preview import can_view_customer_portal
+    fresh = get_user_model().objects.filter(pk=user.pk, is_active=True, is_staff=True).first()
+    if not fresh or not can_view_customer_portal(fresh) or fresh.get_session_auth_hash() != user.get_session_auth_hash():
+        raise PermissionDenied('The customer portal view is for admins and managers.')
     return fresh
 
 

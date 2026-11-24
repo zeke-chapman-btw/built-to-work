@@ -103,7 +103,7 @@ def _upcoming_events(today, days_ahead=21):
     from apps.events.models import Event
     start = datetime.combine(today - timedelta(days=1), datetime.min.time(), EASTERN)
     end = datetime.combine(today + timedelta(days=days_ahead), datetime.min.time(), EASTERN)
-    return Event.objects.filter(status="upcoming", managed_in_base44=False).filter(
+    return Event.objects.filter(status="upcoming", managed_in_base44=False, admin_preview_fixture__isnull=True).filter(
         Q(start_at__gte=start, start_at__lt=end) | Q(setup_date__gte=today, setup_date__lte=today + timedelta(days=days_ahead)))
 
 
@@ -495,7 +495,8 @@ def _age(dob, today):
 def new_participants(today, now):
     from apps.participants.intake_discovery import current_interest_expression
     from apps.participants.models import Participant
-    rows = (Participant.objects.filter(kind="person", archived_at__isnull=True, created_at__gte=now - timedelta(days=4))
+    rows = (Participant.objects.filter(kind="person", archived_at__isnull=True, admin_preview_fixture__isnull=True,
+                                       created_at__gte=now - timedelta(days=4))
             .exclude(registration_submissions__source="historical_import")
             .annotate(_interest=current_interest_expression())
             .prefetch_related("registration_submissions__event", "registration_submissions__intake_session")

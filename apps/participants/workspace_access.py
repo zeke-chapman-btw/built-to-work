@@ -17,7 +17,8 @@ def require_people(user, *permissions):
 def people_for(user):
     require_people(user)
     from .identity import resolved_identity_map
-    return Participant.objects.filter(kind=Participant.Kind.PERSON).exclude(pk__in=resolved_identity_map())
+    return (Participant.objects.filter(kind=Participant.Kind.PERSON, admin_preview_fixture__isnull=True)
+            .exclude(pk__in=resolved_identity_map()))
 
 
 def can_analytics(user):

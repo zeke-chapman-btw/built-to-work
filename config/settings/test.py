@@ -10,3 +10,6 @@ BTW_REMINDERS_MASTER_SWITCH = False  # tests turn reminder features on directly
 
 # Page-view counting is switched on only in the tests that check it.
 USAGE_TRACKING = False
+
+# Portal views stay off in tests unless a test turns them on (the older tests check the preview-site-only switch).
+BTW_PORTAL_VIEWS_ENABLED = False

@@ -79,7 +79,7 @@ CUSTOMER_LIST_TABS = {"search": "All customers", "activity": "Recent activity"}
 @staff_view
 @require_http_methods(["GET"])
 def directory(request):
-    query = organizations(request.user).select_related("primary_contact", "primary_lead__identity").annotate(
+    query = organizations(request.user).exclude(name__startswith="SYNTHETIC — Admin Customer Preview").select_related("primary_contact", "primary_lead__identity").annotate(
         open_position_count=Count("workforce_needs", filter=Q(workforce_needs__status__in=["active", "hold"]), distinct=True),
         active_campaign_count=Count("campaigns", filter=~Q(campaigns__status__in=["completed", "cancelled"]), distinct=True),
     ).order_by("name", "pk")

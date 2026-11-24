@@ -366,3 +366,22 @@ def staff_invitations(request):
     return people_render(request, 'participants/portal/staff_invitations.html', {
         'invitations': PortalInvitation.objects.select_related('participant').prefetch_related('deliveries').order_by('-created_at')[:200],
         'selected': selected, 'page_title': 'Participant portal invitations'})
+
+
+@participant_view
+@require_http_methods(['GET'])
+def help_page(request, slug=''):
+    """Help: short how-to guides for participants."""
+    from django.urls import reverse
+    from apps.training.access import guides_for
+    from apps.training.models import Guide, GuideProgress
+    guides = guides_for({'participant'})
+    if slug:
+        guide = next((g for g in guides if g.slug == slug), None)
+        if guide is None:
+            raise Http404
+        done = GuideProgress.objects.filter(user=request.user, guide=guide).first() if not getattr(request, 'portal_preview', None) else None
+        return render(request, 'participants/portal/help.html', {'guide': guide, 'steps': guide.steps.all(), 'done': done,
+            'steps_url': reverse('training:steps', args=[guide.slug]), 'done_url': reverse('training:done', args=[guide.slug]),
+            'portal': 'participant', 'section': 'help', 'title': guide.title})
+    return render(request, 'participants/portal/help.html', {'guides': guides, 'section': 'help', 'title': 'Help'})

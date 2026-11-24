@@ -29,7 +29,7 @@ class Post16B1Tests(EmployerFixtures, TestCase):
             response = self.workspace(tab)
             self.assertEqual(response.status_code, 200, tab)
         self.assertContains(self.workspace('account'), self.lead_member.identity.email)
-        self.assertContains(self.workspace(), reverse('customer_portal:workspace', args=['account']) + '#help')
+        self.assertContains(self.workspace(), reverse('customer_portal:workspace', args=['help']))
 
     def test_dashboard_has_only_released_candidates_and_truthful_next_actions(self):
         self.need.internal_note = 'SYNTHETIC PRIVATE STAFF CANARY'

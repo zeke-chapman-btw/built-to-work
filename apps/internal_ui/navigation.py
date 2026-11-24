@@ -225,7 +225,9 @@ def _destination_allowed(user, item):
     if route=='admin:index':
         from apps.accounts.operational_access import limited_staff
         return not limited_staff(user)
-    if route=="internal:portal-preview":return user.is_superuser
+    if route=="internal:portal-preview":
+        from apps.participants.portal_preview import can_view_participant_portal
+        return can_view_participant_portal(user)
     if route=="operations:trailers":
         if user.is_superuser:return True
         from apps.trailer_control.navigation import local_control_entry
