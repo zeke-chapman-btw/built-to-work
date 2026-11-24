@@ -10,14 +10,13 @@
 .rm-more>summary{cursor:pointer;padding:11px 0;font-weight:600;font-size:14px;color:#3f3f46;list-style:none}.rm-more>summary::-webkit-details-marker{display:none}
 .rm-more>summary:before{content:"▸ ";color:#a1a1aa}.rm-more[open]>summary:before{content:"▾ "}
 .rm-more[open]{padding-bottom:8px}
-.rm-top{display:flex;gap:14px;align-items:flex-end}.rm-top>.btw-field:first-child{flex:1}
+.rm-top{display:flex;gap:14px;align-items:flex-end;margin-bottom:10px}.rm-top>.btw-field:first-child{flex:1}
 .rm-prev{margin:12px 0 0;padding:10px 12px;background:#f7f7f8;border-radius:8px;font-size:13px}.rm-prev ul{margin:6px 0 0;padding-left:18px}
 .rm-gone{display:none!important}
 @media (max-width:640px){.rm-two{grid-template-columns:1fr}.rm-top{flex-direction:column;align-items:stretch}}
 </style>
 {{ form.non_field_errors }}
 <input type="hidden" name="source" value="{{ rule.source }}">
-<p class="cp3-note" style="margin:0 0 12px">Sends about <b>{{ source.label|lower }}</b>.</p>
 <div class="rm-top">{% include 'reminders/field.html' with field=form.name %}{% include 'reminders/field.html' with field=form.enabled %}</div>
 
 <fieldset class="rm-fs" data-rm-when><legend>When</legend>
