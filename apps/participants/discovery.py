@@ -256,7 +256,9 @@ def discover(user, params, *, strict=False):
         qs = qs.filter(acquisition__acquired_at__date__lte=d["acquired_to"])
     source = activity_sources()
     if d.get("event"):
-        qs = qs.filter(pk__in=canonical_records(source["registrations"].filter(event=d["event"])).values("_canonical_person"))
+        # Sign-ups made in this app, plus people imported from that event's files.
+        qs = qs.filter(Q(pk__in=canonical_records(source["registrations"].filter(event=d["event"])).values("_canonical_person"))
+                       | Q(historical_events__event=d["event"]) | Q(acquisition__event=d["event"])).distinct()
     if d.get("participation"):
         qs = apply_facet(qs, "participation", d["participation"], user)
     qualification = canonical_records(ParticipantQualification.objects.filter(is_active=True)).filter(_canonical_person=OuterRef("pk"))

@@ -673,6 +673,7 @@ body.internal-app #main-content .pl-insight ul{list-style:none;margin:0;padding:
 body.internal-app #main-content .pl-insight li,body.internal-app #main-content .pl-insight li a{display:grid;grid-template-columns:1fr auto;gap:2px 8px;color:#222;text-decoration:none;font-size:13px}
 body.internal-app #main-content .pl-insight li a:hover .pl-bar-label{text-decoration:underline}
 body.internal-app #main-content .pl-insight li i{grid-column:1/-1;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--brand-red,#d71935) var(--bar),#eee var(--bar))}
+body.internal-app #main-content .pl-insight li>a{grid-column:1/-1}
 body.internal-app #main-content .pl-muted{color:#888}
 body.internal-app #main-content .pl-results{padding:0;overflow:hidden}
 body.internal-app #main-content .pl-results .pl-head,body.internal-app #main-content .pl-results .pl-row{display:grid;grid-template-columns:70px minmax(170px,1.5fr) minmax(120px,1.1fr) 110px 90px !important;gap:12px;align-items:center;padding:12px 18px}

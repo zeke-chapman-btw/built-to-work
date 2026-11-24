@@ -33,6 +33,17 @@ class ParticipantListV2Tests(TestCase):
         trades = next(c for c in response.context['list_insights'] if c['title'] == 'Trade interest')
         self.assertEqual({r['label']: r['count'] for r in trades['rows']}, {'Electrician': 3, 'Welder': 2, 'Supervisor': 1})
 
+    def test_event_filter_finds_people_imported_from_that_event(self):
+        from django.utils import timezone
+        from apps.events.models import Event
+        from apps.participants.workspace_models import ParticipantAcquisition
+        start = timezone.now() - timezone.timedelta(days=30)
+        event = Event.objects.create(name='SYNTHETIC rodeo', start_at=start, end_at=start, status='completed')
+        person = Participant.objects.get(first_name='Derrick')
+        ParticipantAcquisition.objects.create(participant=person, channel='event', event=event, acquired_at=start)
+        response = self.client.get(reverse('participants:staff-directory'), {'event': str(event.pk)})
+        self.assertEqual(response.context['total_participants'], 1)
+
     def test_seeking_chip_filters_the_list(self):
         response = self.client.get(reverse('participants:staff-directory'), {'employment': 'open'})
         self.assertEqual(response.context['total_participants'], 1)
