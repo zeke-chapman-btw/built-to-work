@@ -1,0 +1,17 @@
+{% if item %}<div class="btw-tp-backdrop" role="presentation"></div>
+<section class="btw-tp" role="dialog" aria-modal="true" aria-labelledby="btw-tp-title">
+<p class="btw-tp-kicker">Update</p>
+<h2 id="btw-tp-title">{{ item.title }}</h2>
+<div class="btw-tp-body">{{ item.body|linebreaks }}</div>
+<form method="post" action="{% url 'training:announcement-answer' item.pk %}" class="btw-tp-actions">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
+<button class="button secondary" name="answer" value="later" type="submit">Remind me next time</button>
+{% if item.button_label and item.button_url %}<button class="button button-primary" name="answer" value="go" type="submit">{{ item.button_label }}</button>{% else %}<button class="button button-primary" name="answer" value="ok" type="submit">Got it</button>{% endif %}</form>
+</section>
+<style>
+.btw-tp-backdrop{position:fixed;inset:0;background:rgba(17,24,39,.45);z-index:2147482990}
+.btw-tp{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2147482995;width:min(480px,calc(100vw - 32px));max-height:calc(100vh - 40px);overflow:auto;background:#fff;border-radius:14px;border-top:5px solid #d0212f;box-shadow:0 20px 60px rgba(0,0,0,.25);padding:24px 26px 20px;font-size:15px;line-height:1.5;color:#1f2329}
+.btw-tp h2{margin:0 0 10px;font-size:21px}
+.btw-tp-body p{margin:0 0 10px;color:#374151}
+.btw-tp-kicker{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#d0212f;margin:0 0 4px}
+.btw-tp-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:16px}
+</style>{% endif %}

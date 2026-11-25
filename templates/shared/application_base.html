@@ -1,4 +1,4 @@
-{% load static task_ui ui_patterns application_shell %}{% application_shell as shell %}{% if shell.staff %}{% global_task_create_url as floating_task_create_url %}{% endif %}<!doctype html>
+{% load static task_ui ui_patterns application_shell training_ui %}{% application_shell as shell %}{% if shell.staff %}{% global_task_create_url as floating_task_create_url %}{% endif %}<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">{% block meta %}{% endblock %}
 <title>{% block title %}{{ page_title|default:'BTW workspace' }} · Built to Work{% endblock %}</title>
@@ -40,4 +40,4 @@
     {% if shell.staff and floating_task_create_url and not task_action_in_event_header %}<a class="button button-primary global-task-create" data-task-create data-global-task-create href="{{ floating_task_create_url }}">+ Task</a>{% endif %}
   </main>{% if not shell.staff %}<footer>{{ shell.footer }}{% if shell.portal %} · <a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a>{% endif %}</footer>{% endif %}
 </div><button class="scrim" type="button" aria-label="Close navigation" data-scrim hidden></button>
-{% if shell.staff %}{% include 'operations/task_dialog.html' %}{% endif %}<script defer src="{% static 'shared/position_form.js' %}?v=pf-5"></script></body></html>
+{% if shell.staff %}{% include 'operations/task_dialog.html' %}{% endif %}{% sign_in_message %}<script defer src="{% static 'shared/position_form.js' %}?v=pf-5"></script></body></html>

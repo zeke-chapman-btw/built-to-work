@@ -1,0 +1,10 @@
+{% extends 'shared/workspace_landing.html' %}{% load static %}{% block extra_head %}{{ block.super }}<link rel="stylesheet" href="{% static 'internal/css/record_ui.css' %}?v=rui-1112">{% endblock %}{% block workspace_class %}ux-settings-page{% endblock %}{% block workspace_content %}<div class="cp3" style="max-width:760px">
+<p style="margin:0 0 12px"><a class="ux-back" href="{% url 'training:announcements' %}">← Sign-in messages</a></p>
+<form method="post" class="card" style="padding:18px 22px">{% csrf_token %}
+<h2 style="margin:0 0 12px;font-size:18px">{% if item.pk %}Edit message{% else %}New sign-in message{% endif %}</h2>
+{% include 'internal/ui/form_fields.html' %}
+{% if item.pk %}<p style="color:#6b7280;font-size:13px;margin:12px 0 0">Seen by {{ seen_count }} so far.</p>{% endif %}
+<div style="display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;margin-top:16px">
+<span style="display:flex;gap:10px">{% if item.pk %}<button class="button secondary" type="submit" name="delete" value="1" formnovalidate>Delete</button><button class="button secondary" type="submit" name="reset" value="1" formnovalidate>Show it to everyone again</button>{% endif %}</span>
+<button class="button button-primary" type="submit">Save</button></div>
+</form></div>{% endblock %}

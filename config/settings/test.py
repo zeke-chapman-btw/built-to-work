@@ -13,3 +13,6 @@ USAGE_TRACKING = False
 
 # Portal views stay off in tests unless a test turns them on (the older tests check the preview-site-only switch).
 BTW_PORTAL_VIEWS_ENABLED = False
+
+# Sign-in pop-up messages stay off in tests unless a test turns them on (they add a form to every page).
+SIGN_IN_MESSAGES_ENABLED = False

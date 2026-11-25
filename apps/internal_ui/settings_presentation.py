@@ -39,6 +39,7 @@ def _sections(user):
         sections.append({'key': 'billing', 'label': 'Billing', 'url': reverse('billing:settings'), 'groups': []})
         sections.append({'key': 'security', 'label': 'Security', 'url': reverse('security:settings'), 'groups': []})
         sections.append({'key': 'training', 'label': 'Training', 'url': reverse('training:manage'), 'groups': []})
+        sections.append({'key': 'sign-in-messages', 'label': 'Sign-in messages', 'url': reverse('training:announcements'), 'groups': []})
     elsewhere = []
     if manager(user):
         elsewhere.append({'label': 'Customers → Setup', 'description': 'Customer onboarding questions and the service agreement.',
@@ -84,6 +85,8 @@ def settings_context(request):
         selected = 'reminders'
     elif path.startswith('/settings/training/'):
         selected = 'training'
+    elif path.startswith('/settings/sign-in-messages/'):
+        selected = 'sign-in-messages'
     elif path.startswith('/settings/expense-categories/'):
         selected = 'advanced'
     else:
@@ -92,7 +95,7 @@ def settings_context(request):
     available = {section['key']: section for section in sections}
     # Root query strings choose presentation only. Protected tools use their
     # existing routes and independently recheck their existing authorization.
-    if selected not in available or (path == home and selected in {'portal', 'compensation', 'staff-pay', 'connections', 'messages', 'reminders', 'billing', 'security', 'training'}):
+    if selected not in available or (path == home and selected in {'portal', 'compensation', 'staff-pay', 'connections', 'messages', 'reminders', 'billing', 'security', 'training', 'sign-in-messages'}):
         selected = 'overview'  # the gear's landing page: every section, plus where personal settings went
     tabs = []
     for section in sections:
@@ -103,7 +106,7 @@ def settings_context(request):
         about = {'staff': 'Staff list, sign-ins and roles.', 'portal': 'See the customer and participant portals as they do.',
                  'compensation': 'Pay rates, per diem and mileage.', 'messages': 'Saved message templates.',
                  'reminders': 'Who gets reminded about what, and when.', 'connections': 'Texting, email and Gmail.',
-                 'billing': 'Stripe and bank payments.', 'training': 'How-to guides and who has finished them.', 'security': 'Two-step sign-in, error alerts, privacy and terms.',
+                 'billing': 'Stripe and bank payments.', 'training': 'How-to guides and who has finished them.', 'sign-in-messages': 'Updates that pop up when people sign in.', 'security': 'Two-step sign-in, error alerts, privacy and terms.',
                  'advanced': 'Everything else, and each area\'s setup.'}
         links = [{'label': t['label'], 'description': about.get(t['key'], ''), 'url': t['url']} for t in tabs]
         groups = ([{'label': 'Settings', 'links': links}] if links else []) + [{'label': 'Your own account', 'links': [

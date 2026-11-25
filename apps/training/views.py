@@ -13,7 +13,7 @@ from django.utils.text import slugify
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from .access import audiences_for, can_see, done_ids, guides_for, summary
-from .models import AUDIENCES, STAFF_AUDIENCES, Guide, GuideProgress, GuideStep
+from .models import AUDIENCES, STAFF_AUDIENCES, Announcement, Guide, GuideProgress, GuideStep
 
 
 def _staff(request):
@@ -203,3 +203,85 @@ def edit(request, slug=None):
     rows = list(item.steps.all()) if item.pk else []
     return render(request, "training/edit.html", _staff_context(
         request, page_title="Settings", form=form, guide=item, step_rows=rows))
+
+
+
+# ------------------------------------------------------------------ Sign-in messages
+
+@login_required
+@require_POST
+def announcement_answer(request, pk):
+    """Answer a sign-in message: open its link, say "got it", or be reminded at the next sign-in."""
+    from .announcements import due_for
+    from .models import Announcement, AnnouncementSeen
+    item = get_object_or_404(Announcement, pk=pk)
+    action = request.POST.get("answer")
+    back = request.POST.get("next") or "/"
+    back = back if back.startswith("/") and not back.startswith("//") else "/"
+    if action == "later":
+        request.session.pop("announcements_due", None)
+        return redirect(back)
+    AnnouncementSeen.objects.get_or_create(announcement=item, user=request.user)
+    if due_for(request.user) is None:
+        request.session.pop("announcements_due", None)
+    url = item.button_url or ""
+    if action == "go" and (url.startswith("/") and not url.startswith("//") or url.startswith("https://")):
+        return redirect(url)
+    return redirect(back)
+
+
+class AnnouncementForm(forms.ModelForm):
+    audiences = forms.MultipleChoiceField(choices=AUDIENCES, widget=forms.CheckboxSelectMultiple, label="Who sees it")
+
+    class Meta:
+        model = Announcement
+        fields = ("title", "body", "audiences", "button_label", "button_url", "starts_on", "ends_on", "active")
+        labels = {"body": "Message", "button_label": "Button text", "button_url": "Button link",
+                  "starts_on": "Show from", "ends_on": "Stop showing after", "active": "Turned on"}
+        widgets = {"body": forms.Textarea(attrs={"rows": 5}), "starts_on": forms.DateInput(attrs={"type": "date"}),
+                   "ends_on": forms.DateInput(attrs={"type": "date"})}
+
+    def clean_button_url(self):
+        url = (self.cleaned_data.get("button_url") or "").strip()
+        if url and not (url.startswith("/") and not url.startswith("//") or url.startswith("https://")):
+            raise forms.ValidationError("Use a page in the app (like /my/training/) or a full https:// link.")
+        return url
+
+
+@login_required(login_url="/admin/login/")
+@require_GET
+def announcements(request):
+    _admin(request)
+    from apps.internal_ui.views import _staff_context
+    from .models import Announcement
+    rows = list(Announcement.objects.all())
+    for row in rows:
+        row.seen_count = row.seen.count()
+    return render(request, "training/announcements.html", _staff_context(request, page_title="Settings", rows=rows))
+
+
+@login_required(login_url="/admin/login/")
+@require_http_methods(["GET", "POST"])
+def announcement_edit(request, pk=None):
+    _admin(request)
+    from apps.internal_ui.views import _staff_context
+    from .models import Announcement
+    item = get_object_or_404(Announcement, pk=pk) if pk else Announcement(audiences=list(STAFF_AUDIENCES))
+    if request.method == "POST" and request.POST.get("delete") == "1" and item.pk:
+        item.delete()
+        messages.success(request, "Message deleted.")
+        return redirect("training:announcements")
+    if request.method == "POST" and request.POST.get("reset") == "1" and item.pk:
+        item.seen.all().delete()
+        messages.success(request, "Everyone will see it again at their next sign-in.")
+        return redirect("training:announcement-edit", pk=item.pk)
+    form = AnnouncementForm(request.POST or None, instance=item)
+    if request.method == "POST" and form.is_valid():
+        saved = form.save(commit=False)
+        if not saved.pk:
+            saved.created_by = request.user
+        saved.save()
+        messages.success(request, "Saved. People will see it the next time they sign in.")
+        return redirect("training:announcements")
+    return render(request, "training/announcement_edit.html", _staff_context(
+        request, page_title="Settings", form=form, item=item, seen_count=item.seen.count() if item.pk else 0))
