@@ -75,3 +75,62 @@ class TrainingTests(TestCase):
     def test_my_stuff_has_a_training_tab(self):
         self.client.force_login(self.staff, backend=BACKEND)
         self.assertContains(self.client.get(reverse("my:schedule")), reverse("training:mine"))
+
+
+class GuidesMatchTheAppTests(TestCase):
+    """Fails if a guide points at a page, button or screenshot that no longer exists.
+    When this fails after a change to the app, update the guide in apps/training/content.py (and a migration
+    for guides already in the app), so training always matches what people see."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        import html
+        from pathlib import Path
+        from django.conf import settings
+        root = Path(settings.BASE_DIR)
+        texts = []
+        for pattern in ("templates/**/*.html", "apps/**/templates/**/*.html", "apps/**/*.py", "static/**/*.js"):
+            for path in root.glob(pattern):
+                if "/tests" in str(path) or path.name.startswith("test") or "training/content.py" in str(path):
+                    continue
+                try:
+                    texts.append(path.read_text(errors="ignore"))
+                except OSError:
+                    pass
+        cls.source = html.unescape("\n".join(texts))
+        cls.static = root / "static" / "training"
+
+    def _found(self, target):
+        import re
+        if target.startswith("text:"):
+            return target[5:].strip() in self.source
+        names = re.findall(r"\[name=([\w-]+)\]", target)
+        classes = re.findall(r"\.([\w-]+)", target)
+        attrs = re.findall(r"\[([\w-]+)\]", target)
+        if names:
+            return all(re.search(rf"""name=["']?{n}\b|["']{n}["']""", self.source) for n in names)
+        if classes:
+            return all(c in self.source for c in classes)
+        if attrs:
+            return all(a in self.source for a in attrs)
+        return True
+
+    def test_every_guide_step_points_at_something_real(self):
+        from django.urls import Resolver404, resolve
+        from .content import GUIDES
+        problems = []
+        for guide in GUIDES:
+            for number, step in enumerate(guide["steps"], 1):
+                where = f'{guide["title"]} → step {number} ({step["title"]})'
+                if step.get("page"):
+                    try:
+                        resolve(step["page"].split("?")[0])
+                    except Resolver404:
+                        problems.append(f"{where}: page {step['page']} doesn't exist")
+                if step.get("image") and not (self.static / step["image"]).exists():
+                    problems.append(f"{where}: screenshot {step['image']} is missing")
+                options = [t.strip() for t in step.get("target", "").split("||") if t.strip()]
+                if options and not any(self._found(t) for t in options):
+                    problems.append(f"{where}: can't find {step['target']!r} anywhere in the app")
+        self.assertEqual(problems, [], "Guides out of date:\n" + "\n".join(problems))
