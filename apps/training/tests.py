@@ -194,3 +194,16 @@ class SignInMessageTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.sign_in("msg-recruiter")
         self.assertEqual(self.client.get(reverse("training:announcements")).status_code, 403)
+
+
+class HandbookLinkTests(TestCase):
+    def test_admin_sets_link_and_staff_see_it_in_help(self):
+        from apps.training.models import TrainingSettings
+        User = get_user_model()
+        admin = User.objects.create_superuser("hb-admin", "hb@example.test", "x-test-only")
+        self.client.force_login(admin, backend=BACKEND)
+        self.client.post(reverse("training:manage"), {"handbook_url": "https://docs.google.com/document/d/abc/edit"})
+        self.assertEqual(TrainingSettings.current().handbook_url, "https://docs.google.com/document/d/abc/edit")
+        page = self.client.get("/help/")
+        self.assertContains(page, "Workflow handbook")
+        self.assertContains(page, "https://docs.google.com/document/d/abc/edit")

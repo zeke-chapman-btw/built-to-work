@@ -107,3 +107,14 @@ class AnnouncementSeen(models.Model):
     class Meta:
         default_permissions = ()
         constraints = [models.UniqueConstraint(fields=("announcement", "user"), name="training_announcement_seen_once")]
+
+
+class TrainingSettings(models.Model):
+    """One row: the staff workflow handbook (a Google Doc) linked from Help."""
+    handbook_url = models.URLField(blank=True, verbose_name="Workflow handbook link",
+                                   help_text="The Google Doc with the app's main workflows. Shown to staff at the top of Help.")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def current(cls):
+        return cls.objects.filter(pk=1).first() or cls(pk=1)

@@ -13,7 +13,7 @@ from django.utils.text import slugify
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from .access import audiences_for, can_see, done_ids, guides_for, summary
-from .models import AUDIENCES, STAFF_AUDIENCES, Announcement, Guide, GuideProgress, GuideStep
+from .models import AUDIENCES, STAFF_AUDIENCES, Announcement, Guide, GuideProgress, GuideStep, TrainingSettings
 
 
 def _staff(request):
@@ -132,11 +132,22 @@ def _people_progress(guides):
     return people
 
 
+class HandbookForm(forms.ModelForm):
+    class Meta:
+        model = TrainingSettings
+        fields = ("handbook_url",)
+
+
 @login_required(login_url="/admin/login/")
-@require_GET
+@require_http_methods(["GET", "POST"])
 def manage(request):
     _admin(request)
     from apps.internal_ui.views import _staff_context
+    handbook = HandbookForm(request.POST or None, instance=TrainingSettings.current())
+    if request.method == "POST" and handbook.is_valid():
+        handbook.save()
+        messages.success(request, "Handbook link saved.")
+        return redirect("training:manage")
     guides = list(Guide.objects.prefetch_related("steps").order_by("position", "title"))
     counts = {}
     for row in GuideProgress.objects.values("guide_id"):
@@ -147,7 +158,7 @@ def manage(request):
     shown = [g for g in guides if not audience or audience in g.audiences]
     return render(request, "training/manage.html", _staff_context(
         request, page_title="Settings", guides=shown, audience=audience, audiences=AUDIENCES,
-        people=_people_progress(guides)))
+        people=_people_progress(guides), handbook_form=handbook))
 
 
 class GuideForm(forms.ModelForm):

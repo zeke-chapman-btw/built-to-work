@@ -25,4 +25,10 @@ def guide(request):
     for g in guides:
         g.is_done = g.pk in finished
     return render(request, "internal/help.html", {"page_title": "Help", "mine": mine, "show_all": show_all,
-                                                  "is_manager": manager(user), "guides": guides})
+                                                  "is_manager": manager(user), "guides": guides,
+                                                  "handbook_url": _handbook_url()})
+
+
+def _handbook_url():
+    from apps.training.models import TrainingSettings
+    return TrainingSettings.current().handbook_url
