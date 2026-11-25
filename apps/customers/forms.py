@@ -63,7 +63,7 @@ class OrganizationForm(CustomerModelForm):
     org_revision = forms.IntegerField(min_value=0, required=False, widget=forms.HiddenInput)
     sections = (("Company identity", ("name", "legal_name", "industry", "description")),
                 ("Business contact", ("website", "business_email", "phone", "primary_contact")),
-                ("Customer status", ("status",)))
+                ("Customer status", ("status", "btw_recruiter")))
 
     class Meta:
         model = Org
@@ -74,6 +74,9 @@ class OrganizationForm(CustomerModelForm):
         super().__init__(*args, **kwargs)
         self.fields["status"].choices = [(key, label) for key, label in Org.Status.choices if key != "archived"]
         self.fields["primary_contact"].queryset = CustomerContact.objects.filter(organization=self.instance) if not self.instance._state.adding else CustomerContact.objects.none()
+        from django.contrib.auth import get_user_model
+        self.fields["btw_recruiter"].queryset = get_user_model().objects.filter(is_active=True, is_staff=True, staff_profile__isnull=False).order_by("first_name", "last_name")
+        self.fields["btw_recruiter"].label_from_instance = lambda u: u.get_full_name() or u.username
 
 
 class LocationForm(CustomerModelForm):
@@ -215,7 +218,7 @@ HIRING_SECTIONS = (
     ("Schedule", ("shift", "schedule_details", "hours_mode", "hours_per_week", "start_mode", "start_date", "start_timeframe", "duration_response", "duration_details", "end_date")),
     ("Skills & experience", ("required_skills_response", "required_skills_details", "preferred_skills_response", "preferred_skills_details", "required_experience_response", "required_experience_details", "required_experience_years", "preferred_experience_response", "preferred_experience_details", "preferred_experience_years", "required_credentials_response", "required_credentials_details", "preferred_credentials_response", "preferred_credentials_details")),
     ("Travel & work conditions", ("travel_response", "travel_details", "overnight_response", "overnight_details", "conditions_response", "conditions_details", "equipment_response", "equipment_details")),
-    ("Contact & hiring", ("primary_contact", "screening_response", "screening_details", "other_response", "other_details", "hiring_timeline", "hiring_deadline")),
+    ("Contact & hiring", ("primary_contact", "screening_response", "screening_details", "other_response", "other_details", "hiring_timeline", "hiring_deadline", "post_to_participants")),
 )
 
 

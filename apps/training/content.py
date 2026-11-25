@@ -184,16 +184,21 @@ GUIDES += [
                   body="Recruiting → Positions lists every open customer position. Open the one you're filling."),
              dict(title="Press + Add candidate", target="text:+ Add candidate",
                   body="You'll see suggested matches, best fit first. Use the filters to narrow them."),
-             dict(title="Review a match and select them", target="text:Review||text:Select candidate",
-                  body="Press Review to look at the person, then Select candidate. They join the position's pipeline."),
+             dict(title="Review a match and add them", target="text:Review||text:Add to position",
+                  body="Press Review to look at the person, then Add to position. They join the position's pipeline. Nothing is shared with the customer yet."),
              dict(title="Move them through the stages", target="text:Change stage",
                   body="Open the candidate and press Change stage as things happen: contacted, interested, and so on. "
                        "Log contact records each conversation."),
-             dict(title="Share them with the customer", target="text:Share with employer",
-                  body="When they're ready, press Share with employer, check what the customer will see, and press Approve release. "
+             dict(title="Share them with the customer", target="text:Share with customer",
+                  body="When they're ready, press Share with customer. You can press Preview what the customer sees first, then press Share with customer. "
                        "The customer gets an email and sees the candidate in their portal."),
-             dict(title="Watch for the customer's answer",
-                  body="The customer marks them Interested, Request Interview or Not Interested. You'll see it on the candidate and get a reminder if they haven't answered."),
+             dict(title="Follow the customer's updates",
+                  body="The customer runs the interviews and updates the status as things move: Interested, Interview scheduled, Interviewed, Offer made, Hired, or Not a fit. "
+                       "The candidate's stage moves along on its own, and you get a reminder each time so you can follow up. "
+                       "Not a fit doesn't close them out; change the stage yourself if you agree."),
+             dict(title="Confirm the hire", target="text:Confirm hire",
+                  body="When the customer marks someone Hired, open Share with customer on the candidate and press Confirm hire once you've checked it. "
+                       "The job is added to the person's work history as Placed by Built to Work."),
          ]),
     dict(slug="upload-a-document", title="Add a document to a profile", position=180, minutes=2, audiences=RECRUIT,
          summary="Resumes, certificates and other files.",
@@ -242,7 +247,7 @@ GUIDES += [
              dict(title="Open Approvals", page="/approvals/", target="text:Approvals",
                   body="Tabs across the top: event work requests, document checks, candidates waiting to be shared, and positions."),
              dict(title="Open an item and decide", target="text:Review",
-                  body="Press Review on an item, check it, and approve or decline."),
+                  body="Press Review on an item, check it, and approve or decline. Positions have two buttons: Approve, or Send back for changes."),
              dict(title="Look back at past decisions", target="text:Show past decisions",
                   body="Show past decisions lists what's already been approved or declined."),
          ]),
@@ -281,8 +286,13 @@ GUIDES += [
              dict(title="Press + New position", target="text:+ New position",
                   body="Fill in the role, where the work is, pay, schedule and what experience is needed. "
                        "Customers can also request positions themselves from their portal."),
-             dict(title="Save it and set up recruiting",
-                  body="Once saved, it shows in Recruiting → Positions, ready for candidates."),
+             dict(title="Submit and approve it", target="text:Approve",
+                  body="Press Submit for review, then Approve (or Send back for changes). On the approve screen, pick the fee and tick "
+                       "Post this job for participants if it should show on the participant job board; it shows what participants will see. "
+                       "Approving sets up recruiting right away, run by the customer's Built to Work recruiter."),
+             dict(title="Pick the customer's recruiter", target="text:Edit customer||text:Edit",
+                  body="On the customer, Edit → Built to Work recruiter. New positions from this customer go to that person. "
+                       "If nobody is picked, they go to the Recruiting lead."),
          ]),
     dict(slug="customer-portal-access", title="Give a customer portal access", position=260, minutes=2, audiences=MANAGE,
          summary="Invite a customer contact to their portal.",
@@ -391,8 +401,10 @@ GUIDES += [
                   body="Waiting on you lists the candidates who need your answer."),
              dict(title="Open a candidate",
                   body="You'll see their summary, work history, certifications, results and documents they agreed to share."),
-             dict(title="Choose your response", target="text:Your response",
-                  body="Pick Interested, Request Interview or Not Interested, add a note if you like, and press Send to Built to Work. We take it from there."),
+             dict(title="Keep the status up to date", target="text:Update the status",
+                  body="You run the interviews. As things move, pick Interested, Interview scheduled, Interviewed, Offer made or Hired, or Not a fit. "
+                       "Add a date (interview date, or start date if hired) and a note if you like, and press Send to Built to Work. "
+                       "We're told each time. Hired becomes official once Built to Work confirms it."),
          ]),
     dict(slug="customer-request-position", title="Ask us to fill a position", position=420, minutes=4, audiences=["customer"],
          summary="Tell us about a job you need people for.",
@@ -401,6 +413,9 @@ GUIDES += [
                   body="It's on your dashboard and on the Positions page."),
              dict(title="Fill in each section", target="text:Continue",
                   body="The role, where the work is, pay and benefits, schedule, skills, and who we should talk to. Press Continue after each section, or Save draft to finish later."),
+             dict(title="Choose whether to post it", target="text:Post this job",
+                  body="In the last section, tick Post this job for Built to Work participants if you'd like people in our program to see it and say they're interested. "
+                       "Your company name isn't shown."),
              dict(title="Submit it", body="We review it and start looking for candidates. You'll see it under Positions."),
          ]),
     dict(slug="customer-team", title="Add people from your company", position=430, minutes=2, audiences=["customer"],

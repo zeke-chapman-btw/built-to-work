@@ -14,7 +14,7 @@
 <details class="cx-more" data-ui-menu><summary>More</summary><div>
 <a href="{% url 'participants:staff-profile' candidate.participant_id %}">Participant profile</a>
 <a href="{% url 'recruiting:matching' candidate.opportunity_id %}">Position &amp; matching</a>
-{% if editable %}<a href="{% url 'recruiting:disclosure' candidate.pk %}">Share with employer</a>
+{% if editable %}<a href="{% url 'recruiting:disclosure' candidate.pk %}">Share with customer</a>
 <a data-record-editor href="?edit=reassign">Change who's assigned</a>{% endif %}
 </div></details>
 </div>
@@ -30,7 +30,7 @@
 <section class="customer-card cx-card" aria-labelledby="rc-log-title"><header class="cx-card-h"><h2 id="rc-log-title">Contact log</h2><span class="cx-links">{% if editable %}<a data-record-editor href="?edit=outreach">+ Log contact</a>{% endif %}</span></header>
 {% for item in outreach %}<div class="cx-person"><strong>{{ item.get_method_display }} · {{ item.outcome }}</strong><span>{{ item.contacted_at|date:'M j, Y · g:i A' }} · {{ item.actor }}{% if item.visible_task %} · <a href="{% url 'operations:task' item.visible_task.pk %}">Task</a>{% endif %}</span>{% if item.response %}<span>{{ item.response }}</span>{% endif %}{% if item.notes %}<span>{{ item.notes|linebreaksbr }}</span>{% endif %}</div>{% empty %}<p class="cx-empty">No contacts logged yet.</p>{% endfor %}
 </section>
-<section class="customer-card cx-card" aria-labelledby="rc-emp-title"><header class="cx-card-h"><h2 id="rc-emp-title">Employer responses</h2>{% if editable %}<span class="cx-links"><a href="{% url 'recruiting:disclosure' candidate.pk %}">Share with employer</a></span>{% endif %}</header>
+<section class="customer-card cx-card" aria-labelledby="rc-emp-title"><header class="cx-card-h"><h2 id="rc-emp-title">Employer responses</h2>{% if editable %}<span class="cx-links"><a href="{% url 'recruiting:disclosure' candidate.pk %}">Share with customer</a></span>{% endif %}</header>
 {% for event in employer_feedback %}<div class="cx-person"><strong>{{ event.get_kind_display }}</strong><span>{{ event.created_at|date:'M j, Y · g:i A' }}</span>{% if event.message %}<span>{{ event.message|linebreaksbr }}</span>{% endif %}</div>{% empty %}<p class="cx-empty">No employer responses yet.</p>{% endfor %}
 </section>
 <section class="customer-card cx-card" aria-labelledby="rc-hist-title"><header class="cx-card-h"><h2 id="rc-hist-title">History</h2></header>

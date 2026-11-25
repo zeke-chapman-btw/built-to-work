@@ -71,7 +71,7 @@ def audit(actor, org, action, obj, *, before=None, after=None, why, need=None, c
     return entry
 
 
-ORG_FIELDS = ("name", "legal_name", "industry", "website", "business_email", "phone", "description", "status", "primary_contact")
+ORG_FIELDS = ("name", "legal_name", "industry", "website", "business_email", "phone", "description", "status", "primary_contact", "btw_recruiter")
 
 
 @transaction.atomic
@@ -445,7 +445,12 @@ def revision_action(*, actor, org_id, need_id, expected_org_revision, expected_n
         rev.state, rev.reviewed_by = "review", actor
         if not need.effective_revision_id:
             need.status = "review"
-    elif action == "approve" and rev.state == "review" and need.status != "cancelled":
+    elif action == "approve" and rev.state in {"submitted", "review"} and need.status != "cancelled":
+        # Approving straight from "submitted" counts as the review too (one step for staff);
+        # the record still passes through "review" so its history stays complete.
+        if rev.state == "submitted":
+            rev.state, rev.reviewed_by = "review", actor
+            rev.save(update_fields=["state", "reviewed_by", "updated_at"])
         rev.state, rev.approved_at, rev.approved_by = "approved", timezone.now(), actor
         # Clear the pending pointer before approval for immediate SQLite guards.
         need.working_revision = None

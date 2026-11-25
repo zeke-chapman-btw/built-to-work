@@ -87,7 +87,7 @@ def create(request, disclosure_id):
                 messages.success(request, "Interaction recorded for your company. No message was sent and no recruiting decision changed.")
                 return redirect(back + "#company-interactions")
     return render(request, "crm/portal_form.html", context(request, "candidates", form=form,
-        page_title="Log interaction", subject=candidate["position"], crm_candidate=candidate, back=back + "#company-interactions",
+        page_title="Log touchpoint", subject=candidate["position"], crm_candidate=candidate, back=back + "#company-interactions",
         guidance="Record an action your company performed outside BTW. These records are visible to authorized members of your company and BTW staff.", submit_label="Save interaction"))
 
 
@@ -135,7 +135,7 @@ def correct(request, disclosure_id, interaction_id):
                 messages.success(request, "Correction saved. The original author and earlier versions are retained.")
                 return redirect(back)
     return render(request, "crm/portal_form.html", context(request, "candidates", form=form,
-        page_title="Correct interaction", subject=candidate["position"], crm_candidate=candidate,
+        page_title="Correct touchpoint", subject=candidate["position"], crm_candidate=candidate,
         back=back,
         guidance="Explain your correction. The company, candidate, release and original author cannot change.", submit_label="Save correction"))
 

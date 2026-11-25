@@ -320,11 +320,19 @@ class DisclosureMemberPermission(UUIDModel, TimestampedModel):
         constraints = [models.UniqueConstraint(fields=['disclosure','membership'],name='recruiting_disclosure_member')]
 
 
+# What a customer can tell us about a candidate, in the order things usually happen.
+# 'interview' (the old "Request Interview") stays for responses already recorded.
+FEEDBACK_KINDS = [('interested','Interested'),('interview','Request Interview'),('interview_scheduled','Interview scheduled'),
+                  ('interviewed','Interviewed'),('offer_made','Offer made'),('report_hired','Hired'),
+                  ('not_interested','Not a fit'),('feedback','Note')]
+
+
 class EmployerCandidateFeedback(UUIDModel, TimestampedModel):
     disclosure = models.ForeignKey(CandidateDisclosure, on_delete=models.PROTECT, related_name='feedback')
     membership = models.ForeignKey('customers.CustomerMembership', on_delete=models.PROTECT, related_name='+')
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')
-    kind = models.CharField(max_length=24,choices=[('interested','Interested'),('interview','Request Interview'),('not_interested','Not Interested'),('report_hired','Report Hired'),('feedback','Feedback')])
+    kind = models.CharField(max_length=24,choices=FEEDBACK_KINDS)
+    on_date = models.DateField(null=True,blank=True)
     message = models.CharField(max_length=2000,blank=True)
     operation_id = models.UUIDField(unique=True)
     payload_fingerprint = models.CharField(max_length=64)
@@ -332,11 +340,11 @@ class EmployerCandidateFeedback(UUIDModel, TimestampedModel):
     confirmed_at = models.DateTimeField(null=True,blank=True)
     confirmation_reason = models.CharField(max_length=500,blank=True)
     class Meta:
-        constraints = [models.CheckConstraint(condition=Q(kind__in=['interested','interview','not_interested','report_hired','feedback']),name='recruiting_employer_feedback_kind')]
+        constraints = [models.CheckConstraint(condition=Q(kind__in=[k for k, _ in FEEDBACK_KINDS]),name='recruiting_employer_feedback_kind')]
     def save(self,*args,**kwargs):
         from django.core.exceptions import ValidationError
         if self.pk:
             old=type(self).objects.filter(pk=self.pk).first()
-            if old and any(getattr(old,k)!=getattr(self,k) for k in ('disclosure_id','membership_id','actor_id','kind','message','operation_id','payload_fingerprint')):
+            if old and any(getattr(old,k)!=getattr(self,k) for k in ('disclosure_id','membership_id','actor_id','kind','message','on_date','operation_id','payload_fingerprint')):
                 raise ValidationError('Retain the original employer response. Record a new attributed response instead.')
         return super().save(*args,**kwargs)

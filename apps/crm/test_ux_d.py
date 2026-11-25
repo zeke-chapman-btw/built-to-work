@@ -26,7 +26,7 @@ class EmployerPresentationUxTests(EmployerFixtures, TestCase):
         projected=response.context['candidate']['candidate']
         self.assertContains(response,projected['name'])
         self.assertContains(response,'href="#company-interactions"')
-        self.assertContains(response,'Last company interaction')
+        self.assertContains(response,'Last company touchpoint')
         self.assertEqual(response.context['crm_company_last']['id'],row.pk)
         self.assertIsInstance(response.context['crm_company_last'],dict)
         editor=self.client.get(self.url())
@@ -54,7 +54,7 @@ class EmployerPresentationUxTests(EmployerFixtures, TestCase):
         page=self.client.get(self.candidate_url())
         self.assertEqual(page.status_code,200)
         self.assertFalse(page.context['crm_can_record'])
-        self.assertNotContains(page,'>Log interaction</a>')
+        self.assertNotContains(page,'>Log touchpoint</a>')
         self.assertEqual(self.client.get(self.url()).status_code,403)
         employer.member_permission(actor=self.admin,disclosure_id=self.grant.pk,membership_id=member.pk,
             can_respond=True,expected_revision=0,why='SYNTHETIC scoped response permission')

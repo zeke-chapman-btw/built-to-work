@@ -39,6 +39,9 @@ class CustomerOrganization(VersionedRecord):
                                     blank=True, related_name="primary_for", editable=False)
     primary_contact = models.ForeignKey("CustomerContact", on_delete=models.PROTECT, null=True,
                                        blank=True, related_name="primary_for")
+    btw_recruiter = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                      related_name="recruiting_customers", verbose_name="Built to Work recruiter",
+                                      help_text="New positions from this customer go to this person, and they run the recruiting.")
 
     class Meta:
         ordering = ["name", "pk"]
@@ -316,6 +319,8 @@ class HiringTerms(models.Model):
     other_details = models.TextField(blank=True)
     hiring_timeline = models.TextField(blank=True)
     hiring_deadline = models.DateField(null=True, blank=True)
+    post_to_participants = models.BooleanField(default=False, verbose_name="Post this job for Built to Work participants?",
+        help_text="Built to Work can share a short version of this job with people in our program so they can say they're interested. Your company name and private details aren't shown.")
 
     class Meta:
         abstract = True

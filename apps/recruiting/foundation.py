@@ -60,7 +60,13 @@ def readiness(item):
     submission = RegistrationSubmission.objects.filter(participant_id__in=identity_members(item.pk),
         status='submitted', intake_operation_id__isnull=False).select_related('form_version__form').order_by('-submitted_at', '-pk').first()
     if not submission:
-        issues.append('Completed required intake is not recorded.')
+        # People brought in from an event's sign-up file agreed to the terms at that event (recorded on import).
+        # The owner confirmed that consent counts as their completed sign-up (Nov 2026).
+        imported = RegistrationSubmission.objects.filter(participant_id__in=identity_members(item.pk), status='submitted',
+            source='historical_import', consent_acceptances__isnull=False).order_by('-submitted_at', '-pk').first()
+        if imported is None:
+            issues.append('Completed required intake is not recorded.')
+        return {'eligible': not issues, 'issues': issues, 'submission': imported}
     else:
         try:
             version = verify_published(submission.form_version, allow_retired=True)

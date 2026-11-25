@@ -10,6 +10,18 @@ from .views import staff,page
 from .access import fresh_staff,person
 from .workflow import candidate_for
 from .models import CandidateDisclosure,EmployerCandidateFeedback,DisclosureMemberPermission
+STATUS_STEPS=[('interested','Interested'),('interview_scheduled','Interview scheduled'),('interviewed','Interviewed'),
+              ('offer_made','Offer made'),('report_hired','Hired')]
+
+
+def _current_status(disclosure_id):
+    """The latest step this company has recorded for the candidate (notes don't change it)."""
+    from .models import EmployerCandidateFeedback
+    latest=EmployerCandidateFeedback.objects.filter(disclosure_id=disclosure_id).exclude(kind='feedback').order_by('-created_at').first()
+    if latest is None:return ''
+    return 'interview_scheduled' if latest.kind=='interview' else latest.kind
+
+
 from .employer_forms import (DisclosureForm,RevokeForm,EmployerFeedbackForm,ConfirmHireForm,MemberPermissionForm,WithdrawalForm,FeedbackReviewForm)
 from . import employer
 
@@ -38,15 +50,15 @@ def customer_candidate(request,record_id):
         if getattr(request,'customer_preview',False):raise PermissionDenied('Customer Administrator Preview is view-only.')
         if form.is_valid():
             d=form.cleaned_data
-            try:employer.feedback(actor=request.user,organization_id=organization,disclosure_id=record_id,kind=d['kind'],message=d['message'],operation_id=d['operation_id'])
+            try:employer.feedback(actor=request.user,organization_id=organization,disclosure_id=record_id,kind=d['kind'],message=d['message'],operation_id=d['operation_id'],on_date=d.get('on_date'))
             except ValidationError as exc:form.add_error(None,exc)
-            else:messages.success(request,'Your response was sent to BTW. Official recruiting decisions remain with BTW.');return redirect('customer_portal:recruiting-candidate',record_id=record_id)
+            else:messages.success(request,'Updated. Built to Work has been told.');return redirect('customer_portal:recruiting-candidate',record_id=record_id)
     from apps.crm.portal_views import interaction_context
     from apps.customers import portal_pages as pages
     data=pages.with_status([data])[0]
     shared,waiting=pages.more_sections(data['candidate'])
     return render(request,'recruiting/customer/candidate.html',context(request,'candidates',candidate=data,feedback_form=form,
-        more_shared=shared,more_waiting=waiting,response_kinds=[('interview','Request an interview',True),('interested','Interested',False),('not_interested','Not a fit',False),('report_hired','We hired them',False)],
+        more_shared=shared,more_waiting=waiting,response_kinds=STATUS_STEPS,current_status=_current_status(record_id),
         **interaction_context(request,record_id,data)))
 
 
@@ -112,7 +124,7 @@ def disclosure(request,candidate_id):
             'revoke_form':revoke_form if revoke_form.is_bound and str(revoke_form.data.get('disclosure'))==str(row.pk) else RevokeForm(initial={'disclosure':row.pk,'expected_revision':row.revision}),
             'members':CustomerMembership.objects.filter(organization_id=row.organization_id,state='enabled',accepted_at__isnull=False).select_related('identity'),
             'feedback':feedback})
-    return page(request,'recruiting/disclosure.html',page_title='Employer Candidate Release',candidate=candidate,form=form,preview=preview,grants=grants,hire_form=hire_form,feedback_review_form=feedback_review)
+    return page(request,'recruiting/disclosure.html',page_title='Share with customer',candidate=candidate,form=form,preview=preview,grants=grants,hire_form=hire_form,feedback_review_form=feedback_review)
 
 
 @staff

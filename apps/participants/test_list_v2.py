@@ -21,7 +21,7 @@ class ParticipantListV2Tests(TestCase):
         self.assertEqual({r['label']: r['count'] for r in seeking['rows']}, {'Yes': 2, 'Maybe': 1})
         self.assertContains(response, 'class="pl-toggle')
         self.assertContains(response, '>DH</span>')
-        self.assertContains(response, 'Last interaction')
+        self.assertContains(response, 'Last touchpoint')
         self.assertContains(response, 'No contact yet')
         self.assertContains(response, 'Search by name, phone, email or ID')
 

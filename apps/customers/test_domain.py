@@ -545,14 +545,15 @@ class WorkforceNeedTests(CustomerFixtures, TestCase):
         self.assertEqual(need.effective_revision.approved_by_id, self.manager.pk)
         self.assertIsNotNone(need.effective_revision.approved_at)
 
-    def test_cannot_approve_unsubmitted_or_unreviewed_revision(self):
+    def test_cannot_approve_unsubmitted_revision_but_submitted_approves_in_one_step(self):
         org = self.org()
         need = self.draft(org)
         with self.assertRaises(ValidationError):
             self.transition(org, need, "approve")
         self.transition(org, need, "submit")
-        with self.assertRaises(ValidationError):
-            self.transition(org, need, "approve")
+        need = self.transition(org, need, "approve")
+        self.assertEqual(need.effective_revision.state, "approved")
+        self.assertIsNotNone(need.effective_revision.reviewed_by_id)
 
     def test_unauthorized_actor_cannot_approve(self):
         org = self.org()

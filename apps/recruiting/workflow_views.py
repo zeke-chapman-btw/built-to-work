@@ -41,7 +41,7 @@ def overview(request):
         request_count=WorkforceRequest.objects.filter(archived_at__isnull=True,positions__need__recruiting_opportunity__in=current).distinct().count(),
         stage_counts=candidates.values('stage__key','stage__label','stage__position').annotate(total=Count('pk')).order_by('stage__position','stage__key'),
         outreach_count=outreach.count(),outreach=outreach[:5],overdue_count=overdue.count(),overdue_tasks=overdue.order_by('due_date','pk')[:5],
-        interview_count=pending_responses.filter(kind='interview').count(),pending_response_count=pending_responses.count(),
+        interview_count=pending_responses.filter(kind__in=['interview','interview_scheduled']).count(),pending_response_count=pending_responses.count(),
         pending_responses=pending_responses.order_by('-created_at')[:8],
         employer_responses=responses.order_by('-created_at')[:8],**_overview_extras(items,candidates))
 

@@ -244,7 +244,7 @@ def correct(request, interaction_id):
             else:
                 messages.success(request, "Correction saved; the original author and earlier versions are retained.")
                 return editor_success(request, back)
-    return interaction_editor(request, {"form": form, "page_title": "Correct interaction",
+    return interaction_editor(request, {"form": form, "page_title": "Correct touchpoint",
         "subject": row.participant or row.organization, "back": back,
         "submit_label": "Save correction", "guidance": "Explain the correction. Ownership and original authorship cannot change."})
 

@@ -54,7 +54,7 @@ class EmployerTests(EmployerFixtures,TestCase):
         one=employer.review_feedback(actor=self.admin,feedback_id=event.pk,why='SYNTHETIC interview request reviewed')
         again=employer.review_feedback(actor=self.admin,feedback_id=event.pk,why='SYNTHETIC retry')
         self.assertEqual(one.pk,again.pk)
-        self.candidate.refresh_from_db();self.assertEqual(self.candidate.stage_id,'identified')
+        self.candidate.refresh_from_db();self.assertEqual(self.candidate.stage_id,'interview')
         event.refresh_from_db();self.assertIsNone(event.confirmed_at)
         after=self.client.get(reverse('recruiting:overview'))
         self.assertEqual(after.context['pending_response_count'],0)
@@ -134,7 +134,8 @@ class EmployerTests(EmployerFixtures,TestCase):
         grant=self.release()
         for kind in ['interested','interview','not_interested','feedback']:self.respond(grant,kind=kind)
         event=self.respond(grant,kind='report_hired')
-        self.candidate.refresh_from_db();self.assertEqual(self.candidate.stage_id,'identified');self.assertTrue(self.candidate.active)
+        # Status steps move the pipeline along; "Not a fit" and "Hired" leave the decision with BTW.
+        self.candidate.refresh_from_db();self.assertEqual(self.candidate.stage_id,'interview');self.assertTrue(self.candidate.active)
         with self.assertRaises(PermissionDenied):employer.confirm_hire(actor=self.customer,feedback_id=event.pk,expected_candidate_revision=self.candidate.revision,why='SYNTHETIC customer cannot confirm')
         row=employer.confirm_hire(actor=self.admin,feedback_id=event.pk,expected_candidate_revision=self.candidate.revision,why='SYNTHETIC BTW confirmed actual hire')
         self.assertEqual(row.outcome,'hired');self.assertFalse(row.active)
@@ -290,3 +291,37 @@ class EmployerTests(EmployerFixtures,TestCase):
         self.assertEqual(self.client.get(reverse('participants:staff-profile',args=[self.person.pk])).status_code,403)
         self.client.force_login(self.admin,backend='django.contrib.auth.backends.ModelBackend')
         for url in [reverse('recruiting:disclosure',args=[self.candidate.pk]),reverse('recruiting:sharing-withdrawal',args=[self.person.pk])]:self.assertEqual(self.client.get(url).status_code,200)
+
+
+class CustomerStatusStepTests(EmployerFixtures,TestCase):
+    def setUp(self):self.employer_setup()
+
+    def test_status_steps_move_the_pipeline_forward_only(self):
+        grant=self.release()
+        self.respond(grant,kind='interview_scheduled')
+        self.candidate.refresh_from_db();self.assertEqual(self.candidate.stage_id,'interview')
+        self.respond(grant,kind='interested')  # an earlier step never moves it back
+        self.candidate.refresh_from_db();self.assertEqual(self.candidate.stage_id,'interview')
+        self.respond(grant,kind='offer_made')
+        self.candidate.refresh_from_db();self.assertEqual(self.candidate.stage_id,'offer_made')
+        self.respond(grant,kind='feedback')
+        self.candidate.refresh_from_db();self.assertEqual(self.candidate.stage_id,'offer_made')
+
+    def test_hired_waits_for_btw_and_then_goes_into_work_history(self):
+        import datetime
+        from apps.participants.workspace_models import ParticipantWorkExperience
+        grant=self.release()
+        event=self.respond(grant,kind='report_hired',on_date=datetime.date(2026,12,1))
+        self.candidate.refresh_from_db();self.assertNotEqual(self.candidate.stage_id,'hired')
+        self.assertFalse(ParticipantWorkExperience.objects.filter(participant=self.candidate.participant,source='placement').exists())
+        employer.confirm_hire(actor=self.admin,feedback_id=event.pk,expected_candidate_revision=self.candidate.revision,why='SYNTHETIC confirmed')
+        job=ParticipantWorkExperience.objects.get(participant=self.candidate.participant,source='placement')
+        self.assertEqual(job.employer,str(self.organization))
+        self.assertEqual(job.started_on,datetime.date(2026,12,1))
+        self.assertIn('Placed by Built to Work',job.description)
+
+    def test_not_a_fit_leaves_the_decision_with_btw(self):
+        grant=self.release()
+        self.respond(grant,kind='not_interested')
+        self.candidate.refresh_from_db()
+        self.assertEqual(self.candidate.stage_id,'identified');self.assertTrue(self.candidate.active)

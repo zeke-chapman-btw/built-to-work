@@ -200,3 +200,35 @@ def review_interest(*,actor,interest_id,status,note,expected_revision,operation_
             request_update(actor=actor, participant_id=row.participant_id, message=participant_message, task=task)
         audit(actor,'interest.reviewed',event,data={'interest':str(row.pk),'status':status,'selected':bool(candidate),'task':str(task.pk) if task else None},why=note)
         return event
+
+
+def participant_posting(revision):
+    """The short, participant-safe version of an approved position (no company name or private terms)."""
+    from apps.customers.position_view import pay_text
+    where='Remote' if revision.location_mode=='remote' else ', '.join(x for x in (revision.city,revision.location_state) if x)
+    schedule=' · '.join(x for x in (revision.get_shift_display() if revision.shift else '',revision.schedule_details) if x)
+    wanted=' '.join(x for x in (revision.required_skills_details,revision.required_credentials_details,revision.required_experience_details) if x)
+    details={'title':revision.title,'trade':revision.trade,
+             'summary':(revision.description or revision.title or '')[:3000],
+             'location':where,'employment_type':revision.get_employment_type_display() if revision.employment_type else '',
+             'schedule':schedule[:500],'pay':(pay_text(revision) or '')[:500],'qualifications':wanted[:3000],
+             'travel':(revision.travel_details if revision.travel_response=='yes' else '')[:500]}
+    return {k:str(v).strip() for k,v in details.items()}
+
+
+def start_recruiting(*,actor,need,post):
+    """Right after approval: set up recruiting with the customer's BTW recruiter, and post it if chosen."""
+    from .selection import create_opportunity
+    owner=need.organization.btw_recruiter
+    item=None
+    if owner and owner.is_active and owner.is_staff:
+        try:item=create_opportunity(actor=actor,need_id=need.pk,owner_id=owner.pk)
+        except (PermissionDenied,ValidationError):item=None
+    if item is None:
+        item=create_opportunity(actor=actor,need_id=need.pk,owner_id=actor.pk)
+    if post and item.publication_state!='published':
+        item.refresh_from_db()
+        item=publish(actor=actor,opportunity_id=item.pk,expected_revision=item.revision,action='publish',
+            details=participant_posting(need.effective_revision),expected_need_revision=need.effective_revision_id,
+            why='Posted for participants when the position was approved.')
+    return item

@@ -139,6 +139,20 @@ class ConsentImportTests(EventExportImportTests):
         self.assertEqual(acceptance.submission.source, "historical_import")
         self.assertTrue(acceptance.metadata["historical_import"])
 
+    def test_imported_with_consent_can_be_put_forward_to_customers(self):
+        from apps.participants.models import Participant
+        from apps.recruiting.foundation import readiness
+        from apps.recruiting.selection import applicable_consent, candidate_gates
+        self.setup_consent()
+        batch = self.consent_batch()
+        list(preview_batch(batch, guess_mapping(self.HEAD.split(",")), actor=self.actor))
+        import_ready(batch, actor=self.actor)
+        agreed = Participant.objects.get(last_name="Charlie")
+        self.assertEqual(readiness(agreed)["issues"], [])
+        self.assertIsNotNone(applicable_consent(agreed))
+        declined = Participant.objects.get(last_name="Delta")
+        self.assertIn("Completed required intake is not recorded.", readiness(declined)["issues"])
+
     def test_consent_without_stored_document_is_flagged(self):
         batch = self.consent_batch()
         rows = list(preview_batch(batch, guess_mapping(self.HEAD.split(",")), actor=self.actor))

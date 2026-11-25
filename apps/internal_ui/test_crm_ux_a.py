@@ -100,7 +100,7 @@ class CrmUxProfileTests(TestCase):
         response = self.client.get(self.url)
         self.assertNotContains(response, 'section=relationship')
         self.assertNotContains(response, 'section=recruiting')
-        self.assertNotContains(response, '>Log interaction</a>')
+        self.assertNotContains(response, '>Log touchpoint</a>')
         for section in ['relationship', 'recruiting']:
             self.assertEqual(self.client.get(self.url, {'section': section}).status_code, 403)
 
@@ -108,7 +108,7 @@ class CrmUxProfileTests(TestCase):
         self.person.archived_at = timezone.now(); self.person.save(update_fields=['archived_at'])
         response = self.client.get(self.url, {'section': 'relationship'})
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, '>Log interaction</a>')
+        self.assertNotContains(response, '>Log touchpoint</a>')
         self.assertNotContains(response, '>Edit profile</a>')
         self.assertContains(response, 'Archived participant')
 

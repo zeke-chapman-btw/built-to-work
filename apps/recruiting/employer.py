@@ -178,9 +178,12 @@ def company_feedback(row):
 
 
 def safe_projection(row,member):
-    latest = company_feedback(row).order_by('-created_at', '-pk').first()
+    # A note doesn't change where things stand, so show the latest status step when there is one.
+    latest = (company_feedback(row).exclude(kind='feedback').order_by('-created_at', '-pk').first()
+              or company_feedback(row).order_by('-created_at', '-pk').first())
     confirmed = company_feedback(row).filter(kind='report_hired', confirmed_at__isnull=False).exists()
     labels = {'interested': 'Company expressed interest', 'interview': 'Company requested an interview',
+        'interview_scheduled': 'Interview scheduled', 'interviewed': 'Interviewed', 'offer_made': 'Offer made',
         'not_interested': 'Company reported not interested', 'report_hired': 'Company reported a hire · awaiting BTW confirmation',
         'feedback': 'Company feedback recorded'}
     progress = 'BTW confirmed the reported hire' if confirmed else labels.get(latest.kind, 'Company response recorded') if latest else 'Released for your review'
@@ -227,21 +230,43 @@ def released_document(actor,organization_id,disclosure_id,document_id):
         return document
 
 
-def feedback(*,actor,organization_id,disclosure_id,kind,message,operation_id):
+# The customer's status moves the candidate along BTW's pipeline too, so nobody updates it twice.
+FOLLOW_STAGE={'interested':'customer_interested','interview':'interview','interview_scheduled':'interview',
+              'interviewed':'interviewed','offer_made':'offer_made'}
+# "Not a fit" and "Hired" only alert the recruiter: BTW closes the candidate out or confirms the hire.
+
+
+def _follow_customer(member_user,disclosure,kind):
+    from .models import CandidateOpportunity,RecruitingStage
+    key=FOLLOW_STAGE.get(kind)
+    if not key:return
+    row=CandidateOpportunity.objects.select_for_update().filter(pk=disclosure.candidate_id).select_related('stage').first()
+    stage=RecruitingStage.objects.filter(pk=key,is_active=True).first()
+    if not row or not stage or not row.active or row.stage_id==stage.key:return
+    if stage.semantic=='active' and row.stage and row.stage.position>=stage.position:return  # never move backwards
+    previous=row.stage_id
+    row.stage=stage;row.revision+=1
+    row.active=stage.semantic=='active';row.outcome='' if row.active else stage.semantic
+    row.save()
+    audit(member_user,'candidate.stage_followed_customer',row,data={'from':previous,'to':stage.key,'customer_status':kind})
+
+
+def feedback(*,actor,organization_id,disclosure_id,kind,message,operation_id,on_date=None):
     if kind not in dict(EmployerCandidateFeedback._meta.get_field('kind').choices):raise ValidationError('Choose a supported employer response.')
     message=(message or '').strip()
     if len(message)>2000:raise ValidationError('Keep feedback within 2,000 characters.')
     if kind=='feedback' and not message:raise ValidationError('Enter feedback for BTW.')
     with policy_transaction():
         member,row=customer_grant(actor,organization_id,disclosure_id,write=True)
-        fingerprint=digest({'grant':str(row.pk),'membership':str(member.pk),'kind':kind,'message':message})
+        fingerprint=digest({'grant':str(row.pk),'membership':str(member.pk),'kind':kind,'message':message,'on':str(on_date or '')})
         prior=EmployerCandidateFeedback.objects.filter(operation_id=operation_id).first()
         if prior:
             if prior.payload_fingerprint!=fingerprint or prior.actor_id!=actor.pk:raise ValidationError('This response identifier was already used for a different action.')
             return prior
         event=EmployerCandidateFeedback.objects.create(disclosure=row,membership=member,actor=member.identity.user,
-            kind=kind,message=message,operation_id=operation_id,payload_fingerprint=fingerprint)
-        audit(member.identity.user,'employer.response',event,data={'disclosure':str(row.pk),'organization':str(row.organization_id),'kind':kind,'membership':str(member.pk),'official_stage_changed':False})
+            kind=kind,message=message,on_date=on_date,operation_id=operation_id,payload_fingerprint=fingerprint)
+        audit(member.identity.user,'employer.response',event,data={'disclosure':str(row.pk),'organization':str(row.organization_id),'kind':kind,'membership':str(member.pk),'official_stage_changed':kind in FOLLOW_STAGE})
+        _follow_customer(member.identity.user,row,kind)
         return event
 
 
@@ -273,7 +298,26 @@ def confirm_hire(*,actor,feedback_id,expected_candidate_revision,why):
         else:candidate=transition(actor=actor,candidate_id=candidate.pk,stage_key='hired',expected_revision=expected_candidate_revision,why=why,confirm_hired=True)
         event.confirmed_by=actor;event.confirmed_at=timezone.now();event.confirmation_reason=reason(why);event.save()
         audit(actor,'employer.hire_confirmed',event,data={'candidate':str(candidate.pk),'official_outcome':'hired'},why=why)
+        _record_placement(actor,candidate,event)
         return candidate
+
+
+def _record_placement(actor,candidate,event):
+    """A confirmed hire goes into the person's work history, marked as placed by Built to Work."""
+    from apps.participants.workspace_models import ParticipantWorkExperience
+    need=candidate.opportunity.need
+    revision=need.effective_revision
+    company=str(need.organization)
+    role=(getattr(revision,'title','') or getattr(need,'title','') or 'Position')[:200]
+    reference=f'Placed by Built to Work · {company}'[:240]
+    if ParticipantWorkExperience.objects.filter(participant_id=candidate.participant_id,source='placement',source_reference=reference,role=role).exists():
+        return
+    where=', '.join(x for x in (getattr(revision,'city','') or '',getattr(revision,'location_state','') or '') if x)
+    entry=ParticipantWorkExperience(participant_id=candidate.participant_id,employer=company[:200],role=role,location=where[:200],
+        started_on=event.on_date or timezone.localdate(),is_current=True,description='Placed by Built to Work.',
+        source_reference=reference,created_by=actor,updated_by=actor)
+    entry.source='placement'
+    entry.save()
 
 
 def feedback_reviews():

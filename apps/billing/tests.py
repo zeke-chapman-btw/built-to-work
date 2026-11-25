@@ -327,3 +327,39 @@ class BusinessOverviewTests(BillingFlowTests):
         other = get_user_model().objects.create_user(username="bz-staff", password="x-test-only", is_staff=True)
         self.client.force_login(other, backend=BACKEND)
         self.assertEqual(self.client.get(reverse("billing:business")).status_code, 403)
+
+
+class ApprovalStartsRecruitingTests(BillingFlowTests):
+    def submitted_need(self, post=False):
+        payload = self.payload(self.org_a)
+        payload["post_to_participants"] = post
+        need = self.draft(self.org_a, payload)
+        self.transition(self.org_a, need, "submit")
+        need.refresh_from_db(); self.org_a.refresh_from_db()
+        return need
+
+    def test_one_click_approve_sets_up_recruiting_for_the_customers_recruiter_and_posts(self):
+        from apps.recruiting.models import RecruitingOpportunity
+        from apps.customers import services as cs
+        recruiter = self.admin
+        self.org_a = cs.save_organization(actor=self.admin, org_id=self.org_a.pk, expected_revision=self.org_a.revision,
+                                          data={"btw_recruiter": recruiter}, why=WHY)
+        need = self.submitted_need(post=True)
+        page = self.client.get(reverse("customers:need", args=[self.org_a.pk, need.pk]))
+        self.assertNotContains(page, "Start review")
+        screen = self.client.get(reverse("customers:need-action", args=[self.org_a.pk, need.pk, "approve"]))
+        self.assertContains(screen, "The customer asked for it to be posted")
+        response = self.approve(need, fee_kind="none", post_to_participants="on")
+        self.assertEqual(response.status_code, 302)
+        item = RecruitingOpportunity.objects.get(need=need)
+        self.assertEqual(item.owner, recruiter)
+        self.assertEqual(item.publication_state, "published")
+        self.assertNotIn(str(self.org_a), str(item.publication.safe_details))
+
+    def test_approve_without_posting_still_sets_up_recruiting(self):
+        from apps.recruiting.models import RecruitingOpportunity
+        need = self.submitted_need()
+        self.approve(need, fee_kind="none")
+        item = RecruitingOpportunity.objects.get(need=need)
+        self.assertEqual(item.owner, self.admin)
+        self.assertNotEqual(item.publication_state, "published")

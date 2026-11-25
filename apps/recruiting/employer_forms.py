@@ -30,6 +30,7 @@ class EmployerFeedbackForm(forms.Form):
     operation_id=forms.UUIDField(widget=forms.HiddenInput,initial=uuid.uuid4)
     kind=forms.ChoiceField(choices=EmployerCandidateFeedback._meta.get_field('kind').choices)
     message=forms.CharField(max_length=2000,required=False,widget=forms.Textarea(attrs={'rows':3}),label='Feedback for BTW')
+    on_date=forms.DateField(required=False,label='Date',widget=forms.DateInput(attrs={'type':'date'}))
 
 
 class ConfirmHireForm(OptionalReasonMixin, forms.Form):

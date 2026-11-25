@@ -16,9 +16,21 @@ class ApproveForm(ActionForm):
     candidates = forms.IntegerField(label="Candidates wanted (skilled)", min_value=3, max_value=300, initial=3,
                                     help_text="In sets of 3. 9 candidates = $12,000.")
     people = forms.IntegerField(label="People needed (general labor)", min_value=1, max_value=500, initial=1)
+    post_to_participants = forms.BooleanField(required=False, label="Post this job for participants",
+                                              help_text="Approving also sets up recruiting for this position.")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        initial = self.initial or {}
+        if initial.get("already_posted"):
+            self.fields.pop("post_to_participants")
+        else:
+            asked = "The customer asked for it to be posted. " if initial.get("post_to_participants") else ""
+            preview = initial.get("posting_preview") or {}
+            shown = " · ".join(v for v in (preview.get("title"), preview.get("location"), preview.get("pay"), preview.get("employment_type")) if v)
+            self.fields["post_to_participants"].help_text = (asked + "Participants would see: " + shown + ". No company name. "
+                "You can edit the posting later under Recruiting. Approving also sets up recruiting." if shown
+                else asked + "Approving also sets up recruiting for this position.")
         already = (self.initial or {}).get("already_charged")
         if already:
             self.fields["fee_kind"].initial = "none"

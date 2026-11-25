@@ -9,9 +9,12 @@ from .position_view import pay_text
 RESPONSE_STATUS = {
     'Request Interview': ('interviewing', 'Interview requested', 'b'),
     'Interested': ('interviewing', 'Interested', 'b'),
-    'Not Interested': ('notfit', 'Not a fit', ''),
-    'Report Hired': ('hired', 'Hired · waiting on Built to Work', 'y'),
-    'Feedback': ('other', 'Note sent', ''),
+    'Interview scheduled': ('interviewing', 'Interview scheduled', 'b'),
+    'Interviewed': ('interviewing', 'Interviewed', 'b'),
+    'Offer made': ('interviewing', 'Offer made', 'b'),
+    'Not a fit': ('notfit', 'Not a fit', ''),
+    'Hired': ('hired', 'Hired · waiting on Built to Work', 'y'),
+    'Note': ('other', 'Note sent', ''),
 }
 CANDIDATE_FILTERS = [('waiting', 'Waiting on you'), ('interviewing', 'Interviewing'), ('hired', 'Hired'), ('notfit', 'Not a fit'), ('all', 'All')]
 

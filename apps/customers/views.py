@@ -395,10 +395,8 @@ def need_detail(request, org_id, record_id):
     if working:
         if obj.status not in {"closed", "cancelled"} and working.state == "draft":
             actions.append(("submit", "Submit for review"))
-        if obj.status != "cancelled" and working.state == "submitted":
-            actions += [("review", "Start review"), ("return", "Send back")]
-        if obj.status != "cancelled" and working.state == "review":
-            actions += [("approve", "Approve changes"), ("return", "Send back")]
+        if obj.status != "cancelled" and working.state in {"submitted", "review"}:
+            actions += [("approve", "Approve" if not obj.effective_revision_id else "Approve changes"), ("return", "Send back for changes")]
         actions.append(("withdraw", "Withdraw changes"))
     actions += {"active": [("hold", "Put on hold"), ("close", "Close position")], "hold": [("resume", "Reopen"), ("close", "Close position")]}.get(obj.status, [])
     if obj.status not in {"closed", "cancelled"}:
@@ -435,7 +433,12 @@ def need_action(request, org_id, record_id, action):
         if not manager(request.user):
             raise PermissionDenied("Only Admins and Managers can approve positions.")
         revision = obj.working_revision
-        initial.update(people=(revision.worker_quantity if revision else None) or 1)
+        initial.update(people=(revision.worker_quantity if revision else None) or 1,
+                       post_to_participants=bool(revision and revision.post_to_participants),
+                       already_posted=bool(getattr(getattr(obj, "recruiting_opportunity", None), "publication_id", None)))
+        if revision:
+            from apps.recruiting.workflow import participant_posting
+            initial["posting_preview"] = participant_posting(revision)
         earlier = [c for c in obj.charges.exclude(status__in=["canceled", "failed", "no_charge"])]
         if earlier:
             initial.update(already_charged=", ".join(f"${c.amount:,.0f} ({c.breakdown})" for c in earlier), fee_kind="none")
@@ -450,6 +453,13 @@ def need_action(request, org_id, record_id, action):
                 record_position_charge(org=org, need=need, revision=need.effective_revision, kind=kind,
                                        quantity=d["candidates"] if kind == "skilled" else d["people"] if kind == "general" else 0,
                                        actor=request.user)
+            # Recruiting is set up right away (with this customer's BTW recruiter) and posted if chosen.
+            from apps.recruiting.workflow import start_recruiting
+            try:
+                start_recruiting(actor=request.user, need=need, post=d.get("post_to_participants"))
+            except (ValidationError, PermissionDenied) as exc:
+                from django.contrib import messages
+                messages.warning(request, "Approved, but recruiting couldn't be set up automatically: " + "; ".join(getattr(exc, "messages", [str(exc)])))
             return need
         if action in revision_actions:
             return s.revision_action(**common, revision_id=d["working_id"], action=action)

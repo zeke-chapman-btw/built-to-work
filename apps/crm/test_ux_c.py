@@ -74,7 +74,7 @@ class CustomerRelationshipUxTests(EmployerFixtures, TestCase):
         self.assertEqual(response.status_code,200)
         self.assertNotContains(response,'>Edit</a>')
         self.assertNotContains(response,'>Preferences</a>')
-        self.assertNotContains(response,'>Log interaction</a>')
+        self.assertNotContains(response,'>Log touchpoint</a>')
         self.assertEqual(self.client.get(reverse('crm:contact',args=[self.organization.pk,self.contact.pk])).status_code,403)
 
     def test_customer_identity_cannot_enter_staff_relationship(self):

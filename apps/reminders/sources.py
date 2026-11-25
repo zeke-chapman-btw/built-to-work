@@ -233,8 +233,10 @@ def customer_not_responded(today, now):
 def employer_feedback(today, now):
     from apps.crm.models import Interaction
     from apps.recruiting.models import EmployerCandidateFeedback
-    labels = {"interview": "asked for an interview with", "feedback": "sent feedback about",
-              "interested": "is interested in", "report_hired": "reported hiring"}
+    labels = {"interview": "asked for an interview with", "feedback": "sent a note about",
+              "interested": "is interested in", "interview_scheduled": "scheduled an interview with",
+              "interviewed": "interviewed", "offer_made": "made an offer to", "report_hired": "hired",
+              "not_interested": "passed on"}
     rows = (EmployerCandidateFeedback.objects.filter(kind__in=list(labels), confirmed_at__isnull=True,
                                                      created_at__gte=now - timedelta(days=30))
             .select_related("disclosure__participant", "disclosure__organization", "disclosure__candidate__opportunity__owner"))
@@ -253,13 +255,21 @@ def employer_feedback(today, now):
 def new_position(today, now):
     from apps.customers.models import WorkforceNeedRevision
     rows = (WorkforceNeedRevision.objects.filter(state="submitted", submitted_at__gte=now - timedelta(days=60))
-            .select_related("organization", "submitted_by"))
+            .select_related("organization__btw_recruiter", "submitted_by"))
     for row in rows[:300]:
         title = row.title or "a position"
+        recruiter = user_target(row.organization.btw_recruiter)
+        if recruiter is None:  # no recruiter picked for this customer yet: the Recruiting lead gets it
+            from apps.reminders.models import ReminderRole
+            from apps.reminders.engine import role_targets
+            role = ReminderRole.objects.filter(key="recruiting_lead").first()
+            lead = role_targets(role) if role else []
+        else:
+            lead = [recruiter]
         yield Item(ref=f"need-revision:{row.pk}", anchor=_local(row.submitted_at).date(), created=row.submitted_at,
                    line=f"{row.organization} submitted {title}",
                    link=reverse("customers:need", args=[row.organization_id, row.need_id]),
-                   fields={"company": str(row.organization), "position": title}, related={})
+                   fields={"company": str(row.organization), "position": title}, related={"recruiter": lead})
 
 
 # --------------------------------------------------------------- Payroll
@@ -634,10 +644,11 @@ SOURCES = {s.key: s for s in (
     Source("customer_no_response", "Recruiting", "Candidates sent to a customer, no response yet", customer_not_responded,
            ("after",), "the candidate is sent", {"recruiter": "Recruiter on the position"},
            {"name": "the candidate", "company": "the customer"}),
-    Source("employer_feedback", "Recruiting", "Interview requests and customer feedback", employer_feedback, ("new", "after"),
+    Source("employer_feedback", "Recruiting", "Customer status updates and notes about candidates", employer_feedback, ("new", "after"),
            "the customer asks", {"recruiter": "Recruiter on the position"}, {"name": "the candidate", "company": "the customer"}),
     Source("new_position", "Recruiting", "Positions submitted by customers", new_position, ("new", "after"),
-           "it's submitted", {}, {"company": "the customer", "position": "position title"}),
+           "it's submitted", {"recruiter": "The customer's BTW recruiter (or the Recruiting lead if none is set)"},
+           {"company": "the customer", "position": "position title"}),
     Source("onboarding_submitted", "Customers", "Customer onboarding forms ready to review", onboarding_submitted,
            ("new", "after"), "when they submitted it", {"owner": "Staff member who started it"}, {"company": "the customer"}),
     Source("delivery_behind", "Recruiting", "Paid-for positions still short on candidates", delivery_behind, ("after",),
