@@ -13,6 +13,9 @@ urlpatterns = [
     path("training/<slug:slug>/steps.json", views.steps, name="steps"),
     path("training/<slug:slug>/done/", views.done, name="done"),
     path("settings/training/", views.manage, name="manage"),
+    path("help/handbook/", views.handbook, name="handbook"),
+    path("settings/training/handbook/new/", views.section_edit, name="section-new"),
+    path("settings/training/handbook/<slug:slug>/", views.section_edit, name="section-edit"),
     path("settings/training/new/", views.edit, name="new"),
     path("settings/training/<slug:slug>/", views.edit, name="edit"),
 ]

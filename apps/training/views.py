@@ -13,7 +13,7 @@ from django.utils.text import slugify
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from .access import audiences_for, can_see, done_ids, guides_for, summary
-from .models import AUDIENCES, STAFF_AUDIENCES, Announcement, Guide, GuideProgress, GuideStep, TrainingSettings
+from .models import AUDIENCES, STAFF_AUDIENCES, Announcement, Guide, GuideProgress, GuideStep, HandbookSection
 
 
 def _staff(request):
@@ -132,22 +132,11 @@ def _people_progress(guides):
     return people
 
 
-class HandbookForm(forms.ModelForm):
-    class Meta:
-        model = TrainingSettings
-        fields = ("handbook_url",)
-
-
 @login_required(login_url="/admin/login/")
-@require_http_methods(["GET", "POST"])
+@require_GET
 def manage(request):
     _admin(request)
     from apps.internal_ui.views import _staff_context
-    handbook = HandbookForm(request.POST or None, instance=TrainingSettings.current())
-    if request.method == "POST" and handbook.is_valid():
-        handbook.save()
-        messages.success(request, "Handbook link saved.")
-        return redirect("training:manage")
     guides = list(Guide.objects.prefetch_related("steps").order_by("position", "title"))
     counts = {}
     for row in GuideProgress.objects.values("guide_id"):
@@ -158,7 +147,7 @@ def manage(request):
     shown = [g for g in guides if not audience or audience in g.audiences]
     return render(request, "training/manage.html", _staff_context(
         request, page_title="Settings", guides=shown, audience=audience, audiences=AUDIENCES,
-        people=_people_progress(guides), handbook_form=handbook))
+        people=_people_progress(guides), sections=HandbookSection.objects.all()))
 
 
 class GuideForm(forms.ModelForm):
@@ -296,3 +285,68 @@ def announcement_edit(request, pk=None):
         return redirect("training:announcements")
     return render(request, "training/announcement_edit.html", _staff_context(
         request, page_title="Settings", form=form, item=item, seen_count=item.seen.count() if item.pk else 0))
+
+
+# ------------------------------------------------------------------ Workflow handbook
+
+def sections_for(user):
+    wanted = audiences_for(user)
+    return [s for s in HandbookSection.objects.filter(published=True) if wanted & set(s.audiences or [])]
+
+
+@login_required(login_url="/accounts/login/")
+@require_GET
+def handbook(request):
+    if not request.user.is_staff:
+        raise PermissionDenied
+    from apps.internal_ui.views import _staff_context
+    from .handbook import render as render_text
+    sections = sections_for(request.user)
+    titles = dict(Guide.objects.filter(published=True).values_list("slug", "title"))
+    allowed = {g.slug for g in guides_for(audiences_for(request.user))}
+    for s in sections:
+        s.html = render_text(s.body)
+        s.guide_links = [(slug, titles[slug]) for slug in s.guides or [] if slug in titles and slug in allowed]
+    return render(request, "training/handbook.html", _staff_context(request, page_title="Workflow handbook", sections=sections))
+
+
+class SectionForm(forms.ModelForm):
+    audiences = forms.MultipleChoiceField(choices=[(k, v) for k, v in AUDIENCES if k in STAFF_AUDIENCES],
+                                          widget=forms.CheckboxSelectMultiple, label="Who sees it")
+    guides = forms.MultipleChoiceField(required=False, widget=forms.CheckboxSelectMultiple, label="Link these guides at the end")
+
+    class Meta:
+        model = HandbookSection
+        fields = ("title", "summary", "audiences", "body", "guides", "position", "published")
+        labels = {"position": "Order", "published": "Visible", "body": "Text"}
+        widgets = {"body": forms.Textarea(attrs={"rows": 18})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["guides"].choices = list(Guide.objects.exclude(audiences=["customer"]).exclude(audiences=["participant"])
+                                             .order_by("position").values_list("slug", "title"))
+
+
+@login_required(login_url="/admin/login/")
+@require_http_methods(["GET", "POST"])
+def section_edit(request, slug=None):
+    _admin(request)
+    from apps.internal_ui.views import _staff_context
+    item = get_object_or_404(HandbookSection, slug=slug) if slug else HandbookSection(audiences=list(STAFF_AUDIENCES))
+    form = SectionForm(request.POST or None, instance=item)
+    if request.method == "POST" and request.POST.get("delete") == "1" and item.pk:
+        item.delete()
+        messages.success(request, "Section deleted.")
+        return redirect("training:manage")
+    if request.method == "POST" and form.is_valid():
+        saved = form.save(commit=False)
+        if not saved.slug:
+            base = slugify(saved.title)[:70] or "section"
+            slug_try, n = base, 2
+            while HandbookSection.objects.filter(slug=slug_try).exists():
+                slug_try, n = f"{base}-{n}", n + 1
+            saved.slug = slug_try
+        saved.save()
+        messages.success(request, "Section saved.")
+        return redirect("training:section-edit", slug=saved.slug)
+    return render(request, "training/section_edit.html", _staff_context(request, page_title="Settings", form=form, section=item))

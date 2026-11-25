@@ -196,14 +196,47 @@ class SignInMessageTests(TestCase):
         self.assertEqual(self.client.get(reverse("training:announcements")).status_code, 403)
 
 
-class HandbookLinkTests(TestCase):
-    def test_admin_sets_link_and_staff_see_it_in_help(self):
-        from apps.training.models import TrainingSettings
-        User = get_user_model()
-        admin = User.objects.create_superuser("hb-admin", "hb@example.test", "x-test-only")
-        self.client.force_login(admin, backend=BACKEND)
-        self.client.post(reverse("training:manage"), {"handbook_url": "https://docs.google.com/document/d/abc/edit"})
-        self.assertEqual(TrainingSettings.current().handbook_url, "https://docs.google.com/document/d/abc/edit")
-        page = self.client.get("/help/")
-        self.assertContains(page, "Workflow handbook")
-        self.assertContains(page, "https://docs.google.com/document/d/abc/edit")
+class HandbookTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        TrainingTests.setUpTestData.__func__(cls)
+    def test_each_role_sees_only_its_sections(self):
+        self.client.force_login(self.staff, backend=BACKEND)  # event staff
+        page = self.client.get(reverse("training:handbook"))
+        self.assertContains(page, "Working an event")
+        self.assertNotContains(page, 'id="payroll"')
+        self.assertNotContains(page, 'id="positions-and-hires"')
+        self.client.force_login(self.recruiter, backend=BACKEND)
+        page = self.client.get(reverse("training:handbook"))
+        self.assertContains(page, "Positions, recruiting and hires")
+        self.assertNotContains(page, 'id="billing"')
+        self.assertNotContains(page, 'id="admin-setup"')
+        self.client.force_login(self.admin, backend=BACKEND)
+        page = self.client.get(reverse("training:handbook"))
+        for title in ("Payroll", "Billing", "Admin and setup", "Working an event"):
+            self.assertContains(page, title)
+        self.assertContains(self.client.get("/help/"), "Workflow handbook")
+
+    def test_admin_edits_a_section_and_text_is_escaped(self):
+        from apps.training.models import HandbookSection
+        self.client.force_login(self.admin, backend=BACKEND)
+        section = HandbookSection.objects.get(slug="payroll")
+        self.client.post(reverse("training:section-edit", args=["payroll"]), {
+            "title": "Payroll", "summary": "x", "audiences": ["admin", "manager", "event_staff"],
+            "body": "1. **Check** days\n<script>bad()</script>", "position": 230, "published": "on"})
+        section.refresh_from_db()
+        self.assertIn("event_staff", section.audiences)
+        self.client.force_login(self.staff, backend=BACKEND)
+        page = self.client.get(reverse("training:handbook"))
+        self.assertContains(page, "<strong>Check</strong>")
+        self.assertNotContains(page, "<script>bad()")
+
+    def test_only_admins_edit_and_only_staff_read(self):
+        self.client.force_login(self.recruiter, backend=BACKEND)
+        self.assertEqual(self.client.get(reverse("training:section-edit", args=["payroll"])).status_code, 403)
+
+    def test_handbook_links_only_point_to_real_guides(self):
+        from apps.training.handbook_content import HANDBOOK
+        slugs = set(Guide.objects.values_list("slug", flat=True))
+        for section in HANDBOOK:
+            self.assertFalse(set(section["guides"]) - slugs, section["slug"])

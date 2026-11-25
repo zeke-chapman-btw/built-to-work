@@ -109,12 +109,26 @@ class AnnouncementSeen(models.Model):
         constraints = [models.UniqueConstraint(fields=("announcement", "user"), name="training_announcement_seen_once")]
 
 
-class TrainingSettings(models.Model):
-    """One row: the staff workflow handbook (a Google Doc) linked from Help."""
-    handbook_url = models.URLField(blank=True, verbose_name="Workflow handbook link",
-                                   help_text="The Google Doc with the app's main workflows. Shown to staff at the top of Help.")
+class HandbookSection(models.Model):
+    """One section of the staff Workflow handbook (Help → Handbook), shown only to the roles picked."""
+    slug = models.SlugField(max_length=80, unique=True)
+    title = models.CharField(max_length=160)
+    summary = models.CharField(max_length=300, blank=True, help_text="One line: what this section covers.")
+    body = models.TextField(help_text='Start a line with "- " for a bullet (indent 2 spaces to nest), "1. " for a numbered step, '
+                                      '"### " for a small heading. Put **two stars** around words to make them bold.')
+    audiences = models.JSONField(default=list, blank=True, help_text="Who sees it.")
+    guides = models.JSONField(default=list, blank=True, help_text="Step-by-step guides to link at the end.")
+    position = models.PositiveIntegerField(default=100, help_text="Lower numbers show first.")
+    published = models.BooleanField(default=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    @classmethod
-    def current(cls):
-        return cls.objects.filter(pk=1).first() or cls(pk=1)
+    class Meta:
+        ordering = ("position", "title")
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def audience_labels(self):
+        names = dict(AUDIENCES)
+        return [names.get(a, a) for a in self.audiences or []]
