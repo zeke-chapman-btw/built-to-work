@@ -132,3 +132,25 @@ class HandbookSection(models.Model):
     def audience_labels(self):
         names = dict(AUDIENCES)
         return [names.get(a, a) for a in self.audiences or []]
+
+
+class HelpRequest(models.Model):
+    """A question someone sent from a Help page ("Ask for help")."""
+    FROM = (("staff", "Staff"), ("customer", "Customer"), ("participant", "Participant"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="help_requests")
+    sent_from = models.CharField(max_length=20, choices=FROM)
+    organization = models.ForeignKey("customers.CustomerOrganization", on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    participant = models.ForeignKey("participants.Participant", on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+    name = models.CharField(max_length=160, blank=True)
+    email = models.CharField(max_length=254, blank=True)
+    page = models.CharField(max_length=300, blank=True, help_text="The page they were on.")
+    message = models.TextField(max_length=2000)
+    created_at = models.DateTimeField(auto_now_add=True)
+    handled_at = models.DateTimeField(null=True, blank=True)
+    handled_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="+")
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return f"{self.name or 'Someone'}: {self.message[:40]}"

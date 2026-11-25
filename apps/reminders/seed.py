@@ -55,6 +55,8 @@ RULES = (
      (True, False, False), {"roles": ["recruiting_lead"]}, "admins", "{company} hasn't responded about {name}", "{line}"),
     ("employer_feedback", "Recruiting", "Customer updated a candidate's status", "Same day, then daily until someone logs a touchpoint.", "", "employer_feedback", "new", "", False, 1, T(8),
      (True, False, False), {"related": ["recruiter"]}, "admins", "{company} is waiting on you about {name}", "{line}"),
+    ("help_request", "Help", "Someone asked for help", "Right away, then daily until it's marked handled.", "", "help_requests", "new", "", False, 1, T(8),
+     (True, True, False), {"related": ["owner"]}, "admins", "{name} asked for help", "{line}. Answer it, then mark it handled in Help → Help questions."),
     ("new_position", "Recruiting", "New position submitted by a customer", "Same day.", "", "new_position", "new", "", False, 0, T(8),
      (True, True, False), {"related": ["recruiter"]}, "admins", "New position from {company}: {position}", "{line}. Review it in the app."),
     ("missing_workdays", "Payroll", "Workdays or mileage missing", "2 days before the pay week ends (Friday).", "", "missing_workdays", "before", "2", False, 0, T(9),

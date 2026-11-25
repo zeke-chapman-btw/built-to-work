@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import help_requests, views
 
 app_name = "training"
 urlpatterns = [
@@ -14,6 +14,9 @@ urlpatterns = [
     path("training/<slug:slug>/done/", views.done, name="done"),
     path("settings/training/", views.manage, name="manage"),
     path("help/handbook/", views.handbook, name="handbook"),
+    path("help/ask/", help_requests.ask, name="ask"),
+    path("help/questions/", help_requests.inbox, name="help-requests"),
+    path("help/questions/<int:pk>/handled/", help_requests.handled, name="help-request-handled"),
     path("settings/training/handbook/new/", views.section_edit, name="section-new"),
     path("settings/training/handbook/<slug:slug>/", views.section_edit, name="section-edit"),
     path("settings/training/new/", views.edit, name="new"),

@@ -1,0 +1,9 @@
+<section class="card ask-help" id="ask-for-help" style="padding:16px 20px;margin-top:18px">
+{% if request.GET.asked == '1' %}<p role="status" style="margin:0 0 10px;padding:10px 14px;border-radius:10px;background:#dcfce7;color:#166534"><strong>Thanks, we got your question.</strong> Someone from Built to Work will get back to you{% if request.user.email %} at {{ request.user.email }}{% endif %}.</p>
+{% elif request.GET.asked == 'preview' %}<p role="status" style="margin:0 0 10px;padding:10px 14px;border-radius:10px;background:#fef9c3;color:#854d0e">This is a preview, so nothing was sent.</p>
+{% elif request.GET.asked == 'error' %}<p role="alert" style="margin:0 0 10px;padding:10px 14px;border-radius:10px;background:#fee2e2;color:#991b1b">Please type your question and try again.</p>{% endif %}
+<h2 style="font-size:17px;margin:0 0 4px">Still stuck? Ask for help</h2>
+<p class="cp3-note" style="margin:0 0 10px">{{ ask_note|default:"Tell us what you're trying to do. Someone from Built to Work will get back to you." }}</p>
+<form method="post" action="{% url 'training:ask' %}">{% csrf_token %}<input type="hidden" name="back" value="{{ request.get_full_path }}"><input type="hidden" name="page" value="{{ ask_page|default:'' }}">
+<label for="ask-message" class="visually-hidden" style="position:absolute;left:-9999px">Your question</label><textarea id="ask-message" name="message" rows="3" maxlength="2000" required placeholder="What are you trying to do, and where are you stuck?" style="width:100%;box-sizing:border-box"></textarea>
+<div style="margin-top:10px"><button class="button button-primary primary" type="submit">Send question</button></div></form></section>

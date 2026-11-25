@@ -18,3 +18,17 @@ def sign_in_message(context):
         request.session.pop("announcements_due", None)
     data["item"] = item
     return data
+
+
+@register.inclusion_tag("training/page_help.html", takes_context=True)
+def page_help(context):
+    request = context.get("request")
+    from django.conf import settings
+    found = None
+    if getattr(settings, "PAGE_HELP_ENABLED", True) and request is not None and getattr(request, "user", None) and request.user.is_authenticated:
+        try:
+            from apps.training.page_help import guide_for
+            found = guide_for(request)
+        except Exception:
+            found = None  # never break a page over a help link
+    return {"found": found}

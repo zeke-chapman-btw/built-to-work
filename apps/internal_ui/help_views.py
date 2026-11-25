@@ -26,9 +26,14 @@ def guide(request):
         g.is_done = g.pk in finished
     return render(request, "internal/help.html", {"page_title": "Help", "mine": mine, "show_all": show_all,
                                                   "is_manager": manager(user), "guides": guides,
-                                                  "handbook_count": _handbook_count(user)})
+                                                  "handbook_count": _handbook_count(user), "help_questions": _help_questions(user)})
 
 
 def _handbook_count(user):
     from apps.training.views import sections_for
     return len(sections_for(user))
+
+
+def _help_questions(user):
+    from apps.training.help_requests import open_count
+    return open_count(user)

@@ -240,3 +240,75 @@ class HandbookTests(TestCase):
         slugs = set(Guide.objects.values_list("slug", flat=True))
         for section in HANDBOOK:
             self.assertFalse(set(section["guides"]) - slugs, section["slug"])
+
+
+class AskForHelpTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        TrainingTests.setUpTestData.__func__(cls)
+
+    def participant_login(self):
+        from django.utils import timezone as tz
+        from apps.participants.models import Participant, ParticipantAccount
+        user = get_user_model().objects.create_user("synthetic-asker")
+        person = Participant.objects.create(first_name="SYNTHETIC", last_name="Asker")
+        ParticipantAccount.objects.create(user=user, participant=person, login_email="asker@example.test", status="active", email_verified_at=tz.now())
+        self.client.force_login(user, backend="apps.participants.auth.ParticipantAuthenticationBackend")
+        return person
+
+    def test_participant_asks_and_recruiting_lead_is_reminded_and_staff_handle_it(self):
+        from apps.training.models import HelpRequest
+        from apps.reminders import sources
+        from django.utils import timezone as tz
+        person = self.participant_login()
+        page = self.client.get(reverse("participants:portal-help"))
+        self.assertContains(page, "Ask for help")
+        sent = self.client.post(reverse("training:ask"), {"message": "How do I sign up for an event?", "page": "/participants/portal/events/",
+                                                          "back": "/participants/portal/help/"})
+        self.assertRedirects(sent, "/participants/portal/help/?asked=1", fetch_redirect_response=False)
+        item = HelpRequest.objects.get()
+        self.assertEqual((item.sent_from, item.participant_id), ("participant", person.pk))
+        found = list(sources.help_requests(tz.localdate(), tz.now()))
+        self.assertEqual(len(found), 1)
+        self.assertIn("How do I sign up", found[0].line)
+        # A recruiter sees it and marks it handled; then the reminder stops.
+        self.client.force_login(self.recruiter, backend=BACKEND)
+        self.assertContains(self.client.get("/help/"), "Help questions waiting")
+        self.assertContains(self.client.get(reverse("training:help-requests")), "How do I sign up for an event?")
+        self.client.post(reverse("training:help-request-handled", args=[item.pk]))
+        item.refresh_from_db(); self.assertIsNotNone(item.handled_at)
+        self.assertEqual(list(sources.help_requests(tz.localdate(), tz.now())), [])
+
+    def test_event_staff_cannot_see_questions_and_outside_links_are_ignored(self):
+        self.client.force_login(self.staff, backend=BACKEND)
+        self.assertEqual(self.client.get(reverse("training:help-requests")).status_code, 403)
+        sent = self.client.post(reverse("training:ask"), {"message": "Where is my schedule?", "back": "https://evil.example/"})
+        self.assertRedirects(sent, "/?asked=1", fetch_redirect_response=False)
+
+    def test_customers_and_participants_get_a_welcome_message(self):
+        from apps.training.models import Announcement
+        self.assertTrue(Announcement.objects.filter(audiences=["customer"], button_url="/customer/workspace/help/").exists())
+        self.assertTrue(Announcement.objects.filter(audiences=["participant"], button_url="/participants/portal/help/").exists())
+
+
+@override_settings(PAGE_HELP_ENABLED=True)
+class PageHelpLinkTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        TrainingTests.setUpTestData.__func__(cls)
+
+    def setUp(self):
+        from apps.training import page_help
+        page_help._INDEX["at"] = 0.0
+
+    def test_staff_page_links_to_its_guide_for_the_right_role(self):
+        self.client.force_login(self.recruiter, backend=BACKEND)
+        page = self.client.get("/participants/")
+        self.assertContains(page, "Help with this page")
+        self.assertContains(page, "/my/training/find-a-participant/")
+        self.assertNotContains(self.client.get("/help/"), "Help with this page")
+
+    def test_participant_page_links_to_the_portal_guide(self):
+        AskForHelpTests.participant_login(self)
+        page = self.client.get(reverse("participants:portal-jobs"))
+        self.assertContains(page, reverse("participants:portal-help-guide", args=["participant-jobs"]))

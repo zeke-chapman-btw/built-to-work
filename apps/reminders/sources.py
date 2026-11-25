@@ -272,6 +272,32 @@ def new_position(today, now):
                    fields={"company": str(row.organization), "position": title}, related={"recruiter": lead})
 
 
+# --------------------------------------------------------------- Help questions
+
+def help_requests(today, now):
+    """Questions sent with "Ask for help" that nobody has marked handled yet."""
+    from apps.training.models import HelpRequest
+    from apps.reminders.models import ReminderRole
+    from apps.reminders.engine import role_targets
+    role = ReminderRole.objects.filter(key="recruiting_lead").first()
+    lead = role_targets(role) if role else []
+    rows = (HelpRequest.objects.filter(handled_at__isnull=True, created_at__gte=now - timedelta(days=30))
+            .select_related("organization__btw_recruiter"))
+    for row in rows[:300]:
+        if row.sent_from == "customer":
+            recruiter = user_target(row.organization.btw_recruiter) if row.organization else None
+            owner = [recruiter] if recruiter else lead
+        elif row.sent_from == "participant":
+            owner = lead
+        else:
+            owner = []  # staff questions go to admins
+        who = {"customer": f"{row.name} ({row.organization})" if row.organization else row.name}.get(row.sent_from, row.name)
+        yield Item(ref=f"help-request:{row.pk}", anchor=_local(row.created_at).date(), created=row.created_at,
+                   line=f"{who} asked: {row.message[:140]}", link=reverse("training:help-requests"),
+                   fields={"name": row.name or "Someone", "from": row.get_sent_from_display().lower()},
+                   related={"owner": owner})
+
+
 # --------------------------------------------------------------- Payroll
 
 def _period_start(today):
@@ -644,6 +670,9 @@ SOURCES = {s.key: s for s in (
     Source("customer_no_response", "Recruiting", "Candidates sent to a customer, no response yet", customer_not_responded,
            ("after",), "the candidate is sent", {"recruiter": "Recruiter on the position"},
            {"name": "the candidate", "company": "the customer"}),
+    Source("help_requests", "Help", "Someone asked for help", help_requests, ("new", "after"),
+           "they asked", {"owner": "Who should answer: the customer's BTW recruiter, or the Recruiting lead (admins for staff questions)"},
+           {"name": "who asked", "from": "staff, customer or participant"}),
     Source("employer_feedback", "Recruiting", "Customer status updates and notes about candidates", employer_feedback, ("new", "after"),
            "the customer asks", {"recruiter": "Recruiter on the position"}, {"name": "the candidate", "company": "the customer"}),
     Source("new_position", "Recruiting", "Positions submitted by customers", new_position, ("new", "after"),
