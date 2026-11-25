@@ -117,6 +117,8 @@ def workspace(request, tab='overview'):
     if tab == 'help':
         from apps.training.access import guides_for
         data['guides'] = guides_for({'customer'})
+        from apps.training.views import portal_sections
+        data['handbook_sections'] = portal_sections('customer')
         return render(request, 'customers/portal/help.html', data)
     if tab in {'overview', 'recruiting'}:
         from .portal_dashboard import recruiting_context

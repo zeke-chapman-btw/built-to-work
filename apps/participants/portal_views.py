@@ -384,4 +384,6 @@ def help_page(request, slug=''):
         return render(request, 'participants/portal/help.html', {'guide': guide, 'steps': guide.steps.all(), 'done': done,
             'steps_url': reverse('training:steps', args=[guide.slug]), 'done_url': reverse('training:done', args=[guide.slug]),
             'portal': 'participant', 'section': 'help', 'title': guide.title})
-    return render(request, 'participants/portal/help.html', {'guides': guides, 'section': 'help', 'title': 'Help'})
+    from apps.training.views import portal_sections
+    return render(request, 'participants/portal/help.html', {'guides': guides, 'section': 'help', 'title': 'Help',
+                                                             'handbook_sections': portal_sections('participant')})

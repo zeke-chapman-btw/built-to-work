@@ -289,9 +289,20 @@ def announcement_edit(request, pk=None):
 
 # ------------------------------------------------------------------ Workflow handbook
 
-def sections_for(user):
-    wanted = audiences_for(user)
+def sections_for(user, audiences=None):
+    wanted = set(audiences) if audiences is not None else audiences_for(user) & set(STAFF_AUDIENCES)
     return [s for s in HandbookSection.objects.filter(published=True) if wanted & set(s.audiences or [])]
+
+
+def portal_sections(audience):
+    """Handbook sections for a portal's Help page, with their text ready to show."""
+    from .handbook import render as render_text
+    titles = dict(Guide.objects.filter(published=True).values_list("slug", "title"))
+    sections = sections_for(None, {audience})
+    for s in sections:
+        s.html = render_text(s.body)
+        s.guide_links = [(slug, titles[slug]) for slug in s.guides or [] if slug in titles]
+    return sections
 
 
 @login_required(login_url="/accounts/login/")
@@ -311,8 +322,8 @@ def handbook(request):
 
 
 class SectionForm(forms.ModelForm):
-    audiences = forms.MultipleChoiceField(choices=[(k, v) for k, v in AUDIENCES if k in STAFF_AUDIENCES],
-                                          widget=forms.CheckboxSelectMultiple, label="Who sees it")
+    audiences = forms.MultipleChoiceField(choices=AUDIENCES, widget=forms.CheckboxSelectMultiple, label="Who sees it",
+                                          help_text="Customers and participants see their sections in Help in their portal.")
     guides = forms.MultipleChoiceField(required=False, widget=forms.CheckboxSelectMultiple, label="Link these guides at the end")
 
     class Meta:
@@ -323,8 +334,7 @@ class SectionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["guides"].choices = list(Guide.objects.exclude(audiences=["customer"]).exclude(audiences=["participant"])
-                                             .order_by("position").values_list("slug", "title"))
+        self.fields["guides"].choices = list(Guide.objects.order_by("position").values_list("slug", "title"))
 
 
 @login_required(login_url="/admin/login/")

@@ -172,3 +172,111 @@ Admins and managers can see it with practice data: Settings → Portals."""),
 - **Email signatures:** each person sets theirs. The company logo is added automatically.
 - **Connections:** Stripe (billing), Mailchimp (marketing), email and text. Keys are entered on the app's Connections page, never shared in chat."""),
 ]
+
+
+# ------------------------------------------------------------------ Customers (shown in the customer portal's Help)
+HANDBOOK += [
+    dict(slug="customer-how-it-works", position=400, audiences=["customer"], title="How working with Built to Work goes",
+         summary="From asking for workers to a confirmed hire.",
+         guides=["customer-getting-started"],
+         body="""1. **You tell us what you need:** request a position in the portal.
+2. **We review it:** we check the details with you, confirm the fee, and approve it. Then we start recruiting.
+3. **We find and check candidates:** we look through people in our program, talk with them, and check their skills and experience.
+4. **We share candidates with you:** you get an email, and they show up under Candidates. You only see what each person agreed to share.
+5. **You interview and decide:** you run the interviews. Keep each candidate's status updated so we can help along the way.
+6. **You hire:** mark them Hired. We confirm it with you, and it becomes official."""),
+
+    dict(slug="customer-positions", position=410, audiences=["customer"], title="Requesting a position",
+         summary="What to include and what happens next.",
+         guides=["customer-request-position"],
+         body="""1. Press **+ Request a position** on your dashboard or the Positions page.
+2. Fill in each section: the role, where the work is, pay and benefits, schedule, skills and experience, and who we should talk to. You can save a draft and finish later.
+3. **Posting it for participants (optional):** in the last section, tick "Post this job for Built to Work participants?" A short version of the job is shown to people in our program so they can say they're interested. Your company name and private details aren't shown.
+4. Submit it. It shows under Positions as "Waiting on Built to Work" until we approve it, or we send it back with questions.
+5. Need a change later? Edit the position and submit the update. We review changes the same way."""),
+
+    dict(slug="customer-candidates", position=420, audiences=["customer"], title="Reviewing candidates and keeping us updated",
+         summary="Your part once we share someone with you.",
+         guides=["customer-review-candidates"],
+         body="""1. Open **Candidates**. "Waiting on you" lists people who need your answer.
+2. Open a candidate to see their summary, work history, certifications, results and any documents they agreed to share.
+3. **Update the status** as things move:
+  - **Interested:** you'd like to talk to them.
+  - **Interview scheduled:** add the interview date.
+  - **Interviewed**
+  - **Offer made**
+  - **Hired:** add the start date.
+  - **Not a fit:** at any time. A short note on why helps us send better candidates.
+4. Add a note any time, or just send a note without changing the status.
+5. We're told every time you update a candidate, so we can follow up with them."""),
+
+    dict(slug="customer-hiring", position=430, audiences=["customer"], title="When you hire someone",
+         summary="What happens after you mark someone Hired.",
+         guides=[],
+         body="""- Mark the candidate **Hired** and add their start date.
+- Built to Work confirms the hire with you. Until then it shows as "Hired · waiting on Built to Work".
+- Once it's confirmed, it's recorded as an official hire, and we stay in touch with the new hire to help them get off to a good start."""),
+
+    dict(slug="customer-billing", position=440, audiences=["customer"], title="Fees and billing",
+         summary="How positions are charged.",
+         guides=[],
+         body="""- **Bank account:** connect your company's bank account under Billing. It's handled securely through Stripe.
+- **When you're charged:** after we approve a position. Skilled positions are charged in sets of 3 candidates; general labor is charged per person needed. We confirm the fee with you first.
+- **Changes:** updating a position doesn't add a new charge unless you're asking for more candidates or people.
+- **Your records:** Billing shows each charge and its status, and candidates paid for vs delivered."""),
+
+    dict(slug="customer-team-access", position=450, audiences=["customer"], title="Your team's access",
+         summary="Who at your company can use the portal.",
+         guides=["customer-team"],
+         body="""- **Company & team** shows who can use the portal and how many seats you have.
+- Your company lead can invite coworkers. They get an email to set up their own sign-in.
+- The lead can choose who can request and edit positions, and who can respond to candidates.
+- Someone leaves? Pause or remove their access there."""),
+]
+
+# ------------------------------------------------------------------ Participants (shown in the participant portal's Help)
+HANDBOOK += [
+    dict(slug="participant-how-it-works", position=500, audiences=["participant"], title="How Built to Work helps you find work",
+         summary="What we do and what to expect.",
+         guides=["participant-getting-started"],
+         body="""1. **You sign up:** at one of our events or online.
+2. **You show us what you can do:** at events you can try hands-on stations, and your results are saved to your account.
+3. **You tell us what you're looking for:** keep your profile up to date with your skills, experience and the work you want.
+4. **We match you with jobs:** we work with employers who are hiring. When a job fits you, a Built to Work recruiter reaches out.
+5. **We introduce you to the employer:** with your OK, we share your information with them.
+6. **You interview and get hired:** the employer interviews you and makes the decision. We're with you along the way."""),
+
+    dict(slug="participant-events", position=510, audiences=["participant"], title="Events",
+         summary="Signing up and what happens at the trailer.",
+         guides=["participant-sign-up-for-an-event"],
+         body="""- **Find one:** Events lists what's coming up near you.
+- **Sign up:** open an event and press Confirm registration. Your ticket is under My activity.
+- **At the event:** check in with your ticket, then try the stations. They show your skills, and your results are saved to your account.
+- **Can't make it?** No problem. Sign up for another one when it suits you."""),
+
+    dict(slug="participant-jobs-overview", position=520, audiences=["participant"], title="Jobs",
+         summary="Seeing open jobs and showing interest.",
+         guides=["participant-jobs"],
+         body="""- **Jobs** lists open jobs from employers we work with. Search by trade or location.
+- If one fits, say you're interested. A Built to Work recruiter reviews it and gets in touch.
+- **My interests** shows the jobs you've asked about.
+- We may also reach out about jobs you haven't seen yet, based on your profile."""),
+
+    dict(slug="participant-put-forward", position=530, audiences=["participant"], title="When we put you forward for a job",
+         summary="What happens when an employer is interested.",
+         guides=[],
+         body="""1. A Built to Work recruiter talks with you about the job first.
+2. With your OK, we share your information with the employer. You agreed to what can be shared when you signed up.
+3. The employer reviews it and may ask to interview you. We help you get ready.
+4. If you're hired, the job is added to your work history with Built to Work."""),
+
+    dict(slug="participant-profile", position=540, audiences=["participant"], title="Keeping your profile up to date",
+         summary="Why it matters and what to update.",
+         guides=["participant-update-profile"],
+         body="""- **Contact details:** so we can reach you about jobs and events.
+- **Work history and skills:** the more we know, the better we can match you.
+- **The work you want:** trades, locations, and when you can start.
+- **Documents:** add your resume, licenses or certificates.
+
+**Questions?** Reply to any text or email from Built to Work and someone on our team will help."""),
+]
